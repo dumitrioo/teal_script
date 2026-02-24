@@ -1,0 +1,63 @@
+// Sheldon, Leonard, Penny, Rajesh, and Howard are standing in line
+// at a Double Cola vending machine; there are no other people in line.
+// The first person in line (Sheldon) buys a can, drinks it, and becomes two!
+// The resulting two Sheldons join the back of the line. Then the next person
+// in line (Leonard) buys a can, drinks it, and joins the back of the line as
+// a double, and so on. This process continues ad infinitum.
+
+function serialize_tbbt_array(a) {
+    res = "";
+    as = a.size();
+    res += "[" + a[0].name;
+    j = 1;
+    for(i = 0; i < as; ++i) {
+        nm = a[i].name;
+        nu = a[i].num;
+        for(; j < nu; ++j) {
+            res += ", " + nm;
+        }
+        j = 0;
+    }
+    return res + "]";
+}
+
+tbbt() {
+    n = ++this.curr;
+
+    if(n > 0) {
+        console.println("Target turn number: ", n);
+
+        a[0].name = "Sheldon"; a[0].num = 1;
+        a[1].name = "Leonard"; a[1].num = 1;
+        a[2].name = "Penny";   a[2].num = 1;
+        a[3].name = "Rajesh";  a[3].num = 1;
+        a[4].name = "Howard";  a[4].num = 1;
+
+        for(i = 1; i < n; ++i) {
+            --a[0].num;
+            pf = a[0];
+            if(pf.num <= 0) {
+                a.pop_front();
+            }
+            last = a.size() - 1;
+            if(a[last].name == pf.name) {
+                a[last].num += 2;
+            } else {
+                t = object();
+                t.num = 2;
+                t.name = pf.name;
+                a.push_back(t);
+            }
+        }
+        console.println("The character to take a drink at step No ", n, " is \"", a[0].name, "\"");
+
+        console.println("Current queue state: ", serialize_tbbt_array(a));
+        console.println("Current RLE-optimized queue state: ", a);
+        console.println("----------------------------------------------------------------");
+    } else {
+        console.println("wrong argument: ", n);
+    }
+    return 0;
+}
+
+tbbt duplicating_beverage();

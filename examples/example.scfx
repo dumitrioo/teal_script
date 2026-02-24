@@ -1,0 +1,340 @@
+'command_line_args' command_line_args;
+
+execution_time_limit(dt) {
+    if (this.t == undefined)
+        this.t = timestamp();
+    if (timestamp().fseconds() - this.t.fseconds() > dt)
+        exit(0);
+    return 0;
+}
+
+execution_time_limit stopper(1);
+
+
+function rnd_str(n) {
+    res = "";
+    for (i = 0; i < n; ++i) {
+        res += "0123456789qwertyuiopasdfghjklzx"
+               "cvbnmQWERTYUIOPASDFGHJKLZXCVBNM"[rand() % 62];
+    }
+    return res;
+}
+
+
+test13() {
+    console.println(hexdump(rnd_str(256)));
+    console.println(data_to_hex_str(sha256(rnd_str(128))));
+    console.println(data_to_hex_str(sha512("qwerty")));
+}
+
+test13 t13();
+
+
+test12() {
+    s = object("[1,2,\"333\",4,5]");
+    console.println(s);
+    console.println(s.typeof());
+    console.println(s[2].typeof());
+
+    s[2][1] = '5';
+    console.println(s);
+    s[2][2] = '9';
+    console.println(s);
+}
+
+test12 t12();
+
+
+test11() {
+    console.println("\xa9\u2605\u272a22aa\U00013000\U00013000");
+    s = "\U00013000\n\U00013001\r\n\U00013002\r\n\U00013003\r\n"
+        "\U00013004\r\n\U00013005\r\n\U00013006\r\n\U00013007"
+        "\U00013008\U00013009\U0001300a\U00013003\U0001300b"
+        "\U0001300c\U0001300d\U0001300e";
+    console.println(s);
+    console.println("str");
+    console.println("\U00013008");
+    sc = cartesian_to_spheric(vec4(1, 1, 1));
+    console.println(sc);
+    dc = spheric_to_cartesian(sc);
+    console.println(dc);
+}
+
+test11 t11();
+
+
+test10() {
+    v = vec4(1, 0, 0, 1);
+    console.println("v: ", v);
+
+    mr1 = rotation(deg2rad(60), 1, 1, 1);
+
+    vr = mr1 * v;
+    console.println("vr: ", vr);
+    a = angle3d(vr, vec4(1, 1, 0, 1));
+    console.println("angle: ", rad2deg(a));
+
+    mr2 = rotation(a, 1, -1, 0);
+    mr3 = rotation(deg2rad(-45), 0, 0, 1);
+    console.println("mr1: ", mr1);
+    console.println("mr2: ", mr2);
+    console.println("mr3: ", mr3);
+    v1 = mr3 * mr2 * mr1 * v;
+    console.println("v1: ", v1);
+}
+
+test10 t10();
+
+
+test9() {
+    o = object();
+    o["k"] = "1";
+
+    o["k"] = "5";
+    o["o"] = o;
+    console.println(o);
+    o["k"] = "2";
+    console.println(o);
+
+    return 0;
+}
+
+test9 t9();
+
+
+test8() {
+    earth_eq_r = 6378.1;
+    earth_po_r = 6356.8;
+    earth_r_ratio = earth_po_r / earth_eq_r;
+    console.println("Earth's polar to equatorial radiuses ratio: ", earth_r_ratio);
+
+    moon_eq_r = 1738.14;
+    moon_po_r = 1735.97;
+    moon_r_ratio = moon_po_r / moon_eq_r;
+    console.println("Moon's polar to equatorial radiuses ratio: ", moon_r_ratio);
+    console.println("---------------------");
+
+    console.fixed();
+    shell_width = 5.0 * 1000.0; // m
+    outer_r = (1737.1) * 1000.0; // m
+    inner_r = outer_r - shell_width; // m
+    vol_factor = (M_PI * 4.0) / 3.0;
+    whole_vol = vol_factor * pow(outer_r, 3.0);
+    console.println("whole vol: ", whole_vol / 1000000000.0, " cubic km");
+    inner_vol = vol_factor * pow(inner_r, 3.0);
+    console.println("inner vol: ", inner_vol / 1000000000.0, " cubic km");
+    shell_vol = whole_vol - inner_vol; // m^3
+    console.println("shell vol: ", shell_vol / 1000000000.0, " cubic km");
+    console.println("shell vol / whole vol = ", shell_vol / whole_vol);
+    ti_dens_gcm3 = 4.540; // g / cm^3
+    ti_dens_gm3 = 4.540 * (100.0 * 100.0 * 100.0); // g / m^3
+    ti_dens = ti_dens_gm3 / 1000.0; // kg / m^3
+    console.println("titanium density: ", ti_dens, " kg/m^3");
+    shell_wt = shell_vol * ti_dens; // kg
+    console.println("shell weight: ", shell_wt / 1000.0, " tonnes");
+    shell_only_dens = shell_wt / whole_vol;
+    console.println("shell only density: ", shell_only_dens);
+    console.println("-----------------------------------------");
+    return 0;
+}
+
+test8 t8();
+
+
+test7_1() {
+    fname = "/tmp/test_file_5898723489765";
+    console.println("openinig file \"", fname, "\"");
+    if ((f = file(fname, true, true)).ok()) {
+        console.println("file: ", f.to_string());
+        fs = f.size();
+        console.println("file size: ", fs);
+        console.println("file content:\n", hexdump(f.read(fs)));
+        f.seekr(0);
+        f.write("1231234\n");
+        f.write("1231234\n");
+        fs = f.size();
+        console.println("file size: ", fs);
+        f.seekr(0);
+        console.println("file content:\n", hexdump(f.read(fs)));
+        f.close();
+        delete_filesystem_entry(fname);
+    } else {
+        console.println("file opening error");
+    }
+}
+
+test7_1 t7_1();
+
+
+test7() {
+    if ((f = file("/dev/urandom")).ok()) {
+        d = f.read(256);
+        console.println(hexdump(d), '\n');
+        console.println(hexdump(data_to_base85_str(d)), "\n");
+        console.println(hexdump(data_to_base64_str(d)));
+    } else {
+        console.println("error opening file /dev/random");
+        exit(-1);
+    }
+}
+
+test7 t7();
+
+
+test6() {
+    r = (hwrand() / 18446744073709551615.0).string();
+    console.println(r);
+    console.println(data_to_hex_str(r));
+    console.println(data_to_base64_str(r));
+    console.println(data_to_base85_str(r));
+    return this.state;
+}
+
+test6 t();
+
+
+test5() {
+    if (!this.win_created) {
+        this.win_created = true;
+        this.sw = 1600;
+        this.sh = 900;
+        ray_init_window(this.sw, this.sh, "graphics");
+        this.linestrip = array();
+        this.pause = false;
+        this.strip_color = Color(rand(), rand(), rand(), rand());
+        this.tid = thread_id();
+    }
+    if (this.tid != thread_id()) {
+        return this.tid;
+    }
+    if (ray_window_should_close()) {
+        ray_close_window();
+        exit(0);
+    } else {
+        if (ray_get_char_pressed() == 'p') {
+            this.pause = !this.pause;
+        }
+        if (ray_get_key_pressed() == 300) {
+            ray_toggle_full_screen();
+        }
+        ray_begin_drawing();
+        ray_clear_background(Color(0, 0, 0, 255));
+        i = 0;
+        if (!this.pause) {
+            for (; i < 50; ++i) {
+                this.linestrip[i] = Vector2(rand() % this.sw, rand() % this.sh);
+            }
+            this.linestrip[i] = this.linestrip[0];
+            this.strip_color = Color(rand(), rand(), rand(), rand());
+        }
+        ray_draw_line_strip(this.linestrip, this.strip_color);
+        for (i = 0; i < this.linestrip.size() - 1; ++i) {
+            clr = Color(rand(), rand(), rand(), rand());
+            ray_draw_circle(this.linestrip[i].x(), this.linestrip[i].y(), rand() % 30, clr);
+        }
+        ray_end_drawing();
+        sleep(0.01);
+    }
+    return this.tid;
+}
+
+test5 t5();
+
+
+test4() {
+    if ((f = file("/dev/random")).ok()) {
+        console.println(f.read(1024).hexdump());
+    } else {
+        console.println("error opening file /dev/random");
+    }
+    return 0;
+}
+
+test4 t4();
+
+
+test3() {
+    if (!this.initialized) {
+        console.fixed(); console.setprecision(0);
+        this.n = 0;
+        this.initialized = true;
+        this.n1 = float(0);
+        this.n2 = float(1);
+        console.println(this.n1);
+        return 0;
+    }
+    s = this.n1 + this.n2;
+    this.n1 = this.n2;
+    this.n2 = s;
+    console.println(this.n1);
+    return 0;
+}
+
+test3 t3();
+
+
+test2() {
+    if (this.a = undefined) {
+        this.rule = 30;
+        // this.rule = 153;
+        // this.rule = 106;
+        // this.rule = 204; // identity
+        // this.rule = 58;
+        // this.rule = 225;
+        // this.rule = 216;
+        // this.rule = 210;
+        // this.rule = 135;
+        // this.rule = 75;
+        // this.rule = 147;
+        // this.rule = 45;
+        // this.rule = 89;
+        // this.rule = 105;
+        // this.rule = 169;
+        // this.rule = 54;
+        // this.rule = 86;
+        // this.rule = 150;
+        // this.rule = 120;
+        // this.rule = 232; // sharpen
+        // this.rule = 240;
+        this.a = array();
+        for (i = 0; i < 128; ++i) {
+            this.a[i] = (hwrand() & 1).u8();
+        }
+        this.c = 0;
+    }
+    CN = this.a.size();
+    for (i = 0; i < CN; ++i) {
+        console.print(this.a[i] ? "." : " ");
+    }
+    console.println();
+    a = array();
+    a[0] = 0;
+    for (i = 1; i <= CN; ++i) {
+        indx = (this.a[i - 1] << 2) | (this.a[i % CN] << 1) | this.a[(i + 1) % CN];
+        a[i % CN] = (this.rule >> indx) & 1;
+    }
+    this.a = a;
+    return this.a;
+}
+
+test2 t2();
+
+
+test1() {
+    if (this.cur == undefined) {
+        this.cur = rand();
+        this.cycles = 0;
+    }
+    console.println(this.cur.utoa(2, 64).replace_substr("1", "*").replace_substr("0", " "));
+    rule = 30;
+    cur = 0;
+    cur = cur.update_bit(0, rule.get_bit((this.cur.get_bit_field(0, 2) << 1) | this.cur.get_bit(63)));
+    for (i = 1; i < 63; ++i) {
+        cur = cur.update_bit(i, rule.get_bit(this.cur.get_bit_field(i - 1, 3)));
+    }
+    cur = cur.update_bit(63, rule.get_bit(this.cur.get_bit_field(62, 2) | (this.cur.get_bit(0) << 2)));
+    this.cur = cur;
+    return this.cur;
+}
+
+test1 t1() 'out';

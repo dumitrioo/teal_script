@@ -1,0 +1,7 @@
+oba() {
+    a = 1.0 - 1.0 + 1.0;
+    println(a);
+    exit();
+}
+
+oba na();

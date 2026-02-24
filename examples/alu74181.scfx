@@ -1,0 +1,194 @@
+/////////////////////////////////////////////////////////////////////////////////
+//                                  ALU 74181
+
+//////////////////////////////// cells templates ////////////////////////////////
+
+function slp() sleep(hardware_concurrency() == 1 ? 0.0 : 0.003);
+
+not(a) { slp(); return !a; }
+buf(a) { slp(); return bool(a); }
+and2(a, b) { slp(); return a && b; }
+and3(a, b, c) { slp(); return a && b && c; }
+and4(a, b, c, d) { slp(); return a && b && c && d; }
+and5(a, b, c, d, e) { slp(); return a && b && c && d && e; }
+nand2(a, b) { slp(); return !(a && b); }
+nand3(a, b, c) { slp(); return !(a && b && c); }
+nand4(a, b, c, d) { slp(); return !(a && b && c && d); }
+nand5(a, b, c, d, e) { slp(); return !(a && b && c && d && e); }
+or2(a, b) { slp(); return a || b; }
+or3(a, b, c) { slp(); return a || b || c; }
+or4(a, b, c, d) { slp(); return a || b || c || d; }
+nor2(a, b) { slp(); return !(a || b); }
+nor3(a, b, c) { slp(); return !(a || b || c); }
+nor4(a, b, c, d) { slp(); return !(a || b || c || d); }
+xor2(a, b) { slp(); return a ^ b; }
+xor3(a, b, c) { slp(); return a ^ b ^ c; }
+xor4(a, b, c, d) { slp(); return a ^ b ^ c ^ d; }
+xnor2(a, b) { slp(); return !(a ^ b); }
+xnor3(a, b, c) { slp(); return !(a ^ b ^ c); }
+xnor4(a, b, c, d) { slp(); return !(a ^ b ^ c ^ d); }
+i2or2(a, b) { slp(); return !a || !b; }
+
+scale_factor(v) return v;
+
+rand_bool() {
+    if(this.ctr % 5 == 0) this.res = randf() > 0.5;
+    ++this.ctr;
+    return this.res;
+}
+
+ray_window() {
+    if(!this.win_created) {
+        ray_init_window(800, 600, "ALU 74181");
+        ray_set_target_fps(30);
+        ray_begin_drawing();
+        ray_clear_background(Color(0, 0, 0, 255));
+        this.win_created = true;
+        this.tid = thread_id();
+    }
+    if(this.tid == thread_id()) {
+        if(ray_window_should_close()) {
+            ray_end_drawing();
+            ray_close_window();
+            exit(0);
+        } else {
+            if(ray_get_key_pressed() == 300) ray_toggle_full_screen();
+            ray_end_drawing();
+            ray_begin_drawing();
+            ray_clear_background(Color(0, 0, 0, 255));
+        }
+    }
+    return this.tid;
+}
+
+color_select() return Color(0x29, 0xae, 0x9cc, 255);
+color_in() return Color(0x64, 0xff, 0x9f, 255);
+color_out() return Color(0x1e, 0xed, 0x00, 255);
+color_carry() return Color(0xfe, 0x24, 0x02, 255);
+color_pgeq() return Color(0x9e, 0xdb, 0x00, 255);
+
+draw_bool(t, v, x, y, f, lbl, crcclr) {
+    if(t == thread_id()) {
+        if(ray_window_should_close()) { ray_close_window(); exit(0); return 0; }
+        if(ray_get_key_pressed() == 300) { ray_toggle_full_screen(); }
+        rctclr = Color(64, 64, 64, 255);
+        rcdclr = Color(32, 32, 32, 255);
+        ray_draw_circle(x * f, y * f, 7 * f, v ? crcclr : Color(0, 0, 0, 255));
+        ray_draw_text(lbl, (x - 9) * f, (y + 11) * f, 15 * f, Color(80, 200, 100, 255));
+        ray_draw_line((x - 10.5) * f, (y - 10) * f, (x + 10) * f, (y - 10) * f, rctclr);
+        ray_draw_line((x - 10) * f, (y - 10) * f, (x - 10) * f, (y + 10) * f, rctclr);
+        ray_draw_line((x + 10.5) * f, (y + 10) * f, (x + 10) * f, (y - 10) * f, rcdclr);
+        ray_draw_line((x + 10) * f, (y + 10) * f, (x - 10) * f, (y + 10) * f, rcdclr);
+    }
+    return 0;
+}
+
+//////////////////////////////// cells instances ////////////////////////////////
+
+///////////////////////// real inputs
+// 'A0' a0; 'A1' a1; 'A2' a2; 'A3' a3;
+// 'B0' b0; 'B1' b1; 'B2' b2; 'B3' b3;
+// 'S0' s0; 'S1' s1; 'S2' s2; 'S3' s3;
+// 'C_in' c_in; 'M' m;
+
+///////////////////////// mock inputs
+rand_bool s0(); rand_bool s1(); rand_bool s2(); rand_bool s3();
+rand_bool a0(); rand_bool a1(); rand_bool a2(); rand_bool a3();
+rand_bool b0(); rand_bool b1(); rand_bool b2(); rand_bool b3();
+rand_bool c_in(); rand_bool m();
+
+not   alu_0(b3);
+not   alu_1(b2);
+not   alu_2(b1);
+not   alu_3(b0);
+not   alu_4(m);
+and3  alu_5(b3, s3, a3);
+and3  alu_6(a3, s2, alu_0);
+and2  alu_7(alu_0, s1);
+and2  alu_8(s0, b3);
+buf   alu_9(a3);
+and3  alu_10(b2, s3, a2);
+and3  alu_11(a2, s2, alu_1);
+and2  alu_12(alu_1, s1);
+and2  alu_13(s0, b2);
+buf   alu_14(a2);
+and3  alu_15(b1, s3, a1);
+and3  alu_16(a1, s2, alu_2);
+and2  alu_17(alu_2, s1);
+and2  alu_18(s0, b1);
+buf   alu_19(a1);
+and3  alu_20(b0, s3, a0);
+and3  alu_21(a0, s2, alu_3);
+and2  alu_22(alu_3, s1);
+and2  alu_23(s0, b0);
+buf   alu_24(a0);
+nor2  alu_25(alu_5, alu_6);
+nor3  alu_26(alu_7, alu_8, alu_9);
+nor2  alu_27(alu_10, alu_11);
+nor3  alu_28(alu_12, alu_13, alu_14);
+nor2  alu_29(alu_15, alu_16);
+nor3  alu_30(alu_17, alu_18, alu_19);
+nor2  alu_31(alu_20, alu_21);
+nor3  alu_32(alu_22, alu_23, alu_24);
+xor2  alu_33(alu_25, alu_26);
+xor2  alu_34(alu_27, alu_28);
+xor2  alu_35(alu_29, alu_30);
+xor2  alu_36(alu_31, alu_32);
+buf   alu_37(alu_26);
+and2  alu_38(alu_25, alu_28);
+and3  alu_39(alu_25, alu_27, alu_30);
+and4  alu_40(alu_25, alu_27, alu_29, alu_32);
+nand5 alu_41(alu_25, alu_27, alu_32, alu_31, c_in);
+nand4 alu_42(alu_25, alu_27, alu_32, alu_31)          'P';
+and5  alu_43(c_in, alu_31, alu_32, alu_27, alu_4);
+and4  alu_44(alu_32, alu_27, alu_32, alu_4);
+and3  alu_45(alu_27, alu_30, alu_4);
+and2  alu_46(alu_28, alu_4);
+and4  alu_47(c_in, alu_31, alu_29, alu_4);
+and3  alu_48(alu_29, alu_32, alu_4);
+and2  alu_49(alu_30, alu_4);
+and3  alu_50(c_in, alu_31, alu_4);
+and2  alu_51(alu_32, alu_4);
+nand2 alu_52(c_in, alu_4);
+nor4  alu_53(alu_37, alu_38, alu_39, alu_40)          'G';
+nor4  alu_54(alu_43, alu_44, alu_45, alu_46);
+nor3  alu_55(alu_47, alu_48, alu_49);
+nor2  alu_56(alu_50, alu_51);
+i2or2 alu_57(alu_53, alu_41)                          'C_out';
+xor2  alu_58(alu_33, alu_54)                          'f3';
+xor2  alu_59(alu_34, alu_55)                          'f2';
+xor2  alu_60(alu_35, alu_56)                          'f1';
+xor2  alu_61(alu_36, alu_52)                          'f0';
+and4  alu_62(alu_58, alu_59, alu_60, alu_61)          'EQ';
+
+ray_window ray();
+scale_factor sfctr(2.6);
+
+color_select clr_s();
+color_in clr_in();
+color_out clr_out();
+color_carry clr_c();
+color_pgeq clr_pgeq();
+
+draw_bool dr_c_in(ray, c_in, 200, 20, sfctr, "inC", clr_c);
+draw_bool dr_m(ray, m, 240, 20, sfctr, " M", clr_in);
+draw_bool dr_s0(ray, s3, 20, 20, sfctr, "s3", clr_s);
+draw_bool dr_s1(ray, s2, 60, 20, sfctr, "s2", clr_s);
+draw_bool dr_s2(ray, s1, 100, 20, sfctr, "s1", clr_s);
+draw_bool dr_s3(ray, s0, 140, 20, sfctr, "s0", clr_s);
+draw_bool dr_a0(ray, a3, 20, 60, sfctr, "a3", clr_in);
+draw_bool dr_a1(ray, a2, 60, 60, sfctr, "a2", clr_in);
+draw_bool dr_a2(ray, a1, 100, 60, sfctr, "a1", clr_in);
+draw_bool dr_a3(ray, a0, 140, 60, sfctr, "a0", clr_in);
+draw_bool dr_b0(ray, b3, 20, 100, sfctr, "b3", clr_in);
+draw_bool dr_b1(ray, b2, 60, 100, sfctr, "b2", clr_in);
+draw_bool dr_b2(ray, b1, 100, 100, sfctr, "b1", clr_in);
+draw_bool dr_b3(ray, b0, 140, 100, sfctr, "b0", clr_in);
+draw_bool dr_f3(ray, alu_61, 20, 160, sfctr, "f3", clr_out);
+draw_bool dr_f2(ray, alu_60, 60, 160, sfctr, "f2", clr_out);
+draw_bool dr_f1(ray, alu_59, 100, 160, sfctr, "f1", clr_out);
+draw_bool dr_f0(ray, alu_58, 140, 160, sfctr, "f0", clr_out);
+draw_bool dr_c_out(ray, alu_57, 200, 160, sfctr, "outC", clr_c);
+draw_bool dr_p(ray, alu_42, 20, 200, sfctr, " P", clr_pgeq);
+draw_bool dr_g(ray, alu_53, 60, 200, sfctr, " G", clr_pgeq);
+draw_bool dr_AeB(ray, alu_62, 120, 200, sfctr, "EQ", clr_pgeq);

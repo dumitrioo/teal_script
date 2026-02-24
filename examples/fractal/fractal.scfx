@@ -1,0 +1,49 @@
+pfractal(yb, ye) {
+    yMin = -0.2; yMax =  0.1; xMin = -1.5; xMax = -1.1;
+    bt = timestamp().fseconds();
+    for(yPixel = yb; yPixel < ye; ++yPixel) {
+        rstr = itoa(yPixel);
+        y0 = (yPixel / 40.0) * (yMax - yMin) + yMin;
+        for (xPixel = -96; xPixel < 387; ++xPixel) {
+            x0 = (xPixel / 78.0) * (xMax - xMin) + xMin;
+            x = x0; y = y0;
+            indx = 0;
+            for(iter = 0; iter < 80; ++iter) {
+                xx = x * x - y * y + x0;
+                yy = 2.0 * x * y + y0;
+                x = xx; y = yy;
+                if(x * x + y * y > 4.0) {
+                    indx = iter / 8;
+                    break;
+                }
+            }
+            rstr += " .:;+=xX$&"[indx];
+        }
+        println(rstr);
+        rstr = "";
+    }
+    et = timestamp().fseconds();
+    println("elapsed time: ", et - bt);
+    exit();
+}
+
+pfractal pf1(-100, -87);
+pfractal pf2(-87, -75);
+pfractal pf3(-75, -63);
+pfractal pf4(-63, -50);
+pfractal pf5(-50, -37);
+pfractal pf6(-37, -25);
+pfractal pf7(-25, -12);
+pfractal pf8(-12, 0);
+pfractal pf9(0, 12);
+pfractal pf10(12, 25);
+pfractal pf11(25, 37);
+pfractal pf12(37, 50);
+pfractal pf13(50, 63);
+pfractal pf14(63, 75);
+pfractal pf15(75, 87);
+pfractal pf16(87, 100);
+pfractal pf17(100, 112);
+pfractal pf18(112, 125);
+pfractal pf19(125, 137);
+pfractal pf20(137, 150);

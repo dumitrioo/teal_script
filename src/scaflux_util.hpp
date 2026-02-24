@@ -1,0 +1,321 @@
+#pragma once
+
+#include <commondefs.hpp>
+#include <file_util.hpp>
+#include <str_util.hpp>
+#include <math/math_util.hpp>
+#include <json.hpp>
+#ifdef SCFX_USE_EMHASH8_MAP
+#include <emhash/hash_set8.hpp>
+#include <emhash/hash_table8.hpp>
+#endif
+
+#define SCFXFUN(FUNC_NAME, ARGS) [&](scfx::valbox const &FUNC_NAME, std::vector<scfx::valbox> &ARGS) -> scfx::valbox
+#define SCFXNUMARG(INDX, TYPE) args[INDX].cast_num_to_num<TYPE>()
+#define SCFX_CHCK_FUN_PARMS_NUM_EQ(NUM_ARGS) \
+    if(args.size() != (NUM_ARGS)) { \
+        throw std::runtime_error{"wrong function arguments count"}; \
+    }
+#define SCFX_CHCK_FUN_PARMS_NUM_LE(NUM_ARGS) \
+    if(args.size() > (NUM_ARGS)) { \
+        throw std::runtime_error{"wrong function arguments count"}; \
+    }
+#define SCFX_CHCK_FUN_PARMS_NUM_GE(NUM_ARGS) \
+    if(args.size() < (NUM_ARGS)) { \
+        throw std::runtime_error{"wrong function arguments count"}; \
+    }
+#define SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(NUM_ARGS_MIN, NUM_ARGS_MAX) \
+    if(args.size() < (NUM_ARGS_MIN) || args.size() > (NUM_ARGS_MAX)) { \
+        throw std::runtime_error{"wrong function arguments count"}; \
+    }
+#define SCFXCLASSARG(INDX, TYPE) args[INDX].as_class<TYPE>()
+#define SCFXTHIS(TYPE) args[0].as_class<TYPE>()
+
+namespace scfx {
+
+#define SCFX_DEFINE_BASE_LINE_COL_ERROR(CLASS, BASE_CLASS) class CLASS: public BASE_CLASS { \
+    public: \
+        CLASS(std::int64_t l, std::int64_t c, std::string const &msg): \
+            BASE_CLASS{msg}, \
+            l_{l}, \
+            c_{c} \
+        { \
+        } \
+        char const *what() const noexcept override { \
+            try { \
+                std::stringstream ss{}; \
+                ss << "at " << l_ + 1 << ":" << c_ + 1 << " - " << BASE_CLASS::what(); \
+                buf_ = ss.str(); \
+                return buf_.c_str(); \
+            } catch(...) { \
+            } \
+            return def_; \
+        } \
+    private: \
+        static inline char const *def_{""}; \
+        mutable std::string buf_{}; \
+        std::int64_t l_{}; \
+        std::int64_t c_{}; \
+    };
+
+#define SCFX_DEFINE_DERIVED_ERROR(CLASS, BASE_CLASS) class CLASS: public BASE_CLASS { \
+    public: \
+        CLASS(std::int64_t l, std::int64_t c, const std::string &msg): BASE_CLASS{l, c, msg} { \
+        } \
+    };
+
+    SCFX_DEFINE_BASE_LINE_COL_ERROR(logic_error, std::logic_error)
+    SCFX_DEFINE_BASE_LINE_COL_ERROR(runtime_error, std::runtime_error)
+    SCFX_DEFINE_DERIVED_ERROR(compilation_error, logic_error)
+    SCFX_DEFINE_DERIVED_ERROR(domain_error, logic_error)
+    SCFX_DEFINE_DERIVED_ERROR(future_error, logic_error)
+    SCFX_DEFINE_DERIVED_ERROR(invalid_argument, logic_error)
+    SCFX_DEFINE_DERIVED_ERROR(length_error, logic_error)
+    SCFX_DEFINE_DERIVED_ERROR(out_of_range, logic_error)
+    SCFX_DEFINE_DERIVED_ERROR(range_error, runtime_error)
+    SCFX_DEFINE_DERIVED_ERROR(overflow_error, runtime_error)
+    SCFX_DEFINE_DERIVED_ERROR(underflow_error, runtime_error)
+    SCFX_DEFINE_DERIVED_ERROR(system_error, runtime_error)
+
+#undef SCFX_DEFINE_BASE_LINE_COL_ERROR
+#undef SCFX_DEFINE_DERIVED_ERROR
+
+#ifdef SCFX_USE_EMHASH8_MAP
+    template<typename K_T, typename V_T, typename HASH_T = std::hash<K_T>>
+    using map_t = emhash8::HashMap<K_T, V_T, HASH_T>;
+    template<typename K_T, typename V_T, typename HASH_T = std::hash<K_T>>
+    using self_fields_map_t = emhash8::HashMap<K_T, V_T, HASH_T>;
+#else
+    template<typename K_T, typename V_T>
+    using map_t = std::unordered_map<K_T, V_T>;
+    template<typename K_T, typename V_T>
+    using self_fields_map_t = std::unordered_map<K_T, V_T>;
+#endif
+
+    template<typename K_T, typename V_T>
+    using dict_map_t = std::map<K_T, V_T>;
+
+    using shared_mutex = std::shared_mutex;
+
+    static bool is_identifier(std::string const &ident) {
+        if(ident.size() == 0) {
+            return false;
+        }
+        std::wstring wid{scfx::str_util::from_utf8(ident)};
+        if(!(scfx::str_util::fltr<std::wstring>::isalpha(wid[0]) || wid[0] == '_')) {
+            return false;
+        }
+        for(std::size_t i{1}; i < wid.size(); ++i) {
+            if(!(scfx::str_util::fltr<std::wstring>::isalnum(wid[0]) || wid[0] == '_')) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static bool is_keyword(std::wstring const &str) {
+        return str == L"if" ||
+               str == L"else" ||
+               str == L"true" ||
+               str == L"false" ||
+               str == L"undefined" ||
+               str == L"for" ||
+               str == L"while" ||
+               str == L"return" ||
+               str == L"break" ||
+               str == L"continue" ||
+               str == L"try" ||
+               str == L"catch" ||
+               str == L"throw" ||
+               str == L"function"
+        ;
+    }
+
+    static bool expression_part(std::wstring const &str) {
+        return str != L"if" &&
+               str != L"else" &&
+               str != L"for" &&
+               str != L"while" &&
+               str != L"return" &&
+               str != L"break" &&
+               str != L"continue" &&
+               str != L"try" &&
+               str != L"catch" &&
+               str != L"throw" &&
+               str != L"function"
+        ;
+    }
+
+    template<typename T>
+    scfx::math::vector4<T> vec4_from_json(scfx::json const &j) {
+        scfx::math::vector4<T> res{};
+        try {
+            if(j.is_array()) {
+                for(std::size_t i = 0; i < 4 && i < j.size(); ++i) {
+                    res[i] = j[i].try_as_long_double();
+                }
+            } else if(j.is_object()) {
+                res.x() = j.key_exists("x") ? j["x"].try_as_long_double() : 0;
+                res.y() = j.key_exists("y") ? j["y"].try_as_long_double() : 0;
+                res.z() = j.key_exists("z") ? j["z"].try_as_long_double() : 0;
+                res.w() = j.key_exists("w") ? j["w"].try_as_long_double() : 0;
+            }
+        } catch(...) {
+            res = scfx::math::vector4<T>{};
+        }
+        return res;
+    }
+
+    template<typename T>
+    scfx::math::vector4<T> vec4_from_str(std::string const &s) {
+        scfx::math::vector4<T> res{};
+        try {
+            scfx::json j{scfx::json::deserialize(s)};
+            res = vec4_from_json<T>(j);
+        } catch(...) {
+            res = scfx::math::vector4<T>{};
+        }
+        return res;
+    }
+
+    template<typename T>
+    scfx::math::vector4<T> vec4_from_str(std::wstring const &s) {
+        scfx::math::vector4<T> res{};
+        try {
+            scfx::json j{scfx::json::deserialize(scfx::str_util::to_utf8(s))};
+            res = vec4_from_json<T>(j);
+        } catch(...) {
+            res = scfx::math::vector4<T>{};
+        }
+        return res;
+    }
+
+    template<typename T>
+    scfx::math::matrix4<T> mat4_from_json(scfx::json const &j) {
+        scfx::math::matrix4<T> res{};
+        try {
+            if(j.is_array()) {
+                for(std::size_t i = 0; i < 16 && i < j.size(); ++i) {
+                    res[i] = j[i].try_as_long_double();
+                }
+            } else if(j.is_object()) {
+                res.x() = j.key_exists("x") ? j["x"].try_as_long_double() : 0;
+                res.y() = j.key_exists("y") ? j["y"].try_as_long_double() : 0;
+                res.z() = j.key_exists("z") ? j["z"].try_as_long_double() : 0;
+                res.w() = j.key_exists("w") ? j["w"].try_as_long_double() : 0;
+            }
+        } catch(...) {
+            res = scfx::math::matrix4<T>{};
+        }
+        return res;
+    }
+
+    template<typename T>
+    class map_array {
+    public:
+        map_array() {}
+
+        T &operator[](std::size_t indx) & {
+            if(indx >= size_) {
+                size_ = indx + 1;
+            }
+            return map_[indx];
+        }
+
+        T at(std::size_t indx) const {
+            if(indx >= size_) {
+                throw runtime_error{"index out of range"};
+            }
+            auto it{map_.find(indx)};
+            if(it == map_.end()) {
+                return T{};
+            }
+            return it->second;
+        }
+
+        std::size_t size() const {
+            return size_;
+        }
+
+        void resize(std::size_t n) {
+            size_ = n;
+            for(auto it{map_.lower_bound(n)}; it != map_.end(); ) {
+                it = map_.erase(it);
+            }
+        }
+
+        std::map<std::size_t, T> const &m() const & {
+            return map_;
+        }
+
+        map_array subarray(std::size_t start_index, std::size_t count = std::numeric_limits<std::size_t>::max()) const {
+            map_array res{};
+            res.resize(std::min(count, size() - start_index));
+            for(auto it{map_.lower_bound(start_index)}; it != map_.end(); ++ it) {
+                if(it->first - start_index >= count) {
+                    break;
+                }
+                res[it->first] = it->second;
+            }
+            return res;
+        }
+
+        bool contains(size_t indx) const {
+            return indx < size_ && map_.find(indx) != map_.end();
+        }
+
+        void traverse_full(std::function<void(size_t, T const &)> fun, size_t start = 0, size_t count = std::numeric_limits<std::size_t>::max()) const {
+            auto it{map_.lower_bound(start)};
+            for(size_t i{start}; i < size_ && i < start + count; ++i) {
+                if(it != map_.end() && i == it->first) {
+                    fun(i, it->second);
+                    ++it;
+                } else {
+                    fun(i, T{});
+                }
+            }
+        }
+
+        void traverse_real(std::function<void(size_t, T const &)> fun, size_t start = 0, size_t count = std::numeric_limits<std::size_t>::max()) const {
+            for(auto it{map_.lower_bound(start)}; it != map_.end() && it->first < start + count; ++it) {
+                fun(it->first, it->second);
+            }
+        }
+
+        void clear() {
+            size_ = 0;
+            map_.clear();
+        }
+
+        bool empty() const {
+            return size_ == 0;
+        }
+
+        void push_back(T const &v) {
+            map_[size_++] = v;
+        }
+
+        void push_back(T &&v) {
+            map_[size_++] = std::move(v);
+        }
+
+        T pop_back() {
+            T res{};
+            if(empty()) {
+                throw runtime_error{"array empty"};
+            }
+            --size_;
+            auto it{map_.lower_bound(size_)};
+            if(it != map_.end()) {
+                res = std::move(it->second);
+                map_.erase(it);
+            }
+            return res;
+        }
+
+    private:
+        std::map<std::size_t, T> map_{};
+        std::size_t size_{0};
+    };
+
+}

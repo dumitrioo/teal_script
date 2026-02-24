@@ -1,0 +1,265 @@
+'command_line_args' command_line_args;
+
+
+t() {
+    k["r"] = "1";
+    t["d"] = "r";
+    println(k + t);
+}
+
+t c();
+
+
+execution_time_limit(t) {
+    if(this.t == undefined) this.t = timestamp().fseconds() + t;
+    if(timestamp().fseconds() > this.t) exit();
+}
+
+execution_time_limit etl(.1);
+
+
+
+function callee2(qq) { println("callee2! - ", qq); }
+function callee(fn)  { println("callee!"); fn(234); }
+function caller(fn)  { fn(callee2); }
+other_call_test()    { caller(callee); return 2; }
+other_call_test oct();
+
+
+function fact(n) {
+    return n <= 1 ? n : n * fact(n - 1);
+}
+function mysin(x) {
+    return x
+        - pow(x, 3.0) / 6.0
+        + pow(x, 5.0) / 120.0
+        - pow(x, 7.0) / 5040.0
+        + pow(x, 9.0) / 362880.0
+        - pow(x, 11.0) / 39916800.0
+        + pow(x, 13.0) / 6227020800.0
+        - pow(x, 15.0) / 1307674368000.0
+        + pow(x, 17.0) / 355687428096000.0
+        - pow(x, 19.0) / 121645100408832000.0
+        + pow(x, 21.0) / 51090942171709440000.0
+        - pow(x, 23.0) / 25852016738884976640000.0
+        + pow(x, 25.0) / 15511210043330985984000000.0;
+}
+sin_test() {
+    console.setprecision(26);
+    console.println(sin(1.0));
+    console.println(mysin(1.0));
+    return 0;
+}
+
+sin_test sntst();
+
+
+function fibonacci(n, memo) {
+    if memo.contains(n)
+        return memo[n];
+    if n <= 1
+        memo[n] = n;
+    else
+        memo[n] = fibonacci(n - 1, memo) + fibonacci(n - 2, memo);
+    return memo[n];
+}
+
+misc_test() {
+    console.println(pow(2, -0.5));
+    return 0;
+
+    console.setprecision(16);
+    ts = steady_clock();
+    tw = timestamp();
+    console.println(ts, " ", ts / 3600);
+    console.println(tw.fseconds(), " ", tw.fseconds() / 3600);
+    console.println(timestamp(ts).as_iso_8601(0));
+    console.println(tw.as_iso_8601(0));
+
+    return 0;
+}
+
+misc_test msctst();
+
+
+untab(argv) {
+    clargs = argv;
+    clargs.pop_front();
+    clargs.pop_front();
+    for(i = 0; i < clargs.size(); ++i) {
+        if(file_exists(clargs[i])) {
+            try {
+                console.println("processing file ", clargs[i]);
+                save_to_file(clargs[i], clargs[i].load_from_file().replace_substr("\t", " " * 4));
+            } catch(e) {
+                console.error(e);
+            }
+        } else if (dir_exists(clargs[i])) {
+            dir_list = list_directory(clargs[i], true);
+            for(i = 0; i < dir_list.size(); ++i) {
+                if(file_exists(dir_list[i])) {
+                    try {
+                        console.println("processing file ", dir_list[i]);
+                        save_to_file(dir_list[i], dir_list[i].load_from_file().replace_substr("\t", " " * 4));
+                    } catch(e) {
+                        console.error(e);
+                    }
+                }
+            }
+        }
+    }
+}
+
+untab utb(command_line_args);
+
+
+finddupes(argv) {
+    clargs = argv;
+    clargs.pop_front();
+    clargs.pop_front();
+    if(dir_exists(clargs[0])) {
+        dupes = object();
+        dir_list = list_directory(clargs[0], true);
+        for(i = 0; i < dir_list.size(); ++i) {
+            curr_fname = dir_list[i];
+            if(file_exists(curr_fname)) {
+                try dupes[sha256(load_from_file(curr_fname))].push_back(curr_fname); catch();
+            }
+        }
+        for(i = 0; i < dupes.size(); ++i) {
+            if(dupes[i].size() > 1) {
+                for(j = 0; j < dupes[i].size(); ++j) {
+                    console.println(dupes[i][j]);
+                }
+                console.println("----------------------------------------------------------");
+            }
+        }
+    }
+    return 0;
+}
+
+finddupes dps(command_line_args);
+
+
+cmdline_test(argv) {
+    try {
+        throw 12;
+    } catch(e) {
+        console.println(e);
+    }
+    return 0;
+}
+
+cmdline_test cmltst(command_line_args);
+
+
+tupo_test() {
+    sv = str_tok("spssususususdgsdyustgsfsyutsfdesf", "s");
+    console.println(sv);
+    return 0;
+}
+
+tupo_test tutst();
+
+
+cpu_test() {
+    if(!this.cpuperf) {
+        this.cpuperf = perf_stat();
+        if(!this.cpuperf.start()) {
+            console.println("spssususususdgsdyustgsfsyutsfdesf");
+            return (0);
+        }
+    }
+    console.println("cpu: ", this.cpuperf.cpu_load() * 100, "%, self: ", this.cpuperf.self_cpu_consumption() * 100, "%");
+    sleep(0.05);
+    return 0;
+}
+
+cpu_test cputst();
+
+
+function num_to_suffixed(n, prec) {
+    a = array("", "k", "M", "G", "T", "P", "E", "Z", "Y", "R", "Q");
+    p = 0; k = n;
+    while(k > 1000.0) {
+        k /= 1000.0;
+        ++p;
+    }
+    return array(ftoa(k, prec), a[p]);
+}
+my_test() {
+    try {
+        console.fixed();
+        r = 6371239.0;
+        solar_constant = 1360.8;
+        s = M_PI * r * r;
+        p = s * solar_constant;
+        sunpower = num_to_suffixed(p, 18);
+        console.setprecision(36);
+        console.println(sunpower[0], " ", sunpower[1], "W");
+
+        throw "exit";
+    } catch(e) {
+        console.error(e);
+    }
+    return 0;
+}
+
+my_test mtst();
+
+
+ctr(anything) {
+    if(this.delay == undefined) {
+        this.delay = 0.0007;
+        this.tsfs = time();
+        console.fixed();
+        console.setprecision(16);
+    }
+    if(++this.i % 100 == 0) {
+        ts = timestamp();
+        tsfs = ts.fseconds();
+        t = (0.1 - (tsfs - this.tsfs)) * 0.025;
+        this.delay += sign(t) * t * t;
+        this.tsfs = tsfs;
+        if(this.i % 1000 == 0) {
+            console.println(ts.as_iso_8601(), " ", this.delay);
+        }
+
+    }
+    return this.delay;
+}
+
+ctr cto(tm);
+
+
+another_test() {
+    console.info("start at ", timestamp().as_iso_8601());
+    begin = timestamp().fseconds();
+    for(i = 0; i < 1000000; ++i) {
+    }
+    end = timestamp().fseconds();
+    console.info("end at ", timestamp().as_iso_8601());
+    console.info(end - begin, " sec.");
+}
+
+another_test at();
+
+
+test_mat() {
+    try {
+        p = perspective(60, 1, 1, 50);
+        l = look_at(0, 0, 0,  1, 0, 0,  0, 0, 1);
+
+        for(i = 0.0; i < 60.0; i += 0.1) {
+            point = vec4(i, 0, 0);
+            v1 = p * l * point;
+            console.println(point, "   ", v1);
+        }
+    } catch(e) {
+        console.println("error ", e);
+    }
+
+    return 0;
+}
+
+test_mat tm();
