@@ -785,11 +785,6 @@ namespace scfx {
                     tk.type_is(token::type::BITORASSIGN) ||
                     tk.type_is(token::type::XORASSIGN)
                 ) {
-                    // if(res.is_null()) {
-                    //     throw compilation_error{make_error_msg(get_token(0).line(), get_token(0).col(),
-                    //         std::string{"invalid expression before "}
-                    //     )};
-                    // }
                     scfx::json over_res{};
                     over_res["loc"]["line"] = get_token(0).line();
                     over_res["loc"]["col"] = get_token(0).col();
@@ -801,11 +796,6 @@ namespace scfx {
                     over_res["content"]["left"] = std::move(res);
                     res = std::move(over_res);
                     res["content"]["right"] = get_prio_16();
-                    // if(res["content"]["right"].is_null()) {
-                    //     throw compilation_error{make_error_msg(get_token(0).line(), get_token(0).col(),
-                    //         std::string{"invalid expression"}
-                    //     )};
-                    // }
                 } else if(tk.type_is(token::type::QUESTION)) {
                     scfx::json over_res{};
                     over_res["loc"]["line"] = get_token(0).line();

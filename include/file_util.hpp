@@ -26,8 +26,6 @@
 
 #ifdef USE_FILE_MAGIC
 #include <magic.h>
-// #include "file_util_magic_mgc.hpp"
-// #include "lzari.hpp"
 #endif
 
 #include "timespec_wrapper.hpp"
@@ -134,15 +132,6 @@ namespace scfx::file_util {
         }
     }
 
-// #ifdef USE_FILE_MAGIC
-//     std::string file_type(const std::string &pat_str);
-//     std::string data_type(void const *data, std::size_t data_size);
-//     std::string data_type(std::vector<std::uint8_t> const &data);
-//     std::string data_type(std::string const &data);
-//     extern unsigned char __magic_mgc[];
-//     extern std::size_t __magic_mgc_len;
-// #endif
-
     static bool file_exists(const std::string &file_name) {
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_APPLE) || defined(PLATFORM_ANDROID)
         struct stat sb;
@@ -157,7 +146,6 @@ namespace scfx::file_util {
 #endif
     }
 
-
 #ifdef USE_FILE_MAGIC
     namespace detail {
 
@@ -166,6 +154,7 @@ namespace scfx::file_util {
         template<class T> using magic_ptr = std::unique_ptr<T, magic_deleter<T>>;
 
         class mgc_detector {
+        public:
             mgc_detector() {
                 magic_handle_.reset(::magic_open(MAGIC_MIME_TYPE));
                 if(magic_handle_) {
@@ -173,12 +162,6 @@ namespace scfx::file_util {
                         magic_handle_.reset();
                     }
                 }
-            }
-
-        public:
-            static mgc_detector &instance() {
-                static mgc_detector inst{};
-                return inst;
             }
 
             bool ok() const {
@@ -206,12 +189,12 @@ namespace scfx::file_util {
     }
 
     static std::string file_type(const std::string &pat_str) {
-        if(file_exists(pat_str)) { return detail::mgc_detector::instance().file(pat_str); }
+        if(file_exists(pat_str)) { return detail::mgc_detector{}.file(pat_str); }
         return {};
     }
 
     static std::string data_type(void const *data, std::size_t data_size) {
-        if(data && data_size) { return detail::mgc_detector::instance().buffer(data, data_size); }
+        if(data && data_size) { return detail::mgc_detector{}.buffer(data, data_size); }
         return {};
     }
 
@@ -261,17 +244,6 @@ namespace scfx::file_util {
     public:
         std::string path_;
     };
-
-    // bool dir_exists(const std::string &);
-    // bool file_exists(const std::string &);
-    // bool delete_fs_entry(const std::string &);
-    // bool is_empty(std::string const &dir);
-    // bool copy_file(const std::string &from, const std::string &to);
-    // std::vector<uint8_t> load_from_file(const std::string &, std::uint64_t how_much = 0ULL);
-    // std::string load_text_file(const std::string &fn);
-    // bool save_to_file(const std::string &, const std::vector<uint8_t> &);
-    // bool save_to_file(const std::string &fn, const void *data, ptrdiff_t size);
-    // bool save_to_file(const std::string &fn, const std::string &data);
 
     static bool dir_exists(const std::string &file_name) {
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_UNIXISH) || defined(PLATFORM_APPLE) || defined(PLATFORM_ANDROID)

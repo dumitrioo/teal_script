@@ -676,13 +676,11 @@ namespace scfx {
                     } else if(args.size() == 2) {
                         valbox res{};
                         res.become_array();
-                        // res.as_array() = args[0].as_array().subarray(args[1].cast_to_u64());
                         res = args[0].subarray(args[1].cast_to_u64());
                         return res;
                     } else if(args.size() == 3) {
                         valbox res{};
                         res.become_array();
-                        // res.as_array() = args[0].as_array().subarray(args[1].cast_to_u64(), args[2].cast_to_u64());
                         res = args[0].subarray(args[1].cast_to_u64(), args[2].cast_to_u64());
                         return res;
                     }

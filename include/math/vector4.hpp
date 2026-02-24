@@ -166,7 +166,6 @@ namespace scfx::math {
             res.v_[0] = m.at(0, 0) * v_[0] + m.at(0, 1) * v_[1] + m.at(0, 2) * v_[2] + m.at(0, 3) * v_[3];
             res.v_[1] = m.at(1, 0) * v_[0] + m.at(1, 1) * v_[1] + m.at(1, 2) * v_[2] + m.at(1, 3) * v_[3];
             res.v_[2] = m.at(2, 0) * v_[0] + m.at(2, 1) * v_[1] + m.at(2, 2) * v_[2] + m.at(2, 3) * v_[3];
-            // res.v_[3] = m.at(3, 0) * v_[0] + m.at(3, 1) * v_[1] + m.at(3, 2) * v_[2] + m.at(3, 3) * v_[3];
             *this = res;
             return *this;
         }

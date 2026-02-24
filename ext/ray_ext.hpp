@@ -213,9 +213,6 @@ namespace scfx {
                 auto &&vec2arr{args[0].as_array()};
                 std::vector<Vector2> pts{};
                 pts.reserve(vec2arr.size());
-                // vec2arr.traverse_full([&](size_t, valbox const &v) {
-                //     pts.push_back(v.as_class<Vector2>());
-                // });
                 for(auto &&v: vec2arr) {
                     pts.push_back(v.as_class<Vector2>());
                 }

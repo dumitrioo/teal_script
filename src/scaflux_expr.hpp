@@ -383,11 +383,6 @@ namespace scfx {
             std::string errstr{};
             valbox left_of_dot{valbox_no_initialize::dont_do_it};
             valbox fn{func_->eval(ctx, eval_caller_type::func_call, &left_of_dot)};
-            // std::string fsym{func_->symbol()};
-            // if(fn.is_string_ref()) {
-            //     fsym = fn.as_string();
-            //     fn = ctx->find_func(fn.as_string(), line(), col());
-            // }
             if(!fn.is_func_ref()) {
                 throw runtime_error{func_->line(), func_->col(), "calling of non-function"};
             }
@@ -404,7 +399,6 @@ namespace scfx {
                     act_args.push_back(col());
                 }
             } else {
-                // user_fn_seltor = ctx->is_rt_func_selector(fn);
                 if(user_fn_seltor) {
                     act_args.reserve(args_.size() + 2);
                     act_args.push_back((void *)ctx);
@@ -1496,7 +1490,6 @@ namespace scfx {
                             if(l.as_object().end() == l.as_object().find(r.cast_to_string())) {
                                 throw runtime_error{this_->line(), this_->col(), "field not found"};
                             }
-                            // res = l[r];
                             bool excepted{false};
                             runtime_error er{{}, {}, {}};
                             try {
@@ -1522,7 +1515,6 @@ namespace scfx {
                                     res = ar.at(indx);
                                 }
                             } else {
-                                // res = l[r];
                                 bool excepted{false};
                                 runtime_error er{{}, {}, {}};
                                 try {

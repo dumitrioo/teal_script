@@ -136,26 +136,18 @@ namespace scfx {
         }
 
         void push_frame_ignore() {
-            // frame_ignore_stack_.push_back(v);
             function_depth_++;
         }
 
         void pop_frame_ignore() {
-            // frame_ignore_stack_.pop_back();
             function_depth_--;
         }
 
         void clear_frame_ignore_stack() {
-            // frame_ignore_stack_.clear();
             function_depth_ = 0;
         }
 
-        // bool ignore_frame_index() const {
-        //     return !frame_ignore_stack_.empty() && frame_ignore_stack_.back();
-        // }
-
         bool is_inside_function() const {
-            // return !frame_ignore_stack_.empty();
             return function_depth_ > 0;
         }
 
@@ -165,7 +157,6 @@ namespace scfx {
 
         valbox find_val_by_sym_name(std::string const &name, int l, int c) {
             valbox res{valbox_no_initialize::dont_do_it};
-            // bool ign_frm_indx{ignore_frame_index()};
             int64_t stb{-2};
             for(int i{stack_ptr_}; i >= 0; --i) {
                 if(stb != -2 && i <= stb) {

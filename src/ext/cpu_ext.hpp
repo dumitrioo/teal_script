@@ -96,7 +96,6 @@ namespace scfx {
                         termination_ = false;
                         std::promise<bool> prom{};
                         std::future<bool> fut{prom.get_future()};
-                        // cpu_usage_thread_ = std::thread{thr_proc, this, std::move(prom)};
                         cpu_usage_thread_ = std::thread{[&]() {
                             prom.set_value(true);
                             while(!termination_) {
@@ -239,7 +238,6 @@ namespace scfx {
                         curr_cpu_kernel_last_scan_time_ = TSWKernelTime;
                         curr_cpu_user_last_scan_time_ = TSWUserTime;
                         curr_cpu_milestone_last_scan_time_ = now;
-                        //self_cpu_consumption_ = std::clamp<FLT_T>(self_cpu_consumption, 0, 1);
                     }
                     if(self_cpu_consumption_buff_.size()) {
                         FLT_T s = 0;
