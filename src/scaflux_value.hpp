@@ -133,8 +133,6 @@ namespace scfx {
 
     private:
         using array_t = std::deque<valbox>;
-        // using array_t = std::vector<valbox>;
-        // using array_t = map_array<valbox>;
         using object_t = map_t<std::string, valbox>;
         using value_t = std::variant<
             bool,
@@ -248,7 +246,6 @@ namespace scfx {
             pointed_box_.reset();
             array_t &a{as_array()};
             for(auto &&v: arr) {
-                //a[v.first] = v.second.clone();
                 a.push_back(v.clone());
             }
             a.resize(arr.size());
@@ -352,11 +349,7 @@ namespace scfx {
                 return res;
             } else if(drt == type::ARRAY) {
                 array_t a{};
-                // for(auto &&i: dr.as_array().m()) {
-                //     a[i.first] = i.second.clone();
-                // }
                 for(auto &&i: dr.as_array()) {
-                    // a[i.first] = i.second.clone();
                     a.push_back(i.clone());
                 }
                 a.resize(dr.as_array().size());
@@ -791,10 +784,6 @@ namespace scfx {
             res.become_array();
             array_t &resarr{res.as_array()};
             if(n > 0 && start < a.size()) {
-                //resarr.resize(std::min(n, a.size() - start));
-                // for(auto it{a.m().lower_bound(8)}; it != a.m().end() && it->first - start < n; ++it) {
-                //     resarr[it->first] = it->second.clone();
-                // }
                 std::size_t cnt{0};
                 for(auto it{a.begin() + start}; it != a.end() && cnt < n; ++it) {
                     resarr.push_back(it->clone());
@@ -1403,10 +1392,6 @@ namespace scfx {
                     case type::VEC4: l.as_vec4() += r.as_vec4(); break;
                     case type::ARRAY: {
                             array_t &la{l.as_array()};
-                            // size_t lasize{la.size()};
-                            // r.as_array().traverse_real([&](size_t i, valbox const &v) {
-                            //     la[lasize + i] = v.deref().clone();
-                            // });
                             for(auto &&el: la) {
                                 la.push_back(el.deref().clone());
                             }
@@ -1466,10 +1451,6 @@ namespace scfx {
                     case type::ARRAY:
                         switch(rtype) {
                             case type::ARRAY: {
-                                    // auto thissize{l.as_array().size()};
-                                    // for(auto &&v: r.as_array().m()) {
-                                    //     l.as_array()[thissize + v.first] = v.second.deref().clone();
-                                    // }
                                     for(auto &&el: r.as_array()) {
                                         l.as_array().push_back(el.deref().clone());
                                     }
@@ -1540,9 +1521,7 @@ namespace scfx {
                     case type::ARRAY:
                         res.become_array();
                         res.as_array().resize(l.as_array().size() + r.as_array().size());
-                        // l.as_array().traverse_real([&](size_t i, valbox const &v) { res.as_array()[i] = v.clone(); });
                         for(auto &&el: l.as_array()) { res.as_array().push_back(el.clone()); }
-                        // r.as_array().traverse_real([&](size_t i, valbox const &v) { res.as_array()[i + l.as_array().size()] = v.clone(); });
                         for(auto &&el: r.as_array()) { res.as_array().push_back(el.clone()); }
                         break;
                     case type::OBJECT:
@@ -1637,9 +1616,6 @@ namespace scfx {
                     res.box_->value_ = l.as_array();
                     if(r.is_string_ref() || r.is_wstring_ref()) {
                         auto rarr{r.cast_to_array()};
-                        // for(auto &&v: rarr.m()) {
-                        //     res.as_array().push_back(v.second.deref().clone());
-                        // }
                         for(auto &&v: rarr) { res.as_array().push_back(v.clone()); }
                     } else if(r.is_array_ref()) {
                         std::string &resstr{res.as_string()};
@@ -1720,17 +1696,6 @@ namespace scfx {
                     case type::WSTRING: return l.as_wstring() == r.as_wstring();
                     case type::POINTER: return l.as_ptr() == r.as_ptr();
                     case type::UNDEFINED: return true;
-                    // case type::FUNC: {
-                    //     std::function<valbox(valbox const &, std::vector<valbox> &)> const &f1{l.as_func()};
-                    //     std::function<valbox(valbox const &, std::vector<valbox> &)> const &f2{r.as_func()};
-                    //     auto s1{sizeof(f1)};
-                    //     auto s2{sizeof(f2)};
-                    //     bool res{false};
-                    //     if(s1 == s2) {
-                    //         res = memcmp(&f1, &f2, s1) == 0;
-                    //     }
-                    //     return res;
-                    // }
                     default: break;
                 }
             } else {
@@ -3115,9 +3080,6 @@ namespace scfx {
                 case type::OBJECT:        return to_json().serialize5(4);
                 case type::ARRAY: {
                     std::string res{};
-                    // as_array().traverse_full([&](size_t /*idx*/, valbox const &v) {
-                    //     res += v.cast_to_char();
-                    // });
                     for(auto &&v: as_array()) {
                         res += v.cast_to_char();
                     }
@@ -3152,16 +3114,13 @@ namespace scfx {
                 case type::OBJECT:        return scfx::str_util::from_utf8(to_json().serialize5(4));
                 case type::ARRAY: {
                     std::wstring res{};
-                    // as_array().traverse_full([&](size_t /*idx*/, valbox const &v) {
-                    //     res += v.cast_to_wchar();
-                    // });
                     for(auto &&v: as_array()) {
                         res += v.cast_to_wchar();
                     }
                     return res;
                 }
                 case type::CLASS:         { std::wstringstream ss{}; ss <<  scfx::str_util::from_utf8(deref().box_->class_); return ss.str(); }
-                case type::POINTER:       return scfx::str_util::from_utf8(scfx::str_util::utoa((uintptr_t)deref().as_ptr(), 16, sizeof(void *) * 8)); // deref().cast_to_wstring();
+                case type::POINTER:       return scfx::str_util::from_utf8(scfx::str_util::utoa((uintptr_t)deref().as_ptr(), 16, sizeof(void *) * 8));
                 case type::UNDEFINED:     return L"<undefined>";
                 default: break;
             }
@@ -3274,10 +3233,6 @@ namespace scfx {
                     break;
                 case type::ARRAY:
                     res.reserve(as_array().size());
-                    // as_array().traverse_full([&](size_t, valbox const &v) {
-                    //     auto itm_bytes{v.cast_to_byte_array()};
-                    //     res.insert(res.end(), itm_bytes.begin(), itm_bytes.end());
-                    // });
                     for(auto &&v: as_array()) {
                         auto itm_bytes{v.cast_to_byte_array()};
                         res.insert(res.end(), itm_bytes.begin(), itm_bytes.end());
