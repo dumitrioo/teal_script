@@ -1509,6 +1509,30 @@ namespace scfx {
             num_of_threads_ = threads_.size();
         }
 
+        bool wait(long double seconds) {
+            if(is_current_thread_mode_multi()) {
+                auto slpfor{std::chrono::nanoseconds{
+                        std::min<std::int64_t>(static_cast<std::int64_t>(seconds * 1'000'000'000.0L),
+                        wait_granularity_nsec_)
+                    }
+                };
+                long double expiration{timespec_wrapper::now().fseconds() + seconds};
+                while(!termination_requested() && timespec_wrapper::now().fseconds() < expiration) {
+                    std::this_thread::sleep_for(slpfor);
+                }
+                return termination_requested();
+            }
+            return false;
+        }
+
+        std::int64_t wait_granularity_nsec() const noexcept {
+            return wait_granularity_nsec_;
+        }
+
+        void set_wait_granularity_nsec(std::int64_t val) noexcept {
+            wait_granularity_nsec_ = val;
+        }
+
         // runtime interface ---------------------------------------------------------------
         dict_map_t<std::string, valbox> *global_constants_dictionary() override {
             return &global_constants_dictionary_;
@@ -1646,6 +1670,7 @@ namespace scfx {
         shared_mutex threads_mtp_{};
         std::atomic<std::size_t> num_of_threads_{0};
         std::list<std::thread> threads_{};
+        std::int64_t wait_granularity_nsec_{100LL};
 
         dict_map_t<std::string, valbox> global_constants_dictionary_{
             {"M_E", valbox{2.7182818284590452353602874713526624977572470936999595749669676277240766L}},

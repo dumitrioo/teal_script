@@ -50,9 +50,7 @@ int main(int argc, char **argv) {
             }
 #else
             rt.run_mt(std::thread::hardware_concurrency());
-            while(!rt.termination_requested()) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            }
+            while(!rt.wait(0.1));
 #endif
 
 #ifndef DEBUG_SCFX_RUN_CYCLE
