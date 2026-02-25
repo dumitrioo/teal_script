@@ -209,7 +209,6 @@ namespace scfx {
             rt->add_function("lrint", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::lrint(args[0].cast_num_to_num<long double>()); });
             rt->add_function("llrint", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::llrint(args[0].cast_num_to_num<long double>()); });
             rt->add_function("nearbyint", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::nearbyint(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("remainder", SCFXFUN(/*fname*/, args) { return std::remainder(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>()); });
 
             rt->add_function("sign", SCFXFUN(/*fname*/, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
