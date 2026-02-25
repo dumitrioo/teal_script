@@ -1518,7 +1518,7 @@ namespace scfx {
                 };
                 auto future{
                     std::chrono::steady_clock::now() +
-                    std::chrono::nanoseconds(static_cast<std::int64_t>(secnds * 1'000'000'000.0L))
+                    std::chrono::nanoseconds{static_cast<std::int64_t>(secnds * 1'000'000'000.0L)}
                 };
                 while(!termination_requested() && std::chrono::steady_clock::now() < future) {
                     std::this_thread::sleep_for(slpfor);
