@@ -1509,15 +1509,18 @@ namespace scfx {
             num_of_threads_ = threads_.size();
         }
 
-        bool wait(long double seconds) {
+        bool wait(long double secnds) {
             if(is_current_thread_mode_multi()) {
                 auto slpfor{std::chrono::nanoseconds{
-                        std::min<std::int64_t>(static_cast<std::int64_t>(seconds * 1'000'000'000.0L),
+                        std::min<std::int64_t>(static_cast<std::int64_t>(secnds * 1'000'000'000.0L),
                         wait_granularity_nsec_)
                     }
                 };
-                long double expiration{timespec_wrapper::now().fseconds() + seconds};
-                while(!termination_requested() && timespec_wrapper::now().fseconds() < expiration) {
+                auto future{
+                    std::chrono::steady_clock::now() +
+                    std::chrono::nanoseconds(static_cast<std::int64_t>(secnds * 1'000'000'000.0L))
+                };
+                while(!termination_requested() && std::chrono::steady_clock::now() < future) {
                     std::this_thread::sleep_for(slpfor);
                 }
                 return termination_requested();
