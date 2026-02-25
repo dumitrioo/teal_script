@@ -91,7 +91,7 @@ draw_bool(t, v, x, y, f, lbl, crcclr) {
 // 'S0' s0; 'S1' s1; 'S2' s2; 'S3' s3;
 // 'C_in' c_in; 'M' m;
 
-///////////////////////// mock inputs
+///////////////////////// randomly generated inputs
 rand_bool s0(); rand_bool s1(); rand_bool s2(); rand_bool s3();
 rand_bool a0(); rand_bool a1(); rand_bool a2(); rand_bool a3();
 rand_bool b0(); rand_bool b1(); rand_bool b2(); rand_bool b3();
