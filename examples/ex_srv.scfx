@@ -18,9 +18,9 @@ zmq_srv() {
     console.print("receiving: ");
     rs = this.skt.zmq_recv(100, ZMQ_DONTWAIT);
     console.println(rs);
-    if(rs == "fuck") {
-        console.print("sending you: ");
-        console.println(this.skt.zmq_send("you"));
+    if(rs == "hello") {
+        console.print("sending world: ");
+        console.println(this.skt.zmq_send("world"));
     }
     return 0;
 }

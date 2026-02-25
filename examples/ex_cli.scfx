@@ -15,8 +15,8 @@ zmq_cli() {
             return exit(3);
         }
     }
-    console.println("sending fuck: ");
-    sent = this.skt.zmq_send("fuck");
+    console.println("sending hello: ");
+    sent = this.skt.zmq_send("hello");
     console.println(sent);
     console.println("receiving :");
     rcvd = this.skt.zmq_recv(100, ZMQ_DONTWAIT);

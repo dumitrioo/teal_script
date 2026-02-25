@@ -1,6 +1,14 @@
 'command_line_args' command_line_args;
 
 
+execution_time_limit(t) {
+    if(this.t == undefined) this.t = timestamp().fseconds() + t;
+    if(timestamp().fseconds() > this.t) exit();
+}
+
+execution_time_limit etl(.1);
+
+
 t() {
     k["r"] = "1";
     t["d"] = "r";
@@ -10,19 +18,19 @@ t() {
 t c();
 
 
-execution_time_limit(t) {
-    if(this.t == undefined) this.t = timestamp().fseconds() + t;
-    if(timestamp().fseconds() > this.t) exit();
+function callee2(qq) {
+    println("callee2! - ", qq);
+}
+function callee(fn)  {
+    println("callee!"); fn(234);
+}
+function caller(fn)  {
+    fn(callee2);
+}
+other_call_test()    {
+    caller(callee); return 2;
 }
 
-execution_time_limit etl(.1);
-
-
-
-function callee2(qq) { println("callee2! - ", qq); }
-function callee(fn)  { println("callee!"); fn(234); }
-function caller(fn)  { fn(callee2); }
-other_call_test()    { caller(callee); return 2; }
 other_call_test oct();
 
 
@@ -66,8 +74,6 @@ function fibonacci(n, memo) {
 
 misc_test() {
     console.println(pow(2, -0.5));
-    return 0;
-
     console.setprecision(16);
     ts = steady_clock();
     tw = timestamp();
