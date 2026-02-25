@@ -230,7 +230,6 @@ ctr(anything) {
         if(this.i % 1000 == 0) {
             console.println(ts.as_iso_8601(), " ", this.delay);
         }
-
     }
     return this.delay;
 }
