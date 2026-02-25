@@ -159,13 +159,13 @@ cmdline_test(argv) {
 cmdline_test cmltst(command_line_args);
 
 
-tupo_test() {
+simply_test() {
     sv = str_tok("spssususususdgsdyustgsfsyutsfdesf", "s");
     console.println(sv);
     return 0;
 }
 
-tupo_test tutst();
+simply_test tutst();
 
 
 cpu_test() {
