@@ -25,11 +25,11 @@ int main(int argc, char **argv) {
     scfx::runtime rt{};
 
 #ifdef SCFX_USE_ZMQ
-    scfx::zmq_ext zmq{};
+    zmq_ext zmq{};
     zmq.register_runtime(&rt);
 #endif
 #ifdef SCFX_USE_RAYLIB
-    scfx::ray_ext ray{};
+    ray_ext ray{};
     ray.register_runtime(&rt);
 #endif
 
