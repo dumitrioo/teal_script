@@ -17,9 +17,6 @@ _The combinational logic circuitry of the 74181 integrated circuit_
 
 ```
 //////////////////////////////// cells templates ////////////////////////////////
-
-function slp() sleep(hardware_concurrency() == 1 ? 0.0 : 0.003);
-
 not(a) { slp(); return !a; }
 buf(a) { slp(); return bool(a); }
 and2(a, b) { slp(); return a && b; }
@@ -44,61 +41,7 @@ xnor3(a, b, c) { slp(); return !(a ^ b ^ c); }
 xnor4(a, b, c, d) { slp(); return !(a ^ b ^ c ^ d); }
 i2or2(a, b) { slp(); return !a || !b; }
 
-scale_factor(v) return v;
-
-rand_bool() {
-    if(this.ctr % 5 == 0) this.res = randf() > 0.5;
-    ++this.ctr;
-    return this.res;
-}
-
-ray_window() {
-    if(!this.win_created) {
-        ray_init_window(800, 600, "ALU 74181");
-        ray_set_target_fps(30);
-        ray_begin_drawing();
-        ray_clear_background(Color(0, 0, 0, 255));
-        this.win_created = true;
-        this.tid = thread_id();
-    }
-    if(this.tid == thread_id()) {
-        if(ray_window_should_close()) {
-            ray_end_drawing();
-            ray_close_window();
-            exit(0);
-        } else {
-            if(ray_get_key_pressed() == 300) ray_toggle_full_screen();
-            ray_end_drawing();
-            ray_begin_drawing();
-            ray_clear_background(Color(0, 0, 0, 255));
-        }
-    }
-    return this.tid;
-}
-
-color_select() return Color(0x29, 0xae, 0x9cc, 255);
-color_in() return Color(0x64, 0xff, 0x9f, 255);
-color_out() return Color(0x1e, 0xed, 0x00, 255);
-color_carry() return Color(0xfe, 0x24, 0x02, 255);
-color_pgeq() return Color(0x9e, 0xdb, 0x00, 255);
-
-draw_bool(t, v, x, y, f, lbl, crcclr) {
-    if(t == thread_id()) {
-        if(ray_window_should_close()) { ray_close_window(); exit(0); return 0; }
-        if(ray_get_key_pressed() == 300) { ray_toggle_full_screen(); }
-        rctclr = Color(64, 64, 64, 255);
-        rcdclr = Color(32, 32, 32, 255);
-        ray_draw_circle(x * f, y * f, 7 * f, v ? crcclr : Color(0, 0, 0, 255));
-        ray_draw_text(lbl, (x - 9) * f, (y + 11) * f, 15 * f, Color(80, 200, 100, 255));
-        ray_draw_line((x - 10.5) * f, (y - 10) * f, (x + 10) * f, (y - 10) * f, rctclr);
-        ray_draw_line((x - 10) * f, (y - 10) * f, (x - 10) * f, (y + 10) * f, rctclr);
-        ray_draw_line((x + 10.5) * f, (y + 10) * f, (x + 10) * f, (y - 10) * f, rcdclr);
-        ray_draw_line((x + 10) * f, (y + 10) * f, (x - 10) * f, (y + 10) * f, rcdclr);
-    }
-    return 0;
-}
-
-//////////////////////////////// cells instances ////////////////////////////////
+//////////////////////////////// instances ////////////////////////////////
 
 ///////////////////////// inputs
 'A0' a0; 'A1' a1; 'A2' a2; 'A3' a3;
@@ -106,6 +49,7 @@ draw_bool(t, v, x, y, f, lbl, crcclr) {
 'S0' s0; 'S1' s1; 'S2' s2; 'S3' s3;
 'C_in' c_in; 'M' m;
 
+///////////////////////// workers
 not   alu_0(b3);
 not   alu_1(b2);
 not   alu_2(b1);
@@ -169,39 +113,9 @@ xor2  alu_59(alu_34, alu_55)                          'f2';
 xor2  alu_60(alu_35, alu_56)                          'f1';
 xor2  alu_61(alu_36, alu_52)                          'f0';
 and4  alu_62(alu_58, alu_59, alu_60, alu_61)          'EQ';
-
-ray_window ray();
-scale_factor sfctr(2.6);
-
-color_select clr_s();
-color_in clr_in();
-color_out clr_out();
-color_carry clr_c();
-color_pgeq clr_pgeq();
-
-draw_bool dr_c_in(ray, c_in, 200, 20, sfctr, "inC", clr_c);
-draw_bool dr_m(ray, m, 240, 20, sfctr, " M", clr_in);
-draw_bool dr_s0(ray, s3, 20, 20, sfctr, "s3", clr_s);
-draw_bool dr_s1(ray, s2, 60, 20, sfctr, "s2", clr_s);
-draw_bool dr_s2(ray, s1, 100, 20, sfctr, "s1", clr_s);
-draw_bool dr_s3(ray, s0, 140, 20, sfctr, "s0", clr_s);
-draw_bool dr_a0(ray, a3, 20, 60, sfctr, "a3", clr_in);
-draw_bool dr_a1(ray, a2, 60, 60, sfctr, "a2", clr_in);
-draw_bool dr_a2(ray, a1, 100, 60, sfctr, "a1", clr_in);
-draw_bool dr_a3(ray, a0, 140, 60, sfctr, "a0", clr_in);
-draw_bool dr_b0(ray, b3, 20, 100, sfctr, "b3", clr_in);
-draw_bool dr_b1(ray, b2, 60, 100, sfctr, "b2", clr_in);
-draw_bool dr_b2(ray, b1, 100, 100, sfctr, "b1", clr_in);
-draw_bool dr_b3(ray, b0, 140, 100, sfctr, "b0", clr_in);
-draw_bool dr_f3(ray, alu_61, 20, 160, sfctr, "f3", clr_out);
-draw_bool dr_f2(ray, alu_60, 60, 160, sfctr, "f2", clr_out);
-draw_bool dr_f1(ray, alu_59, 100, 160, sfctr, "f1", clr_out);
-draw_bool dr_f0(ray, alu_58, 140, 160, sfctr, "f0", clr_out);
-draw_bool dr_c_out(ray, alu_57, 200, 160, sfctr, "outC", clr_c);
-draw_bool dr_p(ray, alu_42, 20, 200, sfctr, " P", clr_pgeq);
-draw_bool dr_g(ray, alu_53, 60, 200, sfctr, " G", clr_pgeq);
-draw_bool dr_AeB(ray, alu_62, 120, 200, sfctr, "EQ", clr_pgeq);
 ```
+
+And that's it. All we need to do now is to set input values and read outputs. You may think that SCAFlux is a language for modelling cirquit logic but this is just one example of using the language. Read document from the next section to know more about what this language is an how to use it.
 
 # More information
 
