@@ -1,3 +1,4 @@
+#include <commondefs.hpp>
 #include <scaflux_runtime.hpp>
 #ifdef SCFX_USE_ZMQ
 #include <zmq_ext.hpp>
