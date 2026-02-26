@@ -115,7 +115,9 @@ xor2  alu_61(alu_36, alu_52)                          'f0';
 and4  alu_62(alu_58, alu_59, alu_60, alu_61)          'EQ';
 ```
 
-And that's it. All we need to do now is to set input values and read outputs. You may think that SCAFlux is a language for modelling cirquit logic but this is just one example of using the language. Read document from the next section to know more about what this language is an how to use it.
+And that's it. All we need to do now is to set input values and read outputs.
+You may think that SCAFlux is a language for modelling cirquit logic but this is just one example of using the language.
+Read document from the next section to know more about what this language is an how to use it.
 
 # More information
 
