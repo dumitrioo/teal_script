@@ -30,7 +30,6 @@ HEADERS += \
     ../../src/include/crypto/sha512.hpp \
     ../../src/include/dlib.hpp \
     ../../src/include/file_util.hpp \
-    ../../src/include/file_util_magic_mgc.hpp \
     ../../src/include/fsm_tokenizer.hpp \
     ../../src/include/hash/adler.hpp \
     ../../src/include/json.hpp \
