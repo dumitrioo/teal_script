@@ -68,6 +68,7 @@
 #include <concepts>
 #include <coroutine>
 #include <span>
+#include <format>
 #endif
 #if (__cplusplus >= 202302L)
 #include <print>
