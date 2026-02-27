@@ -1190,6 +1190,11 @@ namespace scfx {
             throw std::runtime_error{std::string{"node not found: \""} + name + "\""};
         }
 
+        size_t worker_cells_count() const {
+            std::shared_lock l{workers_mtp_};
+            return worker_cells_.size();
+        }
+
         valbox get_external_value(std::string const &/*name*/) {
             return {};
         }
@@ -1353,7 +1358,7 @@ namespace scfx {
             programmatic_termination_enabled_ = (val ? 1 : 0);
         }
 
-        int exit_status() const {
+        int exit_status() const noexcept {
             return exit_status_;
         }
 
@@ -1692,7 +1697,7 @@ namespace scfx {
         map_t<std::string, std::string> input_names_to_instances_mapping_{};
         shared_mutex outputs_mtp_{};
         mutable map_t<std::string, valbox> outputs_{};
-        shared_mutex workers_mtp_{};
+        mutable shared_mutex workers_mtp_{};
         map_t<std::string, worker_cell_definition_info> worker_cells_templates_{};
         map_t<std::string, worker_cell_instance> worker_cells_{};
         map_t<std::string, statement_ptr> worker_bodies_{};

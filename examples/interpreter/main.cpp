@@ -44,6 +44,11 @@ int main(int argc, char **argv) {
             }
             rt.loading_complete();
 
+            if(rt.worker_cells_count() == 0) {
+                std::cerr << "warning: nothing to do - none of working elements" << std::endl;
+                return 0;
+            }
+
             try {
                 // in some of the example scripts, there input cell for the host application's
                 // command line argsuments is defined under the "command_line_args" identifier
