@@ -28,7 +28,7 @@ zmq_cli() {
     return 0;
 }
 
-zmq_cli c();
+zmq_cli cli_inst();
 
 
 zmq_sub() {

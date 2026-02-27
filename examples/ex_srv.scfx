@@ -25,7 +25,7 @@ zmq_srv() {
     return 0;
 }
 
-zmq_srv s();
+zmq_srv srv_inst();
 
 zmq_pub() {
     if(this.ctx == undefined) {
