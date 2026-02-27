@@ -45,11 +45,12 @@ int main(int argc, char **argv) {
             rt.loading_complete();
 
             try {
-                // in some scripts, the input cell for command line args is defined
-                // under the  "command_line_args" identifier...
+                // in some of the example scripts, there input cell for the host application's
+                // command line argsuments is defined under the "command_line_args" identifier
+                // so let's set it
                 rt.set_input("command_line_args", args);
             } catch(...) {
-                // but if not, we don't care
+                // but if is not defined, we don't care
             }
 
 #ifdef SINGLE_THREADED_SCFX
