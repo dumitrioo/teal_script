@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
 #ifndef DEBUG_SCFX_RUN_CYCLE
         try {
 #endif
-            for(std::size_t i = 1; i < args.size(); ++i) {
+            for(std::size_t i{1}; i < args.size(); ++i) {
                 if(std::filesystem::is_regular_file(args[i])) {
                     rt.load_file(args[i]);
                 } else if(std::filesystem::is_directory(args[i])) {
