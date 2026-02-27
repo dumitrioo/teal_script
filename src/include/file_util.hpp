@@ -89,18 +89,24 @@ namespace scfx::file_util {
     DEFINE_RUNTIME_ERROR_CLASS_MSG(directory_opening_error, "failed to open directory")
     DEFINE_RUNTIME_ERROR_CLASS_MSG(file_loading_error, "failed to load file")
     DEFINE_RUNTIME_ERROR_CLASS_MSG(file_opening_error, "failed to open file")
-    DEFINE_RUNTIME_ERROR_CLASS_MSG(dir_not_exists_error, "the directory does not exists")
-    DEFINE_RUNTIME_ERROR_CLASS_MSG(file_not_exists_error, "the file does not exists")
+    DEFINE_RUNTIME_ERROR_CLASS_MSG(dir_not_exists_error, "directory not exists")
+    DEFINE_RUNTIME_ERROR_CLASS_MSG(not_a_dir_or_dir_not_exists_error, "not a directory or not exists")
+    DEFINE_RUNTIME_ERROR_CLASS_MSG(file_not_exists_error, "file not exists")
 
     static std::string extract_file_ext(const std::string &file_name) {
+#if (__cplusplus < 201700L)
         std::vector<std::string> tokens = scfx::str_util::str_tok<std::string>(file_name, ".");
         if(tokens.size() < 2) {
             return "";
         }
         return tokens[tokens.size() - 1];
+#else
+        return std::filesystem::path{file_name}.extension().string();
+#endif
     }
 
     static std::string extract_file_name(const std::string &path) {
+#if (__cplusplus < 201700L)
         std::vector<std::string> tokens = scfx::str_util::str_tok<std::string>(path, native_path_separator<std::string>::val(), true);
         while(tokens.size() && tokens[tokens.size() - 1].empty()) {
             auto end_it{tokens.end()}; --end_it;
@@ -111,9 +117,13 @@ namespace scfx::file_util {
         } else {
             return std::string{};
         }
+#else
+        return std::filesystem::path{path}.filename().string();
+#endif
     }
 
     static std::string extract_file_dir(const std::string &path) {
+#if (__cplusplus < 201700L)
         std::vector<std::string> tokens = scfx::str_util::str_tok<std::string>(path, native_path_separator<std::string>::val(), true);
         while(tokens.size() && tokens[tokens.size() - 1].empty()) {
             auto end_it{tokens.end()}; --end_it;
@@ -130,12 +140,15 @@ namespace scfx::file_util {
         } else {
             return std::string{};
         }
+#else
+        return std::filesystem::path{path}.parent_path().string();
+#endif
     }
 
     static bool file_exists(const std::string &file_name) {
+#if (__cplusplus < 201700L)
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_APPLE) || defined(PLATFORM_ANDROID)
         struct stat sb;
-
         if(stat(file_name.c_str(), &sb) == 0 && S_ISREG(sb.st_mode)) {
             return true;
         }
@@ -143,6 +156,90 @@ namespace scfx::file_util {
 #elif defined(PLATFORM_WINDOWS)
         DWORD dwAttrib = GetFileAttributesA(file_name.c_str());
         return (dwAttrib != INVALID_FILE_ATTRIBUTES && ((dwAttrib & FILE_ATTRIBUTE_DIRECTORY) == 0));
+#endif
+#else
+        return std::filesystem::is_regular_file(file_name);
+#endif
+    }
+
+    timespec_wrapper get_file_creation_time(std::string const &file_path) {
+#if defined(PLATFORM_WINDOWS)
+        struct _stat attrib;
+        if (_stat(file_path.c_str(), &attrib) == 0) {
+            return attrib.st_ctime;
+        } else {
+            return {};
+        }
+#elif defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
+        struct stat attrib;
+        if (stat(file_path.c_str(), &attrib) == 0) {
+            return attrib.st_ctim;
+        } else {
+            return {};
+        }
+#elif defined(PLATFORM_APPLE)
+        struct stat attrib;
+        if (stat(file_path.c_str(), &attrib) == 0) {
+            return attrib.st_ctimespec;
+        } else {
+            return {};
+        }
+#else
+        return {};
+#endif
+    }
+
+    timespec_wrapper get_file_access_time(std::string const &file_path) {
+#if defined(PLATFORM_WINDOWS)
+        struct _stat attrib;
+        if (_stat(file_path.c_str(), &attrib) == 0) {
+            return attrib.st_atime;
+        } else {
+            return {};
+        }
+#elif defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
+        struct stat attrib;
+        if (stat(file_path.c_str(), &attrib) == 0) {
+            return attrib.st_atim;
+        } else {
+            return {};
+        }
+#elif defined(PLATFORM_APPLE)
+        struct stat attrib;
+        if (stat(file_path.c_str(), &attrib) == 0) {
+            return attrib.st_atimespec;
+        } else {
+            return {};
+        }
+#else
+        return {};
+#endif
+    }
+
+    timespec_wrapper get_file_modification_time(std::string const &file_path) {
+#if defined(PLATFORM_WINDOWS)
+        struct _stat attrib;
+        if(_stat(file_path.c_str(), &attrib) == 0) {
+            return attrib.st_mtime;
+        } else {
+            return {};
+        }
+#elif defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
+        struct stat attrib;
+        if (stat(file_path.c_str(), &attrib) == 0) {
+            return attrib.st_mtim;
+        } else {
+            return {};
+        }
+#elif defined(PLATFORM_APPLE)
+        struct stat attrib;
+        if (stat(file_path.c_str(), &attrib) == 0) {
+            return attrib.st_mtimespec;
+        } else {
+            return {};
+        }
+#else
+        return {};
 #endif
     }
 
@@ -207,45 +304,8 @@ namespace scfx::file_util {
     }
 #endif
 
-    class dir_entry {
-    public:
-        dir_entry(const std::string &n = std::string()): path_(n) {
-        }
-        dir_entry(const dir_entry &that): path_(that.path_) {
-        }
-        dir_entry &operator=(const dir_entry &that) {
-            if(&that != this) {
-                path_ = that.path_;
-            }
-            return *this;
-        }
-        std::string file_name() const {
-            return extract_file_name(path_);
-        }
-        std::string file_ext() const {
-            return extract_file_ext(path_);
-        }
-        void name(const std::string &fp) {
-            path_ = fp;
-        }
-        const std::string &name() const {
-            return path_;
-        }
-        const std::string &full_path() const {
-            return path_;
-        }
-        scfx::timespec_wrapper create_time() const;
-        scfx::timespec_wrapper access_time() const;
-        scfx::timespec_wrapper modify_time() const;
-        bool is_file() const;
-        bool is_dir() const;
-        uint64_t file_size() const;
-
-    public:
-        std::string path_;
-    };
-
     static bool dir_exists(const std::string &file_name) {
+#if (__cplusplus < 201700L)
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_UNIXISH) || defined(PLATFORM_APPLE) || defined(PLATFORM_ANDROID)
         struct stat sb;
 
@@ -259,6 +319,10 @@ namespace scfx::file_util {
         return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
                 (dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
 #endif
+#else
+        return std::filesystem::is_directory(file_name);
+#endif
+
     }
 
     static std::string real_path(const std::string &p) {
@@ -291,11 +355,12 @@ namespace scfx::file_util {
             std::istreambuf_iterator<char>{sf},
             std::istreambuf_iterator<char>{},
             std::ostreambuf_iterator<char>{df}
-            );
+        );
         return true;
     }
 
     static bool rm_dir(const std::string &path) {
+#if (__cplusplus < 201700L)
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
         auto do_remove{[](const char *fpath, const struct stat64 */*sb*/, int tflag, struct FTW */*ftwbuf*/) -> int {
             if(tflag == FTW_F) {
@@ -316,9 +381,16 @@ namespace scfx::file_util {
         s = removefile_state_alloc();
         return removefile(path.c_str(), s, REMOVEFILE_RECURSIVE | REMOVEFILE_KEEP_PARENT) == 0;
 #endif
+#else
+        if(std::filesystem::is_directory(path)) {
+            return std::filesystem::remove_all(path);
+        }
+        return false;
+#endif
     }
 
     static bool delete_fs_entry(const std::string &fn) {
+#if (__cplusplus < 201700L)
         if(dir_exists(fn)) {
             return rm_dir(fn);
         } else if(file_exists(fn)) {
@@ -327,19 +399,24 @@ namespace scfx::file_util {
 #elif defined(PLATFORM_WINDOWS)
             return DeleteFileA(fn.c_str());
 #endif
+            return false;
         }
-        return false;
+#else
+        return std::filesystem::remove(fn);
+#endif
     }
 
     static std::int64_t file_size(const std::string &fname) {
 #if (__cplusplus < 201700L)
-        std::fstream f{fname, std::ios::binary};
-        if(f) {
-            f.seekg(0, std::ios::end);
-            return f.tellg();
+        std::fstream f{fname, std::ifstream::ate | std::ifstream::binary};
+        if(!f) {
+            throw file_opening_error{};
         }
-        throw file_opening_error{};
+        return f.tellg();
 #else
+        if(!file_exists(fname)) {
+            throw file_opening_error{};
+        }
         return std::filesystem::file_size(fname);
 #endif
     }
@@ -426,6 +503,44 @@ namespace scfx::file_util {
         }
     }
 
+    class dir_entry {
+    public:
+        enum class kind {
+            none, file, dir, sym,
+        };
+
+        dir_entry() = default;
+        dir_entry(
+            const std::string &path,
+            std::size_t fsize = static_cast<std::size_t>(0),
+            kind k = kind::file,
+            scfx::timespec_wrapper mtime = {}
+        ):
+            path_{path},
+            size_{fsize},
+            kind_{k},
+            modify_time_{mtime}
+        {
+        }
+        std::string file_name() const { return std::filesystem::path{path_}.filename().string(); }
+        std::string file_ext() const { return std::filesystem::path{path_}.extension().string(); }
+        void set_path(const std::string &fp) { path_ = fp; }
+        const std::string &full_path() const { return path_; }
+
+        scfx::timespec_wrapper modify_time() const { return modify_time_; }
+        bool is_file() const { return kind_ == kind::file; }
+        bool is_dir() const { return kind_ == kind::dir; }
+        bool is_sym() const { return kind_ == kind::sym; }
+        uint64_t file_size() const { return size_; }
+
+    public:
+        std::string path_;
+        std::size_t size_{0};
+        kind kind_{kind::none};
+        scfx::timespec_wrapper modify_time_{};
+    };
+
+#if 1 // (__cplusplus < 201700L)
 #ifdef PLATFORM_WINDOWS
     template<typename T>
     void for_dir_tree(const std::string &dir_path, T apply, bool recursive = true) {
@@ -440,6 +555,7 @@ namespace scfx::file_util {
             return;
         }
         struct dirent *dir_entry_p;
+        //DIR *dir_p = 0;
         HANDLE dir_p{ INVALID_HANDLE_VALUE };
         WIN32_FIND_DATAA ffd;
         bool fr{true};
@@ -447,7 +563,7 @@ namespace scfx::file_util {
             dir_p = FindFirstFileA((local_dir_path + "*.*").c_str(), &ffd);
             dir_p != INVALID_HANDLE_VALUE && fr;
             fr = FindNextFileA(dir_p, &ffd)
-        ) {
+            ) {
             std::string p = local_dir_path + ffd.cFileName;
 
             if (std::string{ ffd.cFileName } == "." || std::string{ ffd.cFileName } == "..") {
@@ -491,10 +607,9 @@ namespace scfx::file_util {
                 continue;
             }
             std::string p{local_dir_path + dir_entry_p->d_name};
-            dir_entry aplly_entry;
             if(dir_exists(p)) {
                 p += native_path_separator<std::string>::val();
-                aplly_entry.name(p);
+                dir_entry aplly_entry{p, 0, dir_entry::kind::dir, get_file_modification_time(p)};
                 if(!apply(aplly_entry)) {
                     break;
                 }
@@ -502,7 +617,7 @@ namespace scfx::file_util {
                     for_dir_tree(p, apply, true);
                 }
             } else {
-                aplly_entry.name(p);
+                dir_entry aplly_entry{p, static_cast<std::size_t >(file_size(p)), dir_entry::kind::file, get_file_modification_time(p)};
                 if(!apply(aplly_entry)) {
                     break;
                 }
@@ -513,14 +628,81 @@ namespace scfx::file_util {
         }
     }
 #endif
+#else
+    template<typename T>
+    void for_dir_tree(const std::string &dir_path, T apply, bool recursive = true) {
+        std::filesystem::path p{dir_path};
+        if(dir_path.size() == 0) {
+            p = std::string{"."};
+        }
+        if(!dir_exists(p)) {
+            return;
+        }
+        if(recursive) {
+            for(auto const &entry: std::filesystem::recursive_directory_iterator{p}) {
+                auto tt{entry.last_write_time()};
+                std::stringstream ss{};
+                ss << tt << "+0";
+                scfx::timespec_wrapper mt{ss.str()};
+                if(entry.is_regular_file()) {
+                    if(!apply(dir_entry{entry.path().string(), entry.file_size(), dir_entry::kind::file, mt})) {
+                        break;
+                    }
+                } else if(entry.is_directory()) {
+                    if(!apply(dir_entry{entry.path().string(), 0, dir_entry::kind::dir, mt})) {
+                        break;
+                    }
+                }
+            }
+        } else {
+            for(auto const &entry: std::filesystem::directory_iterator{p}) {
+                auto tt{entry.last_write_time()};
+                std::stringstream ss{};
+                ss << tt << "+0";
+                scfx::timespec_wrapper mt{ss.str()};
+                if(entry.is_regular_file()) {
+                    if(!apply(dir_entry{entry.path().string(), entry.file_size(), dir_entry::kind::file, mt})) {
+                        break;
+                    }
+                } else if(entry.is_directory()) {
+                    if(!apply(dir_entry{entry.path().string(), 0, dir_entry::kind::dir,mt})) {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+#endif
 
     static bool is_empty(std::string const &dir) {
+#if (__cplusplus < 201700L)
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
+        std::unique_ptr<DIR, decltype(&closedir)> dtr{opendir(dir.c_str()), closedir};
+        if(dtr == nullptr) {
+            throw not_a_dir_or_dir_not_exists_error{};
+        }
+        std::size_t n{0};
+        struct dirent *d;
+        while((d = readdir(dtr.get())) != nullptr) {
+            if(++n > 2) {
+                break;
+            }
+        }
+        return n < 2;
+#else
         bool contains{false};
         if(!dir_exists(dir)) {
-            throw dir_not_exists_error{};
+            throw not_a_dir_or_dir_not_exists_error{};
         }
         for_dir_tree(dir, [&](dir_entry const &) { contains = true; return false; }, false);
         return !contains;
+#endif
+#else
+        if(!std::filesystem::is_directory(dir)) {
+            throw not_a_dir_or_dir_not_exists_error{};
+        }
+        return std::filesystem::is_empty(dir);
+#endif
     }
 
 }
