@@ -21,7 +21,7 @@
 #endif
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <time.h>
+#include <ctime>
 #include <fstream>
 
 #ifdef USE_FILE_MAGIC
@@ -34,7 +34,7 @@
 #else
 #include <dirent.h>
 #endif
-#include <errno.h>
+#include <cerrno>
 #include <string>
 #include <vector>
 #include <iostream>
@@ -540,7 +540,7 @@ namespace scfx::file_util {
         scfx::timespec_wrapper modify_time_{};
     };
 
-#if 1 // (__cplusplus < 201700L)
+#if (__cplusplus < 201700L)
 #ifdef PLATFORM_WINDOWS
     template<typename T>
     void for_dir_tree(const std::string &dir_path, T apply, bool recursive = true) {
@@ -555,7 +555,6 @@ namespace scfx::file_util {
             return;
         }
         struct dirent *dir_entry_p;
-        //DIR *dir_p = 0;
         HANDLE dir_p{ INVALID_HANDLE_VALUE };
         WIN32_FIND_DATAA ffd;
         bool fr{true};
@@ -570,16 +569,15 @@ namespace scfx::file_util {
                 continue;
             }
 
-            dir_entry aplly_entry;
             if(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
                 p += native_path_separator<std::string>::val();
-                aplly_entry.name(p);
+                dir_entry aplly_entry{p, 0, dir_entry::kind::dir, get_file_modification_time(p)};
                 apply(aplly_entry);
                 if(recursive) {
                     for_dir_tree(p, apply, true);
                 }
             } else {
-                aplly_entry.name(p);
+                dir_entry aplly_entry{p, static_cast<std::size_t >(file_size(p)), dir_entry::kind::file, get_file_modification_time(p)};
                 apply(aplly_entry);
             }
         }
