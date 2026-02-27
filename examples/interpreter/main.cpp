@@ -1,10 +1,11 @@
-#include <commondefs.hpp>
-#include <scaflux_runtime.hpp>
+#include <vector>
+
+#include "../../src/scaflux_runtime.hpp"
 #ifdef SCFX_USE_ZMQ
-#include <zmq_ext.hpp>
+#include "../ext/zmq_ext.hpp"
 #endif
 #ifdef SCFX_USE_RAYLIB
-#include <ray_ext.hpp>
+#include "../ext/ray_ext.hpp"
 #endif
 
 int main(int argc, char **argv) {

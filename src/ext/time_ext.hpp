@@ -1,10 +1,10 @@
 #pragma once
 
-#include <commondefs.hpp>
+#include "../include/commondefs.hpp"
 
-#include <scaflux_value.hpp>
-#include <scaflux_util.hpp>
-#include <scaflux_interfaces.hpp>
+#include "../scaflux_value.hpp"
+#include "../scaflux_util.hpp"
+#include "../scaflux_interfaces.hpp"
 
 namespace scfx {
 

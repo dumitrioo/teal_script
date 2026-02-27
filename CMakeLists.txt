@@ -21,4 +21,4 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=znver4 -fstrict-aliasing -Wal
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -std=c99 -falign-loops -march=znver4 -fstrict-aliasing -Wall -Wextra -fPIC -Wl,-rpath,.")
 
 add_subdirectory(examples/fractal)
-add_subdirectory(interpreter)
+add_subdirectory(examples/interpreter)

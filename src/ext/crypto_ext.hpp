@@ -1,8 +1,8 @@
 #pragma once
 
-#include <commondefs.hpp>
-#include <crypto/sha256.hpp>
-#include <crypto/sha512.hpp>
+#include "../include/commondefs.hpp"
+#include "../include/crypto/sha256.hpp"
+#include "../include/crypto/sha512.hpp"
 
 #include "../scaflux_value.hpp"
 #include "../scaflux_util.hpp"

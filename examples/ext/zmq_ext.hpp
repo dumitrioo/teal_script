@@ -1,12 +1,10 @@
 #pragma once
 
-#include <commondefs.hpp>
-
-#include <zmq.h>
-
 #include <scaflux_value.hpp>
 #include <scaflux_util.hpp>
 #include <scaflux_interfaces.hpp>
+
+#include <zmq.h>
 
 class zmq_ext: public scfx::extension_interface {
 public:

@@ -1,13 +1,13 @@
 #pragma once
 
-#include <commondefs.hpp>
-#include <file_util.hpp>
-#include <str_util.hpp>
-#include <math/math_util.hpp>
-#include <json.hpp>
+#include "include/commondefs.hpp"
+#include "include/file_util.hpp"
+#include "include/str_util.hpp"
+#include "include/math/math_util.hpp"
+#include "include/json.hpp"
 #ifdef SCFX_USE_EMHASH8_MAP
-#include <emhash/hash_set8.hpp>
-#include <emhash/hash_table8.hpp>
+#include "include/emhash/hash_set8.hpp"
+#include "include/emhash/hash_table8.hpp"
 #endif
 
 #define SCFXFUN(FUNC_NAME, ARGS) [&](scfx::valbox const &FUNC_NAME, std::vector<scfx::valbox> &ARGS) -> scfx::valbox

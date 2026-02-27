@@ -1,13 +1,11 @@
 #pragma once
 
-#include <commondefs.hpp>
-
-#include <raylib.h>
-#include <raymath.h>
-
 #include <scaflux_value.hpp>
 #include <scaflux_util.hpp>
 #include <scaflux_interfaces.hpp>
+
+#include <raylib.h>
+#include <raymath.h>
 
 class ray_ext: public scfx::extension_interface {
     scfx::valbox color_val(std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a = 255) {

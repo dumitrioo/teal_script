@@ -1,5 +1,5 @@
-#include <commondefs.hpp>
-#include <scaflux_interfaces.hpp>
+// #include <commondefs.hpp>
+#include "../../src/scaflux_interfaces.hpp"
 
 class fractal_ext: public scfx::extension_interface {
     class fractal {

@@ -7,16 +7,7 @@ add_definitions(-DSCFX_USE_ZMQ)
 add_definitions(-DSCFX_USE_RAYLIB)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}
-    ../src
-    ../include
-    ../ext
-)
-
-link_directories(${CMAKE_CURRENT_SOURCE_DIR}
-    /tmp/pq/lib
-    /tmp/pqxx/lib
-    /tmp/openssl/lib
-    /tmp/openssl/lib64
+    ../../src
 )
 
 add_executable(scaflux

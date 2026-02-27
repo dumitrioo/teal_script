@@ -1,8 +1,8 @@
 #pragma once
 
-#include <commondefs.hpp>
-#include <sequence_generator.hpp>
-#include <str_util.hpp>
+#include "../include/commondefs.hpp"
+#include "../include/sequence_generator.hpp"
+#include "../include/str_util.hpp"
 
 #include "../scaflux_value.hpp"
 #include "../scaflux_util.hpp"

@@ -1,10 +1,12 @@
 #pragma once
 
-#include <commondefs.hpp>
-#include <timespec_wrapper.hpp>
-#include <containers/circular_buffer.hpp>
-
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
 #include <sys/times.h>
+#endif
+
+#include "../include/commondefs.hpp"
+#include "../include/timespec_wrapper.hpp"
+#include "../include/containers/circular_buffer.hpp"
 
 #include "../scaflux_value.hpp"
 #include "../scaflux_util.hpp"

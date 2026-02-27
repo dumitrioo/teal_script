@@ -1,7 +1,7 @@
 #pragma once
 
-#include <commondefs.hpp>
-#include <emhash/hash_set8.hpp>
+#include "include/commondefs.hpp"
+#include "include/emhash/hash_set8.hpp"
 
 #include "scaflux_util.hpp"
 #include "scaflux_value.hpp"

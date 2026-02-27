@@ -1,12 +1,13 @@
 #pragma once
 
-#include <commondefs.hpp>
-#include <file_util.hpp>
-#include <str_util.hpp>
-#include <json.hpp>
-#include <math/vector4.hpp>
-#include <math/matrix4.hpp>
-#include <math/math_util.hpp>
+#include "include/commondefs.hpp"
+#include "include/file_util.hpp"
+#include "include/str_util.hpp"
+#include "include/json.hpp"
+#include "include/math/vector4.hpp"
+#include "include/math/matrix4.hpp"
+#include "include/math/math_util.hpp"
+
 #include "scaflux_util.hpp"
 
 using std::any_cast;

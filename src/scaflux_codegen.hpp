@@ -1,10 +1,10 @@
 #pragma once
 
-#include <commondefs.hpp>
-#include <file_util.hpp>
-#include <str_util.hpp>
-#include <json.hpp>
-#include <emhash/hash_set8.hpp>
+#include "include/commondefs.hpp"
+#include "include/file_util.hpp"
+#include "include/str_util.hpp"
+#include "include/json.hpp"
+#include "include/emhash/hash_set8.hpp"
 
 #include "scaflux_util.hpp"
 #include "scaflux_token.hpp"

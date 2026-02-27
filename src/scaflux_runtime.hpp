@@ -1,15 +1,15 @@
 #pragma once
 
-#include <commondefs.hpp>
-#include <file_util.hpp>
-#include <str_util.hpp>
-#include <base16.hpp>
-#include <base64.hpp>
-#include <base85.hpp>
-#include <emhash/hash_set8.hpp>
-#include <emhash/hash_table8.hpp>
-#include <math/math_util.hpp>
-#include <dlib.hpp>
+#include "include/commondefs.hpp"
+#include "include/file_util.hpp"
+#include "include/str_util.hpp"
+#include "include/base16.hpp"
+#include "include/base64.hpp"
+#include "include/base85.hpp"
+#include "include/emhash/hash_set8.hpp"
+#include "include/emhash/hash_table8.hpp"
+#include "include/math/math_util.hpp"
+#include "include/dlib.hpp"
 
 #include "scaflux_util.hpp"
 #include "scaflux_token.hpp"

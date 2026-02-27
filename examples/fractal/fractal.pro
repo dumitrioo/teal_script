@@ -9,8 +9,7 @@ QMAKE_CXXFLAGS_RELEASE += -O3
 QMAKE_CFLAGS_RELEASE -= -O2
 QMAKE_CFLAGS_RELEASE += -O3
 
-INCLUDEPATH += ../../src \
-    ../../include
+# INCLUDEPATH += ../../src
 
 SOURCES += \
     libmain.cpp
