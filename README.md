@@ -5,7 +5,7 @@ The class of problems, easily solvable with this embedded language, is a control
 
 # Implementation
 
-Proposed implementation is an embedded library written in C++ and designed to be used in couple with C++. To add support for SCAFlux into your C++ application, you need to include header file. And after that you can instantiate SCAFlux runtime object, load source code and extensions shared libraries into it and execute in single- or multi-threaded mode. To extend embedded languages with functions, variables and objects, you should add respective entities using rules described in the document mentioned below.
+Proposed implementation is an embedded library written in C++ and designed to be used in couple with C++. To add support for SCAFlux into your C++ application, you need to include header file, instantiate SCAFlux runtime object, load source code and extensions shared libraries into it and execute in single- or multi-threaded mode. To extend the scripting language with functions, variables and objects, you should add respective entities separately or in form of extension to this runtime object, using rules described in the document mentioned below, in "More information" section.
 You can also explore the [interpreter](examples/interpreter/main.cpp) application source code as the example of embedding a library and extending of the language's functionality. 
 
 # More information
