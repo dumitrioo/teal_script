@@ -1,10 +1,8 @@
 'command_line_args' command_line_args;
 
 execution_time_limit(dt) {
-    if (this.t == undefined)
-        this.t = timestamp();
-    if (timestamp().fseconds() - this.t.fseconds() > dt)
-        exit(0);
+    if(this.t == undefined) this.t = timestamp().fseconds() + dt;
+    if(timestamp().fseconds() > this.t) exit();
     return 0;
 }
 
@@ -33,7 +31,10 @@ test13 t13();
 test12() {
     s = object("[1,2,\"333\",4,5]");
     console.println(s);
-    console.println(s.typeof());
+
+    console.println(typeof(s));
+    console.println(s.typeof()); // an alternative to the above
+
     console.println(s[2].typeof());
 
     s[2][1] = '5';
