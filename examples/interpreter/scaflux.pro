@@ -61,8 +61,8 @@ HEADERS += \
     ../../src/scaflux_token.hpp \
     ../../src/scaflux_util.hpp \
     ../../src/scaflux_value.hpp \
-    ../ext/ray_ext.hpp \
-    ../ext/zmq_ext.hpp
+    optext/ray_ext.hpp \
+    optext/zmq_ext.hpp
 
 QMAKE_CXXFLAGS += -march=znver4 -std=c++20 -Wno-unused-function -Wl,-rpath,.
 QMAKE_CXXFLAGS_RELEASE -= -O2
