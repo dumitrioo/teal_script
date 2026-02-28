@@ -1,6 +1,7 @@
 #  Welcome to SCAFlux
 
 SCAFlux is a dynamically typed scripting language in the declarative, pure functional Data-flow Graph Paradigm, but SCAFlux breaks this functional purity and is partialy statelful, in favor of convenience while resolving many tasks. Unlike conventional programming languages, program in this language does not have a "single entry point". Instead, programmer writes logic by defining a bunch (or a lot) of compute elements connected into a computation network, accordingly to a logical schema, that is a solution of the certain problem, in order to perform necessary computations resolving that problem. All the compute elements are executed independently (simultaneously in case of multi-threaded execution mode), and every time the compute element is done, it is executed with updated input parameters coming from other elements outputs again and again and again, and so on, until the system stops working.
+
 The class of problems, that can be easily solved using this scripting language, is the complex real-time control of multitude actuators/indicators/displays/other consumers of control data within a logical circuit, based on the analysis of incoming signals from multitude input devices.
 
 # Implementation
