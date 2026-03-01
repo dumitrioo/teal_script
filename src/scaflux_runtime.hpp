@@ -1339,10 +1339,12 @@ namespace scfx {
         }
 
         void terminate() {
+            std::unique_lock l{threads_mtp_};
             termination_requested_ = 1;
         }
 
         void unterminate() {
+            std::unique_lock l{threads_mtp_};
             termination_requested_ = 0;
         }
 
@@ -1367,7 +1369,7 @@ namespace scfx {
             if(!is_current_thread_mode_multi()) {
                 return;
             }
-            terminate();
+            termination_requested_ = 1;
             for(auto &&t: threads_) {
                 if(t.joinable()) {
                     t.join();
@@ -1390,7 +1392,7 @@ namespace scfx {
             if(!threads_.empty()) {
                 return;
             }
-            unterminate();
+            termination_requested_ = 0;
             for(int i{0}; i < thrd_cnt; ++i) {
                 threads_.emplace_back([this]() {
                     std::shared_ptr<execution_context> exctx{std::make_shared<execution_context>()};
@@ -1528,9 +1530,17 @@ namespace scfx {
                 while(!termination_requested() && std::chrono::steady_clock::now() < future) {
                     std::this_thread::sleep_for(slpfor);
                 }
-                return termination_requested();
+                std::shared_lock l{threads_mtp_};
+                if(termination_requested_ != 0) {
+                    for(auto &&t: threads_) {
+                        if(t.joinable()) {
+                            t.join();
+                        }
+                    }
+                }
+                return termination_requested_ != 0;
             }
-            return false;
+            return true;
         }
 
         std::int64_t wait_granularity_nsec() const noexcept {
