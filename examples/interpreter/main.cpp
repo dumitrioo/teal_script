@@ -36,10 +36,10 @@ int main(int argc, char **argv) {
 
 
     /////////////////////////////////////////////////////////////////////////////////
-    // see extending_example.scfx for usage...
+    // this is a host part of extending example.
+    // for usage, see "examples/extending_example.scfx"
     /////////////////////////////////////////////////////////////////////////////////
-
-    // example of adding a function to the runtime
+    // adding a function to the runtime
     rt.add_function("hello_from_cpp", [](scfx::valbox const &/*fname*/, std::vector<scfx::valbox> &args) -> scfx::valbox {
         std::cout << "C++ extension function hello_from_cpp() called with arguments:" << std::endl;
         for(auto &&a: args) {
@@ -49,11 +49,11 @@ int main(int argc, char **argv) {
     });
     // ----------------------------------------------
 
-    // example of adding a named value to the runtime
+    // adding a named value to the runtime
     rt.add_var("The_Answer_to_the_Ultimate_Question_of_Life_the_Universe_and_Everything", 42);
     // ----------------------------------------------
 
-    // example of adding an object type to the runtime
+    // adding an object type to the runtime
     rt.add_function("example_object", [](scfx::valbox const &/*fname*/, std::vector<scfx::valbox> &args) -> scfx::valbox {
         if(args.size() > 0) {
             return scfx::valbox{example_object{args[0].cast_to_s32()}, "example_object"};
@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
     });
     // ----------------------------------------------
 
-    // examples of adding an extension to the runtime
+    // adding an extension to the runtime
 #ifdef SCFX_USE_ZMQ
     zmq_ext zmq{};
     zmq.register_runtime(&rt);
@@ -80,7 +80,6 @@ int main(int argc, char **argv) {
     ray_ext ray{};
     ray.register_runtime(&rt);
 #endif
-    // ----------------------------------------------
     /////////////////////////////////////////////////////////////////////////////////
 
 

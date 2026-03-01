@@ -1,5 +1,10 @@
 'command_line_args' command_line_args;
 
+/////////////////////////////////////////////////////////////////////////////
+// this is usage part of extending example.
+// for host part, see "examples/interpreter/main.cpp"
+/////////////////////////////////////////////////////////////////////////////
+
 ext_test_template() {
     try {
         hello_from_cpp("1", 2, object("{k:4}"));
