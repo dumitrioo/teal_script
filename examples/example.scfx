@@ -19,28 +19,6 @@ function rnd_str(n) {
 }
 
 
-test14() {
-    try {
-        hello_from_cpp("1", 2, object("{k:4}"));
-
-        console.println(
-            "The_Answer_to_the_Ultimate_Question_of_Life_the_Universe_and_Everything: ",
-            The_Answer_to_the_Ultimate_Question_of_Life_the_Universe_and_Everything
-        );
-
-        exobj = example_object(5);
-        console.println(exobj.get_val());
-        exobj.set_val(8);
-        console.println(exobj.get_val());
-    } catch(e) {
-        console.error("in test 14 - ", e);
-    }
-    exit();
-}
-
-test14 t14();
-
-
 test13() {
     console.println(hexdump(rnd_str(256)));
     console.println(data_to_hex_str(sha256(rnd_str(128))));

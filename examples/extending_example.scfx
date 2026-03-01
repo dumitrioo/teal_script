@@ -1,0 +1,27 @@
+'command_line_args' command_line_args;
+
+ext_test_template() {
+    try {
+        hello_from_cpp("1", 2, object("{k:4}"));
+        console.println("-----------------------------------");
+
+        console.println(
+            "The_Answer_to_the_Ultimate_Question_of_Life_the_Universe_and_Everything: ",
+            The_Answer_to_the_Ultimate_Question_of_Life_the_Universe_and_Everything
+        );
+        console.println("-----------------------------------");
+
+        console.println("constructing a new example object with value of 5");
+        exobj = example_object(5);
+        console.println("a new object's value: ", exobj.get_val());
+        console.println("set a new value of 8 to the object");
+        exobj.set_val(8);
+        console.println("now object's value equals to: ", exobj.get_val());
+        console.println("-----------------------------------");
+    } catch(e) {
+        console.error("in test 14 - ", e);
+    }
+    exit();
+}
+
+ext_test_template ext_test();

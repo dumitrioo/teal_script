@@ -82,6 +82,7 @@ DISTFILES += \
     ../ex_srv.scfx \
     ../example.scfx \
     ../alu74181.png \
+    ../extending_example.scfx \
     ../fractal/fractal.scfx \
     ../quad_eq.scfx \
     ../scp.scfx \

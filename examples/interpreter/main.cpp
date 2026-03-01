@@ -34,10 +34,14 @@ int main(int argc, char **argv) {
 
     scfx::runtime rt{};
 
+
+    /////////////////////////////////////////////////////////////////////////////////
+    // see extending_example.scfx for usage...
+    /////////////////////////////////////////////////////////////////////////////////
+
     // example of adding a function to the runtime
     rt.add_function("hello_from_cpp", [](scfx::valbox const &/*fname*/, std::vector<scfx::valbox> &args) -> scfx::valbox {
-        std::cout << "C++ extension function hello_from_cpp() called" << std::endl
-                  << "the function arguments:" << std::endl;
+        std::cout << "C++ extension function hello_from_cpp() called with arguments:" << std::endl;
         for(auto &&a: args) {
             std::cout << "\t" << a << std::endl;
         }
@@ -77,6 +81,8 @@ int main(int argc, char **argv) {
     ray.register_runtime(&rt);
 #endif
     // ----------------------------------------------
+    /////////////////////////////////////////////////////////////////////////////////
+
 
 #ifndef DEBUG_SCFX_RUN_CYCLE
     try {
