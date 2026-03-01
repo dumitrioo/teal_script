@@ -2656,7 +2656,6 @@ namespace scfx {
             if(ref.box_.get() == that_ref.box_.get()) {
                 return *this;
             }
-            ref.pointed_box_.reset();
             if(that_ref.is_undefined()) {
                 if(ref.box_) {
                     ref.box_->value_ = value_t{};
@@ -2664,48 +2663,23 @@ namespace scfx {
                     ref.box_->pointed_type_ = type::UNDEFINED;
                     ref.box_->class_.clear();
                 }
-                return *this;
-            }
-            if(!ref.box_) {
-                ref.box_ = std::make_shared<box_data>(that_ref.box_->value_, that_ref.box_->type_, that_ref.box_->pointed_type_, that_ref.box_->class_);
-                ref.pointed_box_ = that_ref.pointed_box_;
-                return *this;
-            }
-            ref.box_->value_ = that_ref.box_->value_;
-            ref.box_->type_ = that_ref.box_->type_;
-            ref.box_->pointed_type_ = that_ref.box_->pointed_type_;
-            ref.box_->class_ = that_ref.box_->class_;
-            ref.pointed_box_ = that_ref.pointed_box_;
-            return *this;
-        }
-
-        valbox &assign(valbox &&that) {
-            valbox &that_ref{that.deref()};
-            valbox &ref{deref()};
-            if(ref.box_.get() == that_ref.box_.get()) {
-                return *this;
-            }
-            if(that_ref.is_undefined()) {
-                ref.box_->value_ = value_t{};
-                ref.box_->type_ = type::UNDEFINED;
-                ref.box_->pointed_type_ = type::UNDEFINED;
-                ref.box_->class_.clear();
                 ref.pointed_box_.reset();
-                return *this;
+            } else {
+                if(!ref.box_) {
+                    ref.box_ = std::make_shared<box_data>(
+                        that_ref.box_->value_,
+                        that_ref.box_->type_,
+                        that_ref.box_->pointed_type_,
+                        that_ref.box_->class_
+                    );
+                } else {
+                    ref.box_->value_ = that_ref.box_->value_;
+                    ref.box_->type_ = that_ref.box_->type_;
+                    ref.box_->pointed_type_ = that_ref.box_->pointed_type_;
+                    ref.box_->class_ = that_ref.box_->class_;
+                }
+                ref.pointed_box_ = that_ref.pointed_box_;
             }
-            if(!ref.box_) {
-                ref.box_ = std::make_shared<box_data>(std::move(that_ref.box_->value_), that_ref.box_->type_, that_ref.box_->pointed_type_, that_ref.box_->class_);
-                that_ref.box_->type_ = type::UNDEFINED;
-                that_ref.box_->pointed_type_ = type::UNDEFINED;
-                that_ref.box_->class_.clear();
-                ref.pointed_box_ = std::move(that_ref.pointed_box_);
-                return *this;
-            }
-            ref.box_->value_ = std::move(that_ref.box_->value_);
-            ref.box_->type_ = that_ref.box_->type_; that_ref.box_->type_ = type::UNDEFINED;
-            ref.box_->pointed_type_ = that_ref.box_->pointed_type_; that_ref.box_->pointed_type_ = type::UNDEFINED;
-            ref.box_->class_ = that_ref.box_->class_; that_ref.box_->class_.clear();
-            ref.pointed_box_ = std::move(that_ref.pointed_box_);
             return *this;
         }
 
