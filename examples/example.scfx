@@ -41,6 +41,9 @@ test12() {
     console.println(s);
     s[2][2] = '9';
     console.println(s);
+
+    s[2][1] += 2;
+    console.println(s);
 }
 
 test12 t12();
