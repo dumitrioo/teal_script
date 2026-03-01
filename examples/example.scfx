@@ -19,13 +19,35 @@ function rnd_str(n) {
 }
 
 
+test14() {
+    try {
+        hello_from_cpp("1", 2, object("{k:4}"));
+
+        console.println(
+            "The_Answer_to_the_Ultimate_Question_of_Life_the_Universe_and_Everything: ",
+            The_Answer_to_the_Ultimate_Question_of_Life_the_Universe_and_Everything
+        );
+
+        exobj = example_object(5);
+        console.println(exobj.get_val());
+        exobj.set_val(8);
+        console.println(exobj.get_val());
+    } catch(e) {
+        console.error("in test 14 - ", e);
+    }
+    exit();
+}
+
+test14 t14();
+
+
 test13() {
     console.println(hexdump(rnd_str(256)));
     console.println(data_to_hex_str(sha256(rnd_str(128))));
     console.println(data_to_hex_str(sha512("qwerty")));
 }
 
-test13 t13();
+// test13 t13();
 
 
 test12() {
@@ -46,7 +68,7 @@ test12() {
     console.println(s);
 }
 
-test12 t12();
+// test12 t12();
 
 
 test11() {
@@ -64,7 +86,7 @@ test11() {
     console.println(dc);
 }
 
-test11 t11();
+// test11 t11();
 
 
 test10() {
@@ -87,7 +109,7 @@ test10() {
     console.println("v1: ", v1);
 }
 
-test10 t10();
+// test10 t10();
 
 
 test9() {
@@ -103,7 +125,7 @@ test9() {
     return 0;
 }
 
-test9 t9();
+// test9 t9();
 
 
 test8() {
@@ -142,7 +164,7 @@ test8() {
     return 0;
 }
 
-test8 t8();
+// test8 t8();
 
 
 test7_1() {
@@ -167,7 +189,7 @@ test7_1() {
     }
 }
 
-test7_1 t7_1();
+// test7_1 t7_1();
 
 
 test7() {
@@ -182,7 +204,7 @@ test7() {
     }
 }
 
-test7 t7();
+// test7 t7();
 
 
 test6() {
@@ -194,7 +216,7 @@ test6() {
     return this.state;
 }
 
-test6 t();
+// test6 t();
 
 
 test5() {
@@ -242,7 +264,7 @@ test5() {
     return this.tid;
 }
 
-test5 t5();
+// test5 t5();
 
 
 test4() {
@@ -254,7 +276,7 @@ test4() {
     return 0;
 }
 
-test4 t4();
+// test4 t4();
 
 
 test3() {
@@ -274,7 +296,7 @@ test3() {
     return 0;
 }
 
-test3 t3();
+// test3 t3();
 
 
 test2() {
@@ -321,7 +343,7 @@ test2() {
     return this.a;
 }
 
-test2 t2();
+// test2 t2();
 
 
 test1() {
@@ -341,4 +363,4 @@ test1() {
     return this.cur;
 }
 
-test1 t1() 'out';
+// test1 t1() 'out';
