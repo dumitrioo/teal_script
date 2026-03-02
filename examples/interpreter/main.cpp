@@ -13,7 +13,7 @@
 #include "optext/ray_ext.hpp"
 #endif
 
-// just a regular C++ class to be added as an <<object type>> to the scripting runtime
+// Just a regular C++ class to be added as an <<object type>> to the scripting runtime
 class example_object {
 public:
     example_object() = default;
@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
     }
 
 
-    // the runtime
+    // The runtime
     scfx::runtime rt{};
 
 
@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
     // For usage, see script "examples/extending_example.scfx".
 
     // -----------------------------------------------------------------------------------
-    // example of adding function to the runtime
+    // Example of adding function to the runtime
     rt.add_function("hello_from_cpp", [](scfx::valbox const &, std::vector<scfx::valbox> &args) -> scfx::valbox {
         std::cout << "C++ extension function hello_from_cpp() called with arguments:" << std::endl;
         for(auto &&a: args) {
@@ -54,12 +54,12 @@ int main(int argc, char **argv) {
     // -----------------------------------------------------------------------------------
 
     // -----------------------------------------------------------------------------------
-    // example of adding named value to the runtime
+    // Example of adding named value to the runtime
     rt.add_var("The_Answer_to_the_Ultimate_Question_of_Life_the_Universe_and_Everything", 42);
     // -----------------------------------------------------------------------------------
 
     // -----------------------------------------------------------------------------------
-    // example of adding object type to the runtime
+    // Example of adding object type to the runtime
     rt.add_function("example_object", [](scfx::valbox const &/*fname*/, std::vector<scfx::valbox> &args) -> scfx::valbox {
         if(args.size() > 0) {
             return scfx::valbox{example_object{args[0].cast_to_s32()}, "example_object"};
@@ -78,12 +78,12 @@ int main(int argc, char **argv) {
     // -----------------------------------------------------------------------------------
 
     // -----------------------------------------------------------------------------------
-    // example of adding extension to the runtime
+    // Example of adding extension to the runtime
 #ifdef SCFX_USE_ZMQ
     zmq_ext zmq{};
     zmq.register_runtime(&rt);
 #endif
-    // one more extension
+    // One more extension
 #ifdef SCFX_USE_RAYLIB
     ray_ext ray{};
     ray.register_runtime(&rt);
