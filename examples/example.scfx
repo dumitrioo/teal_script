@@ -1,12 +1,17 @@
 'command_line_args' command_line_args;
 
+
 execution_time_limit(dt) {
-    if(this.t == undefined) this.t = timestamp().fseconds() + dt;
-    if(timestamp().fseconds() > this.t) exit();
+    if(this.t == undefined) {
+        this.t = timestamp().fseconds() + dt;
+    }
+    if(timestamp().fseconds() > this.t) {
+        exit();
+    }
     return 0;
 }
 
-execution_time_limit stopper(1);
+execution_time_limit tlim(1.0);
 
 
 function rnd_str(n) {
@@ -19,16 +24,16 @@ function rnd_str(n) {
 }
 
 
-test13() {
+example13() {
     console.println(hexdump(rnd_str(256)));
     console.println(data_to_hex_str(sha256(rnd_str(128))));
     console.println(data_to_hex_str(sha512("qwerty")));
 }
 
-// test13 t13();
+example13 ex13();
 
 
-test12() {
+example12() {
     s = object("[1,2,\"333\",4,5]");
     console.println(s);
 
@@ -46,10 +51,10 @@ test12() {
     console.println(s);
 }
 
-// test12 t12();
+example12 ex12();
 
 
-test11() {
+example11() {
     console.println("\xa9\u2605\u272a22aa\U00013000\U00013000");
     s = "\U00013000\n\U00013001\r\n\U00013002\r\n\U00013003\r\n"
         "\U00013004\r\n\U00013005\r\n\U00013006\r\n\U00013007"
@@ -64,10 +69,10 @@ test11() {
     console.println(dc);
 }
 
-// test11 t11();
+example11 ex11();
 
 
-test10() {
+example10() {
     v = vec4(1, 0, 0, 1);
     console.println("v: ", v);
 
@@ -87,10 +92,10 @@ test10() {
     console.println("v1: ", v1);
 }
 
-// test10 t10();
+example10 ex10();
 
 
-test9() {
+example9() {
     o = object();
     o["k"] = "1";
 
@@ -103,10 +108,10 @@ test9() {
     return 0;
 }
 
-// test9 t9();
+example9 ex9();
 
 
-test8() {
+example8() {
     earth_eq_r = 6378.1;
     earth_po_r = 6356.8;
     earth_r_ratio = earth_po_r / earth_eq_r;
@@ -119,33 +124,33 @@ test8() {
     console.println("---------------------");
 
     console.fixed();
-    shell_width = 5.0 * 1000.0; // m
+    crust_width = 5.0 * 1000.0; // m
     outer_r = (1737.1) * 1000.0; // m
-    inner_r = outer_r - shell_width; // m
+    inner_r = outer_r - crust_width; // m
     vol_factor = (M_PI * 4.0) / 3.0;
     whole_vol = vol_factor * pow(outer_r, 3.0);
     console.println("whole vol: ", whole_vol / 1000000000.0, " cubic km");
     inner_vol = vol_factor * pow(inner_r, 3.0);
     console.println("inner vol: ", inner_vol / 1000000000.0, " cubic km");
-    shell_vol = whole_vol - inner_vol; // m^3
-    console.println("shell vol: ", shell_vol / 1000000000.0, " cubic km");
-    console.println("shell vol / whole vol = ", shell_vol / whole_vol);
-    ti_dens_gcm3 = 4.540; // g / cm^3
-    ti_dens_gm3 = 4.540 * pow(100.0, 3); // g / m^3
-    ti_dens = ti_dens_gm3 / 1000.0; // kg / m^3
-    console.println("titanium density: ", ti_dens, " kg/m^3");
-    shell_wt = shell_vol * ti_dens; // kg
-    console.println("shell weight: ", shell_wt / 1000.0, " tonnes");
-    shell_only_dens = shell_wt / whole_vol;
-    console.println("shell only density: ", shell_only_dens);
+    crust_vol = whole_vol - inner_vol; // m^3
+    console.println("crust vol: ", crust_vol / 1000000000.0, " cubic km");
+    console.println("crust vol / whole vol = ", crust_vol / whole_vol);
+    cr_dens_gcm3 = 4.540; // g / cm^3
+    cr_dens_gm3 = 4.540 * pow(100.0, 3); // g / m^3
+    cr_dens = cr_dens_gm3 / 1000.0; // kg / m^3
+    console.println("crust density: ", cr_dens, " kg/m^3");
+    crust_wt = crust_vol * cr_dens; // kg
+    console.println("crust weight: ", crust_wt / 1000.0, " tonnes");
+    crust_only_dens = crust_wt / whole_vol;
+    console.println("crust only density: ", crust_only_dens);
     console.println("-----------------------------------------");
     return 0;
 }
 
-// test8 t8();
+example8 ex8();
 
 
-test7_1() {
+example7_1() {
     fname = "/tmp/test_file_5898723489765";
     console.println("openinig file \"", fname, "\"");
     if ((f = file(fname, true, true)).ok()) {
@@ -167,10 +172,10 @@ test7_1() {
     }
 }
 
-// test7_1 t7_1();
+example7_1 ex7_1();
 
 
-test7() {
+example7() {
     if ((f = file("/dev/urandom")).ok()) {
         d = f.read(256);
         console.println(hexdump(d), '\n');
@@ -182,10 +187,10 @@ test7() {
     }
 }
 
-// test7 t7();
+example7 ex7();
 
 
-test6() {
+example6() {
     r = (hwrand() / 18446744073709551615.0).string();
     console.println(r);
     console.println(data_to_hex_str(r));
@@ -194,10 +199,10 @@ test6() {
     return this.state;
 }
 
-// test6 t();
+example6 ex6();
 
 
-test5() {
+example5() {
     if (!this.win_created) {
         this.win_created = true;
         this.sw = 1600;
@@ -242,10 +247,10 @@ test5() {
     return this.tid;
 }
 
-// test5 t5();
+example5 ex5();
 
 
-test4() {
+example4() {
     if ((f = file("/dev/random")).ok()) {
         console.println(f.read(1024).hexdump());
     } else {
@@ -253,11 +258,10 @@ test4() {
     }
     return 0;
 }
+example4 ex4();
 
-// test4 t4();
 
-
-test3() {
+example3() {
     if (!this.initialized) {
         console.fixed(); console.setprecision(0);
         this.n = 0;
@@ -274,10 +278,10 @@ test3() {
     return 0;
 }
 
-// test3 t3();
+example3 ex3();
 
 
-test2() {
+example2() {
     if (this.a = undefined) {
         this.rule = 30;
         // this.rule = 153;
@@ -321,10 +325,10 @@ test2() {
     return this.a;
 }
 
-// test2 t2();
+example2 ex2();
 
 
-test1() {
+example1() {
     if (this.cur == undefined) {
         this.cur = rand();
         this.cycles = 0;
@@ -341,4 +345,4 @@ test1() {
     return this.cur;
 }
 
-// test1 t1() 'out';
+example1 ex1() 'out';
