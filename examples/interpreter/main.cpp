@@ -13,6 +13,7 @@
 #include "optext/ray_ext.hpp"
 #endif
 
+// just a regular C++ class to be added as an <<object type>> to the scripting runtime
 class example_object {
 public:
     example_object() = default;
@@ -24,36 +25,41 @@ private:
     int v_{};
 };
 
+
 int main(int argc, char **argv) {
     std::vector<std::string> args{argv, argv + argc};
     std::setlocale(LC_ALL, "en_US.UTF-8");
 
-    if(args.size() == 1) {
+    if(args.size() < 2) {
         return 0;
     }
 
+
+    // the runtime
     scfx::runtime rt{};
 
 
-    /////////////////////////////////////////////////////////////////////////////////
-    // this is a host part of extending example.
-    // for usage, see "examples/extending_example.scfx"
-    /////////////////////////////////////////////////////////////////////////////////
-    // adding a function to the runtime
-    rt.add_function("hello_from_cpp", [](scfx::valbox const &/*fname*/, std::vector<scfx::valbox> &args) -> scfx::valbox {
+    // The host part of scripting language possibilities extending example.
+    // For usage, see script "examples/extending_example.scfx".
+
+    // -----------------------------------------------------------------------------------
+    // example of adding function to the runtime
+    rt.add_function("hello_from_cpp", [](scfx::valbox const &, std::vector<scfx::valbox> &args) -> scfx::valbox {
         std::cout << "C++ extension function hello_from_cpp() called with arguments:" << std::endl;
         for(auto &&a: args) {
             std::cout << "\t" << a << std::endl;
         }
         return args.size();
     });
-    // ----------------------------------------------
+    // -----------------------------------------------------------------------------------
 
-    // adding a named value to the runtime
+    // -----------------------------------------------------------------------------------
+    // example of adding named value to the runtime
     rt.add_var("The_Answer_to_the_Ultimate_Question_of_Life_the_Universe_and_Everything", 42);
-    // ----------------------------------------------
+    // -----------------------------------------------------------------------------------
 
-    // adding an object type to the runtime
+    // -----------------------------------------------------------------------------------
+    // example of adding object type to the runtime
     rt.add_function("example_object", [](scfx::valbox const &/*fname*/, std::vector<scfx::valbox> &args) -> scfx::valbox {
         if(args.size() > 0) {
             return scfx::valbox{example_object{args[0].cast_to_s32()}, "example_object"};
@@ -69,18 +75,20 @@ int main(int argc, char **argv) {
         SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
         return SCFXTHIS(example_object).get_val();
     });
-    // ----------------------------------------------
+    // -----------------------------------------------------------------------------------
 
-    // adding an extension to the runtime
+    // -----------------------------------------------------------------------------------
+    // example of adding extension to the runtime
 #ifdef SCFX_USE_ZMQ
     zmq_ext zmq{};
     zmq.register_runtime(&rt);
 #endif
+    // one more extension
 #ifdef SCFX_USE_RAYLIB
     ray_ext ray{};
     ray.register_runtime(&rt);
 #endif
-    /////////////////////////////////////////////////////////////////////////////////
+    // -----------------------------------------------------------------------------------
 
 
 #ifndef DEBUG_SCFX_RUN_CYCLE
