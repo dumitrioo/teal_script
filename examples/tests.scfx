@@ -6,37 +6,60 @@ execution_time_limit(t) {
     if(timestamp().fseconds() > this.t) exit();
 }
 
-execution_time_limit etl(.1);
+// execution_time_limit etl(1.0);
 
 
-t() {
-    k["r"] = "1";
-    t["d"] = "r";
-    println(k + t);
+function custom_to_str(n) {
+    return string(n);
 }
 
-t c();
+dot_notation_call_test() {
+    k = 12.7;
+    s = k.custom_to_str();
+    println(s, " (type = ", typeof(s), ")");
+    assert(typeof(s) == "string");
+    assert(s == "12.7");
+    return 0;
+}
+
+// dot_notation_call_test dnctest();
+
+
+merge_objects() {
+    k["r"] = "1";
+    t["d"] = "d";
+    o = k + t;
+    println(k);
+    println(t);
+    println(o);
+}
+
+merge_objects motest();
 
 
 function callee2(qq) {
     println("callee2! - ", qq);
 }
+
 function callee(fn)  {
     println("callee!"); fn(234);
 }
+
 function caller(fn)  {
     fn(callee2);
 }
+
 other_call_test()    {
     caller(callee); return 2;
 }
 
-other_call_test oct();
+// other_call_test oct();
 
 
 function fact(n) {
     return n <= 1 ? n : n * fact(n - 1);
 }
+
 function mysin(x) {
     return x
         - pow(x, 3.0) / 6.0
@@ -52,6 +75,7 @@ function mysin(x) {
         - pow(x, 23.0) / 25852016738884976640000.0
         + pow(x, 25.0) / 15511210043330985984000000.0;
 }
+
 sin_test() {
     console.setprecision(26);
     console.println(sin(1.0));
@@ -59,18 +83,27 @@ sin_test() {
     return 0;
 }
 
-sin_test sntst();
+// sin_test sntst();
 
 
 function fibonacci(n, memo) {
-    if memo.contains(n)
-        return memo[n];
-    if n <= 1
-        memo[n] = n;
+    if(memo.contains(string(n)))
+        return memo[string(n)];
+    if(n <= 1)
+        memo[string(n)] = n;
     else
-        memo[n] = fibonacci(n - 1, memo) + fibonacci(n - 2, memo);
-    return memo[n];
+        memo[string(n)] = fibonacci(n - 1, memo) + fibonacci(n - 2, memo);
+    return memo[string(n)];
 }
+
+fib_test() {
+    memo = object();
+    println(fibonacci(12, memo));
+    return 0;
+}
+
+// fib_test sntst();
+
 
 misc_test() {
     console.println(pow(2, -0.5));
@@ -85,7 +118,7 @@ misc_test() {
     return 0;
 }
 
-misc_test msctst();
+// misc_test msctst();
 
 
 untab(argv) {
@@ -116,7 +149,7 @@ untab(argv) {
     }
 }
 
-untab utb(command_line_args);
+// untab utb(command_line_args);
 
 
 finddupes(argv) {
@@ -144,7 +177,7 @@ finddupes(argv) {
     return 0;
 }
 
-finddupes dps(command_line_args);
+// finddupes dps(command_line_args);
 
 
 cmdline_test(argv) {
@@ -156,7 +189,7 @@ cmdline_test(argv) {
     return 0;
 }
 
-cmdline_test cmltst(command_line_args);
+// cmdline_test cmltst(command_line_args);
 
 
 simply_test() {
@@ -165,7 +198,7 @@ simply_test() {
     return 0;
 }
 
-simply_test tutst();
+// simply_test tutst();
 
 
 cpu_test() {
@@ -181,7 +214,7 @@ cpu_test() {
     return 0;
 }
 
-cpu_test cputst();
+// cpu_test cputst();
 
 
 function num_to_suffixed(n, prec) {
@@ -193,6 +226,7 @@ function num_to_suffixed(n, prec) {
     }
     return array(ftoa(k, prec), a[p]);
 }
+
 my_test() {
     try {
         console.fixed();
@@ -211,7 +245,7 @@ my_test() {
     return 0;
 }
 
-my_test mtst();
+// my_test mtst();
 
 
 ctr(anything) {
@@ -234,7 +268,7 @@ ctr(anything) {
     return this.delay;
 }
 
-ctr cto(tm);
+// ctr cto(tm);
 
 
 another_test() {
@@ -247,7 +281,7 @@ another_test() {
     console.info(end - begin, " sec.");
 }
 
-another_test at();
+// another_test at();
 
 
 test_mat() {
@@ -267,4 +301,4 @@ test_mat() {
     return 0;
 }
 
-test_mat tm();
+// test_mat tm();

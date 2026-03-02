@@ -293,6 +293,18 @@ namespace scfx {
                 return scfx::file_util::dir_exists(args[0].cast_to_string());
             });
 
+            add_function("native_path_seperator", SCFXFUN(,) {
+                return file_util::native_path_separator<std::string>{}.sym();
+            });
+
+            add_function("native_path_seperator_str", SCFXFUN(,) {
+                return file_util::native_path_separator<std::string>{}.val();
+            });
+
+            add_function("temp_directory_path", SCFXFUN(,) {
+                return std::filesystem::temp_directory_path().string();
+            });
+
             add_function("list_directory", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 2)
                 bool recur{false};
@@ -1014,12 +1026,9 @@ namespace scfx {
             });
 
             add_function("assert", SCFXFUN(, args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(3);
+                SCFX_CHCK_FUN_PARMS_NUM_GE(3);
                 if(!args[2].cast_to_bool()) {
-                    throw runtime_error{
-                        args[0].cast_to_s64(), args[1].cast_to_s64(),
-                        "assertion failed"
-                    };
+                    throw runtime_error{args[0].cast_to_s64(), args[0].cast_to_s64(), std::string{"assertion failed"}};
                 }
                 return true;
             });

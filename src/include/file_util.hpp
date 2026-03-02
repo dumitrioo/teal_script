@@ -49,36 +49,36 @@ namespace scfx::file_util {
     template<>
     struct native_path_separator<std::string> {
         static std::string val() {
-        #if defined(PLATFORM_WINDOWS)
+#if defined(PLATFORM_WINDOWS)
             return "\\";
-        #else
+#else
             return "/";
-        #endif
+#endif
         }
         static char sym() {
-        #if defined(PLATFORM_WINDOWS)
+#if defined(PLATFORM_WINDOWS)
             return '\\';
-        #else
+#else
             return '/';
-        #endif
+#endif
         }
     };
 
     template<>
     struct native_path_separator<std::wstring> {
         static std::wstring val() {
-        #if defined(PLATFORM_WINDOWS)
+#if defined(PLATFORM_WINDOWS)
             return L"\\";
-        #else
+#else
             return L"/";
-        #endif
+#endif
         }
         static wchar_t sym() {
-        #if defined(PLATFORM_WINDOWS)
+#if defined(PLATFORM_WINDOWS)
             return '\\';
-        #else
+#else
             return '/';
-        #endif
+#endif
         }
     };
 

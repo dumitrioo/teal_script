@@ -151,7 +151,7 @@ example8 ex8();
 
 
 example7_1() {
-    fname = "/tmp/test_file_5898723489765";
+    fname = temp_directory_path() + native_path_seperator() + "test_file_5898723489765";
     console.println("openinig file \"", fname, "\"");
     if ((f = file(fname, true, true)).ok()) {
         console.println("file: ", f.to_string());
