@@ -44,13 +44,15 @@ int main(int argc, char **argv) {
 
     // -----------------------------------------------------------------------------------
     // Example of adding function to the runtime
-    rt.add_function("hello_from_cpp", [](scfx::valbox const &, std::vector<scfx::valbox> &args) -> scfx::valbox {
-        std::cout << "C++ extension function hello_from_cpp() called with arguments:" << std::endl;
-        for(auto &&a: args) {
-            std::cout << "\t" << a << std::endl;
+    rt.add_function("hello_from_cpp",
+        [](scfx::valbox const &, std::vector<scfx::valbox> &args) -> scfx::valbox {
+            std::cout << "C++ extension function hello_from_cpp() called with arguments:" << std::endl;
+            for(auto &&a: args) {
+                std::cout << "\t" << a << std::endl;
+            }
+            return args.size();
         }
-        return args.size();
-    });
+    );
     // -----------------------------------------------------------------------------------
 
     // -----------------------------------------------------------------------------------
@@ -60,14 +62,18 @@ int main(int argc, char **argv) {
 
     // -----------------------------------------------------------------------------------
     // Example of adding object type to the runtime
-    rt.add_function("example_object", [](scfx::valbox const &, std::vector<scfx::valbox> &args) -> scfx::valbox {
-        if(args.size() > 0) {
-            return scfx::valbox{example_object{args[0].cast_to_s32()}, "example_object"};
+    rt.add_function("example_object",
+        [](scfx::valbox const &, std::vector<scfx::valbox> &args) -> scfx::valbox {
+            if(args.size() > 0) {
+                return scfx::valbox{example_object{args[0].cast_to_s32()}, "example_object"};
+            }
+            return scfx::valbox{example_object{}, "example_object"};
         }
-        return scfx::valbox{example_object{}, "example_object"};
-    });
+    );
     rt.add_method("example_object", "set_val", SCFXFUN(, args) {
-        SCFX_CHCK_FUN_PARMS_NUM_EQ(2) // check number of arguments, if needed, including implicit object reference as the first arg
+        // check number of arguments, when needed, including
+        // implicit object reference as the first arg
+        SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
         SCFXTHIS(example_object).set_val(args[1].cast_to_s32());
         return 0;
     });
@@ -81,11 +87,13 @@ int main(int argc, char **argv) {
     // Example of adding extension to the runtime
 #ifdef SCFX_USE_ZMQ
     zmq_ext zmq{};
+    // The extension for ZeroMQ is used in "examples/ex_srv.scfx" and "examples/ex_cli.scfx" scripts
     zmq.register_runtime(&rt);
 #endif
     // One more extension
 #ifdef SCFX_USE_RAYLIB
     ray_ext ray{};
+    // The extension for RayLib is used in "examples/alu74181.scfx" script
     ray.register_runtime(&rt);
 #endif
     // -----------------------------------------------------------------------------------
