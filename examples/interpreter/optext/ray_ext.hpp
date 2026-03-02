@@ -31,7 +31,7 @@ public:
         if(rt_ == nullptr) {
             return;
         }
-        rt->add_function("Vector2", SCFXFUN(/*fname*/, args) {
+        rt->add_function("Vector2", SCFXFUN(, args) {
             SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
             return scfx::valbox{
                 Vector2{
@@ -41,12 +41,12 @@ public:
                 "Vector2"
             };
         });
-        rt->add_method("Vector2", "x", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(Vector2).x; });
-        rt->add_method("Vector2", "y", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(Vector2).y; });
-        rt->add_method("Vector2", "set_x", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SCFXTHIS(Vector2 &).x = SCFXNUMARG(1, float); return {}; });
-        rt->add_method("Vector2", "set_y", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SCFXTHIS(Vector2 &).y = SCFXNUMARG(1, float); return {}; });
+        rt->add_method("Vector2", "x", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(Vector2).x; });
+        rt->add_method("Vector2", "y", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(Vector2).y; });
+        rt->add_method("Vector2", "set_x", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SCFXTHIS(Vector2 &).x = SCFXNUMARG(1, float); return {}; });
+        rt->add_method("Vector2", "set_y", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SCFXTHIS(Vector2 &).y = SCFXNUMARG(1, float); return {}; });
 
-        rt->add_function("Vector3", SCFXFUN(/*fname*/, args) {
+        rt->add_function("Vector3", SCFXFUN(, args) {
             SCFX_CHCK_FUN_PARMS_NUM_EQ(3)
             return scfx::valbox{
                 Vector3{
@@ -57,14 +57,14 @@ public:
                 "Vector3"
             };
         });
-        rt->add_method("Vector3", "x", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(Vector2).x; });
-        rt->add_method("Vector3", "y", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(Vector2).y; });
-        rt->add_method("Vector3", "z", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(Vector2).y; });
-        rt->add_method("Vector3", "set_x", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SCFXTHIS(Vector2 &).x = SCFXNUMARG(1, float); return {}; });
-        rt->add_method("Vector3", "set_y", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SCFXTHIS(Vector2 &).y = SCFXNUMARG(1, float); return {}; });
-        rt->add_method("Vector3", "set_z", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SCFXTHIS(Vector2 &).y = SCFXNUMARG(1, float); return {}; });
+        rt->add_method("Vector3", "x", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(Vector2).x; });
+        rt->add_method("Vector3", "y", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(Vector2).y; });
+        rt->add_method("Vector3", "z", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(Vector2).y; });
+        rt->add_method("Vector3", "set_x", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SCFXTHIS(Vector2 &).x = SCFXNUMARG(1, float); return {}; });
+        rt->add_method("Vector3", "set_y", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SCFXTHIS(Vector2 &).y = SCFXNUMARG(1, float); return {}; });
+        rt->add_method("Vector3", "set_z", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SCFXTHIS(Vector2 &).y = SCFXNUMARG(1, float); return {}; });
 
-        rt->add_function("Vector4", SCFXFUN(/*fname*/, args) {
+        rt->add_function("Vector4", SCFXFUN(, args) {
             SCFX_CHCK_FUN_PARMS_NUM_EQ(4)
             return scfx::valbox{
                 Vector4{
@@ -76,7 +76,7 @@ public:
                 "Vector4"
             };
         });
-        rt->add_function("Quaternion", SCFXFUN(/*fname*/, args) {
+        rt->add_function("Quaternion", SCFXFUN(, args) {
             SCFX_CHCK_FUN_PARMS_NUM_EQ(4)
             return scfx::valbox{
                 Vector4{
@@ -88,16 +88,16 @@ public:
                 "Vector4"
             };
         });
-        rt->add_method("Vector4", "x", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(Vector2).x; });
-        rt->add_method("Vector4", "y", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(Vector2).y; });
-        rt->add_method("Vector4", "z", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(Vector2).y; });
-        rt->add_method("Vector4", "w", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(Vector2).y; });
-        rt->add_method("Vector4", "set_x", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SCFXTHIS(Vector2 &).x = SCFXNUMARG(1, float); return {}; });
-        rt->add_method("Vector4", "set_y", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SCFXTHIS(Vector2 &).y = SCFXNUMARG(1, float); return {}; });
-        rt->add_method("Vector4", "set_z", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SCFXTHIS(Vector2 &).y = SCFXNUMARG(1, float); return {}; });
-        rt->add_method("Vector4", "set_w", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SCFXTHIS(Vector2 &).y = SCFXNUMARG(1, float); return {}; });
+        rt->add_method("Vector4", "x", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(Vector2).x; });
+        rt->add_method("Vector4", "y", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(Vector2).y; });
+        rt->add_method("Vector4", "z", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(Vector2).y; });
+        rt->add_method("Vector4", "w", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(Vector2).y; });
+        rt->add_method("Vector4", "set_x", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SCFXTHIS(Vector2 &).x = SCFXNUMARG(1, float); return {}; });
+        rt->add_method("Vector4", "set_y", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SCFXTHIS(Vector2 &).y = SCFXNUMARG(1, float); return {}; });
+        rt->add_method("Vector4", "set_z", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SCFXTHIS(Vector2 &).y = SCFXNUMARG(1, float); return {}; });
+        rt->add_method("Vector4", "set_w", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SCFXTHIS(Vector2 &).y = SCFXNUMARG(1, float); return {}; });
 
-        rt->add_function("Color", SCFXFUN(/*fname*/, args) {
+        rt->add_function("Color", SCFXFUN(, args) {
             SCFX_CHCK_FUN_PARMS_NUM_EQ(4)
             return scfx::valbox{
                 Color{
@@ -109,14 +109,14 @@ public:
                 "Color"
             };
         });
-        rt->add_method("Color", "r", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(Color).r; });
-        rt->add_method("Color", "g", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(Color).g; });
-        rt->add_method("Color", "b", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(Color).b; });
-        rt->add_method("Color", "a", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(Color).a; });
-        rt->add_method("Color", "set_r", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) SCFXTHIS(Color &).r = SCFXNUMARG(1, uint8_t); return {}; });
-        rt->add_method("Color", "set_g", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) SCFXTHIS(Color &).g = SCFXNUMARG(1, uint8_t); return {}; });
-        rt->add_method("Color", "set_b", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) SCFXTHIS(Color &).b = SCFXNUMARG(1, uint8_t); return {}; });
-        rt->add_method("Color", "set_a", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) SCFXTHIS(Color &).a = SCFXNUMARG(1, uint8_t); return {}; });
+        rt->add_method("Color", "r", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(Color).r; });
+        rt->add_method("Color", "g", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(Color).g; });
+        rt->add_method("Color", "b", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(Color).b; });
+        rt->add_method("Color", "a", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(Color).a; });
+        rt->add_method("Color", "set_r", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) SCFXTHIS(Color &).r = SCFXNUMARG(1, uint8_t); return {}; });
+        rt->add_method("Color", "set_g", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) SCFXTHIS(Color &).g = SCFXNUMARG(1, uint8_t); return {}; });
+        rt->add_method("Color", "set_b", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) SCFXTHIS(Color &).b = SCFXNUMARG(1, uint8_t); return {}; });
+        rt->add_method("Color", "set_a", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) SCFXTHIS(Color &).a = SCFXNUMARG(1, uint8_t); return {}; });
 
         rt->add_var("LIGHTGRAY",  color_val(200, 200, 200));
         rt->add_var("GRAY",       color_val(130, 130, 130));
@@ -146,15 +146,15 @@ public:
         rt->add_var("RAYWHITE",   color_val(245, 245, 245));
 
 
-        rt->add_function("ray_get_screen_width", SCFXFUN(/*fname*/, /*args*/) { return GetScreenWidth(); });
-        rt->add_function("ray_get_screen_height", SCFXFUN(/*fname*/, /*args*/) { return GetScreenHeight(); });
-        rt->add_function("ray_get_monitor_count", SCFXFUN(/*fname*/, /*args*/) { return GetMonitorCount(); });
-        rt->add_function("ray_get_current_monitor", SCFXFUN(/*fname*/, /*args*/) { return GetCurrentMonitor(); });
-        rt->add_function("ray_get_monitor_width", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return GetMonitorWidth(SCFXNUMARG(0, int)); });
-        rt->add_function("ray_get_monitor_height", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return GetMonitorHeight(SCFXNUMARG(0, int)); });
+        rt->add_function("ray_get_screen_width", SCFXFUN(, /*args*/) { return GetScreenWidth(); });
+        rt->add_function("ray_get_screen_height", SCFXFUN(, /*args*/) { return GetScreenHeight(); });
+        rt->add_function("ray_get_monitor_count", SCFXFUN(, /*args*/) { return GetMonitorCount(); });
+        rt->add_function("ray_get_current_monitor", SCFXFUN(, /*args*/) { return GetCurrentMonitor(); });
+        rt->add_function("ray_get_monitor_width", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return GetMonitorWidth(SCFXNUMARG(0, int)); });
+        rt->add_function("ray_get_monitor_height", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return GetMonitorHeight(SCFXNUMARG(0, int)); });
 
 
-        rt->add_function("ray_init_window", SCFXFUN(/*fname*/, args) {
+        rt->add_function("ray_init_window", SCFXFUN(, args) {
             InitWindow(
                 args.size() > 0 ? SCFXNUMARG(0, int) > 0 ? SCFXNUMARG(0, int) : 800 : 800,
                 args.size() > 1 ? SCFXNUMARG(1, int) > 0 ? SCFXNUMARG(1, int) : 600 : 600,
@@ -162,49 +162,49 @@ public:
             );
             return scfx::valbox{};
         });
-        rt->add_function("ray_window_should_close", SCFXFUN(/*fname*/, /*args*/) { return WindowShouldClose(); });
-        rt->add_function("ray_begin_drawing", SCFXFUN(/*fname*/, /*args*/) { BeginDrawing(); return scfx::valbox{}; });
-        rt->add_function("ray_end_drawing", SCFXFUN(/*fname*/, /*args*/) { EndDrawing(); return scfx::valbox{}; });
-        rt->add_function("ray_close_window", SCFXFUN(/*fname*/, /*args*/) { CloseWindow(); return scfx::valbox{}; });
-        rt->add_function("ray_clear_background", SCFXFUN(/*fname*/, args) {
+        rt->add_function("ray_window_should_close", SCFXFUN(, /*args*/) { return WindowShouldClose(); });
+        rt->add_function("ray_begin_drawing", SCFXFUN(, /*args*/) { BeginDrawing(); return scfx::valbox{}; });
+        rt->add_function("ray_end_drawing", SCFXFUN(, /*args*/) { EndDrawing(); return scfx::valbox{}; });
+        rt->add_function("ray_close_window", SCFXFUN(, /*args*/) { CloseWindow(); return scfx::valbox{}; });
+        rt->add_function("ray_clear_background", SCFXFUN(, args) {
             SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
             ClearBackground(SCFXTHIS(Color));
             return scfx::valbox{};
         });
 
         // SetTargetFPS
-        rt->add_function("ray_set_target_fps", SCFXFUN(/*fname*/, args) {
+        rt->add_function("ray_set_target_fps", SCFXFUN(, args) {
             SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
             SetTargetFPS(args[0].cast_to_s32());
             return scfx::valbox{};
         });
 
-        rt->add_function("ray_toggle_full_screen", SCFXFUN(/*fname*/, /*args*/) { ToggleFullscreen(); return scfx::valbox{}; });
+        rt->add_function("ray_toggle_full_screen", SCFXFUN(, /*args*/) { ToggleFullscreen(); return scfx::valbox{}; });
 
-        rt->add_function("ray_draw_pixel", SCFXFUN(/*fname*/, args) {
+        rt->add_function("ray_draw_pixel", SCFXFUN(, args) {
             SCFX_CHCK_FUN_PARMS_NUM_EQ(3)
             DrawPixel(SCFXNUMARG(0, int), SCFXNUMARG(1, int), SCFXCLASSARG(2, Color));
             return scfx::valbox{};
         });
-        rt->add_function("ray_draw_pixel_v", SCFXFUN(/*fname*/, args) {
+        rt->add_function("ray_draw_pixel_v", SCFXFUN(, args) {
             SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
             DrawPixelV(SCFXTHIS(Vector2), SCFXCLASSARG(1, Color)); return scfx::valbox{};
         });
 
-        rt->add_function("ray_draw_line", SCFXFUN(/*fname*/, args) {
+        rt->add_function("ray_draw_line", SCFXFUN(, args) {
             SCFX_CHCK_FUN_PARMS_NUM_EQ(5)
             DrawLine(SCFXNUMARG(0, int), SCFXNUMARG(1, int), SCFXNUMARG(2, int), SCFXNUMARG(3, int), SCFXCLASSARG(4, Color)); return scfx::valbox{};
         });
-        rt->add_function("ray_draw_line_v", SCFXFUN(/*fname*/, args) {
+        rt->add_function("ray_draw_line_v", SCFXFUN(, args) {
             SCFX_CHCK_FUN_PARMS_NUM_EQ(3)
             DrawLineV(SCFXTHIS(Vector2), SCFXCLASSARG(1, Vector2), SCFXCLASSARG(2, Color)); return scfx::valbox{};
         });
-        rt->add_function("ray_draw_line_ex", SCFXFUN(/*fname*/, args) {
+        rt->add_function("ray_draw_line_ex", SCFXFUN(, args) {
             SCFX_CHCK_FUN_PARMS_NUM_EQ(4)
             DrawLineEx(SCFXTHIS(Vector2), SCFXCLASSARG(1, Vector2), SCFXNUMARG(2, float), SCFXCLASSARG(3, Color)); return scfx::valbox{};
         });
 
-        rt->add_function("ray_draw_line_strip", SCFXFUN(/*fname*/, args) {
+        rt->add_function("ray_draw_line_strip", SCFXFUN(, args) {
             SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
             auto &&vec2arr{args[0].as_array()};
             std::vector<Vector2> pts{};
@@ -217,16 +217,16 @@ public:
         });
 
 
-        rt->add_function("ray_draw_line_bezier", SCFXFUN(/*fname*/, args) {
+        rt->add_function("ray_draw_line_bezier", SCFXFUN(, args) {
             SCFX_CHCK_FUN_PARMS_NUM_EQ(4)
             DrawLineBezier(SCFXTHIS(Vector2), SCFXCLASSARG(1, Vector2), SCFXNUMARG(2, int), SCFXCLASSARG(3, Color)); return scfx::valbox{};
         });
-        rt->add_function("ray_draw_circle", SCFXFUN(/*fname*/, args) {
+        rt->add_function("ray_draw_circle", SCFXFUN(, args) {
             SCFX_CHCK_FUN_PARMS_NUM_EQ(4)
             DrawCircle(SCFXNUMARG(0, int), SCFXNUMARG(1, int), SCFXNUMARG(2, float), SCFXCLASSARG(3, Color)); return scfx::valbox{};
         });
 
-        rt->add_function("ray_draw_text", SCFXFUN(/*fname*/, args) {
+        rt->add_function("ray_draw_text", SCFXFUN(, args) {
             SCFX_CHCK_FUN_PARMS_NUM_EQ(5)
             DrawText(
                 args[0].cast_to_string().c_str(),
@@ -237,50 +237,50 @@ public:
             return scfx::valbox{};
         });
 
-        rt->add_function("ray_draw_rectangle", SCFXFUN(/*fname*/, args) {
+        rt->add_function("ray_draw_rectangle", SCFXFUN(, args) {
             SCFX_CHCK_FUN_PARMS_NUM_EQ(5)
             DrawRectangle(SCFXNUMARG(0, int), SCFXNUMARG(1, int), SCFXNUMARG(2, int), SCFXNUMARG(3, int), SCFXCLASSARG(4, Color)); return scfx::valbox{};
         });
 
-        rt->add_function("ray_is_key_pressed", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return IsKeyPressed(SCFXNUMARG(0, int)); });
-        rt->add_function("ray_is_key_pressed_repeat", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return IsKeyPressedRepeat(SCFXNUMARG(0, int)); });
-        rt->add_function("ray_is_key_down", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return IsKeyDown(SCFXNUMARG(0, int)); });
-        rt->add_function("ray_is_key_released", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return IsKeyReleased(SCFXNUMARG(0, int)); });
-        rt->add_function("ray_is_key_up", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return IsKeyUp(SCFXNUMARG(0, int)); });
-        rt->add_function("ray_get_key_pressed", SCFXFUN(/*fname*/, /*args*/) { return GetKeyPressed(); });
-        rt->add_function("ray_get_char_pressed", SCFXFUN(/*fname*/, /*args*/) { return GetCharPressed(); });
-        rt->add_function("ray_set_exit_key", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) SetExitKey(SCFXNUMARG(0, int)); return {}; });
-        rt->add_function("ray_is_gamepad_available", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return IsGamepadAvailable(SCFXNUMARG(0, int)); });
-        rt->add_function("ray_get_gamepad_name", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::string{GetGamepadName(SCFXNUMARG(0, int))}; });
-        rt->add_function("ray_is_gamepad_button_pressed", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return IsGamepadButtonPressed(SCFXNUMARG(0, int), SCFXNUMARG(1, int)); });
-        rt->add_function("ray_is_gamepad_button_down", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return IsGamepadButtonDown(SCFXNUMARG(0, int), SCFXNUMARG(1, int)); });
-        rt->add_function("ray_is_gamepad_button_released", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return IsGamepadButtonReleased(SCFXNUMARG(0, int), SCFXNUMARG(1, int)); });
-        rt->add_function("ray_is_gamepad_button_up", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return IsGamepadButtonUp(SCFXNUMARG(0, int), SCFXNUMARG(1, int)); });
-        rt->add_function("ray_get_gamepad_button_pressed", SCFXFUN(/*fname*/, /*args*/) { return GetGamepadButtonPressed(); });
-        rt->add_function("ray_get_gamepad_axis_count", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return GetGamepadAxisCount(SCFXNUMARG(0, int)); });
-        rt->add_function("ray_get_gamepad_axis_movement", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return GetGamepadAxisMovement(SCFXNUMARG(0, int), SCFXNUMARG(1, int)); });
-        rt->add_function("ray_set_gamepad_mappings", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SetGamepadMappings(args[0].cast_to_string().c_str()); });
-        rt->add_function("ray_set_gamepad_vibration", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(4) SetGamepadVibration(SCFXNUMARG(0, int), SCFXNUMARG(1, float), SCFXNUMARG(2, float), SCFXNUMARG(3, float)); return {}; });
+        rt->add_function("ray_is_key_pressed", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return IsKeyPressed(SCFXNUMARG(0, int)); });
+        rt->add_function("ray_is_key_pressed_repeat", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return IsKeyPressedRepeat(SCFXNUMARG(0, int)); });
+        rt->add_function("ray_is_key_down", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return IsKeyDown(SCFXNUMARG(0, int)); });
+        rt->add_function("ray_is_key_released", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return IsKeyReleased(SCFXNUMARG(0, int)); });
+        rt->add_function("ray_is_key_up", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return IsKeyUp(SCFXNUMARG(0, int)); });
+        rt->add_function("ray_get_key_pressed", SCFXFUN(, /*args*/) { return GetKeyPressed(); });
+        rt->add_function("ray_get_char_pressed", SCFXFUN(, /*args*/) { return GetCharPressed(); });
+        rt->add_function("ray_set_exit_key", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) SetExitKey(SCFXNUMARG(0, int)); return {}; });
+        rt->add_function("ray_is_gamepad_available", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return IsGamepadAvailable(SCFXNUMARG(0, int)); });
+        rt->add_function("ray_get_gamepad_name", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::string{GetGamepadName(SCFXNUMARG(0, int))}; });
+        rt->add_function("ray_is_gamepad_button_pressed", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return IsGamepadButtonPressed(SCFXNUMARG(0, int), SCFXNUMARG(1, int)); });
+        rt->add_function("ray_is_gamepad_button_down", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return IsGamepadButtonDown(SCFXNUMARG(0, int), SCFXNUMARG(1, int)); });
+        rt->add_function("ray_is_gamepad_button_released", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return IsGamepadButtonReleased(SCFXNUMARG(0, int), SCFXNUMARG(1, int)); });
+        rt->add_function("ray_is_gamepad_button_up", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return IsGamepadButtonUp(SCFXNUMARG(0, int), SCFXNUMARG(1, int)); });
+        rt->add_function("ray_get_gamepad_button_pressed", SCFXFUN(, /*args*/) { return GetGamepadButtonPressed(); });
+        rt->add_function("ray_get_gamepad_axis_count", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return GetGamepadAxisCount(SCFXNUMARG(0, int)); });
+        rt->add_function("ray_get_gamepad_axis_movement", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return GetGamepadAxisMovement(SCFXNUMARG(0, int), SCFXNUMARG(1, int)); });
+        rt->add_function("ray_set_gamepad_mappings", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SetGamepadMappings(args[0].cast_to_string().c_str()); });
+        rt->add_function("ray_set_gamepad_vibration", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(4) SetGamepadVibration(SCFXNUMARG(0, int), SCFXNUMARG(1, float), SCFXNUMARG(2, float), SCFXNUMARG(3, float)); return {}; });
 
-        rt->add_function("ray_is_mouse_button_pressed", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return IsMouseButtonPressed(SCFXNUMARG(0, int)); });
-        rt->add_function("ray_is_mouse_button_down", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return IsMouseButtonDown(SCFXNUMARG(0, int)); });
-        rt->add_function("ray_is_mouse_button_released", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return IsMouseButtonReleased(SCFXNUMARG(0, int)); });
-        rt->add_function("ray_is_mouse_button_up", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return IsMouseButtonUp(SCFXNUMARG(0, int)); });
-        rt->add_function("ray_get_mouse_x", SCFXFUN(/*fname*/, /*args*/) { return GetMouseX(); });
-        rt->add_function("ray_get_mouse_y", SCFXFUN(/*fname*/, /*args*/) { return GetMouseY(); });
-        rt->add_function("ray_get_mouse_position", SCFXFUN(/*fname*/, /*args*/) { return scfx::valbox{GetMousePosition(), "Vector2"}; });
-        rt->add_function("ray_get_mouse_delta", SCFXFUN(/*fname*/, /*args*/) { return scfx::valbox{GetMouseDelta(), "Vector2"}; });
-        rt->add_function("ray_set_mouse_position", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SetMousePosition(SCFXNUMARG(0, int), SCFXNUMARG(1, int)); return {}; });
-        rt->add_function("ray_set_mouse_offset", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SetMouseOffset(SCFXNUMARG(0, int), SCFXNUMARG(1, int)); return {}; });
-        rt->add_function("ray_set_mouse_scale", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SetMouseScale(SCFXNUMARG(0, float), SCFXNUMARG(1, float)); return {}; });
-        rt->add_function("ray_get_mouse_wheel_move", SCFXFUN(/*fname*/, /*args*/) { return GetMouseWheelMove(); });
-        rt->add_function("ray_get_mouse_wheel_move_v", SCFXFUN(/*fname*/, /*args*/) { return scfx::valbox{GetMouseWheelMoveV(), "Vector2"}; });
-        rt->add_function("ray_set_mouse_cursor", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) SetMouseCursor(SCFXNUMARG(0, int)); return {}; });
-        rt->add_function("ray_get_touch_x", SCFXFUN(/*fname*/, /*args*/) { return GetTouchX(); });
-        rt->add_function("ray_get_touch_y", SCFXFUN(/*fname*/, /*args*/) { return GetTouchY(); });
-        rt->add_function("ray_get_touch_position", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return scfx::valbox{GetTouchPosition(SCFXNUMARG(0, int)), "Vector2"}; });
-        rt->add_function("ray_get_touch_point_id", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return GetTouchPointId(SCFXNUMARG(0, int)); });
-        rt->add_function("ray_get_touch_point_count", SCFXFUN(/*fname*/, /*args*/) { return GetTouchPointCount(); });
+        rt->add_function("ray_is_mouse_button_pressed", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return IsMouseButtonPressed(SCFXNUMARG(0, int)); });
+        rt->add_function("ray_is_mouse_button_down", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return IsMouseButtonDown(SCFXNUMARG(0, int)); });
+        rt->add_function("ray_is_mouse_button_released", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return IsMouseButtonReleased(SCFXNUMARG(0, int)); });
+        rt->add_function("ray_is_mouse_button_up", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return IsMouseButtonUp(SCFXNUMARG(0, int)); });
+        rt->add_function("ray_get_mouse_x", SCFXFUN(, /*args*/) { return GetMouseX(); });
+        rt->add_function("ray_get_mouse_y", SCFXFUN(, /*args*/) { return GetMouseY(); });
+        rt->add_function("ray_get_mouse_position", SCFXFUN(, /*args*/) { return scfx::valbox{GetMousePosition(), "Vector2"}; });
+        rt->add_function("ray_get_mouse_delta", SCFXFUN(, /*args*/) { return scfx::valbox{GetMouseDelta(), "Vector2"}; });
+        rt->add_function("ray_set_mouse_position", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SetMousePosition(SCFXNUMARG(0, int), SCFXNUMARG(1, int)); return {}; });
+        rt->add_function("ray_set_mouse_offset", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SetMouseOffset(SCFXNUMARG(0, int), SCFXNUMARG(1, int)); return {}; });
+        rt->add_function("ray_set_mouse_scale", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SetMouseScale(SCFXNUMARG(0, float), SCFXNUMARG(1, float)); return {}; });
+        rt->add_function("ray_get_mouse_wheel_move", SCFXFUN(, /*args*/) { return GetMouseWheelMove(); });
+        rt->add_function("ray_get_mouse_wheel_move_v", SCFXFUN(, /*args*/) { return scfx::valbox{GetMouseWheelMoveV(), "Vector2"}; });
+        rt->add_function("ray_set_mouse_cursor", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) SetMouseCursor(SCFXNUMARG(0, int)); return {}; });
+        rt->add_function("ray_get_touch_x", SCFXFUN(, /*args*/) { return GetTouchX(); });
+        rt->add_function("ray_get_touch_y", SCFXFUN(, /*args*/) { return GetTouchY(); });
+        rt->add_function("ray_get_touch_position", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return scfx::valbox{GetTouchPosition(SCFXNUMARG(0, int)), "Vector2"}; });
+        rt->add_function("ray_get_touch_point_id", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return GetTouchPointId(SCFXNUMARG(0, int)); });
+        rt->add_function("ray_get_touch_point_count", SCFXFUN(, /*args*/) { return GetTouchPointCount(); });
     }
 
     void unregister_runtime() override {

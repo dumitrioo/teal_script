@@ -43,7 +43,7 @@ namespace scfx {
             if(rt_ == nullptr) {
                 return;
             }
-            rt->add_function("normal_dist_prng", SCFXFUN(/*fname*/, args) {
+            rt->add_function("normal_dist_prng", SCFXFUN(, args) {
                 if(args.size() == 1) {
                     return scfx::valbox{std::make_shared<norm_dist_gen<long double>>(args[0].cast_to_long_double()), "normal_dist_prng"};
                 } else if(args.size() == 2) {
@@ -51,18 +51,18 @@ namespace scfx {
                 }
                 return scfx::valbox{std::make_shared<norm_dist_gen<long double>>(), "normal_dist_prng"};
             });
-            rt->add_method("normal_dist_prng", "gen", SCFXFUN(/*fname*/, args) {
+            rt->add_method("normal_dist_prng", "gen", SCFXFUN(, args) {
                 if(args.size() == 1) {
                     return SCFXTHIS(std::shared_ptr<norm_dist_gen<long double>>)->gen();
                 }
                 return static_cast<long double>(0);
             });
-            rt->add_function("rand", SCFXFUN(/*fname*/, /*args*/) { return ud_(dre_); });
-            rt->add_function("hwrand", SCFXFUN(/*fname*/, /*args*/) { return ud_(rd_); });
-            rt->add_function("randf", SCFXFUN(/*fname*/, /*args*/) { return urd_(dre_); });
-            rt->add_function("hwrandf", SCFXFUN(/*fname*/, /*args*/) { return urd_(rd_); });
-            rt->add_function("frand", SCFXFUN(/*fname*/, /*args*/) { return urd_(dre_); });
-            rt->add_function("hw_frand", SCFXFUN(/*fname*/, /*args*/) { return urd_(rd_); });
+            rt->add_function("rand", SCFXFUN(, /*args*/) { return ud_(dre_); });
+            rt->add_function("hwrand", SCFXFUN(, /*args*/) { return ud_(rd_); });
+            rt->add_function("randf", SCFXFUN(, /*args*/) { return urd_(dre_); });
+            rt->add_function("hwrandf", SCFXFUN(, /*args*/) { return urd_(rd_); });
+            rt->add_function("frand", SCFXFUN(, /*args*/) { return urd_(dre_); });
+            rt->add_function("hw_frand", SCFXFUN(, /*args*/) { return urd_(rd_); });
         }
 
         void unregister_runtime() override {

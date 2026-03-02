@@ -60,18 +60,18 @@ int main(int argc, char **argv) {
 
     // -----------------------------------------------------------------------------------
     // Example of adding object type to the runtime
-    rt.add_function("example_object", [](scfx::valbox const &/*fname*/, std::vector<scfx::valbox> &args) -> scfx::valbox {
+    rt.add_function("example_object", [](scfx::valbox const &, std::vector<scfx::valbox> &args) -> scfx::valbox {
         if(args.size() > 0) {
             return scfx::valbox{example_object{args[0].cast_to_s32()}, "example_object"};
         }
         return scfx::valbox{example_object{}, "example_object"};
     });
-    rt.add_method("example_object", "set_val", SCFXFUN(/*fname*/, args) {
+    rt.add_method("example_object", "set_val", SCFXFUN(, args) {
         SCFX_CHCK_FUN_PARMS_NUM_EQ(2) // check number of arguments, if needed, including implicit object reference as the first arg
         SCFXTHIS(example_object).set_val(args[1].cast_to_s32());
         return 0;
     });
-    rt.add_method("example_object", "get_val", SCFXFUN(/*fname*/, args) {
+    rt.add_method("example_object", "get_val", SCFXFUN(, args) {
         SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
         return SCFXTHIS(example_object).get_val();
     });

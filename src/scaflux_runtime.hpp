@@ -254,46 +254,46 @@ namespace scfx {
             add_var("EDOM", EDOM);       // 33  Math argument out of domain of func
             add_var("ERANGE", ERANGE);   // 34  Math result not representable
 
-            add_function("execute", SCFXFUN(/*fname*/, args) {
+            add_function("execute", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
                 return std::system(args[0].cast_to_string().c_str());
             });
-            add_function("load_from_file", SCFXFUN(/*fname*/, args) {
+            add_function("load_from_file", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
                 auto fd{scfx::file_util::load_from_file(args[0].cast_to_string())};
                 return std::string{fd.begin(), fd.end()};
             });
-            add_function("save_to_file", SCFXFUN(/*fname*/, args) {
+            add_function("save_to_file", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
                 return scfx::file_util::save_to_file(args[0].cast_to_string(), args[1].cast_to_string());
             });
-            add_function("delete_filesystem_entry", SCFXFUN(/*fname*/, args) {
+            add_function("delete_filesystem_entry", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
                 return scfx::file_util::delete_fs_entry(args[0].cast_to_string());
             });
-            add_function("extract_file_dir", SCFXFUN(/*fname*/, args) {
+            add_function("extract_file_dir", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
                 return scfx::file_util::extract_file_dir(args[0].cast_to_string());
             });
-            add_function("extract_file_name", SCFXFUN(/*fname*/, args) {
+            add_function("extract_file_name", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
                 return scfx::file_util::extract_file_name(args[0].cast_to_string());
             });
-            add_function("extract_file_ext", SCFXFUN(/*fname*/, args) {
+            add_function("extract_file_ext", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
                 return scfx::file_util::extract_file_ext(args[0].cast_to_string());
             });
 
-            add_function("file_exists", SCFXFUN(/*fname*/, args) {
+            add_function("file_exists", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
                 return scfx::file_util::file_exists(args[0].cast_to_string());
             });
-            add_function("dir_exists", SCFXFUN(/*fname*/, args) {
+            add_function("dir_exists", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
                 return scfx::file_util::dir_exists(args[0].cast_to_string());
             });
 
-            add_function("list_directory", SCFXFUN(/*fname*/, args) {
+            add_function("list_directory", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 2)
                 bool recur{false};
                 if(args.size() >= 2) {
@@ -313,7 +313,7 @@ namespace scfx {
             });
 
 #ifdef USE_FILE_MAGIC
-            add_function("data_type", SCFXFUN(/*fname*/, args) {
+            add_function("data_type", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(1);
                 std::string res{};
                 if(args[0].is_string_ref()) {
@@ -323,14 +323,14 @@ namespace scfx {
                 }
                 return res;
             });
-            add_function("file_type", SCFXFUN(/*fname*/, args) {
+            add_function("file_type", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(1);
                 std::string res{scfx::file_util::file_type(args[0].cast_to_string())};
                 return res;
             });
 #endif
-            add_function("errno", SCFXFUN(/*fname*/, /*args*/) { return errno; });
-            add_function("err_to_str", SCFXFUN(/*fname*/, args) { return std::string{strerror(args[0].cast_num_to_num<int>())}; });
+            add_function("errno", SCFXFUN(, /*args*/) { return errno; });
+            add_function("err_to_str", SCFXFUN(, args) { return std::string{strerror(args[0].cast_num_to_num<int>())}; });
 
             math_ext_.register_runtime(this);
             time_ext_.register_runtime(this);
@@ -340,73 +340,73 @@ namespace scfx {
             randlib_.register_runtime(this);
 
             add_var("console", scfx::valbox{&con_, "console"});
-            add_method("console", "info", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_GE(1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(detail::console *)->info(args1); return {}; });
-            add_method("console", "log", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_GE(1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(detail::console *)->log(args1); return {}; });
-            add_method("console", "warn", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_GE(1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(detail::console *)->warn(args1); return {}; });
-            add_method("console", "debug", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_GE(1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(detail::console *)->debug(args1); return {}; });
-            add_method("console", "error", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_GE(1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(detail::console *)->error(args1); return {}; });
-            add_method("console", "print", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_GE(1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(detail::console *)->print(args1); return {}; });
-            add_method("console", "println", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_GE(1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(detail::console *)->println(args1); return {}; });
-            add_method("console", "flush", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) SCFXTHIS(detail::console *)->flush(); return scfx::valbox{}; });
-            add_method("console", "fixed", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) SCFXTHIS(detail::console *)->fixed(); return scfx::valbox{}; });
-            add_method("console", "scientific", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) SCFXTHIS(detail::console *)->scientific(); return scfx::valbox{}; });
-            add_method("console", "hexfloat", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) SCFXTHIS(detail::console *)->hexfloat(); return scfx::valbox{}; });
-            add_method("console", "defaultfloat", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) SCFXTHIS(detail::console *)->defaultfloat(); return scfx::valbox{}; });
-            add_method("console", "setprecision", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SCFXTHIS(detail::console *)->setprecision(args[1].cast_to_u64()); return scfx::valbox{}; });
-            add_method("console", "precision", SCFXFUN(/*fname*/, args) { return SCFXTHIS(detail::console *)->precision(); });
-            add_method("console", "setw", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SCFXTHIS(detail::console *)->setw(args[1].cast_to_u64()); return scfx::valbox{}; });
-            add_method("console", "setfill", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SCFXTHIS(detail::console *)->setfill(args[1].cast_to_char()); return scfx::valbox{}; });
-            add_method("console", "fill", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(detail::console *)->fill(); });
-            add_method("console", "enable_colors", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SCFXTHIS(detail::console *)->enable_colors(args[1].cast_to_bool()); return scfx::valbox{}; });
-            add_method("console", "colors_enabled", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(detail::console *)->colors_enabled(); });
-            add_function("println", SCFXFUN(/*fname*/, args) { con_.println(args); return {}; });
-            add_function("print", SCFXFUN(/*fname*/, args) { con_.print(args); return {}; });
+            add_method("console", "info", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_GE(1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(detail::console *)->info(args1); return {}; });
+            add_method("console", "log", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_GE(1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(detail::console *)->log(args1); return {}; });
+            add_method("console", "warn", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_GE(1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(detail::console *)->warn(args1); return {}; });
+            add_method("console", "debug", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_GE(1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(detail::console *)->debug(args1); return {}; });
+            add_method("console", "error", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_GE(1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(detail::console *)->error(args1); return {}; });
+            add_method("console", "print", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_GE(1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(detail::console *)->print(args1); return {}; });
+            add_method("console", "println", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_GE(1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(detail::console *)->println(args1); return {}; });
+            add_method("console", "flush", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) SCFXTHIS(detail::console *)->flush(); return scfx::valbox{}; });
+            add_method("console", "fixed", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) SCFXTHIS(detail::console *)->fixed(); return scfx::valbox{}; });
+            add_method("console", "scientific", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) SCFXTHIS(detail::console *)->scientific(); return scfx::valbox{}; });
+            add_method("console", "hexfloat", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) SCFXTHIS(detail::console *)->hexfloat(); return scfx::valbox{}; });
+            add_method("console", "defaultfloat", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) SCFXTHIS(detail::console *)->defaultfloat(); return scfx::valbox{}; });
+            add_method("console", "setprecision", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SCFXTHIS(detail::console *)->setprecision(args[1].cast_to_u64()); return scfx::valbox{}; });
+            add_method("console", "precision", SCFXFUN(, args) { return SCFXTHIS(detail::console *)->precision(); });
+            add_method("console", "setw", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SCFXTHIS(detail::console *)->setw(args[1].cast_to_u64()); return scfx::valbox{}; });
+            add_method("console", "setfill", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SCFXTHIS(detail::console *)->setfill(args[1].cast_to_char()); return scfx::valbox{}; });
+            add_method("console", "fill", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(detail::console *)->fill(); });
+            add_method("console", "enable_colors", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SCFXTHIS(detail::console *)->enable_colors(args[1].cast_to_bool()); return scfx::valbox{}; });
+            add_method("console", "colors_enabled", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SCFXTHIS(detail::console *)->colors_enabled(); });
+            add_function("println", SCFXFUN(, args) { con_.println(args); return {}; });
+            add_function("print", SCFXFUN(, args) { con_.print(args); return {}; });
 
 
-            add_function("typeof", SCFXFUN(/*fname*/, args) {
+            add_function("typeof", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
                 valbox::type t{args[0].deref().val_type()};
                 return t == valbox::type::CLASS ? args[0].ref_class_name() : valbox::type_to_str(t);
             });
 
-            add_function("is_i64", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_s64_ref(); });
-            add_function("is_u64", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_u64_ref(); });
-            add_function("is_i32", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_s32_ref(); });
-            add_function("is_u32", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_u32_ref(); });
-            add_function("is_i16", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_s16_ref(); });
-            add_function("is_u16", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_u16_ref(); });
-            add_function("is_i8", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_s8_ref(); });
-            add_function("is_u8", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_u8_ref(); });
-            add_function("is_f32", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_float_ref(); });
-            add_function("is_f64", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_double_ref(); });
-            add_function("is_float", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_long_double_ref(); });
-            add_function("is_char", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_char_ref(); });
-            add_function("is_wchar", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_wchar_ref(); });
-            add_function("is_bool", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_bool_ref(); });
-            add_function("is_string", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_string_ref(); });
-            add_function("is_wstring", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_wstring_ref(); });
-            add_function("is_mat4", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_mat4_ref(); });
-            add_function("is_vec4", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_vec4_ref(); });
-            add_function("is_array", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_array_ref(); });
-            add_function("is_object", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_object_ref(); });
+            add_function("is_i64", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_s64_ref(); });
+            add_function("is_u64", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_u64_ref(); });
+            add_function("is_i32", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_s32_ref(); });
+            add_function("is_u32", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_u32_ref(); });
+            add_function("is_i16", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_s16_ref(); });
+            add_function("is_u16", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_u16_ref(); });
+            add_function("is_i8", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_s8_ref(); });
+            add_function("is_u8", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_u8_ref(); });
+            add_function("is_f32", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_float_ref(); });
+            add_function("is_f64", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_double_ref(); });
+            add_function("is_float", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_long_double_ref(); });
+            add_function("is_char", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_char_ref(); });
+            add_function("is_wchar", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_wchar_ref(); });
+            add_function("is_bool", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_bool_ref(); });
+            add_function("is_string", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_string_ref(); });
+            add_function("is_wstring", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_wstring_ref(); });
+            add_function("is_mat4", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_mat4_ref(); });
+            add_function("is_vec4", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_vec4_ref(); });
+            add_function("is_array", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_array_ref(); });
+            add_function("is_object", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].is_object_ref(); });
 
-            add_function("i64", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return (std::int64_t)0; } return args[0].cast_to_s64(); });
-            add_function("u64", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return (std::uint64_t)0; } return args[0].cast_to_u64(); });
-            add_function("i32", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return (std::int32_t)0; } return args[0].cast_to_s32(); });
-            add_function("u32", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return (std::uint32_t)0; } return args[0].cast_to_u32(); });
-            add_function("i16", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return (std::int16_t)0; } return args[0].cast_to_s16(); });
-            add_function("u16", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return (std::uint16_t)0; } return args[0].cast_to_u16(); });
-            add_function("i8", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return (std::int8_t)0; } return args[0].cast_to_s8(); });
-            add_function("u8", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return (std::uint8_t)0; } return args[0].cast_to_u8(); });
-            add_function("f32", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return (float)0; } return args[0].cast_to_float(); });
-            add_function("f64", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return (double)0; } return args[0].cast_to_double(); });
-            add_function("float", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return (long double)0; } return args[0].cast_num_to_num<long double>(); });
-            add_function("char", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return char{}; } return args[0].cast_to_char(); });
-            add_function("wchar", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return wchar_t{}; } return args[0].cast_to_wchar(); });
-            add_function("bool", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return false; } return args[0].cast_to_bool(); });
-            add_function("string", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return std::string{}; } return args[0].cast_to_string(); });
-            add_function("wstring", SCFXFUN(/*fname*/, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return std::wstring{}; } return args[0].cast_to_wstring(); });
-            add_function("vec4", SCFXFUN(/*fname*/, args) {
+            add_function("i64", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return (std::int64_t)0; } return args[0].cast_to_s64(); });
+            add_function("u64", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return (std::uint64_t)0; } return args[0].cast_to_u64(); });
+            add_function("i32", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return (std::int32_t)0; } return args[0].cast_to_s32(); });
+            add_function("u32", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return (std::uint32_t)0; } return args[0].cast_to_u32(); });
+            add_function("i16", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return (std::int16_t)0; } return args[0].cast_to_s16(); });
+            add_function("u16", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return (std::uint16_t)0; } return args[0].cast_to_u16(); });
+            add_function("i8", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return (std::int8_t)0; } return args[0].cast_to_s8(); });
+            add_function("u8", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return (std::uint8_t)0; } return args[0].cast_to_u8(); });
+            add_function("f32", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return (float)0; } return args[0].cast_to_float(); });
+            add_function("f64", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return (double)0; } return args[0].cast_to_double(); });
+            add_function("float", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return (long double)0; } return args[0].cast_num_to_num<long double>(); });
+            add_function("char", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return char{}; } return args[0].cast_to_char(); });
+            add_function("wchar", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return wchar_t{}; } return args[0].cast_to_wchar(); });
+            add_function("bool", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return false; } return args[0].cast_to_bool(); });
+            add_function("string", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return std::string{}; } return args[0].cast_to_string(); });
+            add_function("wstring", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return std::wstring{}; } return args[0].cast_to_wstring(); });
+            add_function("vec4", SCFXFUN(, args) {
                 valbox res{valbox::vec4_t{0, 0, 0, 1}};
                 if(args.size() == 1) {
                     if(args[0].is_array_ref() || args[0].is_object_ref()) {
@@ -427,7 +427,7 @@ namespace scfx {
                 }
                 return res;
             });
-            add_function("mat4", SCFXFUN(/*fname*/, args) {
+            add_function("mat4", SCFXFUN(, args) {
                 valbox res{valbox::mat4_t::identity()};
                 if(args.size() == 16) {
                     for(std::size_t i{0}; i < 16 && i < args.size(); ++i) {
@@ -459,7 +459,7 @@ namespace scfx {
                 }
                 return res;
             });
-            add_function("array", SCFXFUN(/*fname*/, args) {
+            add_function("array", SCFXFUN(, args) {
                 valbox res{};
                 res.become_array();
                 if(args.size() == 1 && (args[0].is_array_ref())) {
@@ -473,7 +473,7 @@ namespace scfx {
                 }
                 return res;
             });
-            add_function("object", SCFXFUN(/*fname*/, args) {
+            add_function("object", SCFXFUN(, args) {
                 if(args.empty()) {
                     return valbox{}.become_object();
                 }
@@ -496,7 +496,7 @@ namespace scfx {
                 }
                 return res;
             });
-            add_function("deserialize", SCFXFUN(/*fname*/, args) {
+            add_function("deserialize", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
                 valbox res{};
                 if(args[0].is_string_ref()) {
@@ -507,7 +507,7 @@ namespace scfx {
                 }
                 return res;
             });
-            add_function("serialize", SCFXFUN(/*fname*/, args) {
+            add_function("serialize", SCFXFUN(, args) {
                 valbox res{};
                 if(args.size() == 1) {
                     res = args[0].to_json().serialize();
@@ -516,7 +516,7 @@ namespace scfx {
                 }
                 return res;
             });
-            add_function("serialize5", SCFXFUN(/*fname*/, args) {
+            add_function("serialize5", SCFXFUN(, args) {
                 valbox res{};
                 if(args.size() == 1) {
                     res = args[0].to_json().serialize5();
@@ -526,7 +526,7 @@ namespace scfx {
                 return res;
             });
 
-            add_function("contains", SCFXFUN(/*fname*/, args) {
+            add_function("contains", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
                 auto a1r{args[0].deref()};
                 if(a1r.is_object_ref()) {
@@ -538,7 +538,7 @@ namespace scfx {
                 return false;
             });
 
-            add_function("key_exists", SCFXFUN(/*fname*/, args) {
+            add_function("key_exists", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
                 auto a1r{args[0].deref()};
                 if(a1r.is_object_ref()) {
@@ -546,7 +546,7 @@ namespace scfx {
                 }
                 throw std::runtime_error{"not object"};
             });
-            add_function("string_field_exists", SCFXFUN(/*fname*/, args) {
+            add_function("string_field_exists", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
                 auto a1r{args[0].deref()};
                 if(a1r.is_object_ref()) {
@@ -557,7 +557,7 @@ namespace scfx {
             });
 
 
-            add_function("resize", SCFXFUN(/*fname*/, args) {
+            add_function("resize", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
                 valbox &a1r{args[0].deref()};
                 if(a1r.is_array_ref()) {
@@ -575,7 +575,7 @@ namespace scfx {
                 }
                 return false;
             });
-            add_function("push_back", SCFXFUN(/*fname*/, args) {
+            add_function("push_back", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
                 valbox &a1r{args[0].deref()};
                 if(a1r.is_undefined_ref()) {
@@ -586,7 +586,7 @@ namespace scfx {
             });
 
 #if 1
-            add_function("push_front", SCFXFUN(/*fname*/, args) {
+            add_function("push_front", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
                 valbox &a1r{args[0].deref()};
                 if(a1r.is_undefined_ref()) {
@@ -595,7 +595,7 @@ namespace scfx {
                 a1r.as_array().insert(a1r.as_array().begin(), args[1].clone());
                 return args[0];
             });
-            add_function("pop_front", SCFXFUN(/*fname*/, args) {
+            add_function("pop_front", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
                 valbox &a1r{args[0].deref()};
                 if(a1r.is_array_ref()) {
@@ -611,7 +611,7 @@ namespace scfx {
             });
 #endif
 
-            add_function("pop_back", SCFXFUN(/*fname*/, args) {
+            add_function("pop_back", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
                 valbox &a1r{args[0].deref()};
                 if(a1r.is_array_ref()) {
@@ -625,7 +625,7 @@ namespace scfx {
                 throw std::runtime_error{"not array"};
             });
 
-            add_function("undefine", SCFXFUN(/*fname*/, args) {
+            add_function("undefine", SCFXFUN(, args) {
                 if(args.size() == 1) {
                     args[0].become_undefined();
                     return args[0];
@@ -633,7 +633,7 @@ namespace scfx {
                 return valbox{};
             });
 
-            add_function("replace_substr", SCFXFUN(/*fname*/, args) {
+            add_function("replace_substr", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(2, 3)
                 if(args.size() == 2) {
                     return scfx::str_util::to_utf8(scfx::str_util::replace_substring<std::wstring>(
@@ -649,7 +649,7 @@ namespace scfx {
             });
 
 
-            add_function("substr", SCFXFUN(/*fname*/, args) {
+            add_function("substr", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 3)
                 if(args.size() == 1) {
                     return args[0].cast_to_string();
@@ -668,7 +668,7 @@ namespace scfx {
                 return std::string{};
             });
 
-            add_function("slice", SCFXFUN(/*fname*/, args) {
+            add_function("slice", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 3)
                 if(args[0].is_array_ref()) {
                     if(args.size() == 1) {
@@ -708,7 +708,7 @@ namespace scfx {
                 return valbox{};
             });
 
-            add_function("str_tok", SCFXFUN(/*fname*/, args) {
+            add_function("str_tok", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
                 valbox res{};
                 res.become_array();
@@ -726,7 +726,7 @@ namespace scfx {
                 return res;
             });
 
-            add_function("ltrim", SCFXFUN(/*fname*/, args) {
+            add_function("ltrim", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
                 if(args[0].is_string_ref()) {
                     return scfx::str_util::ltrim<std::string>(args[0].as_string());
@@ -737,7 +737,7 @@ namespace scfx {
                 }
             });
 
-            add_function("rtrim", SCFXFUN(/*fname*/, args) {
+            add_function("rtrim", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
                 if(args[0].is_string_ref()) {
                     return scfx::str_util::rtrim<std::string>(args[0].as_string());
@@ -747,7 +747,7 @@ namespace scfx {
                     return args[0];
                 }
             });
-            add_function("trim", SCFXFUN(/*fname*/, args) {
+            add_function("trim", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
                 if(args[0].is_string_ref()) {
                     return scfx::str_util::trim<std::string>(args[0].as_string());
@@ -758,7 +758,7 @@ namespace scfx {
                 }
             });
 
-            add_function("subarray", SCFXFUN(/*fname*/, args) {
+            add_function("subarray", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 3)
                 if(args[0].is_array_ref()) {
                     if(args.size() == 1) {
@@ -772,7 +772,7 @@ namespace scfx {
                 throw std::runtime_error{"the first argument must be array"};
             });
 
-            add_function("hexdump", SCFXFUN(/*fname*/, args) {
+            add_function("hexdump", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 4)
                 if(args.size() == 1) {
                     return scfx::str_util::hexdump(args[0].cast_to_byte_array());
@@ -798,46 +798,46 @@ namespace scfx {
                 return std::string{};
             });
 
-            add_function("data_to_base85_str", SCFXFUN(/*fname*/, args) {
+            add_function("data_to_base85_str", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 1)
                 auto src{args[0].cast_to_byte_array()};
                 return scfx::data_to_base85_str(src);
             });
 
-            add_function("base85_str_to_data", SCFXFUN(/*fname*/, args) {
+            add_function("base85_str_to_data", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 1)
                 auto src{args[0].cast_to_string()};
                 auto d{scfx::base85_str_to_data(src)};
                 return std::string{d.begin(), d.end()};
             });
 
-            add_function("data_to_base64_str", SCFXFUN(/*fname*/, args) {
+            add_function("data_to_base64_str", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 1)
                 auto src{args[0].cast_to_byte_array()};
                 return scfx::data_to_base64_str(src);
             });
 
-            add_function("base64_str_to_data", SCFXFUN(/*fname*/, args) {
+            add_function("base64_str_to_data", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 1)
                 auto src{args[0].cast_to_string()};
                 auto d{scfx::base64_str_to_data(src)};
                 return std::string{d.begin(), d.end()};
             });
 
-            add_function("data_to_hex_str", SCFXFUN(/*fname*/, args) {
+            add_function("data_to_hex_str", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 1)
                 auto src{args[0].cast_to_byte_array()};
                 return scfx::data_to_hex_str(src);
             });
 
-            add_function("hex_str_to_data", SCFXFUN(/*fname*/, args) {
+            add_function("hex_str_to_data", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 1)
                 auto src{args[0].cast_to_string()};
                 auto d{scfx::hex_str_to_data(src)};
                 return std::string{d.begin(), d.end()};
             });
 
-            add_function("getset", SCFXFUN(/*fname*/, args) {
+            add_function("getset", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
                 valbox res{valbox_no_initialize::dont_do_it};
                 res.assign(args[0]);
@@ -846,7 +846,7 @@ namespace scfx {
             });
 
 
-            add_function("atoi", SCFXFUN(/*fname*/, args) {
+            add_function("atoi", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 3)
                 if(args.size() == 1) {
                     return scfx::str_util::atoi(args[0].cast_to_string());
@@ -858,7 +858,7 @@ namespace scfx {
                 return std::int64_t{0};
             });
 
-            add_function("atoui", SCFXFUN(/*fname*/, args) {
+            add_function("atoui", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 2)
                 if(args.size() == 1) {
                     return scfx::str_util::atoui(args[0].cast_to_string());
@@ -868,12 +868,12 @@ namespace scfx {
                 return std::uint64_t{0};
             });
 
-            add_function("atof", SCFXFUN(/*fname*/, args) {
+            add_function("atof", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
                 return scfx::str_util::atof(args[0].cast_to_string());
             });
 
-            add_function("itoa", SCFXFUN(/*fname*/, args) {
+            add_function("itoa", SCFXFUN(, args) {
                 if(args.size() > 0) {
                     if(args.size() > 1) {
                         if(args.size() > 2) {
@@ -892,7 +892,7 @@ namespace scfx {
                 return std::string{};
             });
 
-            add_function("utoa", SCFXFUN(/*fname*/, args) {
+            add_function("utoa", SCFXFUN(, args) {
                 if(args.size() > 0) {
                     if(args.size() > 1) {
                         if(args.size() > 2) {
@@ -911,7 +911,7 @@ namespace scfx {
                 return std::string{};
             });
 
-            add_function("ftoa", SCFXFUN(/*fname*/, args) {
+            add_function("ftoa", SCFXFUN(, args) {
                 if(args.size() > 0) {
                     if(args.size() > 1) {
                         return scfx::str_util::ftoa(args[0].cast_to_long_double(), args[1].cast_to_u64());
@@ -923,7 +923,7 @@ namespace scfx {
             });
 
 
-            add_function("get_bit_field", SCFXFUN(/*fname*/, args) {
+            add_function("get_bit_field", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(3)
                 if(args[0].is_u64_ref()) {
                     scfx::bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
@@ -953,14 +953,14 @@ namespace scfx {
                 return args[0];
             });
 
-            add_function("get_bit", SCFXFUN(/*fname*/, args) {
+            add_function("get_bit", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
                 scfx::bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
                 auto bitpos{args[1].cast_to_u64()};
                 return bf.get(bitpos);
             });
 
-            add_function("update_bit", SCFXFUN(/*fname*/, args) {
+            add_function("update_bit", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(3)
                 scfx::bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
                 auto bitpos{args[1].cast_to_u64()};
@@ -975,7 +975,7 @@ namespace scfx {
                 res.assign_preserving_type(bf.whole());
                 return res;
             });
-            add_function("set_bit", SCFXFUN(/*fname*/, args) {
+            add_function("set_bit", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
                 scfx::bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
                 bf.set(args[1].cast_to_u64());
@@ -984,7 +984,7 @@ namespace scfx {
                 res.assign_preserving_type(bf.whole());
                 return res;
             });
-            add_function("clear_bit", SCFXFUN(/*fname*/, args) {
+            add_function("clear_bit", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
                 scfx::bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
                 bf.clr(args[1].cast_to_u64());
@@ -995,14 +995,14 @@ namespace scfx {
             });
 
 
-            add_function("sleep", SCFXFUN(/*fname*/, args) {
+            add_function("sleep", SCFXFUN(, args) {
                 long double time_to_sleep{args[0].cast_to_long_double()};
                 if(time_to_sleep > 0) {
                     std::this_thread::sleep_for(std::chrono::nanoseconds(static_cast<std::int64_t>(time_to_sleep * 1000000000.0L)));
                 }
                 return time_to_sleep;
             });
-            add_function("exit", SCFXFUN(/*fname*/, args) {
+            add_function("exit", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 2);
                 if(programmatic_termination_enabled_ != 0) {
                     exit_status_ = args.size() == 2 ? args[1].cast_num_to_num<int>() : 0;
@@ -1013,7 +1013,7 @@ namespace scfx {
                 return programmatic_termination_enabled_ != 0;
             });
 
-            add_function("assert", SCFXFUN(/*fname*/, args) {
+            add_function("assert", SCFXFUN(, args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(3);
                 if(!args[2].cast_to_bool()) {
                     throw runtime_error{
@@ -1025,20 +1025,20 @@ namespace scfx {
             });
 
 
-            add_function("thread_id", SCFXFUN(/*fname*/, /*args*/) {
+            add_function("thread_id", SCFXFUN(, /*args*/) {
                 std::stringstream ss{};
                 ss << std::this_thread::get_id();
                 std::uint64_t res{};
                 ss >> res;
                 return res;
             });
-            add_function("hardware_concurrency", SCFXFUN(/*fname*/, /*args*/) {
+            add_function("hardware_concurrency", SCFXFUN(, /*args*/) {
                 std::shared_lock l{threads_mtp_};
                 return num_of_threads_ > 0 ? threads_.size() : 1;
             });
 
 
-            add_function("size", SCFXFUN(/*fname*/, args) {
+            add_function("size", SCFXFUN(, args) {
                 valbox &der{args[0].deref()};
                 switch(der.val_type()) {
                     case valbox::type::STRING: return static_cast<uint64_t>(der.as_string().size());
@@ -1049,7 +1049,7 @@ namespace scfx {
                 }
             });
 
-            add_function("empty", SCFXFUN(/*fname*/, args) {
+            add_function("empty", SCFXFUN(, args) {
                 valbox arg0{args[0]};
                 return arg0.is_undefined_ref() ||
                        (arg0.is_object_ref() && arg0.as_object().empty()) ||
