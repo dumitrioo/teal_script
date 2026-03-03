@@ -952,7 +952,7 @@ namespace scfx {
                     if(t == type::ARRAY) {
                         auto &a{as_array()};
                         if(a.size() <= i) { a.resize(i + 1); }
-                        return as_array()[i];
+                        return a[i];
                     }
                     if(t == type::MAT4) {
                         mat4_t &a{as_mat4()};
@@ -1029,6 +1029,44 @@ namespace scfx {
                             return res;
                         }
                     }
+                }
+            }
+            throw std::runtime_error{"operation not applicable"};
+        }
+
+        valbox object_key_at(uint64_t indx) {
+            valbox &der{deref()};
+            if(der.val_or_pointed_type() == type::OBJECT) {
+                object_t &o{as_object()};
+                if(o.size() > indx) {
+                    std::size_t curr_indx{0};
+                    for(auto &&kv: o) {
+                        if(curr_indx == indx) {
+                            return kv.first;
+                        }
+                        ++curr_indx;
+                    }
+                } else {
+                    throw std::range_error{"index out of range"};
+                }
+            }
+            throw std::runtime_error{"operation not applicable"};
+        }
+
+        valbox object_value_at(uint64_t indx) {
+            valbox &der{deref()};
+            if(der.val_or_pointed_type() == type::OBJECT) {
+                object_t &o{as_object()};
+                if(o.size() > indx) {
+                    std::size_t curr_indx{0};
+                    for(auto &&kv: o) {
+                        if(curr_indx == indx) {
+                            return kv.second;
+                        }
+                        ++curr_indx;
+                    }
+                } else {
+                    throw std::range_error{"index out of range"};
                 }
             }
             throw std::runtime_error{"operation not applicable"};
@@ -2704,8 +2742,8 @@ namespace scfx {
                 case type::LONG_DOUBLE:   return as_long_double();
                 case type::BOOL:          return as_bool();
                 case type::WCHAR:         return as_wchar();
-                case type::STRING:        return as_string().empty() ? 0 : as_string()[0];
-                case type::WSTRING:       return as_wstring().empty() ? 0 : as_wstring()[0];
+                case type::STRING:        try { return str_util::atoui(as_string()); } catch (...) { return as_string().empty() ? 0 : as_string()[0]; }
+                case type::WSTRING:       try { return str_util::atoui(cast_to_string()); } catch (...) { return as_wstring().empty() ? 0 : as_wstring()[0]; }
                 case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
@@ -2728,8 +2766,8 @@ namespace scfx {
                 case type::LONG_DOUBLE:   return as_long_double();
                 case type::BOOL:          return as_bool();
                 case type::WCHAR:         return as_wchar();
-                case type::STRING:        return as_string().empty() ? 0 : as_string()[0];
-                case type::WSTRING:       return as_wstring().empty() ? 0 : as_wstring()[0];
+                case type::STRING:        try { return str_util::atoui(as_string()); } catch (...) { return {}; }
+                case type::WSTRING:       try { return str_util::atoui(cast_to_string()); } catch (...) { return {}; }
                 case type::CLASS:         return 0;
                 case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 case type::UNDEFINED:     return 0;
@@ -2754,8 +2792,8 @@ namespace scfx {
                 case type::LONG_DOUBLE:   return as_long_double();
                 case type::BOOL:          return as_bool();
                 case type::WCHAR:         return as_wchar();
-                case type::STRING:        return as_string().empty() ? 0 : as_string()[0];
-                case type::WSTRING:       return as_wstring().empty() ? 0 : as_wstring()[0];
+                case type::STRING:        try { return str_util::atoi(as_string()); } catch (...) { return {}; }
+                case type::WSTRING:       try { return str_util::atoi(cast_to_string()); } catch (...) { return {}; }
                 case type::CLASS:         return 0;
                 case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 case type::UNDEFINED:     return 0;
@@ -2780,8 +2818,8 @@ namespace scfx {
                 case type::LONG_DOUBLE:   return as_long_double();
                 case type::BOOL:          return as_bool();
                 case type::WCHAR:         return as_wchar();
-                case type::STRING:        return as_string().empty() ? 0 : as_string()[0];
-                case type::WSTRING:       return as_wstring().empty() ? 0 : as_wstring()[0];
+                case type::STRING:        try { return str_util::atoui(as_string()); } catch (...) { return {}; }
+                case type::WSTRING:       try { return str_util::atoui(cast_to_string()); } catch (...) { return {}; }
                 case type::CLASS:         return 0;
                 case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 case type::UNDEFINED:     return 0;
@@ -2806,8 +2844,8 @@ namespace scfx {
                 case type::LONG_DOUBLE:   return as_long_double();
                 case type::BOOL:          return as_bool();
                 case type::WCHAR:         return as_wchar();
-                case type::STRING:        return as_string().empty() ? 0 : as_string()[0];
-                case type::WSTRING:       return as_wstring().empty() ? 0 : as_wstring()[0];
+                case type::STRING:        try { return str_util::atoi(as_string()); } catch (...) { return {}; }
+                case type::WSTRING:       try { return str_util::atoi(cast_to_string()); } catch (...) { return {}; }
                 case type::CLASS:         return 0;
                 case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 case type::UNDEFINED:     return 0;
@@ -2832,8 +2870,8 @@ namespace scfx {
                 case type::LONG_DOUBLE:   return as_long_double();
                 case type::BOOL:          return as_bool();
                 case type::WCHAR:         return as_wchar();
-                case type::STRING:        return as_string().empty() ? 0 : as_string()[0];
-                case type::WSTRING:       return as_wstring().empty() ? 0 : as_wstring()[0];
+                case type::STRING:        try { return str_util::atoui(as_string()); } catch (...) { return {}; }
+                case type::WSTRING:       try { return str_util::atoui(cast_to_string()); } catch (...) { return {}; }
                 case type::CLASS:         return 0;
                 case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 case type::UNDEFINED:     return 0;
@@ -2858,8 +2896,8 @@ namespace scfx {
                 case type::LONG_DOUBLE:   return as_long_double();
                 case type::BOOL:          return as_bool();
                 case type::WCHAR:         return as_wchar();
-                case type::STRING:        return as_string().empty() ? 0 : as_string()[0];
-                case type::WSTRING:       return as_wstring().empty() ? 0 : as_wstring()[0];
+                case type::STRING:        try { return str_util::atoi(as_string()); } catch (...) { return {}; }
+                case type::WSTRING:       try { return str_util::atoi(cast_to_string()); } catch (...) { return {}; }
                 case type::CLASS:         return 0;
                 case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 case type::UNDEFINED:     return 0;
@@ -2884,8 +2922,8 @@ namespace scfx {
                 case type::LONG_DOUBLE:   return as_long_double();
                 case type::BOOL:          return as_bool();
                 case type::WCHAR:         return as_wchar();
-                case type::STRING:        return as_string().empty() ? 0 : as_string()[0];
-                case type::WSTRING:       return as_wstring().empty() ? 0 : as_wstring()[0];
+                case type::STRING:        try { return str_util::atoui(as_string()); } catch (...) { return {}; }
+                case type::WSTRING:       try { return str_util::atoui(cast_to_string()); } catch (...) { return {}; }
                 case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
@@ -2908,8 +2946,8 @@ namespace scfx {
                 case type::LONG_DOUBLE:   return as_long_double();
                 case type::BOOL:          return as_bool();
                 case type::WCHAR:         return as_wchar();
-                case type::STRING:        return as_string().empty() ? 0 : as_string()[0];
-                case type::WSTRING:       return as_wstring().empty() ? 0 : as_wstring()[0];
+                case type::STRING:        try { return str_util::atoi(as_string()); } catch (...) { return {}; }
+                case type::WSTRING:       try { return str_util::atoi(cast_to_string()); } catch (...) { return {}; }
                 case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
@@ -2932,8 +2970,8 @@ namespace scfx {
                 case type::LONG_DOUBLE:   return as_long_double();
                 case type::BOOL:          return as_bool();
                 case type::WCHAR:         return as_wchar();
-                case type::STRING:        return as_string().empty() ? 0 : as_string()[0];
-                case type::WSTRING:       return as_wstring().empty() ? 0 : as_wstring()[0];
+                case type::STRING:        try { return str_util::atof(as_string()); } catch (...) { return {}; }
+                case type::WSTRING:       try { return str_util::atof(cast_to_string()); } catch (...) { return {}; }
                 case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
@@ -2956,8 +2994,8 @@ namespace scfx {
                 case type::LONG_DOUBLE:   return as_long_double();
                 case type::BOOL:          return as_bool();
                 case type::WCHAR:         return as_wchar();
-                case type::STRING:        return as_string().empty() ? 0 : as_string()[0];
-                case type::WSTRING:       return as_wstring().empty() ? 0 : as_wstring()[0];
+                case type::STRING:        try { return str_util::atof(as_string()); } catch (...) { return {}; }
+                case type::WSTRING:       try { return str_util::atof(cast_to_string()); } catch (...) { return {}; }
                 case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
@@ -2980,8 +3018,8 @@ namespace scfx {
                 case type::LONG_DOUBLE:   return as_long_double();
                 case type::BOOL:          return as_bool();
                 case type::WCHAR:         return as_wchar();
-                case type::STRING:        return as_string().empty() ? 0 : as_string()[0];
-                case type::WSTRING:       return as_wstring().empty() ? 0 : as_wstring()[0];
+                case type::STRING:        try { return str_util::atof(as_string()); } catch (...) { return {}; }
+                case type::WSTRING:       try { return str_util::atof(cast_to_string()); } catch (...) { return {}; }
                 case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
@@ -3004,8 +3042,26 @@ namespace scfx {
                 case type::LONG_DOUBLE:   return as_long_double();
                 case type::BOOL:          return as_bool();
                 case type::WCHAR:         return as_wchar();
-                case type::STRING:        return !as_string().empty();
-                case type::WSTRING:       return !as_wstring().empty();
+                case type::STRING:
+                    if(str_util::fltr<std::string>{}.strtolower(as_string()) == "false") {
+                        return false;
+                    } else {
+                        try {
+                            return str_util::atof(as_string());
+                        } catch (...) {
+                        }
+                        return true;
+                    }
+                case type::WSTRING:
+                    if(str_util::fltr<std::string>{}.strtolower(cast_to_string()) == "false") {
+                        return false;
+                    } else {
+                        try {
+                            return str_util::atof(as_string());
+                        } catch (...) {
+                        }
+                        return true;
+                    }
                 case type::OBJECT:        return !as_object().empty();
                 case type::ARRAY:         return !as_array().empty();
                 case type::CLASS:         return true;

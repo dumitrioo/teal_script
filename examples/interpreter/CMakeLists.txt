@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10.2)
 
-add_definitions(-DUSE_FILE_MAGIC)
+#add_definitions(-DUSE_FILE_MAGIC)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}
     ../../src
@@ -14,7 +14,6 @@ target_link_libraries(scaflux
     pthread
     dl
     z
-    magic
 )
 
 find_library(ZeroMQ_LIBRARY zmq)
@@ -33,4 +32,13 @@ if(raylib_FOUND)
     target_link_libraries(scaflux raylib)
 else()
     message(STATUS "raylib not found")
+endif()
+
+find_library(magic_LIBRARY magic)
+if(NOT magic_LIBRARY)
+    message(STATUS "magic not found")
+else()
+    message(STATUS "magic found")
+    add_definitions(-DUSE_FILE_MAGIC)
+    target_link_libraries(scaflux magic)
 endif()

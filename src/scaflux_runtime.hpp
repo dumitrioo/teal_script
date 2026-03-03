@@ -594,6 +594,23 @@ namespace scfx {
                 throw std::runtime_error{"not object"};
             });
 
+            add_function("key_at", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
+                auto a1r{args[0].deref()};
+                if(a1r.is_object_ref()) {
+                    return a1r.object_key_at(args[1].cast_to_u64());
+                }
+                throw std::runtime_error{"not object"};
+            });
+
+            add_function("value_at", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
+                auto a1r{args[0].deref()};
+                if(a1r.is_object_ref()) {
+                    return a1r.object_value_at(args[1].cast_to_u64());
+                }
+                throw std::runtime_error{"not object"};
+            });
 
             add_function("resize", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
