@@ -112,14 +112,13 @@ int main(int argc, char **argv) {
                     }
                 }
             } else {
-                throw std::runtime_error{args[i] + " - file or directory does not exist"};
+                throw std::runtime_error{args[i] + " - no such file or directory"};
             }
         }
         rt.loading_complete();
 
         if(rt.worker_cells_count() == 0) {
-            std::cerr << "warning: nothing to do - none of working elements" << std::endl;
-            return 0;
+            throw std::runtime_error{"nothing to do - no working elements"};
         }
 
         try {
