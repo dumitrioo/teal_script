@@ -22,16 +22,16 @@ dot_notation_call_test() {
     return 0;
 }
 
-// dot_notation_call_test dnctest();
+dot_notation_call_test dnctest();
 
 
 mime_type_test() {
     "/bin/ls".load_from_file().data_type().println();
-    println(data_type(load_from_file("/bin/ls"))); // same as above
+    println(data_type(load_from_file("/bin/ls"))); // same as previous line
     exit();
 }
 
-// mime_type_test fttest();
+mime_type_test fttest();
 
 
 merge_objects() {
@@ -42,7 +42,7 @@ merge_objects() {
     assert(o.d == "d");
 }
 
-// merge_objects motest();
+merge_objects motest();
 
 
 function callee2(qq) {
@@ -61,7 +61,7 @@ other_call_test()    {
     caller(callee); return 2;
 }
 
-// other_call_test oct();
+other_call_test oct();
 
 
 function fact(n) {
@@ -91,7 +91,7 @@ sin_test() {
     return 0;
 }
 
-// sin_test sntst();
+sin_test sntst();
 
 
 function fibonacci(n, memo) {
@@ -110,7 +110,7 @@ fib_test() {
     return 0;
 }
 
-// fib_test sntst();
+fib_test fibtst();
 
 
 misc_test() {
@@ -126,7 +126,7 @@ misc_test() {
     return 0;
 }
 
-// misc_test msctst();
+misc_test msctst();
 
 
 untab(argv) {
@@ -188,7 +188,7 @@ finddupes(argv) {
 // finddupes dps(command_line_args);
 
 
-cmdline_test(argv) {
+exception_test(argv) {
     try {
         throw 12;
     } catch(e) {
@@ -197,7 +197,7 @@ cmdline_test(argv) {
     return 0;
 }
 
-// cmdline_test cmltst(command_line_args);
+exception_test exctst(command_line_args);
 
 
 simply_test() {
@@ -206,7 +206,7 @@ simply_test() {
     return 0;
 }
 
-// simply_test tutst();
+simply_test tutst();
 
 
 cpu_test() {
@@ -222,7 +222,7 @@ cpu_test() {
     return 0;
 }
 
-// cpu_test cputst();
+cpu_test cputst();
 
 
 function num_to_suffixed(n, prec) {
@@ -253,7 +253,7 @@ my_test() {
     return 0;
 }
 
-// my_test mtst();
+my_test mtst();
 
 
 ctr(anything) {
@@ -276,7 +276,7 @@ ctr(anything) {
     return this.delay;
 }
 
-// ctr cto(tm);
+ctr cto(tm);
 
 
 another_test() {
@@ -289,7 +289,7 @@ another_test() {
     console.info(end - begin, " sec.");
 }
 
-// another_test at();
+another_test at();
 
 
 test_mat() {
@@ -309,4 +309,4 @@ test_mat() {
     return 0;
 }
 
-// test_mat tm();
+test_mat tm();
