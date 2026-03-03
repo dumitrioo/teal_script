@@ -1,7 +1,10 @@
-int() {
+// just for fun
+// ...and simple tests
+
+fn() {
     a = 1.0 - 1.0 + 1.0;
     println(a);
     return exit(0);
 }
 
-int main();
+fn main();
