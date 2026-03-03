@@ -111,6 +111,8 @@ int main(int argc, char **argv) {
                         rt.load_file(dir_entry.path());
                     }
                 }
+            } else {
+                throw std::runtime_error{args[i] + " - file or directory does not exist"};
             }
         }
         rt.loading_complete();
@@ -135,7 +137,11 @@ int main(int argc, char **argv) {
         }
 #else
         rt.run_mt(std::thread::hardware_concurrency());
-        while(!rt.wait(0.1));
+        while(!rt.wait(0.1)) {
+            if(rt.failure()) {
+                throw std::runtime_error{rt.failure_description()};
+            }
+        }
 #endif
 
 #ifndef DEBUG_SCFX_RUN_CYCLE

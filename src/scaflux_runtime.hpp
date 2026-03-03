@@ -1444,128 +1444,143 @@ namespace scfx {
             if(!threads_.empty()) {
                 return;
             }
+            failure_description_.clear();
+            failure_ = 0;
             termination_requested_ = 0;
             for(int i{0}; i < thrd_cnt; ++i) {
                 threads_.emplace_back([this]() {
-                    std::shared_ptr<execution_context> exctx{std::make_shared<execution_context>()};
-                    execution_context *exctx_ptr{exctx.get()};
-                    exctx_ptr->set_runtime_interface(this);
-                    while(!termination_requested()) {
-                        exctx_ptr->clear_all_jumps_request();
-                        bool have_locked{false};
-                        for(auto &&w: worker_cells_) {
-                            if(w.second.try_lock()) {
-                                have_locked = true;
-                                worker_cell_instance &curr_cell{w.second};
-                                scfx::shut_on_destroy sod{[&]() { curr_cell.unlock(); }};
-                                std::string const &curr_cell_type_name{curr_cell.type_name()};
+                    try {
+                        std::shared_ptr<execution_context> exctx{std::make_shared<execution_context>()};
+                        execution_context *exctx_ptr{exctx.get()};
+                        exctx_ptr->set_runtime_interface(this);
+                        while(!termination_requested() && !failure()) {
+                            exctx_ptr->clear_all_jumps_request();
+                            bool have_locked{false};
+                            for(auto &&w: worker_cells_) {
+                                if(w.second.try_lock()) {
+                                    have_locked = true;
+                                    worker_cell_instance &curr_cell{w.second};
+                                    scfx::shut_on_destroy sod{[&]() { curr_cell.unlock(); }};
+                                    std::string const &curr_cell_type_name{curr_cell.type_name()};
 
-                                if(!curr_cell.type_info_transferred()) {
-                                    auto type_it{worker_cells_templates_.find(curr_cell_type_name)};
-                                    if(type_it != worker_cells_templates_.end()) {
-                                        if(curr_cell.actual_args_info().size() != static_cast<size_t>(type_it->second.num_args())) {
-                                            throw runtime_error{curr_cell.line(), curr_cell.col(), "actual arguments count for the cell mismatch"};
+                                    if(!curr_cell.type_info_transferred()) {
+                                        auto type_it{worker_cells_templates_.find(curr_cell_type_name)};
+                                        if(type_it != worker_cells_templates_.end()) {
+                                            if(curr_cell.actual_args_info().size() != static_cast<size_t>(type_it->second.num_args())) {
+                                                throw runtime_error{curr_cell.line(), curr_cell.col(), "actual arguments count for the cell mismatch"};
+                                            }
+                                            curr_cell.set_type_info(type_it->second.num_args(), type_it->second.arg_names());
                                         }
-                                        curr_cell.set_type_info(type_it->second.num_args(), type_it->second.arg_names());
                                     }
-                                }
 
-                                exctx_ptr->set_self_fields(curr_cell.cell_self_values_ptr());
+                                    exctx_ptr->set_self_fields(curr_cell.cell_self_values_ptr());
 
-                                exctx_ptr->clear_stack_soft();
-                                exctx_ptr->new_stack_frame();
+                                    exctx_ptr->clear_stack_soft();
+                                    exctx_ptr->new_stack_frame();
 
 #ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
-                                bool undefineds{false};
+                                    bool undefineds{false};
 #endif
-                                std::vector<worker_cell_instance::arg_info> &args_info{curr_cell.actual_args_info()};
-                                for(std::size_t curr_arg_number{0}; curr_arg_number < args_info.size(); ++curr_arg_number) {
-                                    worker_cell_instance::arg_info &ai{args_info[curr_arg_number]};
-                                    std::string curr_arg_name{ai.argname};
-                                    if(ai.cell) {
-                                        auto w_it{worker_cells_.find(ai.cell_name)};
-                                        if(w_it != worker_cells_.end()) {
+                                    std::vector<worker_cell_instance::arg_info> &args_info{curr_cell.actual_args_info()};
+                                    for(std::size_t curr_arg_number{0}; curr_arg_number < args_info.size(); ++curr_arg_number) {
+                                        worker_cell_instance::arg_info &ai{args_info[curr_arg_number]};
+                                        std::string curr_arg_name{ai.argname};
+                                        if(ai.cell) {
+                                            auto w_it{worker_cells_.find(ai.cell_name)};
+                                            if(w_it != worker_cells_.end()) {
 #ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
-                                            if(w_it->second.curr_value().is_undefined_ref()) {
+                                                if(w_it->second.curr_value().is_undefined_ref()) {
+                                                    undefineds = true;
+                                                    break;
+                                                }
+#endif
+                                                exctx_ptr->set_local_value(curr_arg_name, w_it->second.curr_value());
+                                            } else {
+                                                auto in_it{input_cells_.find(ai.cell_name)};
+                                                if(in_it != input_cells_.end()) {
+#ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
+                                                    if(in_it->second.curr_value().is_undefined_ref()) {
+                                                        undefineds = true;
+                                                        break;
+                                                    }
+#endif
+                                                    exctx_ptr->set_local_value(curr_arg_name, in_it->second.curr_value());
+                                                } else {
+#ifdef SCFX_USE_EXTERNAL_VALUES
+                                                    valbox val{get_external_value(curr_arg_name)};
+#ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
+                                                    if(val.is_undefined()) {
+                                                        undefineds = true;
+                                                        break;
+                                                    }
+#endif
+                                                    exctx_ptr->set_local_value(curr_arg_name, val);
+#else
+                                                    throw runtime_error{
+                                                        curr_cell.line(), curr_cell.col(),
+                                                        std::string{"input value not found for compute element \""} +
+                                                            curr_cell.inst_name() + "\""
+                                                    };
+#endif
+                                                }
+                                            }
+                                        } else {
+                                            valbox vb{ai.expr->eval(exctx_ptr, eval_caller_type::no_matter, nullptr)};
+#ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
+                                            if(vb.is_undefined_ref()) {
                                                 undefineds = true;
                                                 break;
                                             }
 #endif
-                                            exctx_ptr->set_local_value(curr_arg_name, w_it->second.curr_value());
-                                        } else {
-                                            auto in_it{input_cells_.find(ai.cell_name)};
-                                            if(in_it != input_cells_.end()) {
-#ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
-                                                if(in_it->second.curr_value().is_undefined_ref()) {
-                                                    undefineds = true;
-                                                    break;
-                                                }
-#endif
-                                                exctx_ptr->set_local_value(curr_arg_name, in_it->second.curr_value());
-                                            } else {
-#ifdef SCFX_USE_EXTERNAL_VALUES
-                                                valbox val{get_external_value(curr_arg_name)};
-#ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
-                                                if(val.is_undefined()) {
-                                                    undefineds = true;
-                                                    break;
-                                                }
-#endif
-                                                exctx_ptr->set_local_value(curr_arg_name, val);
-#else
-                                                throw runtime_error{
-                                                        curr_cell.line(), curr_cell.col(),
-                                                        std::string{"input value not found for compute element \""} +
-                                                            curr_cell.inst_name() + "\""
-                                                };
-#endif
-                                            }
+                                            exctx_ptr->set_local_value(curr_arg_name, vb);
                                         }
-                                    } else {
-                                        valbox vb{ai.expr->eval(exctx_ptr, eval_caller_type::no_matter, nullptr)};
-#ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
-                                        if(vb.is_undefined_ref()) {
-                                            undefineds = true;
-                                            break;
-                                        }
-#endif
-                                        exctx_ptr->set_local_value(curr_arg_name, vb);
                                     }
-                                }
 
 #ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
-                                if(undefineds) {
-                                    curr_cell.set_curr_value(valbox{});
-                                    if(!curr_cell.out_name().empty()) {
-                                        exctx_ptr->set_output(curr_cell.out_name(), valbox{});
+                                    if(undefineds) {
+                                        curr_cell.set_curr_value(valbox{});
+                                        if(!curr_cell.out_name().empty()) {
+                                            exctx_ptr->set_output(curr_cell.out_name(), valbox{});
+                                        }
+                                        continue;
                                     }
-                                    continue;
-                                }
 #endif
-                                auto body_it{worker_bodies_.find(curr_cell_type_name)};
-                                if(body_it == worker_bodies_.end()) {
-                                    throw runtime_error{curr_cell.line(), curr_cell.col(), "cell not found"};
-                                }
-                                body_it->second->exec(exctx_ptr);
-                                if(termination_requested()) {
-                                    break;
-                                }
-                                if(exctx_ptr->return_requested()) {
-                                    curr_cell.set_curr_value(exctx_ptr->return_result());
-                                    if(!curr_cell.out_name().empty()) {
-                                        exctx_ptr->set_output(curr_cell.out_name(), exctx_ptr->return_result());
+                                    auto body_it{worker_bodies_.find(curr_cell_type_name)};
+                                    if(body_it == worker_bodies_.end()) {
+                                        throw runtime_error{curr_cell.line(), curr_cell.col(), "cell not found"};
                                     }
+                                    body_it->second->exec(exctx_ptr);
+                                    if(termination_requested() || failure()) {
+                                        break;
+                                    }
+                                    if(exctx_ptr->return_requested()) {
+                                        curr_cell.set_curr_value(exctx_ptr->return_result());
+                                        if(!curr_cell.out_name().empty()) {
+                                            exctx_ptr->set_output(curr_cell.out_name(), exctx_ptr->return_result());
+                                        }
+                                    }
+                                    exctx_ptr->clear_all_jumps_request();
                                 }
-                                exctx_ptr->clear_all_jumps_request();
+                            }
+                            if(!have_locked) {
+                                std::this_thread::sleep_for(std::chrono::microseconds(100));
                             }
                         }
-                        if(!have_locked) {
-                            std::this_thread::sleep_for(std::chrono::microseconds(100));
-                        }
+                    } catch(std::exception const &e) {
+                        failure_description_ = e.what();
+                        failure_ = 1;
                     }
                 });
             }
             num_of_threads_ = threads_.size();
+        }
+
+        bool failure() const noexcept {
+            return failure_.load() != 0;
+        }
+
+        std::string const &failure_description() const noexcept {
+            return failure_description_;
         }
 
         bool wait(long double secnds) {
@@ -1725,7 +1740,9 @@ namespace scfx {
     private:
         detail::console con_{};
 
-        std::int64_t termination_requested_{0};
+        std::atomic<std::int64_t> termination_requested_{0};
+        std::atomic<std::int64_t> failure_{0};
+        std::string failure_description_{};
 
         enum class thread_mode{none, single, multi };
         thread_mode thread_mode_{thread_mode::none};
