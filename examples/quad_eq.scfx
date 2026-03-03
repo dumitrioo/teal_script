@@ -21,7 +21,7 @@ num_roots(d)
     return d > 0 ? 2 : d == 0 ? 1 : 0;
 random_from_range(lo, hi)
     return randf() * abs(hi - lo) + min(lo, hi);
-repeater(in)
+forward(in)
     return in;
 print2args(lll, a)
     console.println(lll, a);
@@ -36,9 +36,9 @@ random_from_range a_gen(-1000.0, 1000.0);
 random_from_range b_gen(-1000.0, 1000.0);
 random_from_range c_gen(-1000.0, 1000.0);
 
-repeater a(a_gen);
-repeater b(b_gen);
-repeater c(c_gen);
+forward a(a_gen);
+forward b(b_gen);
+forward c(c_gen);
 
 discriminant      d(a, b, c);
 calc_x1           x1(a, b, d)   'x1';

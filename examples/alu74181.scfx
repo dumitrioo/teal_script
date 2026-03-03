@@ -176,6 +176,7 @@ draw_bool(t, v, x, y, f, lbl, crcclr) {
     }
     return 0;
 }
+
 ray_window ray();
 forward sfctr(2.6);
 color_select clr_s();
@@ -183,7 +184,6 @@ color_in clr_in();
 color_out clr_out();
 color_carry clr_c();
 color_pgeq clr_pgeq();
-
 draw_bool dr_c_in(ray, c_in, 200, 20, sfctr, "inC", clr_c);
 draw_bool dr_m(ray, m, 240, 20, sfctr, " M", clr_in);
 draw_bool dr_s0(ray, s3, 20, 20, sfctr, "s3", clr_s);
