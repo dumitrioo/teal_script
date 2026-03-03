@@ -40,7 +40,7 @@ namespace scfx {
                 }
                 return scfx::valbox{scfx::timespec_wrapper::now(), "timespec_wrapper"};
             });
-            rt->add_function("gmtimestamp", SCFXFUN(/*args*/) { return scfx::valbox{scfx::timespec_wrapper::gmtnow(), "timespec_wrapper"}; });
+            rt->add_function("gmtimestamp", SCFXFUN() { return scfx::valbox{scfx::timespec_wrapper::gmtnow(), "timespec_wrapper"}; });
             rt->add_method("timespec_wrapper", "year", SCFXFUN(args) { return SCFXTHIS(scfx::timespec_wrapper).year(); });
             rt->add_method("timespec_wrapper", "month", SCFXFUN(args) { return SCFXTHIS(scfx::timespec_wrapper).month(); });
             rt->add_method("timespec_wrapper", "day", SCFXFUN(args) { return SCFXTHIS(scfx::timespec_wrapper).day(); });
@@ -65,13 +65,13 @@ namespace scfx {
                 SCFXTHIS(scfx::timespec_wrapper).from_iso_8601(s);
                 return args[0];
             });
-            rt->add_function("steady_clock", SCFXFUN(/*args*/) {
+            rt->add_function("steady_clock", SCFXFUN() {
                 return static_cast<long double>(std::chrono::steady_clock::now().time_since_epoch().count()) / 1e9L;
             });
-            rt->add_function("time", SCFXFUN(/*args*/) {
+            rt->add_function("time", SCFXFUN() {
                 return scfx::timespec_wrapper::now().fseconds();
             });
-            rt->add_function("gmtime", SCFXFUN(/*args*/) {
+            rt->add_function("gmtime", SCFXFUN() {
                 return scfx::timespec_wrapper::gmtnow().fseconds();
             });
         }

@@ -256,10 +256,10 @@ public:
         rt->add_var("ZMQ_PROTOCOL_ERROR_WS_UNSPECIFIED", ZMQ_PROTOCOL_ERROR_WS_UNSPECIFIED);
 
 
-        rt->add_function("zmq_errno", SCFXFUN(/*args*/) { return zmq_errno(); });
-        rt->add_function("zmq_errstr", SCFXFUN(/*args*/) { return zmq_strerror(zmq_errno()); });
+        rt->add_function("zmq_errno", SCFXFUN() { return zmq_errno(); });
+        rt->add_function("zmq_errstr", SCFXFUN() { return zmq_strerror(zmq_errno()); });
         rt->add_function("zmq_err_to_str", SCFXFUN(args) { return zmq_strerror(args[0].cast_num_to_num<int>()); });
-        rt->add_function("zmq_ctx_new", SCFXFUN(/*args*/) { return zmq_ctx_new(); });
+        rt->add_function("zmq_ctx_new", SCFXFUN() { return zmq_ctx_new(); });
         rt->add_function("zmq_ctx_term", SCFXFUN(args) { return zmq_ctx_term(args[0].as_ptr()); });
         rt->add_function("zmq_ctx_shutdown", SCFXFUN(args) { return zmq_ctx_shutdown(args[0].as_ptr()); });
         rt->add_function("zmq_ctx_set", SCFXFUN(args) { return zmq_ctx_set(args[0].as_ptr(), args[1].cast_num_to_num<int>(), args[2].cast_num_to_num<int>()); });

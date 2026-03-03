@@ -354,10 +354,10 @@ namespace scfx {
                 }
                 return valbox::mat4_t::rotation(ang, vx, vy, vz);
             });
-            rt->add_function("identity", SCFXFUN(/*args*/) { return valbox::mat4_t::identity(); });
-            rt->add_function("mirror_x", SCFXFUN(/*args*/) { return valbox::mat4_t::mirror_x(); });
-            rt->add_function("mirror_y", SCFXFUN(/*args*/) { return valbox::mat4_t::mirror_y(); });
-            rt->add_function("mirror_z", SCFXFUN(/*args*/) { return valbox::mat4_t::mirror_z(); });
+            rt->add_function("identity", SCFXFUN() { return valbox::mat4_t::identity(); });
+            rt->add_function("mirror_x", SCFXFUN() { return valbox::mat4_t::mirror_x(); });
+            rt->add_function("mirror_y", SCFXFUN() { return valbox::mat4_t::mirror_y(); });
+            rt->add_function("mirror_z", SCFXFUN() { return valbox::mat4_t::mirror_z(); });
             rt->add_function("length", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
                 return args[0].as_vec4().length();

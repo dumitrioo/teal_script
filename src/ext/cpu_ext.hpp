@@ -34,7 +34,7 @@ namespace scfx {
             if(rt_ == nullptr) {
                 return;
             }
-            rt->add_function("perf_stat", SCFXFUN(/*args*/) {
+            rt->add_function("perf_stat", SCFXFUN() {
                 return scfx::valbox{std::make_shared<cpu_pc<double>>(), "perf_stat"};
             });
             rt->add_method("perf_stat", "start", SCFXFUN(args) {

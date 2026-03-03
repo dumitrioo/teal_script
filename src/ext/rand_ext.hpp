@@ -57,12 +57,12 @@ namespace scfx {
                 }
                 return static_cast<long double>(0);
             });
-            rt->add_function("rand", SCFXFUN(/*args*/) { return ud_(dre_); });
-            rt->add_function("hwrand", SCFXFUN(/*args*/) { return ud_(rd_); });
-            rt->add_function("randf", SCFXFUN(/*args*/) { return urd_(dre_); });
-            rt->add_function("hwrandf", SCFXFUN(/*args*/) { return urd_(rd_); });
-            rt->add_function("frand", SCFXFUN(/*args*/) { return urd_(dre_); });
-            rt->add_function("hw_frand", SCFXFUN(/*args*/) { return urd_(rd_); });
+            rt->add_function("rand", SCFXFUN() { return ud_(dre_); });
+            rt->add_function("hwrand", SCFXFUN() { return ud_(rd_); });
+            rt->add_function("randf", SCFXFUN() { return urd_(dre_); });
+            rt->add_function("hwrandf", SCFXFUN() { return urd_(rd_); });
+            rt->add_function("frand", SCFXFUN() { return urd_(dre_); });
+            rt->add_function("hw_frand", SCFXFUN() { return urd_(rd_); });
         }
 
         void unregister_runtime() override {

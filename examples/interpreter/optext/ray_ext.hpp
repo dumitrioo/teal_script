@@ -146,10 +146,10 @@ public:
         rt->add_var("RAYWHITE",   color_val(245, 245, 245));
 
 
-        rt->add_function("ray_get_screen_width", SCFXFUN(/*args*/) { return GetScreenWidth(); });
-        rt->add_function("ray_get_screen_height", SCFXFUN(/*args*/) { return GetScreenHeight(); });
-        rt->add_function("ray_get_monitor_count", SCFXFUN(/*args*/) { return GetMonitorCount(); });
-        rt->add_function("ray_get_current_monitor", SCFXFUN(/*args*/) { return GetCurrentMonitor(); });
+        rt->add_function("ray_get_screen_width", SCFXFUN() { return GetScreenWidth(); });
+        rt->add_function("ray_get_screen_height", SCFXFUN() { return GetScreenHeight(); });
+        rt->add_function("ray_get_monitor_count", SCFXFUN() { return GetMonitorCount(); });
+        rt->add_function("ray_get_current_monitor", SCFXFUN() { return GetCurrentMonitor(); });
         rt->add_function("ray_get_monitor_width", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return GetMonitorWidth(SCFXNUMARG(0, int)); });
         rt->add_function("ray_get_monitor_height", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return GetMonitorHeight(SCFXNUMARG(0, int)); });
 
@@ -162,10 +162,10 @@ public:
             );
             return scfx::valbox{};
         });
-        rt->add_function("ray_window_should_close", SCFXFUN(/*args*/) { return WindowShouldClose(); });
-        rt->add_function("ray_begin_drawing", SCFXFUN(/*args*/) { BeginDrawing(); return scfx::valbox{}; });
-        rt->add_function("ray_end_drawing", SCFXFUN(/*args*/) { EndDrawing(); return scfx::valbox{}; });
-        rt->add_function("ray_close_window", SCFXFUN(/*args*/) { CloseWindow(); return scfx::valbox{}; });
+        rt->add_function("ray_window_should_close", SCFXFUN() { return WindowShouldClose(); });
+        rt->add_function("ray_begin_drawing", SCFXFUN() { BeginDrawing(); return scfx::valbox{}; });
+        rt->add_function("ray_end_drawing", SCFXFUN() { EndDrawing(); return scfx::valbox{}; });
+        rt->add_function("ray_close_window", SCFXFUN() { CloseWindow(); return scfx::valbox{}; });
         rt->add_function("ray_clear_background", SCFXFUN(args) {
             SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
             ClearBackground(SCFXTHIS(Color));
@@ -179,7 +179,7 @@ public:
             return scfx::valbox{};
         });
 
-        rt->add_function("ray_toggle_full_screen", SCFXFUN(/*args*/) { ToggleFullscreen(); return scfx::valbox{}; });
+        rt->add_function("ray_toggle_full_screen", SCFXFUN() { ToggleFullscreen(); return scfx::valbox{}; });
 
         rt->add_function("ray_draw_pixel", SCFXFUN(args) {
             SCFX_CHCK_FUN_PARMS_NUM_EQ(3)
@@ -247,8 +247,8 @@ public:
         rt->add_function("ray_is_key_down", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return IsKeyDown(SCFXNUMARG(0, int)); });
         rt->add_function("ray_is_key_released", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return IsKeyReleased(SCFXNUMARG(0, int)); });
         rt->add_function("ray_is_key_up", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return IsKeyUp(SCFXNUMARG(0, int)); });
-        rt->add_function("ray_get_key_pressed", SCFXFUN(/*args*/) { return GetKeyPressed(); });
-        rt->add_function("ray_get_char_pressed", SCFXFUN(/*args*/) { return GetCharPressed(); });
+        rt->add_function("ray_get_key_pressed", SCFXFUN() { return GetKeyPressed(); });
+        rt->add_function("ray_get_char_pressed", SCFXFUN() { return GetCharPressed(); });
         rt->add_function("ray_set_exit_key", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) SetExitKey(SCFXNUMARG(0, int)); return {}; });
         rt->add_function("ray_is_gamepad_available", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return IsGamepadAvailable(SCFXNUMARG(0, int)); });
         rt->add_function("ray_get_gamepad_name", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::string{GetGamepadName(SCFXNUMARG(0, int))}; });
@@ -256,7 +256,7 @@ public:
         rt->add_function("ray_is_gamepad_button_down", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return IsGamepadButtonDown(SCFXNUMARG(0, int), SCFXNUMARG(1, int)); });
         rt->add_function("ray_is_gamepad_button_released", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return IsGamepadButtonReleased(SCFXNUMARG(0, int), SCFXNUMARG(1, int)); });
         rt->add_function("ray_is_gamepad_button_up", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return IsGamepadButtonUp(SCFXNUMARG(0, int), SCFXNUMARG(1, int)); });
-        rt->add_function("ray_get_gamepad_button_pressed", SCFXFUN(/*args*/) { return GetGamepadButtonPressed(); });
+        rt->add_function("ray_get_gamepad_button_pressed", SCFXFUN() { return GetGamepadButtonPressed(); });
         rt->add_function("ray_get_gamepad_axis_count", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return GetGamepadAxisCount(SCFXNUMARG(0, int)); });
         rt->add_function("ray_get_gamepad_axis_movement", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return GetGamepadAxisMovement(SCFXNUMARG(0, int), SCFXNUMARG(1, int)); });
         rt->add_function("ray_set_gamepad_mappings", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return SetGamepadMappings(args[0].cast_to_string().c_str()); });
@@ -266,21 +266,21 @@ public:
         rt->add_function("ray_is_mouse_button_down", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return IsMouseButtonDown(SCFXNUMARG(0, int)); });
         rt->add_function("ray_is_mouse_button_released", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return IsMouseButtonReleased(SCFXNUMARG(0, int)); });
         rt->add_function("ray_is_mouse_button_up", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return IsMouseButtonUp(SCFXNUMARG(0, int)); });
-        rt->add_function("ray_get_mouse_x", SCFXFUN(/*args*/) { return GetMouseX(); });
-        rt->add_function("ray_get_mouse_y", SCFXFUN(/*args*/) { return GetMouseY(); });
-        rt->add_function("ray_get_mouse_position", SCFXFUN(/*args*/) { return scfx::valbox{GetMousePosition(), "Vector2"}; });
-        rt->add_function("ray_get_mouse_delta", SCFXFUN(/*args*/) { return scfx::valbox{GetMouseDelta(), "Vector2"}; });
+        rt->add_function("ray_get_mouse_x", SCFXFUN() { return GetMouseX(); });
+        rt->add_function("ray_get_mouse_y", SCFXFUN() { return GetMouseY(); });
+        rt->add_function("ray_get_mouse_position", SCFXFUN() { return scfx::valbox{GetMousePosition(), "Vector2"}; });
+        rt->add_function("ray_get_mouse_delta", SCFXFUN() { return scfx::valbox{GetMouseDelta(), "Vector2"}; });
         rt->add_function("ray_set_mouse_position", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SetMousePosition(SCFXNUMARG(0, int), SCFXNUMARG(1, int)); return {}; });
         rt->add_function("ray_set_mouse_offset", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SetMouseOffset(SCFXNUMARG(0, int), SCFXNUMARG(1, int)); return {}; });
         rt->add_function("ray_set_mouse_scale", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) SetMouseScale(SCFXNUMARG(0, float), SCFXNUMARG(1, float)); return {}; });
-        rt->add_function("ray_get_mouse_wheel_move", SCFXFUN(/*args*/) { return GetMouseWheelMove(); });
-        rt->add_function("ray_get_mouse_wheel_move_v", SCFXFUN(/*args*/) { return scfx::valbox{GetMouseWheelMoveV(), "Vector2"}; });
+        rt->add_function("ray_get_mouse_wheel_move", SCFXFUN() { return GetMouseWheelMove(); });
+        rt->add_function("ray_get_mouse_wheel_move_v", SCFXFUN() { return scfx::valbox{GetMouseWheelMoveV(), "Vector2"}; });
         rt->add_function("ray_set_mouse_cursor", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) SetMouseCursor(SCFXNUMARG(0, int)); return {}; });
-        rt->add_function("ray_get_touch_x", SCFXFUN(/*args*/) { return GetTouchX(); });
-        rt->add_function("ray_get_touch_y", SCFXFUN(/*args*/) { return GetTouchY(); });
+        rt->add_function("ray_get_touch_x", SCFXFUN() { return GetTouchX(); });
+        rt->add_function("ray_get_touch_y", SCFXFUN() { return GetTouchY(); });
         rt->add_function("ray_get_touch_position", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return scfx::valbox{GetTouchPosition(SCFXNUMARG(0, int)), "Vector2"}; });
         rt->add_function("ray_get_touch_point_id", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return GetTouchPointId(SCFXNUMARG(0, int)); });
-        rt->add_function("ray_get_touch_point_count", SCFXFUN(/*args*/) { return GetTouchPointCount(); });
+        rt->add_function("ray_get_touch_point_count", SCFXFUN() { return GetTouchPointCount(); });
     }
 
     void unregister_runtime() override {

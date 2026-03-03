@@ -1,7 +1,6 @@
 #pragma once
 
 #include "commondefs.hpp"
-#include "emhash/hash_table8.hpp"
 
 namespace scfx::str_util {
 

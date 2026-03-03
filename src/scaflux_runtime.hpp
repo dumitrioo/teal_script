@@ -6,8 +6,6 @@
 #include "include/base16.hpp"
 #include "include/base64.hpp"
 #include "include/base85.hpp"
-#include "include/emhash/hash_set8.hpp"
-#include "include/emhash/hash_table8.hpp"
 #include "include/math/math_util.hpp"
 #include "include/dlib.hpp"
 
@@ -367,7 +365,7 @@ namespace scfx {
             add_var("MAGIC_APPLE", MAGIC_APPLE);
             add_var("MAGIC_EXTENSION", MAGIC_EXTENSION);
 #endif
-            add_function("errno", SCFXFUN(/*args*/) { return errno; });
+            add_function("errno", SCFXFUN() { return errno; });
             add_function("err_to_str", SCFXFUN(args) { return std::string{strerror(args[0].cast_num_to_num<int>())}; });
 
             math_ext_.register_runtime(this);
@@ -1077,14 +1075,14 @@ namespace scfx {
             });
 
 
-            add_function("thread_id", SCFXFUN(/*args*/) {
+            add_function("thread_id", SCFXFUN() {
                 std::stringstream ss{};
                 ss << std::this_thread::get_id();
                 std::uint64_t res{};
                 ss >> res;
                 return res;
             });
-            add_function("hardware_concurrency", SCFXFUN(/*args*/) {
+            add_function("hardware_concurrency", SCFXFUN() {
                 std::shared_lock l{threads_mtp_};
                 return num_of_threads_ > 0 ? threads_.size() : 1;
             });
