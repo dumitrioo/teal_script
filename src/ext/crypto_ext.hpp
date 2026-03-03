@@ -30,7 +30,7 @@ namespace scfx {
             if(rt_ == nullptr) {
                 return;
             }
-            rt->add_function("sha256", SCFXFUN(, args) {
+            rt->add_function("sha256", SCFXFUN(args) {
                 if(args.size() == 1) {
                     std::string s{args[0].cast_to_string()};
                     std::array<std::uint8_t, scfx::crypt::sha256::DIGEST_SIZE> h{scfx::crypt::sha256sum(s.data(), s.size())};
@@ -38,7 +38,7 @@ namespace scfx {
                 }
                 return scfx::valbox{std::string{}};
             });
-            rt->add_function("sha512", SCFXFUN(, args) {
+            rt->add_function("sha512", SCFXFUN(args) {
                 if(args.size() == 1) {
                     std::string s{args[0].cast_to_string()};
                     std::array<std::uint8_t, scfx::crypt::sha512::digest_size()> h{scfx::crypt::sha512sum(s.data(), s.size())};

@@ -34,20 +34,20 @@ namespace scfx {
             if(rt_ == nullptr) {
                 return;
             }
-            rt->add_function("perf_stat", SCFXFUN(, /*args*/) {
+            rt->add_function("perf_stat", SCFXFUN(/*args*/) {
                 return scfx::valbox{std::make_shared<cpu_pc<double>>(), "perf_stat"};
             });
-            rt->add_method("perf_stat", "start", SCFXFUN(, args) {
+            rt->add_method("perf_stat", "start", SCFXFUN(args) {
                 return SCFXTHIS(std::shared_ptr<cpu_pc<double>>)->start();
             });
-            rt->add_method("perf_stat", "stop", SCFXFUN(, args) {
+            rt->add_method("perf_stat", "stop", SCFXFUN(args) {
                 SCFXTHIS(std::shared_ptr<cpu_pc<double>>)->stop();
                 return 0;
             });
-            rt->add_method("perf_stat", "cpu_load", SCFXFUN(, args) {
+            rt->add_method("perf_stat", "cpu_load", SCFXFUN(args) {
                 return SCFXTHIS(std::shared_ptr<cpu_pc<double>>)->cpu_load();
             });
-            rt->add_method("perf_stat", "self_cpu_consumption", SCFXFUN(, args) {
+            rt->add_method("perf_stat", "self_cpu_consumption", SCFXFUN(args) {
                 return SCFXTHIS(std::shared_ptr<cpu_pc<double>>)->self_cpu_consumption();
             });
         }

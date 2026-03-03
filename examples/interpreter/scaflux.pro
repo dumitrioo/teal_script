@@ -78,6 +78,7 @@ LIBS += -lzmq
 
 DISTFILES += \
     ../alu74181.scfx \
+    ../draft.scfx \
     ../ex_cli.scfx \
     ../ex_srv.scfx \
     ../example.scfx \
@@ -85,6 +86,5 @@ DISTFILES += \
     ../extending_example.scfx \
     ../fractal/fractal.scfx \
     ../quad_eq.scfx \
-    ../scp.scfx \
     ../tbbt_2cola.scfx \
     ../tests.scfx

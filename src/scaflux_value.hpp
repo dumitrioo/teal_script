@@ -118,7 +118,7 @@ namespace scfx {
                 sizeof(bool), sizeof(char), sizeof(int8_t), sizeof(uint8_t), sizeof(int16_t), sizeof(uint16_t),
                 sizeof(wchar_t), sizeof(int32_t), sizeof(uint32_t), sizeof(int64_t), sizeof(uint64_t),
                 sizeof(float), sizeof(double), sizeof(long double), sizeof(vec4_t), sizeof(mat4_t),
-                sizeof(void *), sizeof(void *), sizeof(std::function<valbox(valbox const &, std::vector<valbox> &)>),
+                sizeof(void *), sizeof(void *), sizeof(std::function<valbox(std::vector<valbox> &)>),
                 sizeof(array_t), sizeof(object_t), sizeof(std::string), sizeof(std::wstring), 0, 0,
             };
             auto i{static_cast<std::size_t>(t)};
@@ -153,7 +153,7 @@ namespace scfx {
             vec4_t,
             mat4_t,
             void *,
-            std::function<valbox(valbox const &, std::vector<valbox> &)>,
+            std::function<valbox(std::vector<valbox> &)>,
             array_t,
             object_t,
             std::string,
@@ -233,11 +233,11 @@ namespace scfx {
             box_{std::make_shared<box_data>(any{std::forward<T>(v)}, type::CLASS, type::UNDEFINED, classname)}
         {
         }
-        valbox(std::function<valbox(valbox const &, std::vector<valbox> &)> const &v, std::string const &func_name, bool user_func):
+        valbox(std::function<valbox(std::vector<valbox> &)> const &v, std::string const &func_name, bool user_func):
             box_{std::make_shared<box_data>(v, type::FUNC, type::UNDEFINED, std::string{}, func_name, user_func)}
         {
         }
-        valbox(std::function<valbox(valbox const &, std::vector<valbox> &)> &&v, std::string const &func_name, bool user_func):
+        valbox(std::function<valbox(std::vector<valbox> &)> &&v, std::string const &func_name, bool user_func):
             box_{std::make_shared<box_data>(std::move(v), type::FUNC, type::UNDEFINED, std::string{}, func_name, user_func)}
         {
         }
@@ -723,15 +723,15 @@ namespace scfx {
             return false;
         }
         bool is_func_ref() const { return val_or_pointed_type() == type::FUNC; }
-        std::function<valbox(valbox const &, std::vector<valbox> &)> const &as_func() {
+        std::function<valbox(std::vector<valbox> &)> const &as_func() {
             if(!box_) { throw std::runtime_error{"not a function"}; }
             valbox &dr{deref()};
-            return std::get<std::function<valbox(valbox const &, std::vector<valbox> &)>>(dr.box_->value_);
+            return std::get<std::function<valbox(std::vector<valbox> &)>>(dr.box_->value_);
         }
-        std::function<valbox(valbox const &, std::vector<valbox> &)> const &as_func() const {
+        std::function<valbox(std::vector<valbox> &)> const &as_func() const {
             if(!box_) { throw std::runtime_error{"not a function"}; }
             valbox const &dr{deref()};
-            return std::get<std::function<valbox(valbox const &, std::vector<valbox> &)>>(dr.box_->value_);
+            return std::get<std::function<valbox(std::vector<valbox> &)>>(dr.box_->value_);
         }
 
         bool is_vec4_ref() const { return val_or_pointed_type() == type::VEC4; }

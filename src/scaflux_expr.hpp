@@ -400,8 +400,9 @@ namespace scfx {
                 }
             } else {
                 if(user_fn_seltor) {
-                    act_args.reserve(args_.size() + 2);
+                    act_args.reserve(args_.size() + 3);
                     act_args.push_back((void *)ctx);
+                    act_args.push_back(fsym);
                 } else {
                     act_args.reserve(args_.size() + 1);
                 }
@@ -416,11 +417,11 @@ namespace scfx {
             if(user_fn_seltor) {
                 ctx->set_stack_barrier();
                 scfx::shut_on_destroy csb{[ctx]() { ctx->clear_stack_barrier(); }};
-                valbox res{fn.as_func()(fn, act_args)};
+                valbox res{fn.as_func()(act_args)};
                 ctx->clear_return_request();
                 return res;
             } else {
-                return fn.as_func()(fn, act_args);
+                return fn.as_func()(act_args);
             }
         }
 

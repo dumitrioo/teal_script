@@ -10,7 +10,7 @@
 #include "include/emhash/hash_table8.hpp"
 #endif
 
-#define SCFXFUN(FUNC_NAME, ARGS) [&](scfx::valbox const &FUNC_NAME, std::vector<scfx::valbox> &ARGS) -> scfx::valbox
+#define SCFXFUN(ARGS) [&](std::vector<scfx::valbox> &ARGS) -> scfx::valbox
 #define SCFXNUMARG(INDX, TYPE) args[INDX].cast_num_to_num<TYPE>()
 #define SCFX_CHCK_FUN_PARMS_NUM_EQ(NUM_ARGS) \
     if(args.size() != (NUM_ARGS)) { \

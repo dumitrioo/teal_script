@@ -256,26 +256,26 @@ public:
         rt->add_var("ZMQ_PROTOCOL_ERROR_WS_UNSPECIFIED", ZMQ_PROTOCOL_ERROR_WS_UNSPECIFIED);
 
 
-        rt->add_function("zmq_errno", SCFXFUN(, /*args*/) { return zmq_errno(); });
-        rt->add_function("zmq_errstr", SCFXFUN(, /*args*/) { return zmq_strerror(zmq_errno()); });
-        rt->add_function("zmq_err_to_str", SCFXFUN(, args) { return zmq_strerror(args[0].cast_num_to_num<int>()); });
-        rt->add_function("zmq_ctx_new", SCFXFUN(, /*args*/) { return zmq_ctx_new(); });
-        rt->add_function("zmq_ctx_term", SCFXFUN(, args) { return zmq_ctx_term(args[0].as_ptr()); });
-        rt->add_function("zmq_ctx_shutdown", SCFXFUN(, args) { return zmq_ctx_shutdown(args[0].as_ptr()); });
-        rt->add_function("zmq_ctx_set", SCFXFUN(, args) { return zmq_ctx_set(args[0].as_ptr(), args[1].cast_num_to_num<int>(), args[2].cast_num_to_num<int>()); });
-        rt->add_function("zmq_ctx_get", SCFXFUN(, args) { return zmq_ctx_get(args[0].as_ptr(), args[1].cast_num_to_num<int>()); });
-        rt->add_function("zmq_socket", SCFXFUN(, args) { return zmq_socket(args[0].as_ptr(), args[1].cast_num_to_num<int>()); });
-        rt->add_function("zmq_bind", SCFXFUN(, args) { return zmq_bind(args[0].as_ptr(), args[1].cast_to_string().c_str()); });
-        rt->add_function("zmq_connect", SCFXFUN(, args) { return zmq_connect(args[0].as_ptr(), args[1].cast_to_string().c_str()); });
+        rt->add_function("zmq_errno", SCFXFUN(/*args*/) { return zmq_errno(); });
+        rt->add_function("zmq_errstr", SCFXFUN(/*args*/) { return zmq_strerror(zmq_errno()); });
+        rt->add_function("zmq_err_to_str", SCFXFUN(args) { return zmq_strerror(args[0].cast_num_to_num<int>()); });
+        rt->add_function("zmq_ctx_new", SCFXFUN(/*args*/) { return zmq_ctx_new(); });
+        rt->add_function("zmq_ctx_term", SCFXFUN(args) { return zmq_ctx_term(args[0].as_ptr()); });
+        rt->add_function("zmq_ctx_shutdown", SCFXFUN(args) { return zmq_ctx_shutdown(args[0].as_ptr()); });
+        rt->add_function("zmq_ctx_set", SCFXFUN(args) { return zmq_ctx_set(args[0].as_ptr(), args[1].cast_num_to_num<int>(), args[2].cast_num_to_num<int>()); });
+        rt->add_function("zmq_ctx_get", SCFXFUN(args) { return zmq_ctx_get(args[0].as_ptr(), args[1].cast_num_to_num<int>()); });
+        rt->add_function("zmq_socket", SCFXFUN(args) { return zmq_socket(args[0].as_ptr(), args[1].cast_num_to_num<int>()); });
+        rt->add_function("zmq_bind", SCFXFUN(args) { return zmq_bind(args[0].as_ptr(), args[1].cast_to_string().c_str()); });
+        rt->add_function("zmq_connect", SCFXFUN(args) { return zmq_connect(args[0].as_ptr(), args[1].cast_to_string().c_str()); });
 
-        rt->add_function("zmq_setsockopt", SCFXFUN(, args) {
+        rt->add_function("zmq_setsockopt", SCFXFUN(args) {
             SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(3, 3)
             int opt{args[1].cast_num_to_num<int>()};
             auto d{args[2].cast_to_byte_array()};
             return zmq_setsockopt(args[0].as_ptr(), opt, d.data(), d.size());
         });
 
-        rt->add_function("zmq_z85_encode", SCFXFUN(, args) {
+        rt->add_function("zmq_z85_encode", SCFXFUN(args) {
             SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(1, 1)
             auto src{args[0].cast_to_byte_array()};
             if(src.empty()) {
@@ -287,7 +287,7 @@ public:
             return std::string{(char *)dst.data()};
         });
 
-        rt->add_function("zmq_z85_decode", SCFXFUN(, args) {
+        rt->add_function("zmq_z85_decode", SCFXFUN(args) {
             SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(1, 1)
             auto src{args[0].cast_to_string()};
             if(src.empty()) {
@@ -299,7 +299,7 @@ public:
             return dst;
         });
 
-        rt->add_function("zmq_send", SCFXFUN(, args) {
+        rt->add_function("zmq_send", SCFXFUN(args) {
             SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(2, 3)
             std::vector<std::uint8_t> buf{args[1].cast_to_byte_array()};
             if(args.size() == 3) {
@@ -308,12 +308,12 @@ public:
                 return zmq_send(args[0].as_ptr(), buf.data(), buf.size(), 0);
             }
         });
-        rt->add_function("zmq_send_more", SCFXFUN(, args) {
+        rt->add_function("zmq_send_more", SCFXFUN(args) {
             SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(2, 2)
             std::vector<std::uint8_t> buf{args[1].cast_to_byte_array()};
             return zmq_send(args[0].as_ptr(), buf.data(), buf.size(), ZMQ_MORE);
         });
-        rt->add_function("zmq_recv", SCFXFUN(, args) {
+        rt->add_function("zmq_recv", SCFXFUN(args) {
             SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(1, 3)
             int nrd{0};
             std::vector<std::uint8_t> buf{};

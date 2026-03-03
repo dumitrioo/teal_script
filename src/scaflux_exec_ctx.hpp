@@ -200,8 +200,8 @@ namespace scfx {
         }
 
         bool is_rt_func_selector(valbox const &fn) const {
-            std::function<valbox(valbox const &, std::vector<valbox> &)> const &f1{fn.as_func()};
-            std::function<valbox(valbox const &, std::vector<valbox> &)> const &f2{rt_ptr_->user_function_selector()};
+            std::function<valbox(std::vector<valbox> &)> const &f1{fn.as_func()};
+            std::function<valbox(std::vector<valbox> &)> const &f2{rt_ptr_->user_function_selector()};
             auto s1{sizeof(f1)};
             auto s2{sizeof(f2)};
             bool res{false};

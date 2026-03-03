@@ -1,7 +1,7 @@
-oba() {
+int() {
     a = 1.0 - 1.0 + 1.0;
     println(a);
-    exit();
+    return exit(0);
 }
 
-oba na();
+int main();

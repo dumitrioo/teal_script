@@ -38,9 +38,8 @@ merge_objects() {
     k["r"] = "1";
     t["d"] = "d";
     o = k + t;
-    println(k);
-    println(t);
     println(o);
+    assert(o.d == "d");
 }
 
 // merge_objects motest();

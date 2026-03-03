@@ -24,7 +24,7 @@ namespace scfx {
             if(rt_ != nullptr) { return; }
             rt_ = rt;
             if(rt_ == nullptr) { return; }
-            rt->add_function("abs", SCFXFUN(, args) {
+            rt->add_function("abs", SCFXFUN(args) {
                 static std::unordered_map<valbox::type, std::function<valbox(valbox const &)>, valbox::valbox_type_hash> const abses{
                     { valbox::type::CHAR, [](valbox const &v) -> valbox { return std::abs(v.as_char()); } },
                     { valbox::type::U8, [](valbox const &v) -> valbox { return v; } },
@@ -51,7 +51,7 @@ namespace scfx {
             });
 
 
-            rt->add_function("mod", SCFXFUN(, args) {
+            rt->add_function("mod", SCFXFUN(args) {
                 static std::unordered_map<valbox::type, std::function<valbox(valbox const &, valbox const &)>> const abses{
                     { valbox::type::CHAR,        [](valbox const &x, valbox const &y) -> valbox { return x.as_char() % y.cast_num_to_num<char>() + y.cast_num_to_num<char>(); } },
                     { valbox::type::U8,          [](valbox const &x, valbox const &y) -> valbox { return x.as_u8() % y.cast_num_to_num<uint8_t>() + y.cast_num_to_num<uint8_t>(); } },
@@ -78,7 +78,7 @@ namespace scfx {
                 return abses.at(vt)(args[0], args[1]);
             });
 
-            rt->add_function("remainder", SCFXFUN(, args) {
+            rt->add_function("remainder", SCFXFUN(args) {
                 static std::unordered_map<valbox::type, std::function<valbox(valbox const &, valbox const &)>, valbox::valbox_type_hash> const abses{
                     { valbox::type::CHAR,        [](valbox const &x, valbox const &y) -> valbox { return x.as_char() % y.cast_num_to_num<char>() + y.cast_num_to_num<char>(); } },
                     { valbox::type::U8,          [](valbox const &x, valbox const &y) -> valbox { return x.as_u8() % y.cast_num_to_num<uint8_t>() + y.cast_num_to_num<uint8_t>(); } },
@@ -104,7 +104,7 @@ namespace scfx {
                 return abses.at(args[0].val_type())(args[0], args[1]);
             });
 
-            rt->add_function("fma", SCFXFUN(, args) {
+            rt->add_function("fma", SCFXFUN(args) {
                 static std::unordered_map<valbox::type, std::function<valbox(valbox const &, valbox const &, valbox const &)>, valbox::valbox_type_hash> const abses{
                     { valbox::type::CHAR,        [](valbox const &x, valbox const &y, valbox const &z) -> valbox { return x.as_char() * y.cast_num_to_num<char>() + z.cast_num_to_num<char>(); } },
                     { valbox::type::U8,          [](valbox const &x, valbox const &y, valbox const &z) -> valbox { return x.as_u8() * y.cast_num_to_num<uint8_t>() + z.cast_num_to_num<uint8_t>(); } },
@@ -130,10 +130,10 @@ namespace scfx {
                 return abses.at(args[0].val_type())(args[0], args[1], args[2]);
             });
 
-            rt->add_function("deg2rad", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return scfx::math::deg2rad(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("rad2deg", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return scfx::math::rad2deg(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("deg2rad", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return scfx::math::deg2rad(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("rad2deg", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return scfx::math::rad2deg(args[0].cast_num_to_num<long double>()); });
 
-            rt->add_function("gaussian", SCFXFUN(, args) {
+            rt->add_function("gaussian", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(1, 3)
                 switch(args.size()) {
                     case 3: return scfx::math::gaussian<long double>(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>(), args[2].cast_num_to_num<long double>());
@@ -144,73 +144,73 @@ namespace scfx {
                 return 0.0L;
             });
 
-            rt->add_function("cos", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::cos(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("sin", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::sin(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("tan", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::tan(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("acos", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::acos(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("asin", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::asin(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("atan", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::atan(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("atan2", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return std::atan2(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>()); });
+            rt->add_function("cos", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::cos(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("sin", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::sin(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("tan", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::tan(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("acos", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::acos(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("asin", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::asin(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("atan", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::atan(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("atan2", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return std::atan2(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>()); });
 
-            rt->add_function("cosh", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::cosh(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("sinh", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::sinh(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("tanh", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::tanh(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("acosh", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::acosh(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("asinh", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::asinh(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("atanh", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::atanh(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("cosh", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::cosh(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("sinh", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::sinh(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("tanh", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::tanh(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("acosh", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::acosh(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("asinh", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::asinh(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("atanh", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::atanh(args[0].cast_num_to_num<long double>()); });
 
-            rt->add_function("exp", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::exp(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("frexp", SCFXFUN(, args) {
+            rt->add_function("exp", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::exp(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("frexp", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
                 int exp{};
                 long double res{std::frexp(args[0].cast_num_to_num<long double>(), &exp)};
                 args[1].assign(exp);
                 return res;
             });
-            rt->add_function("ldexp", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return std::ldexp(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>()); });
-            rt->add_function("log", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::log(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("log10", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::log10(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("modf", SCFXFUN(, args) {
+            rt->add_function("ldexp", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return std::ldexp(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>()); });
+            rt->add_function("log", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::log(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("log10", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::log10(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("modf", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
                 long double i{};
                 long double res{std::modf(args[0].cast_num_to_num<long double>(), &i)};
                 args[1].assign(i);
                 return res;
             });
-            rt->add_function("exp2", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::exp2(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("expm1", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::expm1(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("ilogb", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::ilogb(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("log1p", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::log1p(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("log2", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::log2(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("logb", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::logb(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("scalbn", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return std::scalbn(args[0].cast_num_to_num<long double>(), args[1].cast_to_s64()); });
-            rt->add_function("scalbln", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(3) return std::scalbln(args[0].cast_num_to_num<long double>(), args[1].cast_to_s64()); });
+            rt->add_function("exp2", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::exp2(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("expm1", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::expm1(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("ilogb", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::ilogb(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("log1p", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::log1p(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("log2", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::log2(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("logb", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::logb(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("scalbn", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return std::scalbn(args[0].cast_num_to_num<long double>(), args[1].cast_to_s64()); });
+            rt->add_function("scalbln", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(3) return std::scalbln(args[0].cast_num_to_num<long double>(), args[1].cast_to_s64()); });
 
-            rt->add_function("pow", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return std::pow(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>()); });
-            rt->add_function("square", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0] * args[0]; });
-            rt->add_function("qube", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) auto a{args[0].cast_num_to_num<long double>()}; return a * a * a; });
-            rt->add_function("sqrt", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::sqrt(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("cbrt", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::cbrt(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("hypot", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return std::hypot(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>()); });
+            rt->add_function("pow", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return std::pow(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>()); });
+            rt->add_function("square", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0] * args[0]; });
+            rt->add_function("qube", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) auto a{args[0].cast_num_to_num<long double>()}; return a * a * a; });
+            rt->add_function("sqrt", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::sqrt(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("cbrt", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::cbrt(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("hypot", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return std::hypot(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>()); });
 
-            rt->add_function("erf", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::erf(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("erfc", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::erfc(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("tgamma", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::tgamma(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("lgamma", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::lgamma(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("erf", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::erf(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("erfc", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::erfc(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("tgamma", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::tgamma(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("lgamma", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::lgamma(args[0].cast_num_to_num<long double>()); });
 
-            rt->add_function("ceil", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::ceil(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("floor", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::floor(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("fmod", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return std::fmod(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>()); });
-            rt->add_function("trunc", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::trunc(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("round", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::round(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("lround", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::lround(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("llround", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::llround(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("rint", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::rint(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("lrint", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::lrint(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("llrint", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::llrint(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("nearbyint", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::nearbyint(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("ceil", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::ceil(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("floor", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::floor(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("fmod", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return std::fmod(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>()); });
+            rt->add_function("trunc", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::trunc(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("round", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::round(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("lround", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::lround(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("llround", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::llround(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("rint", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::rint(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("lrint", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::lrint(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("llrint", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::llrint(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("nearbyint", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::nearbyint(args[0].cast_num_to_num<long double>()); });
 
-            rt->add_function("sign", SCFXFUN(, args) {
+            rt->add_function("sign", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
                 auto dr{args[0].deref()};
                 switch(dr.val_or_pointed_type()) {
@@ -243,7 +243,7 @@ namespace scfx {
                 return (int64_t)0;
             });
 
-            rt->add_function("remquo", SCFXFUN(, args) {
+            rt->add_function("remquo", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(3)
                 int i{};
                 long double res{std::remquo(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>(), &i)};
@@ -251,13 +251,13 @@ namespace scfx {
                 return res;
             });
 
-            rt->add_function("copysign", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return std::copysign(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>()); });
-            rt->add_function("nan", SCFXFUN(, args) { if(args.empty()) return std::nan(""); else return std::nan(args[0].cast_to_string().c_str()); });
-            rt->add_function("nextafter", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return std::nextafter(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>()); });
-            rt->add_function("nexttoward", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return std::nexttoward(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>()); });
+            rt->add_function("copysign", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return std::copysign(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>()); });
+            rt->add_function("nan", SCFXFUN(args) { if(args.empty()) return std::nan(""); else return std::nan(args[0].cast_to_string().c_str()); });
+            rt->add_function("nextafter", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return std::nextafter(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>()); });
+            rt->add_function("nexttoward", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(2) return std::nexttoward(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>()); });
 
-            rt->add_function("fpclassify", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::fpclassify(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("isfinite", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
+            rt->add_function("fpclassify", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return std::fpclassify(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("isfinite", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
                 switch(args[0].val_or_pointed_type()) {
                     case valbox::type::FLOAT: return std::isfinite(args[0].as_float());
                     case valbox::type::DOUBLE: return std::isfinite(args[0].as_double());
@@ -266,7 +266,7 @@ namespace scfx {
                 }
                 throw std::runtime_error{"operation not applicable - floating point type required"};
             });
-            rt->add_function("isinf", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
+            rt->add_function("isinf", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
                 switch(args[0].val_or_pointed_type()) {
                     case valbox::type::FLOAT: return std::isinf(args[0].as_float());
                     case valbox::type::DOUBLE: return std::isinf(args[0].as_double());
@@ -275,7 +275,7 @@ namespace scfx {
                 }
                 throw std::runtime_error{"operation not applicable - floating point type required"};
             });
-            rt->add_function("isnan", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
+            rt->add_function("isnan", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
                 switch(args[0].val_or_pointed_type()) {
                     case valbox::type::FLOAT: return std::isnan(args[0].as_float());
                     case valbox::type::DOUBLE: return std::isnan(args[0].as_double());
@@ -284,7 +284,7 @@ namespace scfx {
                 }
                 throw std::runtime_error{"operation not applicable - floating point type required"};
             });
-            rt->add_function("isnormal", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
+            rt->add_function("isnormal", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
                 switch(args[0].val_or_pointed_type()) {
                     case valbox::type::FLOAT: return std::isnormal(args[0].as_float());
                     case valbox::type::DOUBLE: return std::isnormal(args[0].as_double());
@@ -293,7 +293,7 @@ namespace scfx {
                 }
                 throw std::runtime_error{"operation not applicable - floating point type required"};
             });
-            rt->add_function("signbit", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
+            rt->add_function("signbit", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
                 switch(args[0].val_or_pointed_type()) {
                     case valbox::type::FLOAT: return std::signbit(args[0].as_float());
                     case valbox::type::DOUBLE: return std::signbit(args[0].as_double());
@@ -303,28 +303,28 @@ namespace scfx {
                 throw std::runtime_error{"operation not applicable - floating point type required"};
             });
 
-            rt->add_function("rotation_z", SCFXFUN(, args) {
+            rt->add_function("rotation_z", SCFXFUN(args) {
                 long double ang{0.0L};
                 if(args.size() == 1 && (args[0].is_any_fp_number() || args[0].is_any_int_number())) {
                     ang = args[0].cast_to_long_double();
                 }
                 return valbox::mat4_t::rotate_z(ang);
             });
-            rt->add_function("rotation_x", SCFXFUN(, args) {
+            rt->add_function("rotation_x", SCFXFUN(args) {
                 long double ang{0.0L};
                 if(args.size() == 1 && (args[0].is_any_fp_number() || args[0].is_any_int_number())) {
                     ang = args[0].cast_to_long_double();
                 }
                 return valbox::mat4_t::rotate_x(ang);
             });
-            rt->add_function("rotation_y", SCFXFUN(, args) {
+            rt->add_function("rotation_y", SCFXFUN(args) {
                 long double ang{0.0L};
                 if(args.size() == 1 && (args[0].is_any_fp_number() || args[0].is_any_int_number())) {
                     ang = args[0].cast_to_long_double();
                 }
                 return valbox::mat4_t::rotate_y(ang);
             });
-            rt->add_function("rotation", SCFXFUN(, args) {
+            rt->add_function("rotation", SCFXFUN(args) {
                 long double ang{0.0L};
                 long double vx{0.0L};
                 long double vy{0.0L};
@@ -354,21 +354,21 @@ namespace scfx {
                 }
                 return valbox::mat4_t::rotation(ang, vx, vy, vz);
             });
-            rt->add_function("identity", SCFXFUN(, /*args*/) { return valbox::mat4_t::identity(); });
-            rt->add_function("mirror_x", SCFXFUN(, /*args*/) { return valbox::mat4_t::mirror_x(); });
-            rt->add_function("mirror_y", SCFXFUN(, /*args*/) { return valbox::mat4_t::mirror_y(); });
-            rt->add_function("mirror_z", SCFXFUN(, /*args*/) { return valbox::mat4_t::mirror_z(); });
-            rt->add_function("length", SCFXFUN(, args) {
+            rt->add_function("identity", SCFXFUN(/*args*/) { return valbox::mat4_t::identity(); });
+            rt->add_function("mirror_x", SCFXFUN(/*args*/) { return valbox::mat4_t::mirror_x(); });
+            rt->add_function("mirror_y", SCFXFUN(/*args*/) { return valbox::mat4_t::mirror_y(); });
+            rt->add_function("mirror_z", SCFXFUN(/*args*/) { return valbox::mat4_t::mirror_z(); });
+            rt->add_function("length", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
                 return args[0].as_vec4().length();
             });
-            rt->add_function("at", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(3) return args[0].as_mat4().at(args[1].cast_to_u64(), args[2].cast_to_u64()); });
-            rt->add_function("x", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].as_vec4().x(); });
-            rt->add_function("y", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].as_vec4().y(); });
-            rt->add_function("z", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].as_vec4().z(); });
-            rt->add_function("w", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].as_vec4().w(); });
+            rt->add_function("at", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(3) return args[0].as_mat4().at(args[1].cast_to_u64(), args[2].cast_to_u64()); });
+            rt->add_function("x", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].as_vec4().x(); });
+            rt->add_function("y", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].as_vec4().y(); });
+            rt->add_function("z", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].as_vec4().z(); });
+            rt->add_function("w", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].as_vec4().w(); });
 
-            rt->add_function("spheric_to_cartesian", SCFXFUN(, args) {
+            rt->add_function("spheric_to_cartesian", SCFXFUN(args) {
                 if(args.size() == 1) {
                     if(args[0].is_array_ref()) {
                         long double vx{};
@@ -392,7 +392,7 @@ namespace scfx {
                 if(args.size() > 2) { vz = args[2].cast_to_long_double(); }
                 return scfx::math::spheric_to_cartesian<long double>(vx, vy, vz);
             });
-            rt->add_function("cartesian_to_spheric", SCFXFUN(, args) {
+            rt->add_function("cartesian_to_spheric", SCFXFUN(args) {
                 if(args.size() == 1) {
                     if(args[0].is_array_ref()) {
                         long double vx{};
@@ -416,18 +416,18 @@ namespace scfx {
                 if(args.size() > 2) { vz = args[2].cast_to_long_double(); }
                 return scfx::math::cartesian_to_spheric<long double>(vx, vy, vz);
             });
-            rt->add_function("vec4_r", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].as_vec4().r(); });
-            rt->add_function("vec4_theta", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].as_vec4().theta(); });
-            rt->add_function("vec4_phi", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].as_vec4().phi(); });
+            rt->add_function("vec4_r", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].as_vec4().r(); });
+            rt->add_function("vec4_theta", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].as_vec4().theta(); });
+            rt->add_function("vec4_phi", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].as_vec4().phi(); });
 
-            rt->add_function("angle3d", SCFXFUN(, args) {
+            rt->add_function("angle3d", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
                 return scfx::math::angle3d(args[0].as_vec4(), args[1].as_vec4());
             });
 
-            rt->add_function("normalized", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].as_vec4().normalized(); });
-            rt->add_function("inverted", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].as_mat4().inverted(); });
-            rt->add_function("translation", SCFXFUN(, args) {
+            rt->add_function("normalized", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].as_vec4().normalized(); });
+            rt->add_function("inverted", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return args[0].as_mat4().inverted(); });
+            rt->add_function("translation", SCFXFUN(args) {
                 long double dx{0.0L};
                 long double dy{0.0L};
                 long double dz{0.0L};
@@ -450,7 +450,7 @@ namespace scfx {
                 }
                 return valbox::mat4_t::translate(dx, dy, dz);
             });
-            rt->add_function("perspective", SCFXFUN(, args) {
+            rt->add_function("perspective", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(4)
                 return valbox::mat4_t::perspective(
                     args[0].cast_to_long_double(), // fov_y_degrees
@@ -459,7 +459,7 @@ namespace scfx {
                     args[3].cast_to_long_double()  // zfar
                 );
             });
-            rt->add_function("look_at", SCFXFUN(, args) {
+            rt->add_function("look_at", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(9)
                 return scfx::math::look_at_matrix<long double>(
                     args[0].cast_to_long_double(), // eyeX

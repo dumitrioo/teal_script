@@ -15,7 +15,7 @@ namespace scfx {
         virtual dict_map_t<std::string, valbox> *global_functions_dictionary() = 0;
         virtual dict_map_t<std::string, dict_map_t<std::string, valbox>> *global_methods_dictionary() = 0;
         virtual std::function<bool(std::string)> const &user_functions_search() = 0;
-        virtual std::function<valbox(valbox const &, std::vector<valbox> &)> const &user_function_selector() = 0;
+        virtual std::function<valbox(std::vector<valbox> &)> const &user_function_selector() = 0;
         virtual valbox get_input(std::string const &) = 0;
         virtual valbox const &get_output(std::string const &) = 0;
         virtual void set_input(std::string const &, valbox const &) = 0;
@@ -25,11 +25,11 @@ namespace scfx {
         virtual void clear_inputs() = 0;
         virtual void clear_outputs() = 0;
 
-        virtual void add_function(std::string const &, std::function<valbox(valbox const &, std::vector<valbox> &)>) = 0;
+        virtual void add_function(std::string const &, std::function<valbox(std::vector<valbox> &)>) = 0;
         virtual void remove_function(std::string const &) = 0;
         virtual void add_var(std::string const &, valbox const &) = 0;
         virtual void remove_var(std::string const &) = 0;
-        virtual void add_method(std::string const &/*class_name*/, std::string const &/*method_name*/, std::function<valbox(valbox const &, std::vector<valbox> &)>) = 0;
+        virtual void add_method(std::string const &/*class_name*/, std::string const &/*method_name*/, std::function<valbox(std::vector<valbox> &)>) = 0;
         virtual void remove_method(std::string const &/*class_name*/, std::string const &/*method_name*/) = 0;
     };
 
