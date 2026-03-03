@@ -1401,7 +1401,7 @@ namespace scfx {
                     case type::OBJECT:
                         for(auto &&p: r.as_object()) {
                             if(l.as_object().find(p.first) == l.as_object().end()) {
-                                l[p.first] = p.second;
+                                l[p.first].assign(p.second);
                             }
                         }
                         break;
@@ -1529,7 +1529,7 @@ namespace scfx {
                         res = l.as_object();
                         for(auto &&p: r.as_object()) {
                             if(res.as_object().find(p.first) == res.as_object().end()) {
-                                res[p.first] = p.second;
+                                res[p.first].assign(p.second);
                             }
                         }
                         break;
@@ -1675,27 +1675,32 @@ namespace scfx {
         }
 
         friend bool operator==(valbox const &l, valbox const &r) {
-            type lt{l.val_or_pointed_type()};
-            type rt{r.val_or_pointed_type()};
+            valbox const &lder(l.deref());
+            valbox const &rder(r.deref());
+            type lt{lder.val_or_pointed_type()};
+            type rt{rder.val_or_pointed_type()};
+            if(lder.box_.get() == rder.box_.get()) {
+                return true;
+            }
             if(lt == rt) {
                 switch(lt) {
-                    case type::CHAR: return l.as_char() == r.as_char();
-                    case type::WCHAR: return l.as_wchar() == r.as_wchar();
-                    case type::U8: return l.as_u8() == r.as_u8();
-                    case type::S8: return l.as_s8() == r.as_s8();
-                    case type::U16: return l.as_u16() == r.as_u16();
-                    case type::S16: return l.as_s16() == r.as_s16();
-                    case type::U32: return l.as_u32() == r.as_u32();
-                    case type::S32: return l.as_s32() == r.as_s32();
-                    case type::U64: return l.as_u64() == r.as_u64();
-                    case type::S64: return l.as_s64() == r.as_s64();
-                    case type::FLOAT: return l.as_float() == r.as_float();
-                    case type::DOUBLE: return l.as_double() == r.as_double();
-                    case type::LONG_DOUBLE: return l.as_long_double() == r.as_long_double();
-                    case type::BOOL: return l.as_bool() == r.as_bool();
-                    case type::STRING: return l.as_string() == r.as_string();
-                    case type::WSTRING: return l.as_wstring() == r.as_wstring();
-                    case type::POINTER: return l.as_ptr() == r.as_ptr();
+                    case type::CHAR: return lder.as_char() == rder.as_char();
+                    case type::WCHAR: return lder.as_wchar() == rder.as_wchar();
+                    case type::U8: return lder.as_u8() == rder.as_u8();
+                    case type::S8: return lder.as_s8() == rder.as_s8();
+                    case type::U16: return lder.as_u16() == rder.as_u16();
+                    case type::S16: return lder.as_s16() == rder.as_s16();
+                    case type::U32: return lder.as_u32() == rder.as_u32();
+                    case type::S32: return lder.as_s32() == rder.as_s32();
+                    case type::U64: return lder.as_u64() == rder.as_u64();
+                    case type::S64: return lder.as_s64() == rder.as_s64();
+                    case type::FLOAT: return lder.as_float() == rder.as_float();
+                    case type::DOUBLE: return lder.as_double() == rder.as_double();
+                    case type::LONG_DOUBLE: return lder.as_long_double() == rder.as_long_double();
+                    case type::BOOL: return lder.as_bool() == rder.as_bool();
+                    case type::STRING: return lder.as_string() == rder.as_string();
+                    case type::WSTRING: return lder.as_wstring() == rder.as_wstring();
+                    case type::POINTER: return lder.as_ptr() == rder.as_ptr();
                     case type::UNDEFINED: return true;
                     default: break;
                 }
@@ -1704,29 +1709,29 @@ namespace scfx {
                 bool applicable{stronger_numeric_type(lt, rt, st)};
                 if(applicable) {
                     switch(st) {
-                        case type::CHAR: return l.cast_num_to_num<char>() == r.cast_num_to_num<char>();
-                        case type::WCHAR: return l.cast_num_to_num<wchar_t>() == r.cast_num_to_num<wchar_t>();
-                        case type::U8: return l.cast_num_to_num<std::uint8_t>() == r.cast_num_to_num<std::uint8_t>();
-                        case type::S8: return l.cast_num_to_num<std::int8_t>() == r.cast_num_to_num<std::int8_t>();
-                        case type::U16: return l.cast_num_to_num<std::uint16_t>() == r.cast_num_to_num<std::uint16_t>();
-                        case type::S16: return l.cast_num_to_num<std::int16_t>() == r.cast_num_to_num<std::int16_t>();
-                        case type::U32: return l.cast_num_to_num<std::uint32_t>() == r.cast_num_to_num<std::uint32_t>();
-                        case type::S32: return l.cast_num_to_num<std::int32_t>() == r.cast_num_to_num<std::int32_t>();
-                        case type::U64: return l.cast_num_to_num<std::uint64_t>() == r.cast_num_to_num<std::uint64_t>();
-                        case type::S64: return l.cast_num_to_num<std::int64_t>() == r.cast_num_to_num<std::int64_t>();
-                        case type::FLOAT: return l.cast_num_to_num<float>() == r.cast_num_to_num<float>();
-                        case type::DOUBLE: return l.cast_num_to_num<double>() == r.cast_num_to_num<double>();
-                        case type::LONG_DOUBLE: return l.cast_num_to_num<long double>() == r.cast_num_to_num<long double>();
-                        case type::POINTER: return l.cast_num_to_num<std::uintptr_t>() == r.cast_num_to_num<std::uintptr_t>();
+                        case type::CHAR: return lder.cast_num_to_num<char>() == rder.cast_num_to_num<char>();
+                        case type::WCHAR: return lder.cast_num_to_num<wchar_t>() == rder.cast_num_to_num<wchar_t>();
+                        case type::U8: return lder.cast_num_to_num<std::uint8_t>() == rder.cast_num_to_num<std::uint8_t>();
+                        case type::S8: return lder.cast_num_to_num<std::int8_t>() == rder.cast_num_to_num<std::int8_t>();
+                        case type::U16: return lder.cast_num_to_num<std::uint16_t>() == rder.cast_num_to_num<std::uint16_t>();
+                        case type::S16: return lder.cast_num_to_num<std::int16_t>() == rder.cast_num_to_num<std::int16_t>();
+                        case type::U32: return lder.cast_num_to_num<std::uint32_t>() == rder.cast_num_to_num<std::uint32_t>();
+                        case type::S32: return lder.cast_num_to_num<std::int32_t>() == rder.cast_num_to_num<std::int32_t>();
+                        case type::U64: return lder.cast_num_to_num<std::uint64_t>() == rder.cast_num_to_num<std::uint64_t>();
+                        case type::S64: return lder.cast_num_to_num<std::int64_t>() == rder.cast_num_to_num<std::int64_t>();
+                        case type::FLOAT: return lder.cast_num_to_num<float>() == rder.cast_num_to_num<float>();
+                        case type::DOUBLE: return lder.cast_num_to_num<double>() == rder.cast_num_to_num<double>();
+                        case type::LONG_DOUBLE: return lder.cast_num_to_num<long double>() == rder.cast_num_to_num<long double>();
+                        case type::POINTER: return lder.cast_num_to_num<std::uintptr_t>() == rder.cast_num_to_num<std::uintptr_t>();
                         default: break;
                     }
                 } else {
                     type st{stronger_type(lt, rt)};
                     switch(st) {
-                        case type::BOOL: return l.cast_to_bool() == r.cast_to_bool();
-                        case type::STRING: return l.cast_to_string() == r.cast_to_string();
-                        case type::WCHAR: return l.cast_to_wchar() == r.cast_to_wchar();
-                        case type::WSTRING: return l.cast_to_wstring() == r.cast_to_wstring();
+                        case type::BOOL: return lder.cast_to_bool() == rder.cast_to_bool();
+                        case type::STRING: return lder.cast_to_string() == rder.cast_to_string();
+                        case type::WCHAR: return lder.cast_to_wchar() == rder.cast_to_wchar();
+                        case type::WSTRING: return lder.cast_to_wstring() == rder.cast_to_wstring();
                         case type::UNDEFINED: return false;
                         default: break;
                     }

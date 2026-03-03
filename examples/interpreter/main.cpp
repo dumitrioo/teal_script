@@ -134,8 +134,8 @@ int main(int argc, char **argv) {
             rt.run_cycle();
         }
 #else
-    rt.run_mt(std::thread::hardware_concurrency());
-    while(!rt.wait(0.1));
+        rt.run_mt(std::thread::hardware_concurrency());
+        while(!rt.wait(0.1));
 #endif
 
 #ifndef DEBUG_SCFX_RUN_CYCLE

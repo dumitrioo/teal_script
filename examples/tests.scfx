@@ -6,7 +6,7 @@ execution_time_limit(t) {
     if(timestamp().fseconds() > this.t) exit();
 }
 
-// execution_time_limit etl(1.0);
+execution_time_limit etl(0.1);
 
 
 function custom_to_str(n) {
@@ -34,7 +34,7 @@ merge_objects() {
     println(o);
 }
 
-merge_objects motest();
+// merge_objects motest();
 
 
 function callee2(qq) {
