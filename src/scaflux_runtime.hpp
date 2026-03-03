@@ -1700,8 +1700,8 @@ namespace scfx {
 
             code_generator lj{};
             lj.chop(
-                ast, input_cells_, input_names_to_instances_mapping_, worker_cells_templates_, worker_cells_,
-                worker_bodies_, user_functions_, global_constants_dictionary_, global_functions_dictionary_
+                ast, input_cells_, input_names_to_instances_mapping_, worker_cells_templates_,
+                worker_cells_, worker_bodies_, user_functions_, global_functions_dictionary_
             );
         }
 

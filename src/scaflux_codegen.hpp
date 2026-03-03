@@ -24,7 +24,6 @@ namespace scfx {
             map_t<std::string, worker_cell_instance> &worker_cells,
             map_t<std::string, statement_ptr> &worker_bodies,
             map_t<std::string, function_definition> &user_functions,
-            dict_map_t<std::string, valbox> const &/*global_variables_dictionary*/,
             dict_map_t<std::string, valbox> const &global_functions_dictionary
         ) {
             for(std::size_t i = 0; i < ast.size(); ++i) {
