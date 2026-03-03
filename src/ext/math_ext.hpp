@@ -134,7 +134,7 @@ namespace scfx {
             rt->add_function("rad2deg", SCFXFUN(, args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(1) return scfx::math::rad2deg(args[0].cast_num_to_num<long double>()); });
 
             rt->add_function("gaussian", SCFXFUN(, args) {
-                SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 3)
+                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(1, 3)
                 switch(args.size()) {
                     case 3: return scfx::math::gaussian<long double>(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>(), args[2].cast_num_to_num<long double>());
                     case 2: return scfx::math::gaussian<long double>(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>());

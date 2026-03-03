@@ -269,14 +269,14 @@ public:
         rt->add_function("zmq_connect", SCFXFUN(, args) { return zmq_connect(args[0].as_ptr(), args[1].cast_to_string().c_str()); });
 
         rt->add_function("zmq_setsockopt", SCFXFUN(, args) {
-            SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(3, 3)
+            SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(3, 3)
             int opt{args[1].cast_num_to_num<int>()};
             auto d{args[2].cast_to_byte_array()};
             return zmq_setsockopt(args[0].as_ptr(), opt, d.data(), d.size());
         });
 
         rt->add_function("zmq_z85_encode", SCFXFUN(, args) {
-            SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 1)
+            SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(1, 1)
             auto src{args[0].cast_to_byte_array()};
             if(src.empty()) {
                 return std::string{};
@@ -288,7 +288,7 @@ public:
         });
 
         rt->add_function("zmq_z85_decode", SCFXFUN(, args) {
-            SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 1)
+            SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(1, 1)
             auto src{args[0].cast_to_string()};
             if(src.empty()) {
                 return std::vector<std::uint8_t>{};
@@ -300,7 +300,7 @@ public:
         });
 
         rt->add_function("zmq_send", SCFXFUN(, args) {
-            SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(2, 3)
+            SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(2, 3)
             std::vector<std::uint8_t> buf{args[1].cast_to_byte_array()};
             if(args.size() == 3) {
                 return zmq_send(args[0].as_ptr(), buf.data(), buf.size(), args[2].cast_num_to_num<int>());
@@ -309,12 +309,12 @@ public:
             }
         });
         rt->add_function("zmq_send_more", SCFXFUN(, args) {
-            SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(2, 2)
+            SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(2, 2)
             std::vector<std::uint8_t> buf{args[1].cast_to_byte_array()};
             return zmq_send(args[0].as_ptr(), buf.data(), buf.size(), ZMQ_MORE);
         });
         rt->add_function("zmq_recv", SCFXFUN(, args) {
-            SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 3)
+            SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(1, 3)
             int nrd{0};
             std::vector<std::uint8_t> buf{};
             if(args.size() > 1) {

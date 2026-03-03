@@ -25,6 +25,15 @@ dot_notation_call_test() {
 // dot_notation_call_test dnctest();
 
 
+mime_type_test() {
+    "/bin/ls".load_from_file().data_type().println();
+    println(data_type(load_from_file("/bin/ls"))); // same as above
+    exit();
+}
+
+// mime_type_test fttest();
+
+
 merge_objects() {
     k["r"] = "1";
     t["d"] = "d";

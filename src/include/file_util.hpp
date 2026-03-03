@@ -246,14 +246,11 @@ namespace scfx::file_util {
 #ifdef USE_FILE_MAGIC
     namespace detail {
 
-        template<typename T> struct magic_deleter;
-        template<> struct magic_deleter<::magic_set> { void operator()(magic_set *p) const { if(p != nullptr) { ::magic_close(p); } } };
-        template<class T> using magic_ptr = std::unique_ptr<T, magic_deleter<T>>;
-
         class mgc_detector {
         public:
-            mgc_detector() {
-                magic_handle_.reset(::magic_open(MAGIC_MIME_TYPE));
+            mgc_detector(int flags = MAGIC_MIME_TYPE):
+                magic_handle_{magic_open(flags), &magic_close}
+            {
                 if(magic_handle_) {
                     if(::magic_load(magic_handle_.get(), nullptr) != 0) {
                         magic_handle_.reset();
@@ -280,27 +277,27 @@ namespace scfx::file_util {
             }
 
         private:
-            magic_ptr<magic_set> magic_handle_{};
+            std::unique_ptr<magic_set, decltype(&magic_close)> magic_handle_;
         };
 
     }
 
-    static std::string file_type(const std::string &pat_str) {
-        if(file_exists(pat_str)) { return detail::mgc_detector{}.file(pat_str); }
+    static std::string file_type(const std::string &pat_str, int flags = MAGIC_MIME_TYPE) {
+        if(file_exists(pat_str)) { return detail::mgc_detector{flags}.file(pat_str); }
         return {};
     }
 
-    static std::string data_type(void const *data, std::size_t data_size) {
-        if(data && data_size) { return detail::mgc_detector{}.buffer(data, data_size); }
+    static std::string data_type(void const *data, std::size_t data_size, int flags = MAGIC_MIME_TYPE) {
+        if(data && data_size) { return detail::mgc_detector{flags}.buffer(data, data_size); }
         return {};
     }
 
-    static std::string data_type(std::vector<std::uint8_t> const &data) {
-        return data_type(data.data(), data.size());
+    static std::string data_type(std::vector<std::uint8_t> const &data, int flags = MAGIC_MIME_TYPE) {
+        return data_type(data.data(), data.size(), flags);
     }
 
-    static std::string data_type(std::string const &data) {
-        return data_type(data.data(), data.size());
+    static std::string data_type(std::string const &data, int flags = MAGIC_MIME_TYPE) {
+        return data_type(data.data(), data.size(), flags);
     }
 #endif
 

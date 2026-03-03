@@ -24,7 +24,7 @@
     if(args.size() < (NUM_ARGS)) { \
         throw std::runtime_error{"wrong function arguments count"}; \
     }
-#define SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(NUM_ARGS_MIN, NUM_ARGS_MAX) \
+#define SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(NUM_ARGS_MIN, NUM_ARGS_MAX) \
     if(args.size() < (NUM_ARGS_MIN) || args.size() > (NUM_ARGS_MAX)) { \
         throw std::runtime_error{"wrong function arguments count"}; \
     }

@@ -306,7 +306,7 @@ namespace scfx {
             });
 
             add_function("list_directory", SCFXFUN(, args) {
-                SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 2)
+                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(1, 2)
                 bool recur{false};
                 if(args.size() >= 2) {
                     recur = args[1].cast_to_bool();
@@ -326,20 +326,46 @@ namespace scfx {
 
 #ifdef USE_FILE_MAGIC
             add_function("data_type", SCFXFUN(, args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(1);
+                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(1, 2);
                 std::string res{};
                 if(args[0].is_string_ref()) {
-                    res = scfx::file_util::data_type(args[0].as_string());
+                    if(args.size() == 1) {
+                        res = scfx::file_util::data_type(args[0].as_string());
+                    } else {
+                        res = scfx::file_util::data_type(args[0].as_string(), args[1].cast_to_s32());
+                    }
                 } else if(args[0].is_array_ref()) {
-                    res = scfx::file_util::data_type(args[0].cast_to_string());
+                    if(args.size() == 1) {
+                        res = scfx::file_util::data_type(args[0].cast_to_string());
+                    } else {
+                        res = scfx::file_util::data_type(args[0].cast_to_string(), args[1].cast_to_s32());
+                    }
                 }
                 return res;
             });
             add_function("file_type", SCFXFUN(, args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(1);
-                std::string res{scfx::file_util::file_type(args[0].cast_to_string())};
-                return res;
+                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(1, 2);
+                if(args.size() == 1) {
+                    return scfx::file_util::file_type(args[0].cast_to_string());
+                } else {
+                    return scfx::file_util::file_type(args[0].cast_to_string(), args[1].cast_to_s32());
+                }
             });
+            add_var("MAGIC_NONE", MAGIC_NONE);
+            add_var("MAGIC_DEBUG", MAGIC_DEBUG);
+            add_var("MAGIC_SYMLINK", MAGIC_SYMLINK);
+            add_var("MAGIC_COMPRESS", MAGIC_COMPRESS);
+            add_var("MAGIC_DEVICES", MAGIC_DEVICES);
+            add_var("MAGIC_MIME_TYPE", MAGIC_MIME_TYPE);
+            add_var("MAGIC_CONTINUE", MAGIC_CONTINUE);
+            add_var("MAGIC_CHECK", MAGIC_CHECK);
+            add_var("MAGIC_PRESERVE_ATIME", MAGIC_PRESERVE_ATIME);
+            add_var("MAGIC_RAW", MAGIC_RAW);
+            add_var("MAGIC_ERROR", MAGIC_ERROR);
+            add_var("MAGIC_MIME_ENCODING", MAGIC_MIME_ENCODING);
+            add_var("MAGIC_MIME", MAGIC_MIME);
+            add_var("MAGIC_APPLE", MAGIC_APPLE);
+            add_var("MAGIC_EXTENSION", MAGIC_EXTENSION);
 #endif
             add_function("errno", SCFXFUN(, /*args*/) { return errno; });
             add_function("err_to_str", SCFXFUN(, args) { return std::string{strerror(args[0].cast_num_to_num<int>())}; });
@@ -646,7 +672,7 @@ namespace scfx {
             });
 
             add_function("replace_substr", SCFXFUN(, args) {
-                SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(2, 3)
+                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(2, 3)
                 if(args.size() == 2) {
                     return scfx::str_util::to_utf8(scfx::str_util::replace_substring<std::wstring>(
                         args[0].cast_to_wstring(), args[1].cast_to_wstring(), std::wstring{}
@@ -662,7 +688,7 @@ namespace scfx {
 
 
             add_function("substr", SCFXFUN(, args) {
-                SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 3)
+                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(1, 3)
                 if(args.size() == 1) {
                     return args[0].cast_to_string();
                 } else if(args.size() == 2) {
@@ -681,7 +707,7 @@ namespace scfx {
             });
 
             add_function("slice", SCFXFUN(, args) {
-                SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 3)
+                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(1, 3)
                 if(args[0].is_array_ref()) {
                     if(args.size() == 1) {
                         return args[0];
@@ -771,7 +797,7 @@ namespace scfx {
             });
 
             add_function("subarray", SCFXFUN(, args) {
-                SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 3)
+                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(1, 3)
                 if(args[0].is_array_ref()) {
                     if(args.size() == 1) {
                         return args[0].subarray();
@@ -785,7 +811,7 @@ namespace scfx {
             });
 
             add_function("hexdump", SCFXFUN(, args) {
-                SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 4)
+                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(1, 4)
                 if(args.size() == 1) {
                     return scfx::str_util::hexdump(args[0].cast_to_byte_array());
                 } else if(args.size() == 2) {
@@ -811,39 +837,39 @@ namespace scfx {
             });
 
             add_function("data_to_base85_str", SCFXFUN(, args) {
-                SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 1)
+                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(1, 1)
                 auto src{args[0].cast_to_byte_array()};
                 return scfx::data_to_base85_str(src);
             });
 
             add_function("base85_str_to_data", SCFXFUN(, args) {
-                SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 1)
+                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(1, 1)
                 auto src{args[0].cast_to_string()};
                 auto d{scfx::base85_str_to_data(src)};
                 return std::string{d.begin(), d.end()};
             });
 
             add_function("data_to_base64_str", SCFXFUN(, args) {
-                SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 1)
+                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(1, 1)
                 auto src{args[0].cast_to_byte_array()};
                 return scfx::data_to_base64_str(src);
             });
 
             add_function("base64_str_to_data", SCFXFUN(, args) {
-                SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 1)
+                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(1, 1)
                 auto src{args[0].cast_to_string()};
                 auto d{scfx::base64_str_to_data(src)};
                 return std::string{d.begin(), d.end()};
             });
 
             add_function("data_to_hex_str", SCFXFUN(, args) {
-                SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 1)
+                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(1, 1)
                 auto src{args[0].cast_to_byte_array()};
                 return scfx::data_to_hex_str(src);
             });
 
             add_function("hex_str_to_data", SCFXFUN(, args) {
-                SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 1)
+                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(1, 1)
                 auto src{args[0].cast_to_string()};
                 auto d{scfx::hex_str_to_data(src)};
                 return std::string{d.begin(), d.end()};
@@ -859,7 +885,7 @@ namespace scfx {
 
 
             add_function("atoi", SCFXFUN(, args) {
-                SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 3)
+                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(1, 3)
                 if(args.size() == 1) {
                     return scfx::str_util::atoi(args[0].cast_to_string());
                 } else if(args.size() == 2) {
@@ -871,7 +897,7 @@ namespace scfx {
             });
 
             add_function("atoui", SCFXFUN(, args) {
-                SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 2)
+                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(1, 2)
                 if(args.size() == 1) {
                     return scfx::str_util::atoui(args[0].cast_to_string());
                 } else if(args.size() == 2) {
@@ -1015,7 +1041,7 @@ namespace scfx {
                 return time_to_sleep;
             });
             add_function("exit", SCFXFUN(, args) {
-                SCFX_CHCK_FUN_PARMS_NUM_BETWEEN(1, 2);
+                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(1, 2);
                 if(programmatic_termination_enabled_ != 0) {
                     exit_status_ = args.size() == 2 ? args[1].cast_num_to_num<int>() : 0;
                     terminate();
