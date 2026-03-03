@@ -156,14 +156,14 @@ public:
         } catch (...) {
         }
         try {
-            rt->add_method("fractal", "get_coord", SCFXFUN(/*fname*/, args) {
+            rt->add_method("fractal", "get_coord", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
                 return args[0].as_class<fractal *>()->get_coord();
             });
         } catch (...) {
         }
         try {
-            rt->add_method("fractal", "set_ranges", SCFXFUN(/*fname*/, args) {
+            rt->add_method("fractal", "set_ranges", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(5)
                 args[0].as_class<fractal *>()->set_ranges(args[1].cast_to_s32(), args[2].cast_to_s32(), args[3].cast_to_s32(), args[4].cast_to_s32());
                 return true;
@@ -171,7 +171,7 @@ public:
         } catch (...) {
         }
         try {
-            rt->add_method("fractal", "set_at", SCFXFUN(/*fname*/, args) {
+            rt->add_method("fractal", "set_at", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(4)
                 args[0].as_class<fractal *>()->set_at(args[1].cast_to_s32(), args[2].cast_to_s32(), args[3].cast_to_char());
                 return true;
@@ -179,7 +179,7 @@ public:
         } catch (...) {
         }
         try {
-            rt->add_method("fractal", "print", SCFXFUN(/*fname*/, args) {
+            rt->add_method("fractal", "print", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
                 args[0].as_class<fractal *>()->print();
                 return true;

@@ -1,4 +1,8 @@
 pfractal(yb, ye) {
+    if(this.done != undefined) {
+        sleep(0.1);
+        return true;
+    }
     yMin = -0.2; yMax =  0.1; xMin = -1.5; xMax = -1.1;
     bt = timestamp().fseconds();
     for(yPixel = yb; yPixel < ye; ++yPixel) {
@@ -24,7 +28,8 @@ pfractal(yb, ye) {
     }
     et = timestamp().fseconds();
     println("elapsed time: ", et - bt);
-    exit();
+    this.done = true;
+    return true;
 }
 
 pfractal pf1(-100, -87);
@@ -47,3 +52,20 @@ pfractal pf17(100, 112);
 pfractal pf18(112, 125);
 pfractal pf19(125, 137);
 pfractal pf20(137, 150);
+
+
+execution_finished(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19) {
+    println(a0);
+    if(
+        a0 && a1 && a2 && a3 && a4 && a5 && a6 && a7 && a8 && a9 &&
+        a10 && a11 && a12 && a13 && a14 && a15 && a16 && a17 && a18 && a19
+    ) {
+        exit();
+    }
+    return 0;
+}
+
+execution_finished efini(
+    pf1, pf2, pf3, pf4, pf5, pf6, pf7, pf8, pf9, pf10,
+    pf11, pf12, pf13, pf14, pf15, pf16, pf17, pf18, pf19, pf20
+);
