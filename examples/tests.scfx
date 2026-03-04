@@ -31,7 +31,7 @@ mime_type_test() {
     exit();
 }
 
-mime_type_test fttest();
+mime_type_test mttest();
 
 
 merge_objects() {
