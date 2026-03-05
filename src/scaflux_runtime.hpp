@@ -1451,7 +1451,7 @@ namespace scfx {
                         std::shared_ptr<execution_context> exctx{std::make_shared<execution_context>()};
                         execution_context *exctx_ptr{exctx.get()};
                         exctx_ptr->set_runtime_interface(this);
-                        while(!termination_requested() && !failure()) {
+                        while(termination_requested_ == 0 && failure_ == 0) {
                             exctx_ptr->clear_all_jumps_request();
                             bool have_locked{false};
                             for(auto &&w: worker_cells_) {
@@ -1582,7 +1582,7 @@ namespace scfx {
         }
 
         bool wait(long double secnds) {
-            if(is_current_thread_mode_multi()) {
+            if(thread_mode_ == thread_mode::multi) {
                 auto slpfor{std::chrono::nanoseconds{
                         std::min<std::int64_t>(static_cast<std::int64_t>(secnds * 1'000'000'000.0L),
                         wait_granularity_nsec_)
@@ -1592,18 +1592,22 @@ namespace scfx {
                     std::chrono::steady_clock::now() +
                     std::chrono::nanoseconds{static_cast<std::int64_t>(secnds * 1'000'000'000.0L)}
                 };
-                while(!termination_requested() && std::chrono::steady_clock::now() < future) {
+                while(
+                    termination_requested_ == 0 &&
+                    failure_ == 0 &&
+                    std::chrono::steady_clock::now() < future
+                ) {
                     std::this_thread::sleep_for(slpfor);
                 }
                 std::shared_lock l{threads_mtp_};
-                if(termination_requested_ != 0) {
+                if(termination_requested_ != 0 || failure_ != 0) {
                     for(auto &&t: threads_) {
                         if(t.joinable()) {
                             t.join();
                         }
                     }
                 }
-                return termination_requested_ != 0;
+                return termination_requested_ != 0 || failure_ != 0;
             }
             return true;
         }
