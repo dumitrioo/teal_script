@@ -151,7 +151,6 @@ ray_window() {
             if(ray_get_key_pressed() == 300) ray_toggle_full_screen();
             ray_end_drawing();
             ray_begin_drawing();
-            ray_clear_background(Color(0, 0, 0, 255));
         }
     }
     return this.tid;

@@ -1259,25 +1259,25 @@ namespace scfx {
             set_thread_mode_multi();
         }
 
-        bool run_cycles(std::size_t n) {
-            for(std::size_t i{0}; i < n; ) {
-                if(!run_cycle()) {
-                    return false;
+        void run_cycles(std::size_t n) {
+            for(std::size_t i{0}; i < n; ++i) {
+                run_cycle();
+                if(termination_requested()) {
+                    break;
                 }
             }
-            return true;
         }
 
-        bool run_cycle() {
+        void run_cycle() {
+            if(termination_requested()) {
+                return;
+            }
             if(!is_current_thread_mode_single()) {
                 if(is_current_thread_mode_none()) {
                     set_thread_mode_single();
                 } else {
                     throw std::runtime_error{"set single thread mode first"};
                 }
-            }
-            if(termination_requested() || is_current_thread_mode_multi()) {
-                return false;
             }
             exctx_.clear_all_jumps_request();
             for(auto &&w: worker_cells_) {
@@ -1375,7 +1375,7 @@ namespace scfx {
                 }
                 body_it->second->exec(&exctx_);
                 if(termination_requested()) {
-                    return false;
+                    break;
                 }
                 if(exctx_.return_requested()) {
                     curr_cell.set_curr_value(exctx_.return_result());
@@ -1385,7 +1385,6 @@ namespace scfx {
                 }
                 exctx_.clear_all_jumps_request();
             }
-            return true;
         }
 
         void terminate() {
@@ -1399,7 +1398,7 @@ namespace scfx {
         }
 
         bool termination_requested() const {
-            return termination_requested_ != 0;
+            return termination_requested_.load(std::memory_order_acquire) != 0;
         }
 
         bool programmatic_termination_enabled() const {
@@ -1451,7 +1450,10 @@ namespace scfx {
                         std::shared_ptr<execution_context> exctx{std::make_shared<execution_context>()};
                         execution_context *exctx_ptr{exctx.get()};
                         exctx_ptr->set_runtime_interface(this);
-                        while(termination_requested_ == 0 && failure_ == 0) {
+                        while(
+                            termination_requested_.load(std::memory_order_acquire) == 0 &&
+                            failure_.load(std::memory_order_acquire) == 0
+                        ) {
                             exctx_ptr->clear_all_jumps_request();
                             bool have_locked{false};
                             for(auto &&w: worker_cells_) {
