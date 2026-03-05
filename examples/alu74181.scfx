@@ -43,7 +43,7 @@ rand_bool m();
 
 ///////////////////////// logical gates
 not(a) { return !a; }
-buf(a) { return bool(a); }
+fwd(a) { return bool(a); }
 and2(a, b) { return a && b; }
 and3(a, b, c) { return a && b && c; }
 and4(a, b, c, d) { return a && b && c && d; }
@@ -76,22 +76,22 @@ and3  alu_5(b3, s3, a3);
 and3  alu_6(a3, s2, alu_0);
 and2  alu_7(alu_0, s1);
 and2  alu_8(s0, b3);
-buf   alu_9(a3);
+fwd   alu_9(a3);
 and3  alu_10(b2, s3, a2);
 and3  alu_11(a2, s2, alu_1);
 and2  alu_12(alu_1, s1);
 and2  alu_13(s0, b2);
-buf   alu_14(a2);
+fwd   alu_14(a2);
 and3  alu_15(b1, s3, a1);
 and3  alu_16(a1, s2, alu_2);
 and2  alu_17(alu_2, s1);
 and2  alu_18(s0, b1);
-buf   alu_19(a1);
+fwd   alu_19(a1);
 and3  alu_20(b0, s3, a0);
 and3  alu_21(a0, s2, alu_3);
 and2  alu_22(alu_3, s1);
 and2  alu_23(s0, b0);
-buf   alu_24(a0);
+fwd   alu_24(a0);
 nor2  alu_25(alu_5, alu_6);
 nor3  alu_26(alu_7, alu_8, alu_9);
 nor2  alu_27(alu_10, alu_11);
@@ -104,7 +104,7 @@ xor2  alu_33(alu_25, alu_26);
 xor2  alu_34(alu_27, alu_28);
 xor2  alu_35(alu_29, alu_30);
 xor2  alu_36(alu_31, alu_32);
-buf   alu_37(alu_26);
+fwd   alu_37(alu_26);
 and2  alu_38(alu_25, alu_28);
 and3  alu_39(alu_25, alu_27, alu_30);
 and4  alu_40(alu_25, alu_27, alu_29, alu_32);
