@@ -4,12 +4,19 @@ SCAFlux is a dynamically typed scripting language in the declarative, pure funct
 
 One of the problems classes, that can be easily solved by this scripting language, is the complex real-time control of multitude actuators/indicators/displays/etc. within a logical circuit, based on the analysis of incoming signals from multitude input devices. However, the language's capabilities also allow it to solve problems that are typically solved by the Turing-complete languages, as its type system, language constructs, and set of operations make this scripting language Turing-complete. The language's extensibility from host code also enhances its ability to solve the diverse tasks assigned to scripting engines.
 
-# Implementation
+# Implementation and usage
 
 Proposed implementation is an interpreter accomplished as an embedded library without dependencies written in C++ and designed to be used in couple with C++.
 
-To add support for SCAFlux into your C++ application, you need to include header file, instantiate SCAFlux runtime object, load source code and extensions shared libraries into it and execute in single- or multi-threaded mode. To extend the scripting language with functions, variables and objects, you should add entities separately or in form of extension to this runtime object, using rules described in the document mentioned below, in "More information" section.
-You can also explore the [interpreter](examples/interpreter/main.cpp) application source code and scripts [extending_example](examples/extending_example.scfx), [alu74181](examples/alu74181.scfx), [tbbt_2cola](examples/tbbt_2cola.scfx), [example](examples/example.scfx) as the examples of embedding a library and extending of the language's functionality. 
+To add support for SCAFlux into your C++ application, you need to include [header file](src/scaflux_runtime.hpp), instantiate SCAFlux runtime object, load source code and extensions shared libraries into it and execute in single- or multi-threaded mode. To extend the scripting language with functions, variables and objects, you should add entities separately or in form of extension to this runtime object, using rules described in the document mentioned below, in "More information" section. You can explore the [interpreter](examples/interpreter/main.cpp) application source code and scripts [extending_example](examples/extending_example.scfx), [alu74181](examples/alu74181.scfx), [tbbt_2cola](examples/tbbt_2cola.scfx), [example](examples/example.scfx) as the examples of embedding a library and extending of the language's functionality. 
+
+# Application
+
+Possible application for this engine may include:
+ * Easy automation of any systems containing embedded computers and electronics together with sensors, actuator units and monitoring system.
+ * Logical interconnecting between separately attached hardware/virtual devices.
+ * Programmatic functionality extension for simpler components (adding intelligence into simple systems).
+ * Parallel analysis of somehow dependant input data from many sources (logical information consolidation).
 
 # More information
 
