@@ -11,17 +11,17 @@
 namespace scfx {
 
     class lexer {
-        static std::int64_t const NEWL{'\n'};
-        static std::int64_t const CRET{'\r'};
-        static std::int64_t const TAB{'\t'};
-        static std::int64_t const BACK{'\b'};
-        static std::int64_t const ALRT{'\a'};
-        static std::int64_t const FRFD{'\f'};
-        static std::int64_t const VTAB{'\v'};
-        static std::int64_t const APOS{'\''};
-        static std::int64_t const DQUO{'\"'};
-        static std::int64_t const BKSL{'\\'};
-        static std::int64_t const ESCP{0x1b};
+        static inline std::int64_t constexpr NEWL{'\n'};
+        static inline std::int64_t constexpr CRET{'\r'};
+        static inline std::int64_t constexpr TAB{'\t'};
+        static inline std::int64_t constexpr BACK{'\b'};
+        static inline std::int64_t constexpr ALRT{'\a'};
+        static inline std::int64_t constexpr FRFD{'\f'};
+        static inline std::int64_t constexpr VTAB{'\v'};
+        static inline std::int64_t constexpr APOS{'\''};
+        static inline std::int64_t constexpr DQUO{'\"'};
+        static inline std::int64_t constexpr BKSL{'\\'};
+        static inline std::int64_t constexpr ESCP{0x1b};
 
     public:
         void consume_char(std::int64_t c) {
