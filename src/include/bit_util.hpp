@@ -9,23 +9,15 @@ namespace scfx::bit_util {
     [[nodiscard]]
     constexpr T byteswap(T val) noexcept {
 #if (__cplusplus < 202300L)
-        if constexpr (sizeof(T) == 1)
+        if constexpr (sizeof(T) == 1) {
             return val;
-        using UT = typename std::make_unsigned<std::remove_cv_t<T>>::type;
-        size_t diff = CHAR_BIT * (sizeof(T) - 1);
-        UT mask1 = static_cast<unsigned char>(~0);
-        UT mask2 = mask1 << diff;
-        UT v = val;
-        for(size_t i = 0; i < sizeof(T) / 2; ++i) {
-            UT byte1 = v & mask1;
-            UT byte2 = v & mask2;
-            v = (v ^ byte1 ^ byte2
-                     ^ (byte1 << diff) ^ (byte2 >> diff));
-            mask1 <<= CHAR_BIT;
-            mask2 >>= CHAR_BIT;
-            diff -= 2 * CHAR_BIT;
         }
-        return v;
+        std::uint8_t const *val_ptr{reinterpret_cast<std::uint8_t const *>(&val)};
+        std::uint8_t ret_val_buf[sizeof(T)];
+        for(size_t i{}; i < sizeof(T); ++i) {
+            ret_val_buf[sizeof(T) - i - 1] = val_ptr[i];
+        }
+        return *reinterpret_cast<T *>(&ret_val_buf[0]);
 #else
         return std::byteswap(val);
 #endif
@@ -71,7 +63,7 @@ namespace scfx::bit_util {
         T val;
         swap_on_le(T v): val{v} {
             if constexpr (scfx::sys_util::little_endian()) {
-                val = byteswap(val);
+                val = byteswap<T>(val);
             }
         }
     };
@@ -85,7 +77,7 @@ namespace scfx::bit_util {
         T val;
         swap_on_be(T v): val{v} {
             if constexpr (scfx::sys_util::big_endian()) {
-                val = byteswap(val);
+                val = byteswap<T>(val);
             }
         }
     };

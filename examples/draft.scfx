@@ -2,8 +2,13 @@
 // ...and simple tests
 
 fn() {
-    a = 1.0 - 1.0 + 1.0;
-    println(a);
+    ab = array_buffer();
+
+    ab.append(hton(i32(623)));
+    ab.to_string().hexdump().println();
+
+    ab.put_at(i32(623), 1);
+    ab.to_string().hexdump().println();
     return exit(0);
 }
 

@@ -17,6 +17,7 @@ INCLUDEPATH += ../../src
 SOURCES += main.cpp
 
 HEADERS += \
+    ../../src/ext/array_buffer_ext.hpp \
     ../../src/include/base16.hpp \
     ../../src/include/base64.hpp \
     ../../src/include/base85.hpp \

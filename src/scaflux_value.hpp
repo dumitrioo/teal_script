@@ -93,7 +93,7 @@ namespace scfx {
         static std::string type_to_str(type t) {
             static std::array<std::string_view, 25> const names{
                 "bool", "char", "s8", "u8", "s16", "u16", "wchar", "s32", "u32", "s64", "u64",
-                "float", "double", "long_double", "vec4", "mat4", "pointer", "class", "func",
+                "f32", "f64", "float", "vec4", "mat4", "pointer", "class", "func",
                 "array",  "object", "string", "wstring", "undefined", "valbox",
             };
             auto i{static_cast<std::size_t>(t)};
@@ -2948,6 +2948,30 @@ namespace scfx {
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        try { return str_util::atoi(as_string()); } catch (...) { return {}; }
                 case type::WSTRING:       try { return str_util::atoi(cast_to_string()); } catch (...) { return {}; }
+                case type::POINTER:       return (uintptr_t)deref().as_ptr();
+                default: break;
+            }
+            return 0;
+        }
+
+        std::size_t cast_to_size_t() const {
+            switch(val_or_pointed_type()) {
+                case type::CHAR:          return as_char();
+                case type::U8:            return as_u8();
+                case type::S8:            return as_s8();
+                case type::U16:           return as_u16();
+                case type::S16:           return as_s16();
+                case type::U32:           return as_u32();
+                case type::S32:           return as_s32();
+                case type::U64:           return as_u64();
+                case type::S64:           return as_s64();
+                case type::FLOAT:         return as_float();
+                case type::DOUBLE:        return as_double();
+                case type::LONG_DOUBLE:   return as_long_double();
+                case type::BOOL:          return as_bool();
+                case type::WCHAR:         return as_wchar();
+                case type::STRING:        try { return str_util::atoui(as_string()); } catch (...) { return {}; }
+                case type::WSTRING:       try { return str_util::atoui(cast_to_string()); } catch (...) { return {}; }
                 case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
