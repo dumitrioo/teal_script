@@ -51,7 +51,7 @@ namespace scfx {
 
         void set_value(valbox const &val) {
             std::unique_lock l{*val_mtp_};
-            val_ = val.clone();
+            val_.assign(val);
         }
 
     private:
@@ -217,7 +217,7 @@ namespace scfx {
 
         void set_curr_value(valbox const &v) {
             std::unique_lock l{*val_mtp_};
-            val_ = v.clone();
+            val_.assign(v);
         }
 
         void set_output_name(std::string const &name) {
