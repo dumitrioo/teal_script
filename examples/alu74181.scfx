@@ -210,7 +210,7 @@ draw_bool dr_AeB(ray, alu_62, 120, 200, sfctr, "EQ", clr_pgeq);
 ///////////////////////// speed moderation
 sleepy(n) sleep(n);
 
-forward sleep_time_val(0.01);
+forward sleep_time_val(0.1);
 sleepy slp0(sleep_time_val);
 sleepy slp1(sleep_time_val);
 sleepy slp2(sleep_time_val);
