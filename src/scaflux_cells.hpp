@@ -253,7 +253,16 @@ namespace scfx {
             locker_->unlock();
         }
 
+        statement_ptr body() {
+            return body_ptr_;
+        }
+
+        void set_body(statement_ptr val) {
+            body_ptr_ = val;
+        }
+
     private:
+        statement_ptr body_ptr_{};
         std::int64_t line_{};
         std::int64_t col_{};
         std::string type_name_{};

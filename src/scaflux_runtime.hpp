@@ -1409,11 +1409,15 @@ namespace scfx {
                     continue;
                 }
 #endif
-                auto body_it{worker_bodies_.find(curr_cell_type_name)};
-                if(body_it == worker_bodies_.end()) {
-                    throw runtime_error{curr_cell.line(), curr_cell.col(), "cell not found"};
+                if(!curr_cell.body()) {
+                    auto body_it{worker_bodies_.find(curr_cell_type_name)};
+                    if(body_it == worker_bodies_.end()) {
+                        throw runtime_error{curr_cell.line(), curr_cell.col(), "cell not found"};
+                    }
+                    curr_cell.set_body(body_it->second);
                 }
-                body_it->second->exec(&exctx_);
+                curr_cell.body()->exec(&exctx_);
+
                 if(termination_requested()) {
                     break;
                 }
@@ -1429,12 +1433,12 @@ namespace scfx {
 
         void terminate() {
             std::unique_lock l{threads_mtp_};
-            termination_requested_ = 1;
+            termination_requested_.store(1, std::memory_order_release);
         }
 
         void unterminate() {
             std::unique_lock l{threads_mtp_};
-            termination_requested_ = 0;
+            termination_requested_.store(0, std::memory_order_release);
         }
 
         bool termination_requested() const {
@@ -1458,7 +1462,7 @@ namespace scfx {
             if(!is_current_thread_mode_multi()) {
                 return;
             }
-            termination_requested_ = 1;
+            termination_requested_.store(1, std::memory_order_release);
             for(auto &&t: threads_) {
                 if(t.joinable()) {
                     t.join();
@@ -1481,11 +1485,16 @@ namespace scfx {
             if(!threads_.empty()) {
                 return;
             }
-            failure_description_.clear();
-            failure_ = 0;
-            termination_requested_ = 0;
+            {
+                std::unique_lock l{failure_mtp_};
+                failure_description_.clear();
+                failure_.store(0, std::memory_order_release);
+            }
+            termination_requested_.store(0, std::memory_order_release);
             for(int i{0}; i < thrd_cnt; ++i) {
                 threads_.emplace_back([this]() {
+                    bool excepted{false};
+                    std::string exbuf{};
                     try {
                         std::shared_ptr<execution_context> exctx{std::make_shared<execution_context>()};
                         execution_context *exctx_ptr{exctx.get()};
@@ -1496,10 +1505,10 @@ namespace scfx {
                         ) {
                             exctx_ptr->clear_all_jumps_request();
                             bool have_locked{false};
-                            for(auto &&w: worker_cells_) {
-                                if(w.second.try_lock()) {
+                            for(auto &&wrkcl: worker_cells_) {
+                                if(wrkcl.second.try_lock()) {
                                     have_locked = true;
-                                    worker_cell_instance &curr_cell{w.second};
+                                    worker_cell_instance &curr_cell{wrkcl.second};
                                     scfx::shut_on_destroy sod{[&]() { curr_cell.unlock(); }};
                                     std::string const &curr_cell_type_name{curr_cell.type_name()};
 
@@ -1585,11 +1594,15 @@ namespace scfx {
                                         continue;
                                     }
 #endif
-                                    auto body_it{worker_bodies_.find(curr_cell_type_name)};
-                                    if(body_it == worker_bodies_.end()) {
-                                        throw runtime_error{curr_cell.line(), curr_cell.col(), "cell not found"};
+                                    if(!curr_cell.body()) {
+                                        auto body_it{worker_bodies_.find(curr_cell_type_name)};
+                                        if(body_it == worker_bodies_.end()) {
+                                            throw runtime_error{curr_cell.line(), curr_cell.col(), "cell not found"};
+                                        }
+                                        curr_cell.set_body(body_it->second);
                                     }
-                                    body_it->second->exec(exctx_ptr);
+                                    curr_cell.body()->exec(exctx_ptr);
+
                                     if(termination_requested() || failure()) {
                                         break;
                                     }
@@ -1607,8 +1620,13 @@ namespace scfx {
                             }
                         }
                     } catch(std::exception const &e) {
-                        failure_description_ = e.what();
-                        failure_ = 1;
+                        excepted = true;
+                        exbuf = e.what();
+                    }
+                    if(excepted) {
+                        std::unique_lock l{failure_mtp_};
+                        failure_description_ = exbuf;
+                        failure_.store(1, std::memory_order_release);
                     }
                 });
             }
@@ -1619,7 +1637,8 @@ namespace scfx {
             return failure_.load() != 0;
         }
 
-        std::string const &failure_description() const noexcept {
+        std::string failure_description() const noexcept {
+            std::shared_lock l{failure_mtp_};
             return failure_description_;
         }
 
@@ -1635,21 +1654,21 @@ namespace scfx {
                     std::chrono::nanoseconds{static_cast<std::int64_t>(secnds * 1'000'000'000.0L)}
                 };
                 while(
-                    termination_requested_ == 0 &&
-                    failure_ == 0 &&
+                    termination_requested_.load(std::memory_order_acquire) == 0 &&
+                    failure_.load(std::memory_order_acquire) == 0 &&
                     std::chrono::steady_clock::now() < future
                 ) {
                     std::this_thread::sleep_for(slpfor);
                 }
                 std::shared_lock l{threads_mtp_};
-                if(termination_requested_ != 0 || failure_ != 0) {
+                if(termination_requested_.load(std::memory_order_acquire) != 0 || failure_.load(std::memory_order_acquire) != 0) {
                     for(auto &&t: threads_) {
                         if(t.joinable()) {
                             t.join();
                         }
                     }
                 }
-                return termination_requested_ != 0 || failure_ != 0;
+                return termination_requested_.load(std::memory_order_acquire) != 0 || failure_.load(std::memory_order_acquire) != 0;
             }
             return true;
         }
@@ -1786,6 +1805,7 @@ namespace scfx {
 
         std::atomic<std::int64_t> termination_requested_{0};
         std::atomic<std::int64_t> failure_{0};
+        mutable std::shared_mutex failure_mtp_{};
         std::string failure_description_{};
 
         enum class thread_mode{none, single, multi };
