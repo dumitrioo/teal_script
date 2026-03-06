@@ -9,6 +9,11 @@ fn() {
 
     ab.put_at(i32(623), 1);
     ab.to_string().hexdump().println();
+
+    u = ab.u16_at(0);
+    u = 0x1234;
+    ab.to_string().hexdump().println();
+
     return exit(0);
 }
 

@@ -235,59 +235,87 @@ namespace scfx {
             });
             rt->add_method("array_buffer", "bool_at", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                return SCFXTHIS(std::shared_ptr<array_buffer>)->get_at<bool>(args[1].cast_to_size_t());
+                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->ref_at<bool>(args[1].cast_to_size_t())};
+                res.set_pointed(args[0]);
+                return res;
             });
             rt->add_method("array_buffer", "char_at", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                return SCFXTHIS(std::shared_ptr<array_buffer>)->get_at<char>(args[1].cast_to_size_t());
+                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->ref_at<char>(args[1].cast_to_size_t())};
+                res.set_pointed(args[0]);
+                return res;
             });
             rt->add_method("array_buffer", "wchar_at", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                return SCFXTHIS(std::shared_ptr<array_buffer>)->get_at<wchar_t>(args[1].cast_to_size_t());
+                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->ref_at<wchar_t>(args[1].cast_to_size_t())};
+                res.set_pointed(args[0]);
+                return res;
             });
             rt->add_method("array_buffer", "i8_at", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                return SCFXTHIS(std::shared_ptr<array_buffer>)->get_at<int8_t>(args[1].cast_to_size_t());
+                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->ref_at<int8_t>(args[1].cast_to_size_t())};
+                res.set_pointed(args[0]);
+                return res;
             });
             rt->add_method("array_buffer", "u8_at", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                return SCFXTHIS(std::shared_ptr<array_buffer>)->get_at<uint8_t>(args[1].cast_to_size_t());
+                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->ref_at<uint8_t>(args[1].cast_to_size_t())};
+                res.set_pointed(args[0]);
+                return res;
             });
             rt->add_method("array_buffer", "i16_at", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                return SCFXTHIS(std::shared_ptr<array_buffer>)->get_at<int16_t>(args[1].cast_to_size_t());
+                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->ref_at<int16_t>(args[1].cast_to_size_t())};
+                res.set_pointed(args[0]);
+                return res;
             });
             rt->add_method("array_buffer", "u16_at", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                return SCFXTHIS(std::shared_ptr<array_buffer>)->get_at<uint16_t>(args[1].cast_to_size_t());
+                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->ref_at<uint16_t>(args[1].cast_to_size_t())};
+                res.set_pointed(args[0]);
+                return res;
             });
             rt->add_method("array_buffer", "i32_at", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                return SCFXTHIS(std::shared_ptr<array_buffer>)->get_at<int32_t>(args[1].cast_to_size_t());
+                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->ref_at<int32_t>(args[1].cast_to_size_t())};
+                res.set_pointed(args[0]);
+                return res;
             });
             rt->add_method("array_buffer", "u32_at", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                return SCFXTHIS(std::shared_ptr<array_buffer>)->get_at<uint32_t>(args[1].cast_to_size_t());
+                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->ref_at<uint32_t>(args[1].cast_to_size_t())};
+                res.set_pointed(args[0]);
+                return res;
             });
             rt->add_method("array_buffer", "i64_at", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                return SCFXTHIS(std::shared_ptr<array_buffer>)->get_at<int64_t>(args[1].cast_to_size_t());
+                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->ref_at<int64_t>(args[1].cast_to_size_t())};
+                res.set_pointed(args[0]);
+                return res;
             });
             rt->add_method("array_buffer", "u64_at", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                return SCFXTHIS(std::shared_ptr<array_buffer>)->get_at<uint64_t>(args[1].cast_to_size_t());
+                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->ref_at<uint64_t>(args[1].cast_to_size_t())};
+                res.set_pointed(args[0]);
+                return res;
             });
             rt->add_method("array_buffer", "f32_at", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                return SCFXTHIS(std::shared_ptr<array_buffer>)->get_at<float>(args[1].cast_to_size_t());
+                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->ref_at<float>(args[1].cast_to_size_t())};
+                res.set_pointed(args[0]);
+                return res;
             });
             rt->add_method("array_buffer", "f64_at", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                return SCFXTHIS(std::shared_ptr<array_buffer>)->get_at<double>(args[1].cast_to_size_t());
+                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->ref_at<double>(args[1].cast_to_size_t())};
+                res.set_pointed(args[0]);
+                return res;
             });
             rt->add_method("array_buffer", "float_at", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                return SCFXTHIS(std::shared_ptr<array_buffer>)->get_at<long double>(args[1].cast_to_size_t());
+                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->ref_at<long double>(args[1].cast_to_size_t())};
+                res.set_pointed(args[0]);
+                return res;
             });
         }
 
@@ -429,6 +457,15 @@ namespace scfx {
                 std::remove_cvref_t<T> res{};
                 std::memcpy(&res, &buf_[at], sizeof(std::remove_cvref_t<T>));
                 return res;
+            }
+
+            template<typename T>
+                requires(std::is_fundamental_v<std::remove_cvref_t<T>>)
+            valbox ref_at(std::size_t at) {
+                if(buf_.size() <= at + sizeof(std::remove_cvref_t<T>)) {
+                    throw std::runtime_error{"requested data is out of buffer bounds"};
+                }
+                return valbox{reinterpret_cast<std::remove_cvref_t<T> *>(&buf_[at])};
             }
 
             std::string to_string() const {
