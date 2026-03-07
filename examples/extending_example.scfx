@@ -3,7 +3,7 @@
 // for host part, see "examples/interpreter/main.cpp"
 /////////////////////////////////////////////////////////////////////////////
 
-ext_test_template() {
+extension_test() {
     try {
         hello_from_cpp("1", 2, object("{k:4}"));
         console.println("-----------------------------------");
@@ -27,4 +27,4 @@ ext_test_template() {
     exit();
 }
 
-ext_test_template ext_test();
+extension_test ext_test();

@@ -4,10 +4,8 @@ function HCS(hcs) {
     print(itoa(hcs.u8_at(0)), "/");
     e2 = hcs.u8_at(1);
     e3 = hcs.u8_at(2);
-    c = ((u16(e2) << 2) & 0b1100000000) | e3;
-    print(itoa(c), "/");
-    s = e2 & 0b111111;
-    println(itoa(s));
+    print(itoa(((u16(e2) << 2) & 0b1100000000) | e3), "/");
+    println(itoa(e2 & 0b111111));
 }
 
 function parttblentry(e) {
