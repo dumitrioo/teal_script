@@ -451,7 +451,7 @@ namespace scfx {
             template<typename T>
                 requires(std::is_fundamental_v<std::remove_cvref_t<T>>)
             std::remove_cvref_t<T> get_at(std::size_t at) const {
-                if(buf_.size() <= at + sizeof(std::remove_cvref_t<T>)) {
+                if(buf_.size() < at + sizeof(std::remove_cvref_t<T>)) {
                     throw std::runtime_error{"requested data is out of buffer bounds"};
                 }
                 std::remove_cvref_t<T> res{};
@@ -462,7 +462,7 @@ namespace scfx {
             template<typename T>
                 requires(std::is_fundamental_v<std::remove_cvref_t<T>>)
             valbox ref_at(std::size_t at) {
-                if(buf_.size() <= at + sizeof(std::remove_cvref_t<T>)) {
+                if(buf_.size() < at + sizeof(std::remove_cvref_t<T>)) {
                     throw std::runtime_error{"requested data is out of buffer bounds"};
                 }
                 return valbox{reinterpret_cast<std::remove_cvref_t<T> *>(&buf_[at])};
