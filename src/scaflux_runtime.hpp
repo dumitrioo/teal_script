@@ -144,9 +144,9 @@ namespace scfx {
             void scientific() { fk_ = flt_kind::sci; }
             void hexfloat() { fk_ = flt_kind::hex; }
             void defaultfloat() { fk_ = flt_kind::def; }
-            void setprecision(std::uint64_t prec) { setprec_ = true; prec_ = prec; }
+            void setprecision(int prec) { setprec_ = true; prec_ = prec; }
             auto precision() { return prec_; }
-            void setw(std::uint64_t w) { setw_ = true; w_ = w; }
+            void setw(int w) { setw_ = true; w_ = w; }
             void setfill(char arg) { setfill_ = true; fill_char_ = arg; }
             auto fill() { return fill_char_; }
             bool colors_enabled() const { return terminal_colours_; }
@@ -213,7 +213,7 @@ namespace scfx {
             bool setw_{false};
             int w_{};
             bool setprec_{false};
-            std::uint64_t prec_{};
+            int prec_{};
             shared_mutex out_mtp_{};
             enum class flt_kind{def, sci, fix, hex};
             flt_kind fk_{flt_kind::def};
