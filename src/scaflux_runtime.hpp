@@ -6,7 +6,6 @@
 #include "include/base16.hpp"
 #include "include/base64.hpp"
 #include "include/base85.hpp"
-#include "include/math/math_util.hpp"
 #include "include/dlib.hpp"
 
 #include "scaflux_util.hpp"
@@ -91,10 +90,23 @@ namespace scfx {
             void print(std::vector<scfx::valbox> const &args) {
                 std::string s{};
                 {
-                    std::unique_lock l{prn_buf_mtp_};
-                    for(auto &&v: args) { prn_ << v; }
-                    s = prn_.str();
-                    prn_.str(std::string{});
+                    std::stringstream out{};
+                    /////////////////////////////////
+                    if(setfill_) { out << std::setfill(fill_char_); }
+                    if(setw_) { out << std::setw(w_); }
+                    if(setprec_) { out << std::setprecision(prec_); }
+                    if(fk_ != flt_kind::def) {
+                        switch(fk_) {
+                        case flt_kind::fix: out << std::fixed; break;
+                        case flt_kind::sci: out << std::scientific; break;
+                        case flt_kind::hex: out << std::hex; break;
+                        default: out << std::defaultfloat; break;
+                        }
+                    }
+                    /////////////////////////////////
+                    for(auto &&v: args) { out << v; }
+                    s = out.str();
+                    out.str(std::string{});
                 }
                 std::unique_lock l{out_mtp_};
                 std::cout << s << std::flush;
@@ -103,10 +115,22 @@ namespace scfx {
             void println(std::vector<scfx::valbox> const &args) {
                 std::string s{};
                 {
-                    std::unique_lock l{prn_buf_mtp_};
-                    for(auto &&v: args) { prn_ << v; }
-                    s = prn_.str();
-                    prn_.str(std::string{});
+                    std::stringstream out{};
+                    /////////////////////////////////
+                    if(setfill_) { out << std::setfill(fill_char_); }
+                    if(setw_) { out << std::setw(w_); }
+                    if(setprec_) { out << std::setprecision(prec_); }
+                    if(fk_ != flt_kind::def) {
+                        switch(fk_) {
+                        case flt_kind::fix: out << std::fixed; break;
+                        case flt_kind::sci: out << std::scientific; break;
+                        case flt_kind::hex: out << std::hex; break;
+                        default: out << std::defaultfloat; break;
+                        }
+                    }
+                    /////////////////////////////////
+                    for(auto &&v: args) { out << v; }
+                    s = out.str();
                 }
                 std::unique_lock l{out_mtp_};
                 std::cout << s << std::endl;
@@ -116,69 +140,41 @@ namespace scfx {
                 std::unique_lock l{out_mtp_};
                 std::cout.flush();
             }
-            void fixed() {
-                { std::unique_lock l{prn_buf_mtp_}; prn_ << std::fixed; }
-                { std::unique_lock l{out_buf_mtp_}; out_ << std::fixed; }
-                { std::unique_lock l{err_buf_mtp_}; err_ << std::fixed; }
-            }
-            void scientific() {
-                { std::unique_lock l{prn_buf_mtp_}; prn_ << std::scientific; }
-                { std::unique_lock l{out_buf_mtp_}; out_ << std::scientific; }
-                { std::unique_lock l{err_buf_mtp_}; err_ << std::scientific; }
-            }
-            void hexfloat() {
-                { std::unique_lock l{prn_buf_mtp_}; prn_ << std::hexfloat; }
-                { std::unique_lock l{out_buf_mtp_}; out_ << std::hexfloat; }
-                { std::unique_lock l{err_buf_mtp_}; err_ << std::hexfloat; }
-            }
-            void defaultfloat() {
-                { std::unique_lock l{prn_buf_mtp_}; prn_ << std::defaultfloat; }
-                { std::unique_lock l{out_buf_mtp_}; out_ << std::defaultfloat; }
-                { std::unique_lock l{err_buf_mtp_}; err_ << std::defaultfloat; }
-            }
-            void setprecision(std::uint64_t prec) {
-                { std::unique_lock l{prn_buf_mtp_}; prn_ << std::setprecision(prec); }
-                { std::unique_lock l{out_buf_mtp_}; out_ << std::setprecision(prec); }
-                { std::unique_lock l{err_buf_mtp_}; err_ << std::setprecision(prec); }
-            }
-            auto precision() {
-                std::shared_lock l{out_buf_mtp_};
-                return out_.precision();
-            }
-            void setw(std::uint64_t w) {
-                { std::unique_lock l{prn_buf_mtp_}; prn_ << std::setw(w); }
-                { std::unique_lock l{out_buf_mtp_}; out_ << std::setw(w); }
-                { std::unique_lock l{err_buf_mtp_}; err_ << std::setw(w); }
-            }
-            void setfill(char arg) {
-                { std::unique_lock l{prn_buf_mtp_}; prn_ << std::setfill(arg); }
-                { std::unique_lock l{out_buf_mtp_}; out_ << std::setfill(arg); }
-                { std::unique_lock l{err_buf_mtp_}; err_ << std::setfill(arg); }
-            }
-            auto fill() {
-                std::shared_lock l{out_buf_mtp_};
-                return out_.fill();
-            }
-
-            bool colors_enabled() const {
-                return terminal_colours_;
-            }
-
-            void enable_colors(bool v) {
-                terminal_colours_ = v;
-            }
+            void fixed() { fk_ = flt_kind::fix; }
+            void scientific() { fk_ = flt_kind::sci; }
+            void hexfloat() { fk_ = flt_kind::hex; }
+            void defaultfloat() { fk_ = flt_kind::def; }
+            void setprecision(std::uint64_t prec) { setprec_ = true; prec_ = prec; }
+            auto precision() { return prec_; }
+            void setw(std::uint64_t w) { setw_ = true; w_ = w; }
+            void setfill(char arg) { setfill_ = true; fill_char_ = arg; }
+            auto fill() { return fill_char_; }
+            bool colors_enabled() const { return terminal_colours_; }
+            void enable_colors(bool v) { terminal_colours_ = v; }
 
         private:
             void cerr_out(std::string const &type, std::vector<scfx::valbox> const &args) {
                 std::string s{};
                 {
-                    std::unique_lock l{err_buf_mtp_};
-                    err_ << scfx::str_util::from_utf8(scfx::timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
-                    for(auto &&v: args) {
-                        err_ << v;
+                    std::stringstream out{};
+                    /////////////////////////////////
+                    if(setfill_) { out << std::setfill(fill_char_); }
+                    if(setw_) { out << std::setw(w_); }
+                    if(setprec_) { out << std::setprecision(prec_); }
+                    if(fk_ != flt_kind::def) {
+                        switch(fk_) {
+                        case flt_kind::fix: out << std::fixed; break;
+                        case flt_kind::sci: out << std::scientific; break;
+                        case flt_kind::hex: out << std::hex; break;
+                        default: out << std::defaultfloat; break;
+                        }
                     }
-                    s = err_.str();
-                    err_.str(std::string{});
+                    /////////////////////////////////
+                    out << scfx::str_util::from_utf8(scfx::timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
+                    for(auto &&v: args) {
+                        out << v;
+                    }
+                    s = out.str();
                 }
                 std::unique_lock l{out_mtp_};
                 std::cerr << s << std::endl;
@@ -187,26 +183,40 @@ namespace scfx {
             void cout_out(std::string const &type, std::vector<scfx::valbox> const &args) {
                 std::string s{};
                 {
-                    std::unique_lock l{out_buf_mtp_};
-                    out_ << scfx::str_util::from_utf8(scfx::timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
-                    for(auto &&v: args) {
-                        out_ << v;
+                    std::stringstream out{};
+                    /////////////////////////////////
+                    if(setfill_) { out << std::setfill(fill_char_); }
+                    if(setw_) { out << std::setw(w_); }
+                    if(setprec_) { out << std::setprecision(prec_); }
+                    if(fk_ != flt_kind::def) {
+                        switch(fk_) {
+                            case flt_kind::fix: out << std::fixed; break;
+                            case flt_kind::sci: out << std::scientific; break;
+                            case flt_kind::hex: out << std::hex; break;
+                            default: out << std::defaultfloat; break;
+                        }
                     }
-                    s = out_.str();
-                    out_.str(std::string{});
+                    /////////////////////////////////
+                    out << scfx::str_util::from_utf8(scfx::timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
+                    for(auto &&v: args) {
+                        out << v;
+                    }
+                    s = out.str();
                 }
                 std::unique_lock l{out_mtp_};
                 std::cout << s << std::endl;
             }
 
         private:
+            bool setfill_{false};
+            char fill_char_{};
+            bool setw_{false};
+            int w_{};
+            bool setprec_{false};
+            std::uint64_t prec_{};
             shared_mutex out_mtp_{};
-            shared_mutex out_buf_mtp_{};
-            std::stringstream out_{};
-            shared_mutex err_buf_mtp_{};
-            std::stringstream err_{};
-            shared_mutex prn_buf_mtp_{};
-            std::stringstream prn_{};
+            enum class flt_kind{def, sci, fix, hex};
+            flt_kind fk_{flt_kind::def};
             bool terminal_colours_{false};
         };
 
@@ -1387,46 +1397,57 @@ namespace scfx {
                     auto &&ai{args_info[curr_arg_number]};
                     std::string curr_arg_name{ai.argname};
                     if(ai.cell) {
-                        auto w_it{worker_cells_.find(ai.cell_name)};
-                        if(w_it != worker_cells_.end()) {
-#ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
-                            if(w_it->second.curr_value().is_undefined_ref()) {
-                                undefineds = true;
-                                break;
-                            }
-#endif
-                            exctx_.set_local_value(curr_arg_name, w_it->second.curr_value());
+                        if(ai.w_cell_ptr != nullptr) {
+                            exctx_.set_local_value(curr_arg_name, ai.w_cell_ptr->curr_value());
+                        } else if(ai.in_cell_ptr != nullptr) {
+                            exctx_.set_local_value(curr_arg_name, ai.in_cell_ptr->curr_value());
                         } else {
-                            auto in_it{input_cells_.find(ai.cell_name)};
-                            if(in_it != input_cells_.end()) {
+                            auto w_it{worker_cells_.find(ai.cell_name)};
+                            if(w_it != worker_cells_.end()) {
 #ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
-                                if(in_it->second.curr_value().is_undefined_ref()) {
+                                if(w_it->second.curr_value().is_undefined_ref()) {
                                     undefineds = true;
                                     break;
                                 }
 #endif
-                                exctx_.set_local_value(curr_arg_name, in_it->second.curr_value());
+                                ai.w_cell_ptr = &(w_it->second);
+                                exctx_.set_local_value(curr_arg_name, w_it->second.curr_value());
                             } else {
-#ifdef SCFX_USE_EXTERNAL_VALUES
-                                valbox val{get_external_value(curr_arg_name)};
+                                auto in_it{input_cells_.find(ai.cell_name)};
+                                if(in_it != input_cells_.end()) {
 #ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
-                                if(val.is_undefined()) {
-                                    undefineds = true;
-                                    break;
-                                }
+                                    if(in_it->second.curr_value().is_undefined_ref()) {
+                                        undefineds = true;
+                                        break;
+                                    }
 #endif
-                                exctx_.set_local_value(curr_arg_name, val);
+                                    ai.in_cell_ptr = &(in_it->second);
+                                    exctx_.set_local_value(curr_arg_name, in_it->second.curr_value());
+                                } else {
+#ifdef SCFX_USE_EXTERNAL_VALUES
+                                    valbox val{get_external_value(curr_arg_name)};
+#ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
+                                    if(val.is_undefined()) {
+                                        undefineds = true;
+                                        break;
+                                    }
+#endif
+                                    exctx_.set_local_value(curr_arg_name, val);
 #else
-                                throw runtime_error{
+                                    throw runtime_error{
                                         curr_cell.line(), curr_cell.col(),
                                         std::string{"input value not found for compute element \""} +
                                             curr_cell.inst_name() + "\""
-                                };
+                                    };
 #endif
+                                }
                             }
                         }
                     } else {
-                        valbox vb{ai.expr->eval(&exctx_, eval_caller_type::no_matter, nullptr)};
+                        if(ai.expr_val.is_undefined_ref()) {
+                            ai.expr_val = ai.expr->eval(&exctx_, eval_caller_type::no_matter, nullptr);
+                        }
+                        valbox vb{ai.expr_val};
 #ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
                         if(vb.is_undefined_ref()) {
                             undefineds = true;
@@ -1532,7 +1553,7 @@ namespace scfx {
                 threads_.emplace_back([this]() {
                     bool excepted{false};
                     std::string exbuf{};
-                    try {
+                    // try {
                         std::shared_ptr<execution_context> exctx{std::make_shared<execution_context>()};
                         execution_context *exctx_ptr{exctx.get()};
                         exctx_ptr->set_runtime_interface(this);
@@ -1572,46 +1593,57 @@ namespace scfx {
                                         worker_cell_instance::arg_info &ai{args_info[curr_arg_number]};
                                         std::string curr_arg_name{ai.argname};
                                         if(ai.cell) {
-                                            auto w_it{worker_cells_.find(ai.cell_name)};
-                                            if(w_it != worker_cells_.end()) {
-#ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
-                                                if(w_it->second.curr_value().is_undefined_ref()) {
-                                                    undefineds = true;
-                                                    break;
-                                                }
-#endif
-                                                exctx_ptr->set_local_value(curr_arg_name, w_it->second.curr_value());
+                                            if(ai.w_cell_ptr != nullptr) {
+                                                exctx_ptr->set_local_value(curr_arg_name, ai.w_cell_ptr->curr_value());
+                                            } else if(ai.in_cell_ptr != nullptr) {
+                                                exctx_ptr->set_local_value(curr_arg_name, ai.in_cell_ptr->curr_value());
                                             } else {
-                                                auto in_it{input_cells_.find(ai.cell_name)};
-                                                if(in_it != input_cells_.end()) {
+                                                auto w_it{worker_cells_.find(ai.cell_name)};
+                                                if(w_it != worker_cells_.end()) {
 #ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
-                                                    if(in_it->second.curr_value().is_undefined_ref()) {
+                                                    if(w_it->second.curr_value().is_undefined_ref()) {
                                                         undefineds = true;
                                                         break;
                                                     }
 #endif
-                                                    exctx_ptr->set_local_value(curr_arg_name, in_it->second.curr_value());
+                                                    ai.w_cell_ptr = &(w_it->second);
+                                                    exctx_ptr->set_local_value(curr_arg_name, ai.w_cell_ptr->curr_value());
                                                 } else {
-#ifdef SCFX_USE_EXTERNAL_VALUES
-                                                    valbox val{get_external_value(curr_arg_name)};
+                                                    auto in_it{input_cells_.find(ai.cell_name)};
+                                                    if(in_it != input_cells_.end()) {
 #ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
-                                                    if(val.is_undefined()) {
-                                                        undefineds = true;
-                                                        break;
-                                                    }
+                                                        if(in_it->second.curr_value().is_undefined_ref()) {
+                                                            undefineds = true;
+                                                            break;
+                                                        }
 #endif
-                                                    exctx_ptr->set_local_value(curr_arg_name, val);
+                                                        ai.in_cell_ptr = &(in_it->second);
+                                                        exctx_ptr->set_local_value(curr_arg_name, ai.in_cell_ptr->curr_value());
+                                                    } else {
+#ifdef SCFX_USE_EXTERNAL_VALUES
+                                                        valbox val{get_external_value(curr_arg_name)};
+#ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
+                                                        if(val.is_undefined()) {
+                                                            undefineds = true;
+                                                            break;
+                                                        }
+#endif
+                                                        exctx_ptr->set_local_value(curr_arg_name, val);
 #else
-                                                    throw runtime_error{
-                                                        curr_cell.line(), curr_cell.col(),
-                                                        std::string{"input value not found for compute element \""} +
-                                                            curr_cell.inst_name() + "\""
-                                                    };
+                                                        throw runtime_error{
+                                                            curr_cell.line(), curr_cell.col(),
+                                                            std::string{"input value not found for compute element \""} +
+                                                                curr_cell.inst_name() + "\""
+                                                        };
 #endif
+                                                    }
                                                 }
                                             }
                                         } else {
-                                            valbox vb{ai.expr->eval(exctx_ptr, eval_caller_type::no_matter, nullptr)};
+                                            if(ai.expr_val.is_undefined_ref()) {
+                                                ai.expr_val = ai.expr->eval(exctx_ptr, eval_caller_type::no_matter, nullptr);
+                                            }
+                                            valbox vb{ai.expr_val};
 #ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
                                             if(vb.is_undefined_ref()) {
                                                 undefineds = true;
@@ -1656,10 +1688,10 @@ namespace scfx {
                                 std::this_thread::sleep_for(std::chrono::microseconds(100));
                             }
                         }
-                    } catch(std::exception const &e) {
-                        excepted = true;
-                        exbuf = e.what();
-                    }
+                    // } catch(std::exception const &e) {
+                    //     excepted = true;
+                    //     exbuf = e.what();
+                    // }
                     if(excepted) {
                         std::unique_lock l{failure_mtp_};
                         failure_description_ = exbuf;

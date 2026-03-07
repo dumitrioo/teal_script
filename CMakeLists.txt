@@ -22,5 +22,7 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=znver4 -fstrict-aliasing -Wall -Wextra -rdynamic -fPIC -Wno-unused-function -Wl,-rpath,.")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -falign-loops -march=znver4 -fstrict-aliasing -Wall -Wextra -fPIC -Wl,-rpath,.")
 
+add_definitions(-DSCFX_USE_EMHASH8_MAP)
+
 add_subdirectory(examples/interpreter)
 add_subdirectory(examples/fractal)

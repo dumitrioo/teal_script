@@ -1,57 +1,42 @@
-function min(a, b)
-    return a < b ? a : b;
-function max(a, b)
-    return a > b ? a : b;
-
 exec_time_limiter(dt) {
-    if(this.t == undefined)
-        this.t = timestamp().fseconds() + dt;
-    if(timestamp().fseconds() > this.t)
+    if(this.t == undefined) this.t = timestamp().fseconds() + dt;
+    if(timestamp().fseconds() > this.t) {
+        println("exiting");
         exit();
+    }
     return 0;
 }
-
-discriminant(a, b, c)
-    return pow(b, 2) - 4.0 * a * c;
-calc_x1(a, b, d)
-    return d >= 0 ? (-b + sqrt(d)) / (2.0 * a) : undefined;
-calc_x2(a, b, d)
-    return d > 0 ? (-b - sqrt(d)) / (2.0 * a) : undefined;
-num_roots(d)
-    return d > 0 ? 2 : d == 0 ? 1 : 0;
-random_from_range(lo, hi)
-    return randf() * abs(hi - lo) + min(lo, hi);
-forward(in)
-    return in;
-print2args(lll, a)
-    console.println(lll, a);
-
-// cells instances ------------------------------------------------------
+exec_time_limiter etlim(.05);
 
 //'a' a_in;
 //'b' b_in;
 //'c' c_in;
 
+random_from_range(lo, hi) return randf() * abs(hi - lo) + (lo < hi ? lo : hi);
 random_from_range a_gen(-1000.0, 1000.0);
 random_from_range b_gen(-1000.0, 1000.0);
 random_from_range c_gen(-1000.0, 1000.0);
 
+forward(in) return in;
 forward a(a_gen);
 forward b(b_gen);
 forward c(c_gen);
+
+discriminant(a, b, c) return pow(b, 2) - 4.0 * a * c;
+calc_x1(a, b, d) return d >= 0 ? (-b + sqrt(d)) / (2.0 * a) : 0.0;
+calc_x2(a, b, d) return d > 0 ? (-b - sqrt(d)) / (2.0 * a) : 0.0;
+num_roots(d) return d > 0 ? 2 : d == 0 ? 1 : 0;
 
 discriminant      d(a, b, c);
 calc_x1           x1(a, b, d)   'x1';
 calc_x2           x2(a, b, d)   'x2';
 num_roots         nr(d)         'n_roots';
 
-exec_time_limiter etlim(.005);
-
-print2args pa("a = ", a);
-print2args pb("b = ", b);
-print2args pc("c = ", c);
-print2args pd("d = ", d);
-print2args pnr("number of roots = ", nr);
-print2args px1("x1 = ", x1);
-print2args px2("x2 = ", x2);
-print2args delim("--------------------", "");
+dbgprint(a, b, c, d, x1, x2, nr, sep) {
+    return println(
+        "a = ", a, "\nb = ", b, "\nc = ", c, "\nd = ", d,
+        "\nnumber of roots = ", nr, "\nx1 = ", x1, "\nx2 = ", x2,
+        "\n", sep
+    );
+}
+dbgprint dprn(a, b, c, d, x1, x2, nr, "----------------------");

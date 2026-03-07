@@ -25,7 +25,9 @@ namespace scfx {
 
         valbox curr_value() const {
             std::shared_lock l{*val_mtp_};
-            return val_;
+            valbox res{};
+            res.assign(val_);
+            return res;
         }
 
         void set_inst_name(std::string const &name) {
@@ -146,10 +148,13 @@ namespace scfx {
     class worker_cell_instance {
     public:
         struct arg_info {
-            std::string argname;
-            bool cell;
-            std::string cell_name;
-            expr_ptr expr;
+            std::string argname{};
+            bool cell{false};
+            std::string cell_name{};
+            expr_ptr expr{nullptr};
+            valbox expr_val{};
+            worker_cell_instance *w_cell_ptr{nullptr};
+            input_cell *in_cell_ptr{nullptr};
         };
 
         void set_type_info(
@@ -212,7 +217,9 @@ namespace scfx {
 
         valbox curr_value() const {
             std::shared_lock l{*val_mtp_};
-            return val_;
+            valbox res{};
+            res.assign(val_);
+            return res;
         }
 
         void set_curr_value(valbox const &v) {
