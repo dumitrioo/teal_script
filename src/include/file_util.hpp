@@ -82,10 +82,6 @@ namespace scfx::file_util {
         }
     };
 
-#if (__cplusplus < 201700L)
-    std::int64_t file_size(const std::string &);
-#endif
-
     DEFINE_RUNTIME_ERROR_CLASS_MSG(directory_opening_error, "failed to open directory")
     DEFINE_RUNTIME_ERROR_CLASS_MSG(file_loading_error, "failed to load file")
     DEFINE_RUNTIME_ERROR_CLASS_MSG(file_opening_error, "failed to open file")
@@ -101,7 +97,9 @@ namespace scfx::file_util {
         }
         return tokens[tokens.size() - 1];
 #else
-        return std::filesystem::path{file_name}.extension().string();
+        std::string res{std::filesystem::path{file_name}.extension().string()};
+        while(!res.empty() && res[0] == '.') { res = res.substr(1); }
+        return res;
 #endif
     }
 
