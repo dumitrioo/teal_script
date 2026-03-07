@@ -465,6 +465,43 @@ namespace scfx {
                 throw std::runtime_error{"invalid argument type"};
             });
 
+            add_function("tole", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
+                if(args[0].is_char_ref()) { return args[0].as_char(); }
+                if(args[0].is_bool_ref()) { return args[0].as_bool(); }
+                if(args[0].is_s64_ref()) { return bit_util::swap_on_be<int64_t>{args[0].as_s64()}.val; }
+                if(args[0].is_u64_ref()) { return bit_util::swap_on_be<uint64_t>{args[0].as_u64()}.val; }
+                if(args[0].is_s32_ref()) { return bit_util::swap_on_be<int32_t>{args[0].as_s32()}.val; }
+                if(args[0].is_u32_ref()) { return bit_util::swap_on_be<uint64_t>{args[0].as_u32()}.val; }
+                if(args[0].is_s16_ref()) { return bit_util::swap_on_be<int16_t>{args[0].as_s16()}.val; }
+                if(args[0].is_u16_ref()) { return bit_util::swap_on_be<uint16_t>{args[0].as_u16()}.val; }
+                if(args[0].is_s8_ref()) { return bit_util::swap_on_be<int8_t>{args[0].as_s8()}.val; }
+                if(args[0].is_u8_ref()) { return bit_util::swap_on_be<uint8_t>{args[0].as_u8()}.val; }
+                if(args[0].is_float_ref()) { return bit_util::swap_on_be<float>{args[0].as_float()}.val; }
+                if(args[0].is_double_ref()) { return bit_util::swap_on_be<double>{args[0].as_double()}.val; }
+                if(args[0].is_long_double_ref()) { return bit_util::swap_on_be<long double>{args[0].as_long_double()}.val; }
+                if(args[0].is_wchar_ref()) { return bit_util::swap_on_be<wchar_t>{args[0].as_wchar()}.val; }
+                throw std::runtime_error{"invalid argument type"};
+            });
+            add_function("tobe", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
+                if(args[0].is_char_ref()) { return args[0].as_char(); }
+                if(args[0].is_bool_ref()) { return args[0].as_bool(); }
+                if(args[0].is_s64_ref()) { return bit_util::swap_on_le<int64_t>{args[0].as_s64()}.val; }
+                if(args[0].is_u64_ref()) { return bit_util::swap_on_le<uint64_t>{args[0].as_u64()}.val; }
+                if(args[0].is_s32_ref()) { return bit_util::swap_on_le<int32_t>{args[0].as_s32()}.val; }
+                if(args[0].is_u32_ref()) { return bit_util::swap_on_le<uint64_t>{args[0].as_u32()}.val; }
+                if(args[0].is_s16_ref()) { return bit_util::swap_on_le<int16_t>{args[0].as_s16()}.val; }
+                if(args[0].is_u16_ref()) { return bit_util::swap_on_le<uint16_t>{args[0].as_u16()}.val; }
+                if(args[0].is_s8_ref()) { return bit_util::swap_on_le<int8_t>{args[0].as_s8()}.val; }
+                if(args[0].is_u8_ref()) { return bit_util::swap_on_le<uint8_t>{args[0].as_u8()}.val; }
+                if(args[0].is_float_ref()) { return bit_util::swap_on_le<float>{args[0].as_float()}.val; }
+                if(args[0].is_double_ref()) { return bit_util::swap_on_le<double>{args[0].as_double()}.val; }
+                if(args[0].is_long_double_ref()) { return bit_util::swap_on_le<long double>{args[0].as_long_double()}.val; }
+                if(args[0].is_wchar_ref()) { return bit_util::swap_on_le<wchar_t>{args[0].as_wchar()}.val; }
+                throw std::runtime_error{"invalid argument type"};
+            });
+
             add_function("i64", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return (std::int64_t)0; } return args[0].cast_to_s64(); });
             add_function("u64", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return (std::uint64_t)0; } return args[0].cast_to_u64(); });
             add_function("i32", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_LE(1) if(args.empty()) { return (std::int32_t)0; } return args[0].cast_to_s32(); });

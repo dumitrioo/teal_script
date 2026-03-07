@@ -36,6 +36,8 @@ namespace scfx {
                 } else if(args.size() == 1) {
                     if(args[0].is_string_ref()) {
                         return scfx::valbox{std::make_shared<array_buffer>(args[0].as_string()), "array_buffer"};
+                    } else if(args[0].is_class_ref() && args[0].class_name() == "array_buffer") {
+                        return scfx::valbox{std::make_shared<array_buffer>(*SCFXCLASSARG(0, std::shared_ptr<array_buffer>)), "array_buffer"};
                     } else if(args[0].is_numeric()) {
                         std::shared_ptr<array_buffer> res{std::make_shared<array_buffer>()};
                         res->resize(args[0].cast_to_u64());
@@ -64,52 +66,43 @@ namespace scfx {
                 return true;
             });
             rt->add_method("array_buffer", "assign", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(2, 4)
-                if(args.size() == 2) {
-                    if(args[1].is_string_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_string());
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
+                if(args[1].is_string_ref()) {
+                    SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_string());
+                    return true;
+                } else if(args[1].is_class_ref() && args[1].class_name() == "array_buffer") {
+                    SCFXTHIS(std::shared_ptr<array_buffer>)->assign(*SCFXCLASSARG(1, std::shared_ptr<array_buffer>));
+                    return true;
+                } else if(args[1].is_any_int_number()) {
+                    if(args[1].is_char_ref()) {
+                        SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_char());
                         return true;
-                    } else if(args[1].is_any_int_number()) {
-                        if(args[1].is_char_ref()) {
-                            SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_char());
-                            return true;
-                        } else if(args[1].is_wchar_ref()) {
-                            SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_wchar());
-                            return true;
-                        } else if(args[1].is_s8_ref()) {
-                            SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_s8());
-                            return true;
-                        } else if(args[1].is_u8_ref()) {
-                            SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_u8());
-                            return true;
-                        } else if(args[1].is_s16_ref()) {
-                            SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_s16());
-                            return true;
-                        } else if(args[1].is_u16_ref()) {
-                            SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_u16());
-                            return true;
-                        } else if(args[1].is_s32_ref()) {
-                            SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_s32());
-                            return true;
-                        } else if(args[1].is_u32_ref()) {
-                            SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_u32());
-                            return true;
-                        } else if(args[1].is_s64_ref()) {
-                            SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_s64());
-                            return true;
-                        } else if(args[1].is_u64_ref()) {
-                            SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_u64());
-                            return true;
-                        }
-                    }
-                } else if(args.size() == 3) {
-                    if(args[1].is_string_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_string(), args[2].cast_to_size_t());
+                    } else if(args[1].is_wchar_ref()) {
+                        SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_wchar());
                         return true;
-                    }
-                } else if(args.size() == 4) {
-                    if(args[1].is_string_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_string(), args[2].cast_to_size_t(), args[3].cast_to_size_t());
+                    } else if(args[1].is_s8_ref()) {
+                        SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_s8());
+                        return true;
+                    } else if(args[1].is_u8_ref()) {
+                        SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_u8());
+                        return true;
+                    } else if(args[1].is_s16_ref()) {
+                        SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_s16());
+                        return true;
+                    } else if(args[1].is_u16_ref()) {
+                        SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_u16());
+                        return true;
+                    } else if(args[1].is_s32_ref()) {
+                        SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_s32());
+                        return true;
+                    } else if(args[1].is_u32_ref()) {
+                        SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_u32());
+                        return true;
+                    } else if(args[1].is_s64_ref()) {
+                        SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_s64());
+                        return true;
+                    } else if(args[1].is_u64_ref()) {
+                        SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_u64());
                         return true;
                     }
                 }
@@ -133,6 +126,9 @@ namespace scfx {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
                 if(args[1].is_string_ref()) {
                     SCFXTHIS(std::shared_ptr<array_buffer>)->append(args[1].as_string());
+                    return true;
+                } else if(args[1].is_class_ref() && args[1].class_name() == "array_buffer") {
+                    SCFXTHIS(std::shared_ptr<array_buffer>)->append(*SCFXCLASSARG(1, std::shared_ptr<array_buffer>));
                     return true;
                 } else if(args[1].is_numeric()) {
                     if(args[1].is_bool_ref()) {
@@ -441,38 +437,21 @@ namespace scfx {
         class array_buffer {
         public:
             array_buffer() = default;
-            array_buffer(array_buffer const &) = delete;
-            array_buffer(array_buffer &&) = default;
-            array_buffer &operator=(array_buffer const &) = delete;
-            array_buffer &operator=(array_buffer &&) = default;
-            ~array_buffer() = default;
-
-            array_buffer(std::string const &strbuf, std::string::size_type from = 0, std::string::size_type to = std::string::npos) { assign(strbuf, from, to); }
-            array_buffer(std::wstring const &strbuf, std::wstring::size_type from = 0, std::wstring::size_type to = std::wstring::npos) { assign(strbuf, from, to); }
+            array_buffer(std::string const &strbuf) { assign(strbuf); }
             array_buffer(std::vector<std::uint8_t>::size_type s) { buf_.resize(s); }
             void resize(std::vector<std::uint8_t>::size_type s) { buf_.resize(s); }
             std::size_t size() const noexcept { return buf_.size(); }
 
-            void fill_with(std::uint8_t c) {
-                for(auto &&cc: buf_) {
-                    cc = c;
-                }
-            }
+            void fill_with(std::uint8_t c) { for(auto &&cc: buf_) { cc = c; } }
+
+            void assign(array_buffer const &that) { if(&that != this) { buf_ = that.buf_; } }
 
             void assign(void const *buf, std::size_t bufsiz) {
                 buf_.assign(reinterpret_cast<std::uint8_t const *>(buf), reinterpret_cast<std::uint8_t const *>(buf) + bufsiz);
             }
 
-            void assign(std::string const &strbuf, std::string::size_type from = 0, std::string::size_type to = std::string::npos) {
-                if(from == 0 && to == std::string::npos) { buf_.assign(strbuf.begin(), strbuf.end()); }
-                std::string s{strbuf.substr(from, to)};
-                buf_.assign(s.begin(), s.end());
-            }
-
-            void assign(std::wstring const &strbuf, std::wstring::size_type from = 0, std::wstring::size_type to = std::wstring::npos) {
-                if(from == 0 && to == std::wstring::npos) { buf_.assign(strbuf.begin(), strbuf.end()); }
-                std::wstring s{strbuf.substr(from, to)};
-                buf_.assign(s.begin(), s.end());
+            void assign(std::string const &strbuf) {
+                buf_.assign(strbuf.begin(), strbuf.end());
             }
 
             template<typename T>
@@ -480,6 +459,10 @@ namespace scfx {
             void assign(T val) {
                 std::uint8_t const *val_ptr{reinterpret_cast<std::uint8_t const *>(&val)};
                 buf_.assign(val_ptr, val_ptr + sizeof(val));
+            }
+
+            void append(array_buffer const &that) {
+                buf_.insert(buf_.end(), that.buf_.cbegin(), that.buf_.cend());
             }
 
             void append(void const *buf, std::size_t bufsiz) {
@@ -506,6 +489,17 @@ namespace scfx {
                 std::uint8_t const *val_ptr{reinterpret_cast<std::uint8_t const *>(&val)};
                 for(std::size_t i{}; i < sizeof(T); ++i) {
                     buf_.push_back(val_ptr[i]);
+                }
+            }
+
+            void put_at(array_buffer const &that, std::size_t at) {
+                while(buf_.size() < at) { buf_.push_back(0); }
+                for(std::size_t i{}; i < that.buf_.size(); ++i) {
+                    if(at + i < buf_.size()) {
+                        buf_[at + i] = that.buf_[i];
+                    } else {
+                        buf_.push_back(that.buf_[i]);
+                    }
                 }
             }
 
