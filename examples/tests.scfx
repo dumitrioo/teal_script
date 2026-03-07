@@ -9,6 +9,25 @@ execution_time_limit(t) {
 execution_time_limit etl(0.1);
 
 
+binary_data_test() {
+    ab = array_buffer();
+
+    ab.append(hton(i32(623)));
+    ab.to_string().hexdump().println();
+
+    ab.put_at(i32(623), 1);
+    ab.to_string().hexdump().println();
+
+    u = ab.u16_at(0);
+    u = 0x1234;
+    ab.to_string().hexdump().println();
+
+    return 0;
+}
+
+binary_data_test bindata_test();
+
+
 function custom_to_str(n) {
     return string(n);
 }
@@ -28,7 +47,7 @@ dot_notation_call_test dnctest();
 mime_type_test() {
     "/bin/ls".load_from_file().data_type(MAGIC_MIME_TYPE | MAGIC_MIME_ENCODING).println();
     println(data_type(load_from_file("/bin/ls"), MAGIC_MIME_TYPE | MAGIC_MIME_ENCODING)); // same as previous line
-    exit();
+    // exit();
 }
 
 mime_type_test mttest();

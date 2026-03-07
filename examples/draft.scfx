@@ -2,17 +2,56 @@
 // ...and simple tests
 
 fn() {
-    ab = array_buffer();
-
-    ab.append(hton(i32(623)));
+    devname = "/dev/sda";
+    ab = array_buffer(file(devname).read(512));
+    println("----------------- MBR ------------------");
     ab.to_string().hexdump().println();
+    println("----------------- Bootstrap code area (part 1) ------------------");
+    ab.sub_buffer(0, 218).to_string().hexdump().println();
+    is_dos = false;
+    if(ab.u16_at(218) == 0) {
+        is_dos = true;
+        println("----------------- 0x0000 ------------------");
+        ab.u16_at(218).itoa(16, 4).println();
+        println("----------------- Original physical drive ------------------");
+        ab.u8_at(220).itoa(16, 2).println();
+        println("----------------- Seconds (0–59) ------------------");
+        ab.u8_at(221).itoa(16, 2).println();
+        println("----------------- Minutes (0–59) ------------------");
+        ab.u8_at(222).itoa(16, 2).println();
+        println("----------------- Hours (0–23) ------------------");
+        ab.u8_at(223).itoa(16, 2).println();
+    } else {
+        println("----------------- Disk timestamp/OEM loader signature with NEWLDR ------------------");
+        ab.sub_buffer(218, 6).to_string().hexdump().println();
+    }
+    println("----------------- Bootstrap code area (part 2, code entry at 0x0000) ------------------");
+    ab.sub_buffer(224, 222).to_string().hexdump().println();
+    if(is_dos) {
+        println("----------------- 32-bit disk signature ------------------");
+        ab.u32_at(440).itoa(16, 8).println();
+        println("----------------- 0x0000 (0x5A5A if copy-protected) ------------------");
+        ab.u16_at(444).itoa(16, 4).println();
+    } else {
+        println("----------------- Disk signature (optional; UEFI, Linux, Windows NT family and other OSes) ------------------");
+        ab.sub_buffer(440, 6).to_string().hexdump().println();
+    }
 
-    ab.put_at(i32(623), 1);
-    ab.to_string().hexdump().println();
-
-    u = ab.u16_at(0);
-    u = 0x1234;
-    ab.to_string().hexdump().println();
+    if(is_dos) {
+        println("----------------- Partition entry №1 ------------------");
+        ab.sub_buffer(446, 16).to_string().hexdump().println();
+        println("----------------- Partition entry №2 ------------------");
+        ab.sub_buffer(462, 16).to_string().hexdump().println();
+        println("----------------- Partition entry №3 ------------------");
+        ab.sub_buffer(478, 16).to_string().hexdump().println();
+        println("----------------- Partition entry №4 ------------------");
+        ab.sub_buffer(494, 16).to_string().hexdump().println();
+    } else {
+        println("----------------- Partition table (for primary partitions) ------------------");
+        ab.sub_buffer(446, 16 * 4).to_string().hexdump().println();
+    }
+    println("----------------- Boot signature ------------------");
+    ab.u16_at(510).itoa(16, 4).println();
 
     return exit(0);
 }
