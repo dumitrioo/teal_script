@@ -121,15 +121,6 @@ int main(int argc, char **argv) {
             throw std::runtime_error{"nothing to do - no working elements"};
         }
 
-        try {
-            // in some of the example scripts, there input cell for the host application's
-            // command line argsuments is defined under the "command_line_args" identifier
-            // so let's set it
-            rt.set_input("command_line_args", args);
-        } catch(...) {
-            // but if is not defined, we don't care
-        }
-
 #ifdef SINGLE_THREADED_SCFX
         while(!rt.termination_requested()) {
             rt.run_cycle();

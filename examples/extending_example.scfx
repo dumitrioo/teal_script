@@ -1,5 +1,3 @@
-'command_line_args' command_line_args;
-
 /////////////////////////////////////////////////////////////////////////////
 // this is usage part of extending example.
 // for host part, see "examples/interpreter/main.cpp"

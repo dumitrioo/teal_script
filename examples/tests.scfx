@@ -1,6 +1,3 @@
-'command_line_args' command_line_args;
-
-
 execution_time_limit(t) {
     if(this.t == undefined) this.t = timestamp().fseconds() + t;
     if(timestamp().fseconds() > this.t) exit();
@@ -149,43 +146,37 @@ misc_test msctst();
 
 
 untab(argv) {
-    clargs = argv;
-    clargs.pop_front();
-    clargs.pop_front();
-    for(i = 0; i < clargs.size(); ++i) {
-        if(file_exists(clargs[i])) {
-            try {
-                console.println("processing file ", clargs[i]);
-                save_to_file(clargs[i], clargs[i].load_from_file().replace_substr("\t", " " * 4));
-            } catch(e) {
-                console.error(e);
-            }
-        } else if (dir_exists(clargs[i])) {
-            dir_list = list_directory(clargs[i], true);
-            for(i = 0; i < dir_list.size(); ++i) {
-                if(file_exists(dir_list[i])) {
-                    try {
-                        console.println("processing file ", dir_list[i]);
-                        save_to_file(dir_list[i], dir_list[i].load_from_file().replace_substr("\t", " " * 4));
-                    } catch(e) {
-                        console.error(e);
-                    }
+    dir_or_filename = "/path/to/file_or_dir";
+    if(file_exists(dir_or_filename)) {
+        try {
+            console.println("processing file ", dir_or_filename);
+            save_to_file(dir_or_filename, dir_or_filename.load_from_file().replace_substr("\t", " " * 4));
+        } catch(e) {
+            console.error(e);
+        }
+    } else if (dir_exists(dir_or_filename)) {
+        dir_list = list_directory(dir_or_filename, true);
+        for(i = 0; i < dir_list.size(); ++i) {
+            if(file_exists(dir_list[i])) {
+                try {
+                    console.println("processing file ", dir_list[i]);
+                    save_to_file(dir_list[i], dir_list[i].load_from_file().replace_substr("\t", " " * 4));
+                } catch(e) {
+                    console.error(e);
                 }
             }
         }
     }
 }
 
-// untab utb(command_line_args);
+// untab utb();
 
 
-finddupes(argv) {
-    clargs = argv;
-    clargs.pop_front();
-    clargs.pop_front();
-    if(dir_exists(clargs[0])) {
+finddupes() {
+    dirname = "/path/to/your/dir";
+    if(dir_exists(dirname)) {
         dupes = object();
-        dir_list = list_directory(clargs[0], true);
+        dir_list = list_directory(dirname, true);
         for(i = 0; i < dir_list.size(); ++i) {
             curr_fname = dir_list[i];
             if(file_exists(curr_fname)) {
@@ -204,10 +195,10 @@ finddupes(argv) {
     return 0;
 }
 
-// finddupes dps(command_line_args);
+// finddupes dps();
 
 
-exception_test(argv) {
+exception_test() {
     try {
         throw 12;
     } catch(e) {
@@ -216,7 +207,7 @@ exception_test(argv) {
     return 0;
 }
 
-exception_test exctst(command_line_args);
+exception_test exctst();
 
 
 simply_test() {

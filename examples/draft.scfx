@@ -1,7 +1,31 @@
-// just for fun
-// ...and simple tests
+function HCS(hcs) {
+    print("    "); hcs.u8_at(0).itoa().println();
+    e2 = hcs.u8_at(1);
+    e3 = hcs.u8_at(2);
+    c = u16(e2);
+    c = ((c << 2) & 0b1100000000) | e3;
+    s = e2;
+    s &= 0b111111;
+    print("    "); c.itoa().println();
+    print("    "); s.itoa().println();
+}
 
-fn() {
+function parttblentry(e, offs) {
+    println("    ----------------- status ------------------");
+    print("    "); e.u8_at(0).itoa(16, 2).println();
+    println("    ----------------- start head-cylinder-sector ------------------");
+    HCS(e.sub_buffer(1, 3));
+    println("    ----------------- Partition type ------------------");
+    print("    "); e.u8_at(4).itoa(16, 2).println();
+    println("    ----------------- end head-cylinder-sector ------------------");
+    HCS(e.sub_buffer(5, 3));
+    println("    ----------------- LBA of first absolute sector in the partition ------------------");
+    print("    "); e.u32_at(8).itoa().println();
+    println("    ----------------- Number of sectors in partition ------------------");
+    print("    "); e.u32_at(0xc).itoa().println();
+}
+
+mbr_parser() {
     devname = "/dev/sda";
     ab = array_buffer(file(devname).read(512));
     println("----------------- MBR ------------------");
@@ -37,23 +61,19 @@ fn() {
         ab.sub_buffer(440, 6).to_string().hexdump().println();
     }
 
-    if(is_dos) {
-        println("----------------- Partition entry №1 ------------------");
-        ab.sub_buffer(446, 16).to_string().hexdump().println();
-        println("----------------- Partition entry №2 ------------------");
-        ab.sub_buffer(462, 16).to_string().hexdump().println();
-        println("----------------- Partition entry №3 ------------------");
-        ab.sub_buffer(478, 16).to_string().hexdump().println();
-        println("----------------- Partition entry №4 ------------------");
-        ab.sub_buffer(494, 16).to_string().hexdump().println();
-    } else {
-        println("----------------- Partition table (for primary partitions) ------------------");
-        ab.sub_buffer(446, 16 * 4).to_string().hexdump().println();
-    }
+    println("----------------- Partition entry №1 ------------------");
+    parttblentry(ab.sub_buffer(446, 16), 446);
+    println("----------------- Partition entry №2 ------------------");
+    parttblentry(ab.sub_buffer(462, 16), 462);
+    println("----------------- Partition entry №3 ------------------");
+    parttblentry(ab.sub_buffer(478, 16), 478);
+    println("----------------- Partition entry №4 ------------------");
+    parttblentry(ab.sub_buffer(494, 16), 494);
+
     println("----------------- Boot signature ------------------");
     ab.u16_at(510).itoa(16, 4).println();
 
     return exit(0);
 }
 
-fn main();
+mbr_parser mbrprsr();
