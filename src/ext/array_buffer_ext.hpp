@@ -424,7 +424,7 @@ namespace scfx {
             }
 
             void put_at(std::string const &val, std::size_t at) {
-                while(buf_.size() <= at) { buf_.push_back(0); }
+                while(buf_.size() < at) { buf_.push_back(0); }
                 for(std::size_t i{}; i < val.size(); ++i) {
                     if(at + i < buf_.size()) {
                         buf_[at + i] = val[i];
@@ -438,7 +438,7 @@ namespace scfx {
                 requires(std::is_fundamental_v<T>)
             void put_at(T val, std::size_t at) {
                 std::uint8_t const *valptr{reinterpret_cast<std::uint8_t const *>(&val)};
-                while(buf_.size() <= at) { buf_.push_back(0); }
+                while(buf_.size() < at) { buf_.push_back(0); }
                 for(std::size_t i{}; i < sizeof(val); ++i) {
                     if(at + i < buf_.size()) {
                         buf_[at + i] = valptr[i];
