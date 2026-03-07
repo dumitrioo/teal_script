@@ -88,52 +88,39 @@ namespace scfx {
             }
 
             void print(std::vector<scfx::valbox> const &args) {
-                std::string s{};
-                {
-                    std::stringstream out{};
-                    /////////////////////////////////
-                    if(setfill_) { out << std::setfill(fill_char_); }
-                    if(setw_) { out << std::setw(w_); }
-                    if(setprec_) { out << std::setprecision(prec_); }
-                    if(fk_ != flt_kind::def) {
-                        switch(fk_) {
+                std::stringstream out{};
+                if(setfill_) { out << std::setfill(fill_char_); }
+                if(setw_) { out << std::setw(w_); }
+                if(setprec_) { out << std::setprecision(prec_); }
+                if(fk_ != flt_kind::def) {
+                    switch(fk_) {
                         case flt_kind::fix: out << std::fixed; break;
                         case flt_kind::sci: out << std::scientific; break;
                         case flt_kind::hex: out << std::hex; break;
                         default: out << std::defaultfloat; break;
-                        }
                     }
-                    /////////////////////////////////
-                    for(auto &&v: args) { out << v; }
-                    s = out.str();
-                    out.str(std::string{});
                 }
+                for(auto &&v: args) { out << v; }
                 std::unique_lock l{out_mtp_};
-                std::cout << s << std::flush;
+                std::cout << out.str() << std::flush;
             }
 
             void println(std::vector<scfx::valbox> const &args) {
-                std::string s{};
-                {
-                    std::stringstream out{};
-                    /////////////////////////////////
-                    if(setfill_) { out << std::setfill(fill_char_); }
-                    if(setw_) { out << std::setw(w_); }
-                    if(setprec_) { out << std::setprecision(prec_); }
-                    if(fk_ != flt_kind::def) {
-                        switch(fk_) {
+                std::stringstream out{};
+                if(setfill_) { out << std::setfill(fill_char_); }
+                if(setw_) { out << std::setw(w_); }
+                if(setprec_) { out << std::setprecision(prec_); }
+                if(fk_ != flt_kind::def) {
+                    switch(fk_) {
                         case flt_kind::fix: out << std::fixed; break;
                         case flt_kind::sci: out << std::scientific; break;
                         case flt_kind::hex: out << std::hex; break;
                         default: out << std::defaultfloat; break;
-                        }
                     }
-                    /////////////////////////////////
-                    for(auto &&v: args) { out << v; }
-                    s = out.str();
                 }
+                for(auto &&v: args) { out << v; }
                 std::unique_lock l{out_mtp_};
-                std::cout << s << std::endl;
+                std::cout << out.str() << std::endl;
             }
 
             void flush() {
@@ -145,66 +132,54 @@ namespace scfx {
             void hexfloat() { fk_ = flt_kind::hex; }
             void defaultfloat() { fk_ = flt_kind::def; }
             void setprecision(int prec) { setprec_ = true; prec_ = prec; }
-            auto precision() { return prec_; }
+            int precision() { return prec_; }
             void setw(int w) { setw_ = true; w_ = w; }
             void setfill(char arg) { setfill_ = true; fill_char_ = arg; }
-            auto fill() { return fill_char_; }
+            char fill() { return fill_char_; }
             bool colors_enabled() const { return terminal_colours_; }
             void enable_colors(bool v) { terminal_colours_ = v; }
 
         private:
             void cerr_out(std::string const &type, std::vector<scfx::valbox> const &args) {
-                std::string s{};
-                {
-                    std::stringstream out{};
-                    /////////////////////////////////
-                    if(setfill_) { out << std::setfill(fill_char_); }
-                    if(setw_) { out << std::setw(w_); }
-                    if(setprec_) { out << std::setprecision(prec_); }
-                    if(fk_ != flt_kind::def) {
-                        switch(fk_) {
+                std::stringstream out{};
+                if(setfill_) { out << std::setfill(fill_char_); }
+                if(setw_) { out << std::setw(w_); }
+                if(setprec_) { out << std::setprecision(prec_); }
+                if(fk_ != flt_kind::def) {
+                    switch(fk_) {
+                    case flt_kind::fix: out << std::fixed; break;
+                    case flt_kind::sci: out << std::scientific; break;
+                    case flt_kind::hex: out << std::hex; break;
+                    default: out << std::defaultfloat; break;
+                    }
+                }
+                out << scfx::str_util::from_utf8(scfx::timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
+                for(auto &&v: args) {
+                    out << v;
+                }
+                std::unique_lock l{out_mtp_};
+                std::cerr << out.str() << std::endl;
+            }
+
+            void cout_out(std::string const &type, std::vector<scfx::valbox> const &args) {
+                std::stringstream out{};
+                if(setfill_) { out << std::setfill(fill_char_); }
+                if(setw_) { out << std::setw(w_); }
+                if(setprec_) { out << std::setprecision(prec_); }
+                if(fk_ != flt_kind::def) {
+                    switch(fk_) {
                         case flt_kind::fix: out << std::fixed; break;
                         case flt_kind::sci: out << std::scientific; break;
                         case flt_kind::hex: out << std::hex; break;
                         default: out << std::defaultfloat; break;
-                        }
                     }
-                    /////////////////////////////////
-                    out << scfx::str_util::from_utf8(scfx::timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
-                    for(auto &&v: args) {
-                        out << v;
-                    }
-                    s = out.str();
+                }
+                out << scfx::str_util::from_utf8(scfx::timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
+                for(auto &&v: args) {
+                    out << v;
                 }
                 std::unique_lock l{out_mtp_};
-                std::cerr << s << std::endl;
-            }
-
-            void cout_out(std::string const &type, std::vector<scfx::valbox> const &args) {
-                std::string s{};
-                {
-                    std::stringstream out{};
-                    /////////////////////////////////
-                    if(setfill_) { out << std::setfill(fill_char_); }
-                    if(setw_) { out << std::setw(w_); }
-                    if(setprec_) { out << std::setprecision(prec_); }
-                    if(fk_ != flt_kind::def) {
-                        switch(fk_) {
-                            case flt_kind::fix: out << std::fixed; break;
-                            case flt_kind::sci: out << std::scientific; break;
-                            case flt_kind::hex: out << std::hex; break;
-                            default: out << std::defaultfloat; break;
-                        }
-                    }
-                    /////////////////////////////////
-                    out << scfx::str_util::from_utf8(scfx::timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
-                    for(auto &&v: args) {
-                        out << v;
-                    }
-                    s = out.str();
-                }
-                std::unique_lock l{out_mtp_};
-                std::cout << s << std::endl;
+                std::cout << out.str() << std::endl;
             }
 
         private:
