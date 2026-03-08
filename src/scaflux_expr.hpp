@@ -73,18 +73,46 @@ namespace scfx {
         }
 
         valbox eval(execution_context *ctx, eval_caller_type, valbox *) override {
+            {
+                if(cached_.load(std::memory_order_acquire)) {
+                    return cached_val_;
+                }
+            }
             valbox res{valbox_no_initialize::dont_do_it};
             if(fun_ref()) {
                 valbox res{ctx->find_func(name_)};
+                execution_context::obj_type objtyp{execution_context::obj_type::unknown};
                 if(!res.is_func_ref()) {
-                    res = ctx->find_val_by_sym_name(name_, line(), col());
+                    res = ctx->find_val_by_sym_name(name_, line(), col(), objtyp);
+                    if(
+                        objtyp == execution_context::obj_type::global_fun ||
+                        objtyp == execution_context::obj_type::user_fun
+                    ) {
+                        std::unique_lock l{cached_mtp_};
+                        cached_val_.assign(res);
+                        cached_ = true;
+                    } else {
+                        throw scfx_identifier_not_found{line(), col(),
+                            std::string{"identifier \""} + name_ + "\" not found"
+                        };
+                    }
+                } else {
+                    std::unique_lock l{cached_mtp_};
+                    cached_val_.assign(res);
+                    cached_ = true;
                 }
                 return res;
             }
             bool excepted{false};
             runtime_error er{{}, {}, {}};
             try {
-                res = ctx->find_val_by_sym_name(name_, line(), col());
+                execution_context::obj_type objtyp{execution_context::obj_type::unknown};
+                res = ctx->find_val_by_sym_name(name_, line(), col(), objtyp);
+                if(objtyp == execution_context::obj_type::global_var) {
+                    std::unique_lock l{cached_mtp_};
+                    cached_val_.assign(res);
+                    cached_ = true;
+                }
             } catch (runtime_error const &e) {
                 er = e;
                 excepted = true;
@@ -109,6 +137,9 @@ namespace scfx {
 
     private:
         std::string name_{};
+        shared_mutex cached_mtp_{};
+        valbox cached_val_{};
+        std::atomic<bool> cached_{false};
     };
 
     class prefix_unop_expression: public expression {

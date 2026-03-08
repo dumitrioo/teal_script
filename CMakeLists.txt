@@ -19,8 +19,16 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_C_STANDARD 99)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=znver4 -fstrict-aliasing -Wall -Wextra -rdynamic -fPIC -Wno-unused-function -Wl,-rpath,.")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -falign-loops -march=znver4 -fstrict-aliasing -Wall -Wextra -fPIC -Wl,-rpath,.")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fstrict-aliasing -Wall -Wextra -rdynamic -fPIC -Wno-unused-function -Wl,-rpath,.")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -falign-loops -fstrict-aliasing -Wall -Wextra -fPIC -Wl,-rpath,.")
+
+add_definitions(-DSCFX_USE_CUSTOM_MUTEX)
+
+add_definitions(-DSCFX_USE_CUSTOM_SHARED_MUTEX)
+add_definitions(-DRW_MUTEX_PRIORITIES)
+#add_definitions(-DRW_MUTEX_UPGRADEABLE)
+add_definitions(-DRW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
+#add_definitions(-DRW_MUTEX_ATOMIC_SM_SLEEP_NANOS=10000)
 
 add_definitions(-DSCFX_USE_EMHASH8_MAP)
 

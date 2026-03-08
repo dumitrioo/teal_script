@@ -87,7 +87,7 @@ namespace scfx {
         std::uniform_int_distribution<std::uint64_t> ud_{};
         std::uniform_real_distribution<long double> urd_{0.0L, 1.0L};
 
-        std::shared_mutex rt_mtp_{};
+        shared_mutex rt_mtp_{};
         runtime_interface *rt_{nullptr};
     };
 

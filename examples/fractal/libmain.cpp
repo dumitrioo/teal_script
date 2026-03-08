@@ -84,7 +84,7 @@ class fractal_ext: public scfx::extension_interface {
             return std::pair<int, int>{field_.begin()->first, itlast->first};
         }
 
-        mutable std::shared_mutex field_mtp_{};
+        mutable scfx::shared_mutex field_mtp_{};
         std::map<int, std::map<int, char>> field_{};
     };
 
@@ -148,7 +148,7 @@ public:
     }
 
 private:
-    std::shared_mutex rt_mtp_{};
+    scfx::shared_mutex rt_mtp_{};
     scfx::runtime_interface *rt_{nullptr};
 
     fractal frc{};

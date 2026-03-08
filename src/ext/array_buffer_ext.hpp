@@ -573,7 +573,7 @@ namespace scfx {
         };
 
     private:
-        std::shared_mutex rt_mtp_{};
+        shared_mutex rt_mtp_{};
         runtime_interface *rt_{nullptr};
     };
 

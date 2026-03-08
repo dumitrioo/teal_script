@@ -7,6 +7,7 @@
 #include "../include/commondefs.hpp"
 #include "../include/timespec_wrapper.hpp"
 #include "../include/containers/circular_buffer.hpp"
+#include "../include/mt_synchro.hpp"
 
 #include "../scaflux_value.hpp"
 #include "../scaflux_util.hpp"
@@ -92,7 +93,7 @@ namespace scfx {
             bool start() {
                 cpu_usage_ = 0;
                 self_cpu_consumption_ = 0;
-                std::lock_guard<std::mutex> l{cpu_usage_thread_mtp_};
+                std::unique_lock l{cpu_usage_thread_mtp_};
                 if(!running_) {
                     if(cpu_state_init()) {
                         termination_ = false;
@@ -117,7 +118,7 @@ namespace scfx {
             }
 
             void stop() {
-                std::lock_guard<std::mutex> l{cpu_usage_thread_mtp_};
+                std::unique_lock l{cpu_usage_thread_mtp_};
                 termination_ = true;
                 if(cpu_usage_thread_.joinable()) {
                     cpu_usage_thread_.join();
@@ -292,7 +293,7 @@ namespace scfx {
             std::uint64_t n_of_processors_{ 0ULL };
             std::uint64_t work_j_{ 0ULL };
             std::uint64_t total_j_{ 0ULL };
-            std::mutex cpu_usage_thread_mtp_{};
+            mutex cpu_usage_thread_mtp_{};
             std::thread cpu_usage_thread_;
             clock_t last_clk_{0};
             clock_t clock_last{0};
@@ -309,7 +310,7 @@ namespace scfx {
             bool termination_{ false };
             bool running_{ false };
         };
-        std::shared_mutex rt_mtp_{};
+        shared_mutex rt_mtp_{};
         runtime_interface *rt_{nullptr};
     };
 

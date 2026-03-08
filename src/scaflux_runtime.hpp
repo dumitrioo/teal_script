@@ -1849,7 +1849,7 @@ namespace scfx {
 
         std::atomic<std::int64_t> termination_requested_{0};
         std::atomic<std::int64_t> failure_{0};
-        mutable std::shared_mutex failure_mtp_{};
+        mutable shared_mutex failure_mtp_{};
         std::string failure_description_{};
 
         enum class thread_mode{none, single, multi };
@@ -1945,7 +1945,7 @@ namespace scfx {
         rand_ext randlib_{};
         array_buffer_ext array_buffer_ext_{};
 
-        std::shared_mutex loaded_extensions_mtp_{};
+        shared_mutex loaded_extensions_mtp_{};
         std::list<std::pair<std::shared_ptr<dlib>, extension_interface *>> loaded_extensions_{};
     };
 

@@ -5,13 +5,24 @@ CONFIG   -= app_bundle
 
 TEMPLATE = app
 
+################################################################
 # DEFINES += SINGLE_THREADED_SCFX
 # DEFINES += DEBUG_SCFX_RUN_CYCLE
-
+################################################################
+DEFINES += SCFX_USE_CUSTOM_MUTEX
+################################################################
+DEFINES += SCFX_USE_CUSTOM_SHARED_MUTEX
+DEFINES += RW_MUTEX_PRIORITIES
+# DEFINES += RW_MUTEX_UPGRADEABLE
+DEFINES += RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING
+# DEFINES += RW_MUTEX_ATOMIC_SM_SLEEP_NANOS=100000
+################################################################
 DEFINES += USE_FILE_MAGIC
 DEFINES += SCFX_USE_ZMQ
 DEFINES += SCFX_USE_RAYLIB
+################################################################
 DEFINES += SCFX_USE_EMHASH8_MAP
+################################################################
 
 INCLUDEPATH += ../../src
 
@@ -66,7 +77,7 @@ HEADERS += \
     optext/ray_ext.hpp \
     optext/zmq_ext.hpp
 
-QMAKE_CXXFLAGS += -march=znver4 -std=c++20 -Wno-unused-function -Wl,-rpath,.
+QMAKE_CXXFLAGS += -std=c++20 -Wno-unused-function -Wl,-rpath,.
 QMAKE_CXXFLAGS_RELEASE -= -O2
 QMAKE_CXXFLAGS_RELEASE += -O3
 QMAKE_CFLAGS_RELEASE -= -O2
@@ -86,7 +97,6 @@ DISTFILES += \
     ../example.scfx \
     ../alu74181.png \
     ../extending_example.scfx \
-    ../fractal/fractal.scfx \
     ../quad_eq.scfx \
     ../tbbt_2cola.scfx \
     ../tests.scfx

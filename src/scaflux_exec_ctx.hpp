@@ -155,14 +155,23 @@ namespace scfx {
             stack_[stack_ptr_].put(name, val);
         }
 
-        valbox find_val_by_sym_name(std::string const &name, int l, int c) {
+        enum class obj_type {
+            unknown,
+            stack_var,
+            global_var,
+            user_fun,
+            global_fun,
+        };
+        valbox find_val_by_sym_name(std::string const &name, int64_t l, int64_t c, obj_type &objtyp) {
+            objtyp = obj_type::unknown;
             valbox res{valbox_no_initialize::dont_do_it};
             int64_t stb{-2};
-            for(int i{stack_ptr_}; i >= 0; --i) {
+            for(int64_t i{stack_ptr_}; i >= 0; --i) {
                 if(stb != -2 && i <= stb) {
                     break;
                 }
                 if(stack_[i].get(name, res)) {
+                    objtyp = obj_type::stack_var;
                     return res;
                 }
                 if(stb == -2) {
@@ -181,17 +190,21 @@ namespace scfx {
                 }
                 valbox res{};
                 stack_[stack_ptr_].put(name, res);
+                objtyp = obj_type::stack_var;
                 return res;
             }
             if(!searched) { gvd_it = rt_ptr_->global_constants_dictionary()->find(name); }
             if(gvd_it != rt_ptr_->global_constants_dictionary()->end()) {
+                objtyp = obj_type::global_var;
                 return gvd_it->second;
             }
             if((rt_ptr_->user_functions_search())(name)) {
+                objtyp = obj_type::user_fun;
                 return valbox{rt_ptr_->user_function_selector(), name, true};
             }
             gvd_it = rt_ptr_->global_functions_dictionary()->find(name);
             if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
+                objtyp = obj_type::global_fun;
                 return gvd_it->second;
             }
             throw scfx_identifier_not_found{l, c,
@@ -235,7 +248,7 @@ namespace scfx {
             return false;
         }
 
-        valbox find_method(std::string const &class_name, std::string const &method_name, int l, int c) const {
+        valbox find_method(std::string const &class_name, std::string const &method_name, int64_t l, int64_t c) const {
             auto c_it{rt_ptr_->global_methods_dictionary()->find(class_name)};
             if(c_it != rt_ptr_->global_methods_dictionary()->end()) {
                 auto m_it{c_it->second.find(method_name)};
@@ -325,14 +338,14 @@ namespace scfx {
             }
 
         private:
-            std::unordered_map<std::string, valbox> m_{};
+            map_t<std::string, valbox> m_{};
         };
 
         runtime_interface *rt_ptr_{nullptr};
         std::atomic_int64_t function_depth_{0};
         std::vector<stack_frame> stack_{};
         std::vector<size_t> stack_barriers_{};
-        int stack_ptr_{-1};
+        int64_t stack_ptr_{-1};
         valbox return_result_{};
         std::uint64_t return_requested_{0};
         std::uint64_t continue_requested_{0};

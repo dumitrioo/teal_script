@@ -19,14 +19,30 @@ namespace scfx {
         }
 
         void exec(execution_context *ctx) {
+#if defined(SCFX_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
+            std::unique_lock l{val_mtp_};
+#else
             std::unique_lock l{*val_mtp_};
+#endif
             val_ = ctx->get_input(in_name_).clone();
         }
 
+        void set_value(valbox const &val) {
+#if defined(SCFX_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
+            std::unique_lock l{val_mtp_};
+#else
+            std::unique_lock l{*val_mtp_};
+#endif
+            val_ = val.clone();
+        }
+
         valbox curr_value() const {
+#if defined(SCFX_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
+            std::shared_lock l{val_mtp_};
+#else
             std::shared_lock l{*val_mtp_};
-            valbox res{};
-            res.assign(val_);
+#endif
+            valbox res{val_.clone()};
             return res;
         }
 
@@ -51,15 +67,14 @@ namespace scfx {
             return col_;
         }
 
-        void set_value(valbox const &val) {
-            std::unique_lock l{*val_mtp_};
-            val_.assign(val);
-        }
-
     private:
         std::int64_t line_{};
         std::int64_t col_{};
+#if defined(SCFX_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
+        mutable shared_mutex val_mtp_{};
+#else
         mutable std::unique_ptr<shared_mutex> val_mtp_{std::make_unique<shared_mutex>()};
+#endif
         valbox val_{};
         std::string in_name_{};
         std::string inst_name_{};
@@ -215,16 +230,23 @@ namespace scfx {
             return type_name_;
         }
 
-        valbox curr_value() const {
-            std::shared_lock l{*val_mtp_};
-            valbox res{};
-            res.assign(val_);
-            return res;
+        void set_curr_value(valbox const &v) {
+#if defined(SCFX_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
+            std::unique_lock l{val_mtp_};
+#else
+            std::unique_lock l{*val_mtp_};
+#endif
+            val_ = v.clone();
         }
 
-        void set_curr_value(valbox const &v) {
-            std::unique_lock l{*val_mtp_};
-            val_.assign(v);
+        valbox curr_value() const {
+#if defined(SCFX_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
+            std::shared_lock l{val_mtp_};
+#else
+            std::shared_lock l{*val_mtp_};
+#endif
+            valbox res{val_.clone()};
+            return res;
         }
 
         void set_output_name(std::string const &name) {
@@ -276,7 +298,11 @@ namespace scfx {
         std::string inst_name_{};
         self_fields_map_t<std::string, valbox> cell_self_values_{};
         std::vector<arg_info> args_info_{};
+#if defined(SCFX_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
+        mutable shared_mutex val_mtp_{};
+#else
         mutable std::unique_ptr<shared_mutex> val_mtp_{std::make_unique<shared_mutex>()};
+#endif
         valbox val_{};
         std::string out_name_{};
         std::uint64_t type_info_transferred_{0};

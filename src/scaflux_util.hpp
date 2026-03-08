@@ -3,6 +3,7 @@
 #include "include/commondefs.hpp"
 #include "include/file_util.hpp"
 #include "include/str_util.hpp"
+#include "include/mt_synchro.hpp"
 #include "include/math/math_util.hpp"
 #include "include/json.hpp"
 #ifdef SCFX_USE_EMHASH8_MAP
@@ -95,7 +96,20 @@ namespace scfx {
     template<typename K_T, typename V_T>
     using dict_map_t = std::map<K_T, V_T>;
 
+
+#ifdef SCFX_USE_CUSTOM_SHARED_MUTEX
+    using shared_mutex = mt::atomic_rw_spin_mutex;
+#else
     using shared_mutex = std::shared_mutex;
+#endif
+
+
+#ifdef SCFX_USE_CUSTOM_MUTEX
+    using mutex = mt::atomic_spin_mutex;
+#else
+    using mutex = std::mutex;
+#endif
+
 
     static bool is_identifier(std::string const &ident) {
         if(ident.size() == 0) {
@@ -224,7 +238,7 @@ namespace scfx {
 
         T at(std::size_t indx) const {
             if(indx >= size_) {
-                throw runtime_error{"index out of range"};
+                throw std::runtime_error{"index out of range"};
             }
             auto it{map_.find(indx)};
             if(it == map_.end()) {
@@ -302,7 +316,7 @@ namespace scfx {
         T pop_back() {
             T res{};
             if(empty()) {
-                throw runtime_error{"array empty"};
+                throw std::runtime_error{"array empty"};
             }
             --size_;
             auto it{map_.lower_bound(size_)};

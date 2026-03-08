@@ -586,7 +586,7 @@ public:
     }
 
 private:
-    std::shared_mutex rt_mtp_{};
+    scfx::shared_mutex rt_mtp_{};
     scfx::runtime_interface *rt_{nullptr};
 };
 
