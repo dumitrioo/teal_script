@@ -53,7 +53,7 @@ namespace scfx {
             });
             rt->add_method("normal_dist_prng", "gen", SCFXFUN(args) {
                 if(args.size() == 1) {
-                    return SCFXTHIS(std::shared_ptr<norm_dist_gen<long double>>)->gen();
+                    return SCFXTHIS(args, std::shared_ptr<norm_dist_gen<long double>>)->gen();
                 }
                 return static_cast<long double>(0);
             });

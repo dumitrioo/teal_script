@@ -44,111 +44,111 @@ namespace scfx {
             });
             rt->add_method("file", "open", SCFXFUN(args) {
                 if(args.size() == 2) {
-                    return SCFXTHIS(std::shared_ptr<scfx_file>)->open(args[1].cast_to_string());
+                    return SCFXTHIS(args, std::shared_ptr<scfx_file>)->open(args[1].cast_to_string());
                 } else if(args.size() == 3) {
-                    return SCFXTHIS(std::shared_ptr<scfx_file>)->open(args[1].cast_to_string(), args[2].cast_to_bool());
+                    return SCFXTHIS(args, std::shared_ptr<scfx_file>)->open(args[1].cast_to_string(), args[2].cast_to_bool());
                 } else if(args.size() == 4) {
-                    return SCFXTHIS(std::shared_ptr<scfx_file>)->open(args[1].cast_to_string(), args[2].cast_to_bool(), args[3].cast_to_bool());
+                    return SCFXTHIS(args, std::shared_ptr<scfx_file>)->open(args[1].cast_to_string(), args[2].cast_to_bool(), args[3].cast_to_bool());
                 } else if(args.size() == 5) {
-                    return SCFXTHIS(std::shared_ptr<scfx_file>)->open(args[1].cast_to_string(), args[2].cast_to_bool(), args[3].cast_to_bool(), args[4].cast_to_bool());
+                    return SCFXTHIS(args, std::shared_ptr<scfx_file>)->open(args[1].cast_to_string(), args[2].cast_to_bool(), args[3].cast_to_bool(), args[4].cast_to_bool());
                 }
                 return false;
             });
             rt->add_method("file", "to_string", SCFXFUN(args) {
                 return std::string{"class \"file\", instance 0x"} +
-                        scfx::str_util::utoa(reinterpret_cast<std::uintptr_t>(SCFXTHIS(std::shared_ptr<scfx_file>).get()), 16) +
-                        ", status: " + (SCFXTHIS(std::shared_ptr<scfx_file>)->is_open() ? "opened" : "closed");
+                        scfx::str_util::utoa(reinterpret_cast<std::uintptr_t>(SCFXTHIS(args, std::shared_ptr<scfx_file>).get()), 16) +
+                        ", status: " + (SCFXTHIS(args, std::shared_ptr<scfx_file>)->is_open() ? "opened" : "closed");
             });
             rt->add_method("file", "ok", SCFXFUN(args) {
-                return SCFXTHIS(std::shared_ptr<scfx_file>)->is_open();
+                return SCFXTHIS(args, std::shared_ptr<scfx_file>)->is_open();
             });
             rt->add_method("file", "read", SCFXFUN(args) {
                 if(args.size() == 2) {
-                    std::vector<std::uint8_t> rdres{SCFXTHIS(std::shared_ptr<scfx_file>)->read(args[1].cast_to_u64())};
+                    std::vector<std::uint8_t> rdres{SCFXTHIS(args, std::shared_ptr<scfx_file>)->read(args[1].cast_to_u64())};
                     return std::string{rdres.begin(), rdres.end()};
                 }
                 return std::string{};
             });
             rt->add_method("file", "write", SCFXFUN(args) {
                 if(args.size() == 2) {
-                    return SCFXTHIS(std::shared_ptr<scfx_file>)->write(args[1].cast_to_byte_array());
+                    return SCFXTHIS(args, std::shared_ptr<scfx_file>)->write(args[1].cast_to_byte_array());
                 }
                 return -1LL;
             });
             rt->add_method("file", "close", SCFXFUN(args) {
                 if(args.size() == 1) {
-                    return SCFXTHIS(std::shared_ptr<scfx_file>)->close();
+                    return SCFXTHIS(args, std::shared_ptr<scfx_file>)->close();
                 }
                 return false;
             });
             rt->add_method("file", "seekr", SCFXFUN(args) {
                 if(args.size() == 2) {
-                    return SCFXTHIS(std::shared_ptr<scfx_file>)->seek_rd(args[1].cast_to_s64());
+                    return SCFXTHIS(args, std::shared_ptr<scfx_file>)->seek_rd(args[1].cast_to_s64());
                 }
                 return false;
             });
             rt->add_method("file", "seekw", SCFXFUN(args) {
                 if(args.size() == 2) {
-                    return SCFXTHIS(std::shared_ptr<scfx_file>)->seek_wr(args[1].cast_to_s64());
+                    return SCFXTHIS(args, std::shared_ptr<scfx_file>)->seek_wr(args[1].cast_to_s64());
                 }
                 return false;
             });
             rt->add_method("file", "seekr_end", SCFXFUN(args) {
                 if(args.size() == 2) {
-                    return SCFXTHIS(std::shared_ptr<scfx_file>)->seek_rd_from_end(args[1].cast_to_s64());
+                    return SCFXTHIS(args, std::shared_ptr<scfx_file>)->seek_rd_from_end(args[1].cast_to_s64());
                 }
                 return false;
             });
             rt->add_method("file", "seekw_end", SCFXFUN(args) {
                 if(args.size() == 2) {
-                    return SCFXTHIS(std::shared_ptr<scfx_file>)->seek_wr_from_end(args[1].cast_to_s64());
+                    return SCFXTHIS(args, std::shared_ptr<scfx_file>)->seek_wr_from_end(args[1].cast_to_s64());
                 }
                 return false;
             });
             rt->add_method("file", "seekr_begin", SCFXFUN(args) {
                 if(args.size() == 2) {
-                    return SCFXTHIS(std::shared_ptr<scfx_file>)->seek_rd_from_begin(args[1].cast_to_s64());
+                    return SCFXTHIS(args, std::shared_ptr<scfx_file>)->seek_rd_from_begin(args[1].cast_to_s64());
                 }
                 return false;
             });
             rt->add_method("file", "seekw_begin", SCFXFUN(args) {
                 if(args.size() == 2) {
-                    return SCFXTHIS(std::shared_ptr<scfx_file>)->seek_wr_from_begin(args[1].cast_to_s64());
+                    return SCFXTHIS(args, std::shared_ptr<scfx_file>)->seek_wr_from_begin(args[1].cast_to_s64());
                 }
                 return false;
             });
             rt->add_method("file", "seekr_cur", SCFXFUN(args) {
                 if(args.size() == 2) {
-                    return SCFXTHIS(std::shared_ptr<scfx_file>)->seek_rd_from_curr(args[1].cast_to_s64());
+                    return SCFXTHIS(args, std::shared_ptr<scfx_file>)->seek_rd_from_curr(args[1].cast_to_s64());
                 }
                 return false;
             });
             rt->add_method("file", "seekw_cur", SCFXFUN(args) {
                 if(args.size() == 2) {
-                    return SCFXTHIS(std::shared_ptr<scfx_file>)->seek_wr_from_curr(args[1].cast_to_s64());
+                    return SCFXTHIS(args, std::shared_ptr<scfx_file>)->seek_wr_from_curr(args[1].cast_to_s64());
                 }
                 return false;
             });
             rt->add_method("file", "tellr", SCFXFUN(args) {
                 if(args.size() == 1) {
-                    auto res{SCFXTHIS(std::shared_ptr<scfx_file>)->tell_rd()};
+                    auto res{SCFXTHIS(args, std::shared_ptr<scfx_file>)->tell_rd()};
                     return (std::int64_t)res;
                 }
                 return -1LL;
             });
             rt->add_method("file", "tellw", SCFXFUN(args) {
                 if(args.size() == 1) {
-                    auto res{SCFXTHIS(std::shared_ptr<scfx_file>)->tell_wr()};
+                    auto res{SCFXTHIS(args, std::shared_ptr<scfx_file>)->tell_wr()};
                     return (std::int64_t)res;
                 }
                 return -1LL;
             });
             rt->add_method("file", "size", SCFXFUN(args) {
                 if(args.size() == 1) {
-                    auto org_pos{SCFXTHIS(std::shared_ptr<scfx_file>)->tell_rd()};
-                    SCFXTHIS(std::shared_ptr<scfx_file>)->seek_rd_from_end(0);
-                    auto res{SCFXTHIS(std::shared_ptr<scfx_file>)->tell_rd()};
-                    SCFXTHIS(std::shared_ptr<scfx_file>)->seek_rd(org_pos);
+                    auto org_pos{SCFXTHIS(args, std::shared_ptr<scfx_file>)->tell_rd()};
+                    SCFXTHIS(args, std::shared_ptr<scfx_file>)->seek_rd_from_end(0);
+                    auto res{SCFXTHIS(args, std::shared_ptr<scfx_file>)->tell_rd()};
+                    SCFXTHIS(args, std::shared_ptr<scfx_file>)->seek_rd(org_pos);
                     return (std::int64_t)res;
                 }
                 return static_cast<std::int64_t>(0);

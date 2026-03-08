@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
     // -----------------------------------------------------------------------------------
     // Example of adding function to the runtime
     rt.add_function("hello_from_cpp",
-        [](std::vector<scfx::valbox> &args) -> scfx::valbox {
+        SCFXFUN(args) {
             std::cout << "C++ extension function hello_from_cpp() called with arguments:" << std::endl;
             for(auto &&a: args) {
                 std::cout << "\t" << a << std::endl;
@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
     // -----------------------------------------------------------------------------------
     // Example of adding object type to the runtime
     rt.add_function("example_object",
-        [](std::vector<scfx::valbox> &args) -> scfx::valbox {
+        SCFXFUN(args) {
             if(args.size() > 0) {
                 return scfx::valbox{example_object{args[0].cast_to_s32()}, "example_object"};
             }
@@ -72,13 +72,13 @@ int main(int argc, char **argv) {
     rt.add_method("example_object", "set_val", SCFXFUN(args) {
         // check number of arguments, when needed, including
         // implicit object reference as the first arg
-        SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-        SCFXTHIS(example_object).set_val(args[1].cast_to_s32());
+        SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+        SCFXTHIS(args, example_object).set_val(args[1].cast_to_s32());
         return 0;
     });
     rt.add_method("example_object", "get_val", SCFXFUN(args) {
-        SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
-        return SCFXTHIS(example_object).get_val();
+        SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+        return SCFXTHIS(args, example_object).get_val();
     });
     // -----------------------------------------------------------------------------------
 

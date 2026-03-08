@@ -1,4 +1,3 @@
-// #include <commondefs.hpp>
 #include "../../src/scaflux_interfaces.hpp"
 
 class fractal_ext: public scfx::extension_interface {
@@ -114,7 +113,7 @@ public:
         }
         try {
             rt->add_method("fractal", "set_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(4)
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 4)
                 args[0].as_class<fractal *>()->set_at(args[1].cast_to_s32(), args[2].cast_to_s32(), args[3].cast_to_char());
                 return true;
             });
@@ -122,14 +121,14 @@ public:
         }
         try {
             rt->add_method("fractal", "get_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(3)
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 3)
                 return args[0].as_class<fractal *>()->at(args[1].cast_to_s32(), args[2].cast_to_s32());
             });
         } catch (...) {
         }
         try {
             rt->add_method("fractal", "dump", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 return args[0].as_class<fractal *>()->dump();
             });
         } catch (...) {

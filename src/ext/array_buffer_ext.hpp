@@ -30,14 +30,14 @@ namespace scfx {
                 return;
             }
             rt->add_function("array_buffer", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_LE(1)
+                SCFX_CHCK_FUN_PARMS_NUM_LE(args, 1)
                 if(args.size() == 0) {
                     return scfx::valbox{std::make_shared<array_buffer>(), "array_buffer"};
                 } else if(args.size() == 1) {
                     if(args[0].is_string_ref()) {
                         return scfx::valbox{std::make_shared<array_buffer>(args[0].as_string()), "array_buffer"};
                     } else if(args[0].is_class_ref() && args[0].class_name() == "array_buffer") {
-                        return scfx::valbox{std::make_shared<array_buffer>(*SCFXCLASSARG(0, std::shared_ptr<array_buffer>)), "array_buffer"};
+                        return scfx::valbox{std::make_shared<array_buffer>(*SCFXCLASSARG(args, 0, std::shared_ptr<array_buffer>)), "array_buffer"};
                     } else if(args[0].is_numeric()) {
                         std::shared_ptr<array_buffer> res{std::make_shared<array_buffer>()};
                         res->resize(args[0].cast_to_u64());
@@ -47,339 +47,339 @@ namespace scfx {
                 throw std::runtime_error{"invalid argument(s)"};
             });
             rt->add_method("array_buffer", "size", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
-                return SCFXTHIS(std::shared_ptr<array_buffer>)->size();
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                return SCFXTHIS(args, std::shared_ptr<array_buffer>)->size();
             });
             rt->add_method("array_buffer", "resize", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                SCFXTHIS(std::shared_ptr<array_buffer>)->resize(args[1].cast_to_size_t());
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                SCFXTHIS(args, std::shared_ptr<array_buffer>)->resize(args[1].cast_to_size_t());
                 return true;
             });
             rt->add_method("array_buffer", "fill_zero", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(1)
-                SCFXTHIS(std::shared_ptr<array_buffer>)->fill_with(0);
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                SCFXTHIS(args, std::shared_ptr<array_buffer>)->fill_with(0);
                 return true;
             });
             rt->add_method("array_buffer", "fill_with", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                SCFXTHIS(std::shared_ptr<array_buffer>)->fill_with(args[1].cast_to_char());
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                SCFXTHIS(args, std::shared_ptr<array_buffer>)->fill_with(args[1].cast_to_char());
                 return true;
             });
             rt->add_method("array_buffer", "assign", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 if(args[1].is_string_ref()) {
-                    SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_string());
+                    SCFXTHIS(args, std::shared_ptr<array_buffer>)->assign(args[1].as_string());
                     return true;
                 } else if(args[1].is_class_ref() && args[1].class_name() == "array_buffer") {
-                    SCFXTHIS(std::shared_ptr<array_buffer>)->assign(*SCFXCLASSARG(1, std::shared_ptr<array_buffer>));
+                    SCFXTHIS(args, std::shared_ptr<array_buffer>)->assign(*SCFXCLASSARG(args, 1, std::shared_ptr<array_buffer>));
                     return true;
                 } else if(args[1].is_any_int_number()) {
                     if(args[1].is_char_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_char());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->assign(args[1].as_char());
                         return true;
                     } else if(args[1].is_wchar_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_wchar());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->assign(args[1].as_wchar());
                         return true;
                     } else if(args[1].is_s8_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_s8());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->assign(args[1].as_s8());
                         return true;
                     } else if(args[1].is_u8_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_u8());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->assign(args[1].as_u8());
                         return true;
                     } else if(args[1].is_s16_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_s16());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->assign(args[1].as_s16());
                         return true;
                     } else if(args[1].is_u16_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_u16());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->assign(args[1].as_u16());
                         return true;
                     } else if(args[1].is_s32_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_s32());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->assign(args[1].as_s32());
                         return true;
                     } else if(args[1].is_u32_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_u32());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->assign(args[1].as_u32());
                         return true;
                     } else if(args[1].is_s64_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_s64());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->assign(args[1].as_s64());
                         return true;
                     } else if(args[1].is_u64_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->assign(args[1].as_u64());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->assign(args[1].as_u64());
                         return true;
                     }
                 }
                 throw std::runtime_error{"invalid argument(s)"};
             });
             rt->add_method("array_buffer", "sub_buffer", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(1, 3)
+                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 3)
                 if(args.size() == 1) {
-                    return valbox{SCFXTHIS(std::shared_ptr<array_buffer>)->sub_buffer(), "array_buffer"};
+                    return valbox{SCFXTHIS(args, std::shared_ptr<array_buffer>)->sub_buffer(), "array_buffer"};
                 } else if(args.size() == 2) {
-                    return valbox{SCFXTHIS(std::shared_ptr<array_buffer>)->sub_buffer(args[1].cast_to_size_t()), "array_buffer"};
+                    return valbox{SCFXTHIS(args, std::shared_ptr<array_buffer>)->sub_buffer(args[1].cast_to_size_t()), "array_buffer"};
                 } else if(args.size() == 3) {
-                    return valbox{SCFXTHIS(std::shared_ptr<array_buffer>)->sub_buffer(args[1].cast_to_size_t(), args[2].cast_to_size_t()), "array_buffer"};
+                    return valbox{SCFXTHIS(args, std::shared_ptr<array_buffer>)->sub_buffer(args[1].cast_to_size_t(), args[2].cast_to_size_t()), "array_buffer"};
                 }
                 throw std::runtime_error{"invalid argument(s)"};
             });
             rt->add_method("array_buffer", "to_string", SCFXFUN(args) {
-                return SCFXTHIS(std::shared_ptr<array_buffer>)->to_string();
+                return SCFXTHIS(args, std::shared_ptr<array_buffer>)->to_string();
             });
             rt->add_method("array_buffer", "append", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 if(args[1].is_string_ref()) {
-                    SCFXTHIS(std::shared_ptr<array_buffer>)->append(args[1].as_string());
+                    SCFXTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_string());
                     return true;
                 } else if(args[1].is_class_ref() && args[1].class_name() == "array_buffer") {
-                    SCFXTHIS(std::shared_ptr<array_buffer>)->append(*SCFXCLASSARG(1, std::shared_ptr<array_buffer>));
+                    SCFXTHIS(args, std::shared_ptr<array_buffer>)->append(*SCFXCLASSARG(args, 1, std::shared_ptr<array_buffer>));
                     return true;
                 } else if(args[1].is_numeric()) {
                     if(args[1].is_bool_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->append(args[1].as_bool());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_bool());
                         return true;
                     } else if(args[1].is_char_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->append(args[1].as_char());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_char());
                         return true;
                     } else if(args[1].is_wchar_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->append(args[1].as_wchar());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_wchar());
                         return true;
                     } else if(args[1].is_s8_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->append(args[1].as_s8());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_s8());
                         return true;
                     } else if(args[1].is_u8_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->append(args[1].as_u8());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_u8());
                         return true;
                     } else if(args[1].is_s16_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->append(args[1].as_s16());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_s16());
                         return true;
                     } else if(args[1].is_u16_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->append(args[1].as_u16());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_u16());
                         return true;
                     } else if(args[1].is_s32_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->append(args[1].as_s32());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_s32());
                         return true;
                     } else if(args[1].is_u32_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->append(args[1].as_u32());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_u32());
                         return true;
                     } else if(args[1].is_s64_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->append(args[1].as_s64());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_s64());
                         return true;
                     } else if(args[1].is_u64_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->append(args[1].as_u64());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_u64());
                         return true;
                     } else if(args[1].is_float_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->append(args[1].as_float());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_float());
                         return true;
                     } else if(args[1].is_double_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->append(args[1].as_double());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_double());
                         return true;
                     } else if(args[1].is_long_double_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->append(args[1].as_long_double());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_long_double());
                         return true;
                     }
                 }
                 throw std::runtime_error{"invalid argument(s)"};
             });
             rt->add_method("array_buffer", "put_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(3)
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 3)
                 if(args[1].is_string_ref()) {
-                    SCFXTHIS(std::shared_ptr<array_buffer>)->put_at(args[1].as_string(), args[2].cast_to_size_t());
+                    SCFXTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_string(), args[2].cast_to_size_t());
                     return true;
                 } else if(args[1].is_numeric()) {
                     if(args[1].is_bool_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->put_at(args[1].as_bool(), args[2].cast_to_size_t());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_bool(), args[2].cast_to_size_t());
                         return true;
                     } else if(args[1].is_char_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->put_at(args[1].as_char(), args[2].cast_to_size_t());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_char(), args[2].cast_to_size_t());
                         return true;
                     } else if(args[1].is_wchar_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->put_at(args[1].as_wchar(), args[2].cast_to_size_t());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_wchar(), args[2].cast_to_size_t());
                         return true;
                     } else if(args[1].is_s8_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->put_at(args[1].as_s8(), args[2].cast_to_size_t());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_s8(), args[2].cast_to_size_t());
                         return true;
                     } else if(args[1].is_u8_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->put_at(args[1].as_u8(), args[2].cast_to_size_t());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_u8(), args[2].cast_to_size_t());
                         return true;
                     } else if(args[1].is_s16_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->put_at(args[1].as_s16(), args[2].cast_to_size_t());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_s16(), args[2].cast_to_size_t());
                         return true;
                     } else if(args[1].is_u16_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->put_at(args[1].as_u16(), args[2].cast_to_size_t());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_u16(), args[2].cast_to_size_t());
                         return true;
                     } else if(args[1].is_s32_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->put_at(args[1].as_s32(), args[2].cast_to_size_t());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_s32(), args[2].cast_to_size_t());
                         return true;
                     } else if(args[1].is_u32_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->put_at(args[1].as_u32(), args[2].cast_to_size_t());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_u32(), args[2].cast_to_size_t());
                         return true;
                     } else if(args[1].is_s64_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->put_at(args[1].as_s64(), args[2].cast_to_size_t());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_s64(), args[2].cast_to_size_t());
                         return true;
                     } else if(args[1].is_u64_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->put_at(args[1].as_u64(), args[2].cast_to_size_t());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_u64(), args[2].cast_to_size_t());
                         return true;
                     } else if(args[1].is_float_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->put_at(args[1].as_float(), args[2].cast_to_size_t());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_float(), args[2].cast_to_size_t());
                         return true;
                     } else if(args[1].is_double_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->put_at(args[1].as_double(), args[2].cast_to_size_t());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_double(), args[2].cast_to_size_t());
                         return true;
                     } else if(args[1].is_long_double_ref()) {
-                        SCFXTHIS(std::shared_ptr<array_buffer>)->put_at(args[1].as_long_double(), args[2].cast_to_size_t());
+                        SCFXTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_long_double(), args[2].cast_to_size_t());
                         return true;
                     }
                 }
                 throw std::runtime_error{"invalid argument(s)"};
             });
             rt->add_method("array_buffer", "get_bool_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->get_at<bool>(args[1].cast_to_size_t())};
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                valbox res{SCFXTHIS(args, std::shared_ptr<array_buffer>)->get_at<bool>(args[1].cast_to_size_t())};
                 return res;
             });
             rt->add_method("array_buffer", "get_char_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->get_at<char>(args[1].cast_to_size_t())};
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                valbox res{SCFXTHIS(args, std::shared_ptr<array_buffer>)->get_at<char>(args[1].cast_to_size_t())};
                 return res;
             });
             rt->add_method("array_buffer", "get_wchar_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->get_at<wchar_t>(args[1].cast_to_size_t())};
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                valbox res{SCFXTHIS(args, std::shared_ptr<array_buffer>)->get_at<wchar_t>(args[1].cast_to_size_t())};
                 return res;
             });
             rt->add_method("array_buffer", "get_i8_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->get_at<int8_t>(args[1].cast_to_size_t())};
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                valbox res{SCFXTHIS(args, std::shared_ptr<array_buffer>)->get_at<int8_t>(args[1].cast_to_size_t())};
                 return res;
             });
             rt->add_method("array_buffer", "get_u8_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->get_at<uint8_t>(args[1].cast_to_size_t())};
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                valbox res{SCFXTHIS(args, std::shared_ptr<array_buffer>)->get_at<uint8_t>(args[1].cast_to_size_t())};
                 return res;
             });
             rt->add_method("array_buffer", "get_i16_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->get_at<int16_t>(args[1].cast_to_size_t())};
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                valbox res{SCFXTHIS(args, std::shared_ptr<array_buffer>)->get_at<int16_t>(args[1].cast_to_size_t())};
                 return res;
             });
             rt->add_method("array_buffer", "get_u16_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->get_at<uint16_t>(args[1].cast_to_size_t())};
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                valbox res{SCFXTHIS(args, std::shared_ptr<array_buffer>)->get_at<uint16_t>(args[1].cast_to_size_t())};
                 return res;
             });
             rt->add_method("array_buffer", "get_i32_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->get_at<int32_t>(args[1].cast_to_size_t())};
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                valbox res{SCFXTHIS(args, std::shared_ptr<array_buffer>)->get_at<int32_t>(args[1].cast_to_size_t())};
                 return res;
             });
             rt->add_method("array_buffer", "get_u32_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->get_at<uint32_t>(args[1].cast_to_size_t())};
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                valbox res{SCFXTHIS(args, std::shared_ptr<array_buffer>)->get_at<uint32_t>(args[1].cast_to_size_t())};
                 return res;
             });
             rt->add_method("array_buffer", "get_i64_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->get_at<int64_t>(args[1].cast_to_size_t())};
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                valbox res{SCFXTHIS(args, std::shared_ptr<array_buffer>)->get_at<int64_t>(args[1].cast_to_size_t())};
                 return res;
             });
             rt->add_method("array_buffer", "get_u64_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->get_at<uint64_t>(args[1].cast_to_size_t())};
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                valbox res{SCFXTHIS(args, std::shared_ptr<array_buffer>)->get_at<uint64_t>(args[1].cast_to_size_t())};
                 return res;
             });
             rt->add_method("array_buffer", "get_f32_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->get_at<float>(args[1].cast_to_size_t())};
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                valbox res{SCFXTHIS(args, std::shared_ptr<array_buffer>)->get_at<float>(args[1].cast_to_size_t())};
                 return res;
             });
             rt->add_method("array_buffer", "get_f64_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->get_at<double>(args[1].cast_to_size_t())};
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                valbox res{SCFXTHIS(args, std::shared_ptr<array_buffer>)->get_at<double>(args[1].cast_to_size_t())};
                 return res;
             });
             rt->add_method("array_buffer", "get_float_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->get_at<long double>(args[1].cast_to_size_t())};
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                valbox res{SCFXTHIS(args, std::shared_ptr<array_buffer>)->get_at<long double>(args[1].cast_to_size_t())};
                 return res;
             });
             rt->add_method("array_buffer", "bool_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->ref_at<bool>(args[1].cast_to_size_t())};
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                valbox res{SCFXTHIS(args, std::shared_ptr<array_buffer>)->ref_at<bool>(args[1].cast_to_size_t())};
                 res.set_pointed(args[0]);
                 return res;
             });
             rt->add_method("array_buffer", "char_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->ref_at<char>(args[1].cast_to_size_t())};
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                valbox res{SCFXTHIS(args, std::shared_ptr<array_buffer>)->ref_at<char>(args[1].cast_to_size_t())};
                 res.set_pointed(args[0]);
                 return res;
             });
             rt->add_method("array_buffer", "wchar_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->ref_at<wchar_t>(args[1].cast_to_size_t())};
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                valbox res{SCFXTHIS(args, std::shared_ptr<array_buffer>)->ref_at<wchar_t>(args[1].cast_to_size_t())};
                 res.set_pointed(args[0]);
                 return res;
             });
             rt->add_method("array_buffer", "i8_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->ref_at<int8_t>(args[1].cast_to_size_t())};
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                valbox res{SCFXTHIS(args, std::shared_ptr<array_buffer>)->ref_at<int8_t>(args[1].cast_to_size_t())};
                 res.set_pointed(args[0]);
                 return res;
             });
             rt->add_method("array_buffer", "u8_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->ref_at<uint8_t>(args[1].cast_to_size_t())};
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                valbox res{SCFXTHIS(args, std::shared_ptr<array_buffer>)->ref_at<uint8_t>(args[1].cast_to_size_t())};
                 res.set_pointed(args[0]);
                 return res;
             });
             rt->add_method("array_buffer", "i16_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->ref_at<int16_t>(args[1].cast_to_size_t())};
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                valbox res{SCFXTHIS(args, std::shared_ptr<array_buffer>)->ref_at<int16_t>(args[1].cast_to_size_t())};
                 res.set_pointed(args[0]);
                 return res;
             });
             rt->add_method("array_buffer", "u16_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->ref_at<uint16_t>(args[1].cast_to_size_t())};
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                valbox res{SCFXTHIS(args, std::shared_ptr<array_buffer>)->ref_at<uint16_t>(args[1].cast_to_size_t())};
                 res.set_pointed(args[0]);
                 return res;
             });
             rt->add_method("array_buffer", "i32_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->ref_at<int32_t>(args[1].cast_to_size_t())};
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                valbox res{SCFXTHIS(args, std::shared_ptr<array_buffer>)->ref_at<int32_t>(args[1].cast_to_size_t())};
                 res.set_pointed(args[0]);
                 return res;
             });
             rt->add_method("array_buffer", "u32_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->ref_at<uint32_t>(args[1].cast_to_size_t())};
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                valbox res{SCFXTHIS(args, std::shared_ptr<array_buffer>)->ref_at<uint32_t>(args[1].cast_to_size_t())};
                 res.set_pointed(args[0]);
                 return res;
             });
             rt->add_method("array_buffer", "i64_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->ref_at<int64_t>(args[1].cast_to_size_t())};
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                valbox res{SCFXTHIS(args, std::shared_ptr<array_buffer>)->ref_at<int64_t>(args[1].cast_to_size_t())};
                 res.set_pointed(args[0]);
                 return res;
             });
             rt->add_method("array_buffer", "u64_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->ref_at<uint64_t>(args[1].cast_to_size_t())};
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                valbox res{SCFXTHIS(args, std::shared_ptr<array_buffer>)->ref_at<uint64_t>(args[1].cast_to_size_t())};
                 res.set_pointed(args[0]);
                 return res;
             });
             rt->add_method("array_buffer", "f32_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->ref_at<float>(args[1].cast_to_size_t())};
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                valbox res{SCFXTHIS(args, std::shared_ptr<array_buffer>)->ref_at<float>(args[1].cast_to_size_t())};
                 res.set_pointed(args[0]);
                 return res;
             });
             rt->add_method("array_buffer", "f64_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->ref_at<double>(args[1].cast_to_size_t())};
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                valbox res{SCFXTHIS(args, std::shared_ptr<array_buffer>)->ref_at<double>(args[1].cast_to_size_t())};
                 res.set_pointed(args[0]);
                 return res;
             });
             rt->add_method("array_buffer", "float_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(2)
-                valbox res{SCFXTHIS(std::shared_ptr<array_buffer>)->ref_at<long double>(args[1].cast_to_size_t())};
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                valbox res{SCFXTHIS(args, std::shared_ptr<array_buffer>)->ref_at<long double>(args[1].cast_to_size_t())};
                 res.set_pointed(args[0]);
                 return res;
             });

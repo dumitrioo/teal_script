@@ -11,25 +11,25 @@
 #endif
 
 #define SCFXFUN(ARGS) [&](std::vector<scfx::valbox> &ARGS) -> scfx::valbox
-#define SCFXNUMARG(INDX, TYPE) args[INDX].cast_num_to_num<TYPE>()
-#define SCFX_CHCK_FUN_PARMS_NUM_EQ(NUM_ARGS) \
-    if(args.size() != (NUM_ARGS)) { \
+#define SCFXNUMARG(ARGS, INDX, TYPE) ARGS[INDX].cast_num_to_num<TYPE>()
+#define SCFX_CHCK_FUN_PARMS_NUM_EQ(ARGS, NUM_ARGS) \
+    if(ARGS.size() != (NUM_ARGS)) { \
         throw std::runtime_error{"wrong function arguments count"}; \
     }
-#define SCFX_CHCK_FUN_PARMS_NUM_LE(NUM_ARGS) \
-    if(args.size() > (NUM_ARGS)) { \
+#define SCFX_CHCK_FUN_PARMS_NUM_LE(ARGS, NUM_ARGS) \
+    if(ARGS.size() > (NUM_ARGS)) { \
         throw std::runtime_error{"wrong function arguments count"}; \
     }
-#define SCFX_CHCK_FUN_PARMS_NUM_GE(NUM_ARGS) \
-    if(args.size() < (NUM_ARGS)) { \
+#define SCFX_CHCK_FUN_PARMS_NUM_GE(ARGS, NUM_ARGS) \
+    if(ARGS.size() < (NUM_ARGS)) { \
         throw std::runtime_error{"wrong function arguments count"}; \
     }
-#define SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(NUM_ARGS_MIN, NUM_ARGS_MAX) \
-    if(!(args.size() >= (NUM_ARGS_MIN) && args.size() <= (NUM_ARGS_MAX))) { \
+#define SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(ARGS, NUM_ARGS_MIN, NUM_ARGS_MAX) \
+    if(!(ARGS.size() >= (NUM_ARGS_MIN) && ARGS.size() <= (NUM_ARGS_MAX))) { \
         throw std::runtime_error{"wrong function arguments count"}; \
     }
-#define SCFXCLASSARG(INDX, TYPE) args[INDX].as_class<TYPE>()
-#define SCFXTHIS(TYPE) args[0].as_class<TYPE>()
+#define SCFXCLASSARG(ARGS, INDX, TYPE) ARGS[INDX].as_class<TYPE>()
+#define SCFXTHIS(ARGS, TYPE) ARGS[0].as_class<TYPE>()
 
 namespace scfx {
 
