@@ -50,6 +50,7 @@ HEADERS += \
     ../../src/include/math/math_util.hpp \
     ../../src/include/math/matrix4.hpp \
     ../../src/include/math/vector4.hpp \
+    ../../src/include/mt_synchro.hpp \
     ../../src/include/sequence_generator.hpp \
     ../../src/include/serialization.hpp \
     ../../src/include/str_util.hpp \
