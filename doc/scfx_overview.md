@@ -310,54 +310,32 @@ Figure 1. DFG system visual representation example.
 
 ##### state and side effects:
 
-
+```
 // input cell instances
-
 'Input_1' Input_1;
-
 'Input_2' Input_2;
-
 // cell templates
-
 stateful_transform(a) {
-
-if(this.stored_val == undefined) this.stored_val = 0;
-
-this.stored_val = (this.stored_val + a) % 10;
-
-return this.stored_val * 2;
-
+    if(this.stored_val == undefined) this.stored_val = 0;
+    this.stored_val = (this.stored_val + a) % 10;
+    return this.stored_val * 2;
 }
-
 square(a) return a * a;
-
 sum(a1, a2) return a1 + a2;
-
 muladd(a1, a2, a3) return a1 * a2 + a3;
-
 rnd_gen() return rand() % 10;
-
 // cell instances
-
 stateful_transform Proc_1(Input_1);
-
 square Proc_2(Input_2);
-
 rnd_gen Gen_1();
-
 sum Proc_3(Proc_2, Gen_1) 'Output_1'; // output 1
-
 muladd Proc_4(Proc_1, Proc_2, Proc_3) 'Output_2'; // output 2
-
 // cell template
-
 print_val(label, val) println(label, val); // side effect in form of console output
-
 // cell instances
-
 print_val Prn_3("Proc_3: ", Proc_3);
-
 print_val Prn_4("Proc_4: ", Proc_4);
+```
 
 ##### Possible output:
 
