@@ -1,4 +1,4 @@
-exec_time_limiter(dt) {
+qeq_exec_time_limiter(dt) {
     if(this.t == undefined) this.t = timestamp().fseconds() + dt;
     if(timestamp().fseconds() > this.t) {
         println("exiting");
@@ -6,7 +6,7 @@ exec_time_limiter(dt) {
     }
     return 0;
 }
-exec_time_limiter etlim(.05);
+qeq_exec_time_limiter qeqetlim(.05);
 
 //'a' a_in;
 //'b' b_in;

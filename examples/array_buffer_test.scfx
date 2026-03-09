@@ -1,4 +1,6 @@
 // demo for binary data access using "array_buffer" extension
+// this program reads and analyzes MBR from "/dev/sda" by default
+// to scan another device, you should change device name manually
 
 function HCS(hcs) {
     print(itoa(hcs.u8_at(0)), "/");

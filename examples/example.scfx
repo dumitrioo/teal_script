@@ -1,4 +1,4 @@
-execution_time_limit(dt) {
+exmpl_execution_time_limit(dt) {
     if(this.t == undefined) {
         this.t = timestamp().fseconds() + dt;
     }
@@ -8,7 +8,7 @@ execution_time_limit(dt) {
     return 0;
 }
 
-execution_time_limit tlim(1.0);
+exmpl_execution_time_limit exmpltlim(1.0);
 
 
 function rnd_str(n) {

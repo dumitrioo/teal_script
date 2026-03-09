@@ -91,7 +91,7 @@ LIBS += -lzmq
 
 DISTFILES += \
     ../alu74181.scfx \
-    ../draft.scfx \
+    ../array_buffer_test.scfx \
     ../ex_cli.scfx \
     ../ex_srv.scfx \
     ../example.scfx \

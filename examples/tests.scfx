@@ -1,9 +1,9 @@
-execution_time_limit(t) {
+tests_execution_time_limit(t) {
     if(this.t == undefined) this.t = timestamp().fseconds() + t;
     if(timestamp().fseconds() > this.t) exit();
 }
 
-execution_time_limit etl(0.1);
+tests_execution_time_limit tstsetl(0.1);
 
 
 binary_data_test() {
