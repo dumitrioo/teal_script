@@ -203,6 +203,15 @@ namespace scfx {
         runtime() {
             exctx_.set_runtime_interface(this);
 
+            add_function("version_major", SCFXFUN(/*args*/) { return version_major_; });
+            add_function("version_minor", SCFXFUN(/*args*/) { return version_minor_; });
+            add_function("version_patch", SCFXFUN(/*args*/) { return version_patch_; });
+            add_function("version_string", SCFXFUN(/*args*/) {
+                return str_util::utoa(version_major_) + "." +
+                       str_util::utoa(version_minor_) + "." +
+                       str_util::utoa(version_patch_);
+            });
+
             add_var("EPERM", EPERM);     // 1   Operation not permitted
             add_var("ENOENT", ENOENT);   // 2   No such file or directory
             add_var("ESRCH", ESRCH);     // 3   No such process
@@ -1947,6 +1956,9 @@ namespace scfx {
 
         shared_mutex loaded_extensions_mtp_{};
         std::list<std::pair<std::shared_ptr<dlib>, extension_interface *>> loaded_extensions_{};
+        static std::size_t constexpr version_major_{1};
+        static std::size_t constexpr version_minor_{2};
+        static std::size_t constexpr version_patch_{101};
     };
 
 }
