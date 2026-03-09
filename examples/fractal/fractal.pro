@@ -4,9 +4,9 @@ QT       -= gui
 TEMPLATE = lib
 
 ################################################################
-DEFINES += SCFX_USE_CUSTOM_MUTEX
+# DEFINES += SCFX_USE_CUSTOM_MUTEX
 ################################################################
-DEFINES += SCFX_USE_CUSTOM_SHARED_MUTEX
+# DEFINES += SCFX_USE_CUSTOM_SHARED_MUTEX
 DEFINES += RW_MUTEX_PRIORITIES
 # DEFINES += RW_MUTEX_UPGRADEABLE
 DEFINES += RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING
