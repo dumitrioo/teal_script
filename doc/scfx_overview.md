@@ -1294,6 +1294,7 @@ fractal_tempate fractal_inst();
 
 ##### And, of course, the output:
 
+```
 .................+::;:;;;+ ...::........:....:+=++;
 ....:;.......;::.:::+X ......::..:::;;=:;:::;
 .........:++x+ +; X;;. ............:=$= +
@@ -1314,6 +1315,7 @@ fractal_tempate fractal_inst();
 ............:;= $ $;X;; ...........::;; =+ = x= $+;:x::;
 .........:;=+==+x:;;;xX=;&;:&::::; .....:::;+:::;;:::;+; :=X:::::::: =
 ........;=:..::..:: +:.:;:...::::XX ........:;;........: :.........:;:x&
+```
 
 ##### The ability to perform general-purpose computations is the foundation of the operation of computational cells in a
 
