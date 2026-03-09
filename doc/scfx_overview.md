@@ -17,6 +17,7 @@ dmitry.yashenkin@gmail.com
 
 ## Below is a very simplified illustration of the DFG paradigm, covering its structure.
 
+![](img/fig1.png)
 ```
 Figure 1. DFG system visual representation example.
 ```
