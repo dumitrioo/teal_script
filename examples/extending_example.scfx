@@ -1,7 +1,7 @@
 extension_test() {
     println("////////////////////////////////////////////////////////////////");
     println("// this is usage part of extending example.                   //");
-    println("// for host part, see \"examples/interpreter/main.cpp\"       //");
+    println("// for host part, see \"examples/interpreter/main.cpp\"         //");
     println("////////////////////////////////////////////////////////////////");
     try {
         hello_from_cpp("1", 2, object("{k:4}"));
