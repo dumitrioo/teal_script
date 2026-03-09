@@ -43,8 +43,8 @@ dot_notation_call_test dnctest();
 
 mime_type_test() {
     "/bin/ls".load_from_file().data_type(MAGIC_MIME_TYPE | MAGIC_MIME_ENCODING).println();
-    println(data_type(load_from_file("/bin/ls"), MAGIC_MIME_TYPE | MAGIC_MIME_ENCODING)); // same as previous line
-    // exit();
+    // same as previous line
+    println(data_type(load_from_file("/bin/ls"), MAGIC_MIME_TYPE | MAGIC_MIME_ENCODING));
 }
 
 mime_type_test mttest();
