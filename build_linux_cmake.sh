@@ -4,5 +4,5 @@ cmake --build build
 rm -rf bin
 mkdir bin
 cp build/examples/interpreter/scaflux bin
-strip bin/scaflux
-cp build/examples/fractal/libfractal.so bin
+cp build/examples/fractal/*.dll bin
+cp build/examples/fractal/*.so bin
