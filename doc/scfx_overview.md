@@ -402,6 +402,7 @@ Proc_3: 36
 
 ##### File first_example.scfx
 
+```
 duplicate(a) return a * 2;
 square(a) return a * a;
 sum(a1, a2) return a1 + a2;
@@ -414,6 +415,7 @@ duplicate Proc_1(Input_1);
 square Proc_2(Input_2);
 sum Proc_3(Proc_2, Gen_1) 'Output_1';
 mul_add Proc_4(Proc_1, Proc_2, Proc_3) 'Output_2';
+```
 
 ##### File first_example.cpp
 
@@ -609,7 +611,7 @@ function_injection_test test();
 ###### }
 
 ##### File object_injection.scfx
-
+```
 object_injection_test() {
 o = my_obj();
 println("default object name: \"", o.name(), "\"");
@@ -618,7 +620,7 @@ println("new object name: \"", o.name(), "\"");
 o.set_name(29);
 println("numeric object name: \"", o.name(), "\"");
 }
-
+```
 
 object_injection_test test();
 
@@ -751,6 +753,7 @@ Listing 2. The Example 2 implementation.
 ```
 Listing 3. The Example 3 implementation.
 ```
+```
 // templates
 abandoned(num_connected, initiator_was_connected) {
 return num_connected == 0 && initiator_was_connected;
@@ -879,7 +882,7 @@ can_channel_continue_working can_channel_continue_working(is_regular, init_wait_
 abandoned, one_waiting_too_much, init_wait_answr_toomuch, nobody_inv_lt);
 should_channel_shutdown should_shutdown(abandoned, one_waiting_too_much, alone_nongroup,
 init_wait_answr_toomuch, nobody_inv_lt ) 'should_channel_shutdown';
-
+```
 
 ### Example 4.
 
@@ -899,6 +902,7 @@ Figure 2. ALU 74181 logic.
 
 ```
 Listing 4. The Example 4 implementation.
+```
 ```
 not(a) return !a;
 buf(a) return a && a;
@@ -1079,6 +1083,7 @@ draw_bool dr_c_out(alu_57, 200, 160, fctr, "outC", clr_c);
 draw_bool dr_p(alu_42, 20, 200, fctr, " P", clr_pgeq);
 draw_bool dr_g(alu_53, 60, 200, fctr, " G", clr_pgeq);
 draw_bool dr_AeB(alu_62, 120, 200, fctr, "EQ", clr_pgeq);
+```
 
 ##### Below is the image displaying script work result. As you can see, only a few lines of code is used for debug drawing
 
@@ -1124,6 +1129,8 @@ Figure 3. Displaying input/output values of working data flow system emulating A
 
 ```
 Listing 4. The Example 5 implementation.
+```
+
 ```
 function serialize_tbbt_array(a) {
 res = "[";
@@ -1179,6 +1186,7 @@ return ++this.curr;
 }
 seq_gen sqg();
 tbbt duplicating_beverage(sqg);
+```
 
 ##### And the outputs is as follows:
 
@@ -1241,6 +1249,8 @@ Leonard, Leonard, Leonard]
 ```
 Listing 5. The Example 6 implementation.
 ```
+
+```
 fractal_tempate() {
 yMin = -0.2;
 yMax = 0.1;
@@ -1269,6 +1279,7 @@ exit(); // terminate system execution
 return 0;
 }
 fractal_tempate fractal_inst();
+```
 
 ##### And, of course, the output:
 
