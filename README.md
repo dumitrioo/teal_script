@@ -1,16 +1,28 @@
-#  Welcome to SCAFlux
+# Welcome to SCAFlux
 
-SCAFlux is a dynamically typed scripting language in the declarative, pure functional Data-flow Graph Paradigm, but SCAFlux breaks this functional purity and is partialy statelful, in favor of convenience while resolving many tasks. Unlike conventional programming languages, program in this language does not have a single entry point. Instead, programmer writes logic by defining a bunch (or a lot) of compute elements connected into a computation network accordingly to a logical schema that is a solution of the certain problem, in order to perform necessary computations resolving that problem. All the compute elements are executed independently (simultaneously in case of multi-threaded execution mode), and every time the compute element is done, it is executed (with updated input parameters coming from other elements outputs) again and again and again and so on, until the system stops working.
+SCAFlux is a dynamically typed scripting language in the Data-flow Graph Paradigm.
 
-One of the problems classes, that can be easily solved by this scripting language, is the complex real-time control of multitude actuators/indicators/displays/etc. within a logical circuit, based on the analysis of incoming signals from multitude input devices. However, the language's capabilities also allow it to solve problems that are typically solved by the Turing-complete languages, as its type system, language constructs, and set of operations make this scripting language Turing-complete. The language's extensibility from host code also enhances its ability to solve the diverse tasks assigned to scripting engines.
+# The Data-flow Graph Paradigm
 
-# Implementation and usage
+The Data-flow Graph paradigm (discrete time, clocked synchronous, modular, data-centric) is a declarative pure functional paradigm. Unlike imperative programming languages, program in this language does not have a single entry point. Instead, programmer writes logic by defining a set of compute elements (cells, nodes) connected to each other into a computation network accordingly to a logical schema that is a solution of the certain problem, in order to perform necessary computations resolving that problem. All the compute elements are executed independently (simultaneously in case of multi-threaded execution mode), and every time the compute element is done, it is executed (with updated input parameters coming from other elements outputs) again and again and again and so on, until the system stops working.
+
+# SCAFlux Implementation
+
+SCAFlux breaks the functional purity and is partialy statelful in favor of convenience while resolving many tasks.
+
+The system can operate in a (caller's) single thread and in multi-threaded mode utilizing all the processor cores of the system on which it is running.
+
+Every compute node (cell) is an instance of the cell template - a data transforming function that is able to keep state between calls in form of self variables available through "this" keyword.
+
+# Usage
 
 Proposed implementation is an interpreter accomplished as an embedded library without dependencies written in C++ and designed to be used in couple with C++.
 
 To add support for SCAFlux into your C++ application, you need at least C++20 standard capable compiler. Include [header file](src/scaflux_runtime.hpp) from your C++ source file, then instantiate SCAFlux runtime object, load source code and extensions shared libraries into it and execute in single- or multi-threaded mode. To extend the scripting language with functions, variables and objects, you should add entities separately or in form of extension to this runtime object, using rules described in the document mentioned below, in "More information" section. You can explore the [interpreter](examples/interpreter/main.cpp) application source code and scripts [extending_example](examples/extending_example.scfx), [alu74181](examples/alu74181.scfx), [tbbt_2cola](examples/tbbt_2cola.scfx), [example](examples/example.scfx), [draft](examples/draft.scfx) as the examples of embedding a library and extending of the language's functionality. 
 
 # Application
+
+One of the problems classes, that can be easily solved by this scripting language, is the complex real-time control of multitude actuators/indicators/displays/etc. within a logical circuit, based on the analysis of incoming signals from multitude input devices. However, the language's capabilities also allow it to solve problems that are typically solved by the Turing-complete languages, as its type system, language constructs, and set of operations make this scripting language Turing-complete. The language's extensibility from host code also enhances its ability to solve the diverse tasks assigned to scripting engines.
 
 Possible application for this engine may include:
  * Easy automation of any systems containing embedded computers and electronics together with sensors, actuator units and monitoring system.
