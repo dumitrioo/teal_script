@@ -911,6 +911,7 @@ init_wait_answr_toomuch, nobody_inv_lt ) 'should_channel_shutdown';
 
 ##### as following:
 
+![](../examples/alu74181.png)
 ```
 Figure 2. ALU 74181 logic.
 ```
@@ -1114,6 +1115,7 @@ draw_bool dr_AeB(alu_62, 120, 200, fctr, "EQ", clr_pgeq);
 
 ##### case RayLib has been used as the extension for the purposes of visualization.
 
+![](img/fig3.png)
 ```
 Figure 3. Displaying input/output values of working data flow system emulating ALU74181 logical cirquit.
 ```
