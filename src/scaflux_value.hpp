@@ -328,7 +328,7 @@ namespace scfx {
         }
 
         bool is_another_ref(valbox const &other) const {
-            return box_.get() == other.box_.get();
+            return box_.get() != nullptr && box_.get() == other.box_.get();
         }
 
         valbox clone() const {
@@ -437,7 +437,7 @@ namespace scfx {
                     box->pointed_type_ == type::VALBOX
                 )
                 *
-                reinterpret_cast<uintptr_t>(box)
+                static_cast<uintptr_t>(box == nullptr ? 0 : 1)
             );
         }
         valbox &deref() {
