@@ -1,6 +1,6 @@
 # Welcome to SCAFlux
 
-SCAFlux is a dynamically typed, embedded, easy extensible from the host code scripting language in the Data-flow Graph Paradigm intended to create a complex control systems.
+SCAFlux is a dynamically typed, embedded, extensible from the host code scripting language in the Data-flow Graph Paradigm intended to make the process of creation a complex control systems extremely easy.
 
 ## The Problem
 
@@ -22,11 +22,13 @@ Possible application for this engine may include:
 
 ## Implementation
 
-SCAFlux breaks the functional purity and is partialy statelful in favor of convenience while resolving many tasks.
+The library is implemented as an execution tree interpreter, without dependencies on third-party source code translation libraries, and therefore has an extremely small memory footprint. In 
 
-The system can operate in a synchronous single threaded mode and in asynchronous multi threaded mode utilizing all the processor cores of the system on which it is running.
+SCAFlux language breaks the functional purity of DFG paradigm being partialy statelful in favor of convenience while resolving many tasks.
 
-Every compute node (cell, element) is an instance of the "template" - a data transforming object that looks like a function and is able to keep state between calls in form of instance's variables available through "this" keyword.
+The system can operate in a synchronous single threaded mode and in asynchronous multi threaded mode utilizing all the processor cores of the system on which it is running. In terms of performance, a program in the embedded language is similar to a program in Python; however, given the ability to work in multi-threaded mode, the overall resulting performance can be significantly higher.
+
+Every compute node (cell, element) is an instance of the "template" - a data transforming object that looks like a function but is an "object" type and is able to keep state between calls in form of instance's variables available through "this" keyword.
 
 ## Usage
 
