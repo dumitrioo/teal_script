@@ -24,7 +24,7 @@ namespace scfx {
 #else
             std::unique_lock l{*val_mtp_};
 #endif
-            val_ = ctx->get_input(in_name_).clone();
+            val_ = ctx->get_input(in_name_);
         }
 
         void set_value(valbox const &val) {
@@ -33,7 +33,7 @@ namespace scfx {
 #else
             std::unique_lock l{*val_mtp_};
 #endif
-            val_ = val.clone();
+            val_ = val;
         }
 
         valbox curr_value() const {
@@ -42,8 +42,7 @@ namespace scfx {
 #else
             std::shared_lock l{*val_mtp_};
 #endif
-            valbox res{val_.clone()};
-            return res;
+            return val_;
         }
 
         void set_inst_name(std::string const &name) {
@@ -89,7 +88,6 @@ namespace scfx {
             arg_names_.resize(num);
         }
 #endif
-
         void set_arg_name(std::size_t indx, std::string const &name) {
             if(arg_number_by_name_.find(name) != arg_number_by_name_.end()) {
                 throw runtime_error{
@@ -236,7 +234,7 @@ namespace scfx {
 #else
             std::unique_lock l{*val_mtp_};
 #endif
-            val_ = v.clone();
+            val_ = v;
         }
 
         valbox curr_value() const {
@@ -245,8 +243,7 @@ namespace scfx {
 #else
             std::shared_lock l{*val_mtp_};
 #endif
-            valbox res{val_.clone()};
-            return res;
+            return val_;
         }
 
         void set_output_name(std::string const &name) {
@@ -318,7 +315,6 @@ namespace scfx {
             arg_names_.resize(num);
         }
 #endif
-
         void set_arg_name(std::size_t indx, std::string const &name) {
             if(arg_number_by_name_.find(name) != arg_number_by_name_.end()) {
                 throw runtime_error{
