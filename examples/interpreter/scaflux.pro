@@ -11,11 +11,11 @@ TEMPLATE = app
 ################################################################
 # DEFINES += SCFX_USE_CUSTOM_MUTEX
 ################################################################
-# DEFINES += SCFX_USE_CUSTOM_SHARED_MUTEX
+DEFINES += SCFX_USE_CUSTOM_SHARED_MUTEX
 DEFINES += RW_MUTEX_PRIORITIES
 # DEFINES += RW_MUTEX_UPGRADEABLE
 DEFINES += RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING
-# DEFINES += RW_MUTEX_ATOMIC_SM_SLEEP_NANOS=100000
+DEFINES += RW_MUTEX_ATOMIC_SM_SLEEP_NANOS=100000
 ################################################################
 DEFINES += USE_FILE_MAGIC
 DEFINES += SCFX_USE_ZMQ
@@ -93,6 +93,7 @@ LIBS += -lzmq
 DISTFILES += \
     ../alu74181.scfx \
     ../array_buffer_test.scfx \
+    ../draft.scfx \
     ../ex_cli.scfx \
     ../ex_srv.scfx \
     ../example.scfx \

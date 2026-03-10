@@ -6,7 +6,7 @@ qeq_exec_time_limiter(dt) {
     }
     return 0;
 }
-qeq_exec_time_limiter qeqetlim(.05);
+qeq_exec_time_limiter qeqetlim(.5);
 
 //'a' a_in;
 //'b' b_in;
