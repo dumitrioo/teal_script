@@ -68,7 +68,215 @@
 namespace scfx {
 
     namespace detail {
+#if defined(SCFX_USE_ASYNC_CONSOLE)
+        class console {
+        public:
+            console():
+                out_buffers_{std::make_unique<buff>(), std::make_unique<buff>()},
+                out_thread_{
+                    [this]() {
+                        while(!termination_) {
+                            auto opt_pair{fetch_string_from_buffer()};
+                            if(opt_pair) {
+                                if(opt_pair->second) {
+                                    std::cerr << opt_pair->first << std::flush;
+                                } else {
+                                    std::cout << opt_pair->first << std::flush;
+                                }
+                            }
+                        }
+                    }
+                }
+            {
+            }
 
+            ~console() {
+                termination_ = true;
+                if(out_thread_.joinable()) { out_thread_.join(); }
+            }
+
+            void info(std::vector<scfx::valbox> const &args) {
+                cout_out((terminal_colours_ ? "\033[34minfo\033[0m" : "info"), args);
+            }
+            void log(std::vector<scfx::valbox> const &args) {
+                cout_out((terminal_colours_ ? "\033[32mlog\033[0m" : "log"), args);
+            }
+            void warn(std::vector<scfx::valbox> const &args) {
+                cout_out((terminal_colours_ ? "\033[35mwarning\033[0m" : "warning"), args);
+            }
+            void debug(std::vector<scfx::valbox> const &args) {
+                cout_out((terminal_colours_ ? "\033[93mdebug\033[0m" : "debug"), args);
+            }
+            void error(std::vector<scfx::valbox> const &args) {
+                cout_out((terminal_colours_ ? "\033[91merror\033[0m" : "error"), args);
+            }
+
+            void print(std::vector<scfx::valbox> const &args) {
+                std::stringstream out{};
+                if(setfill_) { out << std::setfill(fill_char_); }
+                if(setw_) { out << std::setw(w_); }
+                if(setprec_) { out << std::setprecision(prec_); }
+                if(fk_ != flt_kind::def) {
+                    switch(fk_) {
+                        case flt_kind::fix: out << std::fixed; break;
+                        case flt_kind::sci: out << std::scientific; break;
+                        case flt_kind::hex: out << std::hex; break;
+                        default: out << std::defaultfloat; break;
+                    }
+                }
+                for(auto &&v: args) { out << v; }
+                put_string_to_buffer(out.str(), false);
+            }
+
+            void println(std::vector<scfx::valbox> const &args) {
+                std::stringstream out{};
+                if(setfill_) { out << std::setfill(fill_char_); }
+                if(setw_) { out << std::setw(w_); }
+                if(setprec_) { out << std::setprecision(prec_); }
+                if(fk_ != flt_kind::def) {
+                    switch(fk_) {
+                        case flt_kind::fix: out << std::fixed; break;
+                        case flt_kind::sci: out << std::scientific; break;
+                        case flt_kind::hex: out << std::hex; break;
+                        default: out << std::defaultfloat; break;
+                    }
+                }
+                for(auto &&v: args) { out << v; }
+                out << '\n';
+                put_string_to_buffer(out.str(), false);
+            }
+
+            void flush() {}
+            void fixed() { fk_ = flt_kind::fix; }
+            void scientific() { fk_ = flt_kind::sci; }
+            void hexfloat() { fk_ = flt_kind::hex; }
+            void defaultfloat() { fk_ = flt_kind::def; }
+            void setprecision(int prec) { setprec_ = true; prec_ = prec; }
+            int precision() { return prec_; }
+            void setw(int w) { setw_ = true; w_ = w; }
+            void setfill(char arg) { setfill_ = true; fill_char_ = arg; }
+            char fill() { return fill_char_; }
+            bool colors_enabled() const { return terminal_colours_; }
+            void enable_colors(bool v) { terminal_colours_ = v; }
+
+        private:
+            void cerr_out(std::string const &type, std::vector<scfx::valbox> const &args) {
+                std::stringstream out{};
+                if(setfill_) { out << std::setfill(fill_char_); }
+                if(setw_) { out << std::setw(w_); }
+                if(setprec_) { out << std::setprecision(prec_); }
+                if(fk_ != flt_kind::def) {
+                    switch(fk_) {
+                    case flt_kind::fix: out << std::fixed; break;
+                    case flt_kind::sci: out << std::scientific; break;
+                    case flt_kind::hex: out << std::hex; break;
+                    default: out << std::defaultfloat; break;
+                    }
+                }
+                out << scfx::str_util::from_utf8(scfx::timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
+                for(auto &&v: args) {
+                    out << v;
+                }
+                out << '\n';
+                put_string_to_buffer(out.str(), true);
+            }
+
+            void cout_out(std::string const &type, std::vector<scfx::valbox> const &args) {
+                std::stringstream out{};
+                if(setfill_) { out << std::setfill(fill_char_); }
+                if(setw_) { out << std::setw(w_); }
+                if(setprec_) { out << std::setprecision(prec_); }
+                if(fk_ != flt_kind::def) {
+                    switch(fk_) {
+                        case flt_kind::fix: out << std::fixed; break;
+                        case flt_kind::sci: out << std::scientific; break;
+                        case flt_kind::hex: out << std::hex; break;
+                        default: out << std::defaultfloat; break;
+                    }
+                }
+                out << scfx::str_util::from_utf8(scfx::timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
+                for(auto &&v: args) {
+                    out << v;
+                }
+                out << '\n';
+                put_string_to_buffer(out.str(), false);
+            }
+
+            class buff {
+            public:
+                void put_string(std::string const &s, bool is_err) {
+                    out_buffer_.enqueue({s, is_err});
+                }
+
+                std::optional<std::pair<std::string, bool>> fetch_string() {
+                    std::pair<std::string, bool> res{};
+                    if(out_buffer_.try_dequeue(res)) {
+                        return res;
+                    }
+                    return {};
+                }
+
+                std::size_t size() const {
+                    return out_buffer_.size_approx();
+                }
+
+            private:
+                moodycamel::ConcurrentQueue<std::pair<std::string, bool>> out_buffer_{};
+            };
+
+            void put_string_to_buffer(std::string const &s, bool is_err) {
+                {
+                    std::shared_lock l{out_index_mtp_};
+                    out_buffers_[(out_index_.load(std::memory_order::acquire) + 1) % 2]->put_string(s, is_err);
+                }
+                {
+                    std::unique_lock l{out_mtp_};
+                    out_cvar_.notify_one();
+                }
+            }
+
+            std::optional<std::pair<std::string, bool>> fetch_string_from_buffer() {
+                std::optional<std::pair<std::string, bool>> res{out_buffers_[out_index_.load(std::memory_order::acquire) % 2]->fetch_string()};
+                if(res) {
+                    return res;
+                } else {
+                    bool need_switch_index{true};
+                    std::unique_lock l{out_mtp_};
+                    if(out_buffers_[(out_index_.load(std::memory_order::acquire) + 1) % 2]->size() == 0) {
+                        std::cv_status wst{out_cvar_.wait_for(l, std::chrono::milliseconds{100})};
+                        if(wst == std::cv_status::timeout) {
+                            need_switch_index = false;
+                        }
+                    }
+                    if(need_switch_index) {
+                        std::unique_lock l{out_index_mtp_};
+                        out_index_ = (out_index_ + 1) % 2;
+                        out_index_switches_++;
+                    }
+                }
+                return out_buffers_[out_index_.load(std::memory_order::acquire) % 2]->fetch_string();
+            }
+
+            std::mutex out_mtp_{};
+            std::condition_variable out_cvar_{};
+            std::atomic<std::size_t> out_index_switches_{0};
+            mutable shared_mutex out_index_mtp_{};
+            std::atomic<std::size_t> out_index_{0};
+            std::array<std::unique_ptr<buff>, 2> out_buffers_{};
+            std::thread out_thread_{};
+
+            bool setfill_{false};
+            char fill_char_{};
+            bool setw_{false};
+            int w_{};
+            bool setprec_{false};
+            int prec_{};
+            enum class flt_kind{def, sci, fix, hex};
+            flt_kind fk_{flt_kind::def};
+            bool terminal_colours_{false};
+            bool termination_{false};
+        };
+#else
         class console {
         public:
             void info(std::vector<scfx::valbox> const &args) {
@@ -194,7 +402,7 @@ namespace scfx {
             flt_kind fk_{flt_kind::def};
             bool terminal_colours_{false};
         };
-
+#endif
     }
 
 
@@ -1537,7 +1745,7 @@ namespace scfx {
                 threads_.emplace_back([this]() {
                     bool excepted{false};
                     std::string exbuf{};
-                    // try {
+                    try {
                         std::shared_ptr<execution_context> exctx{std::make_shared<execution_context>()};
                         execution_context *exctx_ptr{exctx.get()};
                         exctx_ptr->set_runtime_interface(this);
@@ -1672,10 +1880,10 @@ namespace scfx {
                                 std::this_thread::sleep_for(std::chrono::microseconds(100));
                             }
                         }
-                    // } catch(std::exception const &e) {
-                    //     excepted = true;
-                    //     exbuf = e.what();
-                    // }
+                    } catch(std::exception const &e) {
+                        excepted = true;
+                        exbuf = e.what();
+                    }
                     if(excepted) {
                         std::unique_lock l{failure_mtp_};
                         failure_description_ = exbuf;
