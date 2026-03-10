@@ -512,7 +512,7 @@ namespace scfx {
                 if(args.size() >= 2) {
                     recur = args[1].cast_to_bool();
                 }
-                valbox names{};
+                valbox names{valbox_no_initialize::dont_do_it};
                 names.become_array();
                 scfx::file_util::for_dir_tree(
                     args[0].cast_to_string(),
@@ -580,27 +580,27 @@ namespace scfx {
             randlib_.register_runtime(this);
 
             add_var("console", scfx::valbox{&con_, "console"});
-            add_method("console", "info", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(args, detail::console *)->info(args1); return {}; });
-            add_method("console", "log", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(args, detail::console *)->log(args1); return {}; });
-            add_method("console", "warn", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(args, detail::console *)->warn(args1); return {}; });
-            add_method("console", "debug", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(args, detail::console *)->debug(args1); return {}; });
-            add_method("console", "error", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(args, detail::console *)->error(args1); return {}; });
-            add_method("console", "print", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(args, detail::console *)->print(args1); return {}; });
-            add_method("console", "println", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(args, detail::console *)->println(args1); return {}; });
-            add_method("console", "flush", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) SCFXTHIS(args, detail::console *)->flush(); return scfx::valbox{}; });
-            add_method("console", "fixed", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) SCFXTHIS(args, detail::console *)->fixed(); return scfx::valbox{}; });
-            add_method("console", "scientific", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) SCFXTHIS(args, detail::console *)->scientific(); return scfx::valbox{}; });
-            add_method("console", "hexfloat", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) SCFXTHIS(args, detail::console *)->hexfloat(); return scfx::valbox{}; });
-            add_method("console", "defaultfloat", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) SCFXTHIS(args, detail::console *)->defaultfloat(); return scfx::valbox{}; });
-            add_method("console", "setprecision", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2) SCFXTHIS(args, detail::console *)->setprecision(args[1].cast_to_u64()); return scfx::valbox{}; });
+            add_method("console", "info", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(args, detail::console *)->info(args1); return {valbox_no_initialize::dont_do_it}; });
+            add_method("console", "log", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(args, detail::console *)->log(args1); return {valbox_no_initialize::dont_do_it}; });
+            add_method("console", "warn", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(args, detail::console *)->warn(args1); return {valbox_no_initialize::dont_do_it}; });
+            add_method("console", "debug", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(args, detail::console *)->debug(args1); return {valbox_no_initialize::dont_do_it}; });
+            add_method("console", "error", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(args, detail::console *)->error(args1); return {valbox_no_initialize::dont_do_it}; });
+            add_method("console", "print", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(args, detail::console *)->print(args1); return {valbox_no_initialize::dont_do_it}; });
+            add_method("console", "println", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(args, detail::console *)->println(args1); return {valbox_no_initialize::dont_do_it}; });
+            add_method("console", "flush", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) SCFXTHIS(args, detail::console *)->flush(); return scfx::valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "fixed", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) SCFXTHIS(args, detail::console *)->fixed(); return scfx::valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "scientific", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) SCFXTHIS(args, detail::console *)->scientific(); return scfx::valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "hexfloat", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) SCFXTHIS(args, detail::console *)->hexfloat(); return scfx::valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "defaultfloat", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) SCFXTHIS(args, detail::console *)->defaultfloat(); return scfx::valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "setprecision", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2) SCFXTHIS(args, detail::console *)->setprecision(args[1].cast_to_u64()); return scfx::valbox{valbox_no_initialize::dont_do_it}; });
             add_method("console", "precision", SCFXFUN(args) { return SCFXTHIS(args, detail::console *)->precision(); });
-            add_method("console", "setw", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2) SCFXTHIS(args, detail::console *)->setw(args[1].cast_to_u64()); return scfx::valbox{}; });
-            add_method("console", "setfill", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2) SCFXTHIS(args, detail::console *)->setfill(args[1].cast_to_char()); return scfx::valbox{}; });
+            add_method("console", "setw", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2) SCFXTHIS(args, detail::console *)->setw(args[1].cast_to_u64()); return scfx::valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "setfill", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2) SCFXTHIS(args, detail::console *)->setfill(args[1].cast_to_char()); return scfx::valbox{valbox_no_initialize::dont_do_it}; });
             add_method("console", "fill", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return SCFXTHIS(args, detail::console *)->fill(); });
-            add_method("console", "enable_colors", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2) SCFXTHIS(args, detail::console *)->enable_colors(args[1].cast_to_bool()); return scfx::valbox{}; });
+            add_method("console", "enable_colors", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2) SCFXTHIS(args, detail::console *)->enable_colors(args[1].cast_to_bool()); return scfx::valbox{valbox_no_initialize::dont_do_it}; });
             add_method("console", "colors_enabled", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return SCFXTHIS(args, detail::console *)->colors_enabled(); });
-            add_function("println", SCFXFUN(args) { con_.println(args); return {}; });
-            add_function("print", SCFXFUN(args) { con_.print(args); return {}; });
+            add_function("println", SCFXFUN(args) { con_.println(args); return {valbox_no_initialize::dont_do_it}; });
+            add_function("print", SCFXFUN(args) { con_.print(args); return {valbox_no_initialize::dont_do_it}; });
 
 
             add_function("typeof", SCFXFUN(args) {
@@ -774,7 +774,7 @@ namespace scfx {
                 return res;
             });
             add_function("array", SCFXFUN(args) {
-                valbox res{};
+                valbox res{valbox_no_initialize::dont_do_it};
                 res.become_array();
                 if(args.size() == 1 && (args[0].is_array_ref())) {
                     res.assign(args[0]);
@@ -789,12 +789,12 @@ namespace scfx {
             });
             add_function("object", SCFXFUN(args) {
                 if(args.empty()) {
-                    return valbox{}.become_object();
+                    return valbox{valbox_no_initialize::dont_do_it}.become_object();
                 }
                 if(args[0].is_object_ref()) {
                     return args[0];
                 }
-                valbox res{};
+                valbox res{valbox_no_initialize::dont_do_it};
                 res.become_object();
                 if(args[0].is_string_ref()) {
                     res.from_json(scfx::json::deserialize(args[0].as_string()));
@@ -812,7 +812,7 @@ namespace scfx {
             });
             add_function("deserialize", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                valbox res{};
+                valbox res{valbox_no_initialize::dont_do_it};
                 if(args[0].is_string_ref()) {
                     res.from_json(scfx::json::deserialize(args[0].as_string()));
                     return res;
@@ -822,7 +822,7 @@ namespace scfx {
                 return res;
             });
             add_function("serialize", SCFXFUN(args) {
-                valbox res{};
+                valbox res{valbox_no_initialize::dont_do_it};
                 if(args.size() == 1) {
                     res = args[0].to_json().serialize();
                 } else if(args.size() == 2) {
@@ -831,7 +831,7 @@ namespace scfx {
                 return res;
             });
             add_function("serialize5", SCFXFUN(args) {
-                valbox res{};
+                valbox res{valbox_no_initialize::dont_do_it};
                 if(args.size() == 1) {
                     res = args[0].to_json().serialize5();
                 } else if(args.size() == 2) {
@@ -957,11 +957,9 @@ namespace scfx {
             });
 
             add_function("undefine", SCFXFUN(args) {
-                if(args.size() == 1) {
-                    args[0].become_undefined();
-                    return args[0];
-                }
-                return valbox{};
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                args[0].become_undefined();
+                return args[0];
             });
 
             add_function("replace_substr", SCFXFUN(args) {
@@ -1005,12 +1003,12 @@ namespace scfx {
                     if(args.size() == 1) {
                         return args[0];
                     } else if(args.size() == 2) {
-                        valbox res{};
+                        valbox res{valbox_no_initialize::dont_do_it};
                         res.become_array();
                         res = args[0].subarray(args[1].cast_to_u64());
                         return res;
                     } else if(args.size() == 3) {
-                        valbox res{};
+                        valbox res{valbox_no_initialize::dont_do_it};
                         res.become_array();
                         res = args[0].subarray(args[1].cast_to_u64(), args[2].cast_to_u64());
                         return res;
@@ -1036,12 +1034,12 @@ namespace scfx {
                         return args[0].cast_to_wstring();
                     }
                 }
-                return valbox{};
+                return valbox{valbox_no_initialize::dont_do_it};
             });
 
             add_function("str_tok", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                valbox res{};
+                valbox res{valbox_no_initialize::dont_do_it};
                 res.become_array();
                 if(args[0].is_string_ref()) {
                     std::vector<std::string> sv{scfx::str_util::str_tok(args[0].cast_to_string(), args[1].cast_to_string())};
@@ -1652,9 +1650,9 @@ namespace scfx {
 
 #ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
                 if(undefineds) {
-                    curr_cell.set_curr_value(valbox{});
+                    curr_cell.set_curr_value(valbox{valbox_no_initialize::dont_do_it});
                     if(!curr_cell.out_name().empty()) {
-                        exctx_.set_output(curr_cell.out_name(), valbox{});
+                        exctx_.set_output(curr_cell.out_name(), valbox{valbox_no_initialize::dont_do_it});
                     }
                     continue;
                 }
@@ -1745,7 +1743,7 @@ namespace scfx {
                 threads_.emplace_back([this]() {
                     bool excepted{false};
                     std::string exbuf{};
-                    try {
+                    // try {
                         std::shared_ptr<execution_context> exctx{std::make_shared<execution_context>()};
                         execution_context *exctx_ptr{exctx.get()};
                         exctx_ptr->set_runtime_interface(this);
@@ -1848,9 +1846,9 @@ namespace scfx {
 
 #ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
                                     if(undefineds) {
-                                        curr_cell.set_curr_value(valbox{});
+                                        curr_cell.set_curr_value(valbox{valbox_no_initialize::dont_do_it});
                                         if(!curr_cell.out_name().empty()) {
-                                            exctx_ptr->set_output(curr_cell.out_name(), valbox{});
+                                            exctx_ptr->set_output(curr_cell.out_name(), valbox{valbox_no_initialize::dont_do_it});
                                         }
                                         continue;
                                     }
@@ -1880,10 +1878,10 @@ namespace scfx {
                                 std::this_thread::sleep_for(std::chrono::microseconds(100));
                             }
                         }
-                    } catch(std::exception const &e) {
-                        excepted = true;
-                        exbuf = e.what();
-                    }
+                    // } catch(std::exception const &e) {
+                    //     excepted = true;
+                    //     exbuf = e.what();
+                    // }
                     if(excepted) {
                         std::unique_lock l{failure_mtp_};
                         failure_description_ = exbuf;
@@ -2148,7 +2146,7 @@ namespace scfx {
                     return exctx->return_result();
                 }
 
-                return valbox{};
+                return valbox{valbox_no_initialize::dont_do_it};
             }
         };
         int exit_status_{};

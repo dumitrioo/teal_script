@@ -434,10 +434,10 @@ namespace scfx {
                 static_cast<uintptr_t>(
                     box != nullptr &&
                     box->type_ == type::POINTER &&
-                    box->pointed_type_ == type::VALBOX
+                    box->pointed_type_ == type::VALBOX ? 1 : 0
                 )
                 *
-                static_cast<uintptr_t>(box == nullptr ? 0 : 1)
+                reinterpret_cast<uintptr_t>(box)
             );
         }
         valbox &deref() {

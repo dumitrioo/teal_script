@@ -81,20 +81,29 @@ namespace scfx {
 #undef SCFX_DEFINE_BASE_LINE_COL_ERROR
 #undef SCFX_DEFINE_DERIVED_ERROR
 
-#ifdef SCFX_USE_EMHASH8_MAP
+
+#ifdef SCFX_DEBUGGING
+    template<typename K_T, typename V_T>
+    using map_t = std::map<K_T, V_T>;
+    template<typename K_T, typename V_T>
+    using self_fields_map_t = std::map<K_T, V_T>;
+    template<typename K_T, typename V_T>
+    using dict_map_t = std::map<K_T, V_T>;
+#else
+    #ifdef SCFX_USE_EMHASH8_MAP
     template<typename K_T, typename V_T, typename HASH_T = std::hash<K_T>>
     using map_t = emhash8::HashMap<K_T, V_T, HASH_T>;
     template<typename K_T, typename V_T, typename HASH_T = std::hash<K_T>>
     using self_fields_map_t = emhash8::HashMap<K_T, V_T, HASH_T>;
-#else
+    #else
     template<typename K_T, typename V_T>
     using map_t = std::unordered_map<K_T, V_T>;
     template<typename K_T, typename V_T>
     using self_fields_map_t = std::unordered_map<K_T, V_T>;
-#endif
-
+    #endif
     template<typename K_T, typename V_T>
-    using dict_map_t = std::map<K_T, V_T>;
+    using dict_map_t = std::unordered_map<K_T, V_T>;
+#endif
 
 
 #ifdef SCFX_USE_CUSTOM_SHARED_MUTEX

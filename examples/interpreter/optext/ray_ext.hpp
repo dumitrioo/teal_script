@@ -160,48 +160,48 @@ public:
                 args.size() > 1 ? SCFXNUMARG(args, 1, int) > 0 ? SCFXNUMARG(args, 1, int) : 600 : 600,
                 args.size() > 2 ? args[2].cast_to_string().c_str() : "Raylib Window"
             );
-            return scfx::valbox{};
+            return scfx::valbox{scfx::valbox_no_initialize::dont_do_it};
         });
         rt->add_function("ray_window_should_close", SCFXFUN() { return WindowShouldClose(); });
-        rt->add_function("ray_begin_drawing", SCFXFUN() { BeginDrawing(); return scfx::valbox{}; });
-        rt->add_function("ray_end_drawing", SCFXFUN() { EndDrawing(); return scfx::valbox{}; });
-        rt->add_function("ray_close_window", SCFXFUN() { CloseWindow(); return scfx::valbox{}; });
+        rt->add_function("ray_begin_drawing", SCFXFUN() { BeginDrawing(); return scfx::valbox{scfx::valbox_no_initialize::dont_do_it}; });
+        rt->add_function("ray_end_drawing", SCFXFUN() { EndDrawing(); return scfx::valbox{scfx::valbox_no_initialize::dont_do_it}; });
+        rt->add_function("ray_close_window", SCFXFUN() { CloseWindow(); return scfx::valbox{scfx::valbox_no_initialize::dont_do_it}; });
         rt->add_function("ray_clear_background", SCFXFUN(args) {
             SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
             ClearBackground(SCFXTHIS(args, Color));
-            return scfx::valbox{};
+            return scfx::valbox{scfx::valbox_no_initialize::dont_do_it};
         });
 
         // SetTargetFPS
         rt->add_function("ray_set_target_fps", SCFXFUN(args) {
             SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
             SetTargetFPS(args[0].cast_to_s32());
-            return scfx::valbox{};
+            return scfx::valbox{scfx::valbox_no_initialize::dont_do_it};
         });
 
-        rt->add_function("ray_toggle_full_screen", SCFXFUN() { ToggleFullscreen(); return scfx::valbox{}; });
+        rt->add_function("ray_toggle_full_screen", SCFXFUN() { ToggleFullscreen(); return scfx::valbox{scfx::valbox_no_initialize::dont_do_it}; });
 
         rt->add_function("ray_draw_pixel", SCFXFUN(args) {
             SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 3)
             DrawPixel(SCFXNUMARG(args, 0, int), SCFXNUMARG(args, 1, int), SCFXCLASSARG(args, 2, Color));
-            return scfx::valbox{};
+            return scfx::valbox{scfx::valbox_no_initialize::dont_do_it};
         });
         rt->add_function("ray_draw_pixel_v", SCFXFUN(args) {
             SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-            DrawPixelV(SCFXTHIS(args, Vector2), SCFXCLASSARG(args, 1, Color)); return scfx::valbox{};
+            DrawPixelV(SCFXTHIS(args, Vector2), SCFXCLASSARG(args, 1, Color)); return scfx::valbox{scfx::valbox_no_initialize::dont_do_it};
         });
 
         rt->add_function("ray_draw_line", SCFXFUN(args) {
             SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 5)
-            DrawLine(SCFXNUMARG(args, 0, int), SCFXNUMARG(args, 1, int), SCFXNUMARG(args, 2, int), SCFXNUMARG(args, 3, int), SCFXCLASSARG(args, 4, Color)); return scfx::valbox{};
+            DrawLine(SCFXNUMARG(args, 0, int), SCFXNUMARG(args, 1, int), SCFXNUMARG(args, 2, int), SCFXNUMARG(args, 3, int), SCFXCLASSARG(args, 4, Color)); return scfx::valbox{scfx::valbox_no_initialize::dont_do_it};
         });
         rt->add_function("ray_draw_line_v", SCFXFUN(args) {
             SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 3)
-            DrawLineV(SCFXTHIS(args, Vector2), SCFXCLASSARG(args, 1, Vector2), SCFXCLASSARG(args, 2, Color)); return scfx::valbox{};
+            DrawLineV(SCFXTHIS(args, Vector2), SCFXCLASSARG(args, 1, Vector2), SCFXCLASSARG(args, 2, Color)); return scfx::valbox{scfx::valbox_no_initialize::dont_do_it};
         });
         rt->add_function("ray_draw_line_ex", SCFXFUN(args) {
             SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 4)
-            DrawLineEx(SCFXTHIS(args, Vector2), SCFXCLASSARG(args, 1, Vector2), SCFXNUMARG(args, 2, float), SCFXCLASSARG(args, 3, Color)); return scfx::valbox{};
+            DrawLineEx(SCFXTHIS(args, Vector2), SCFXCLASSARG(args, 1, Vector2), SCFXNUMARG(args, 2, float), SCFXCLASSARG(args, 3, Color)); return scfx::valbox{scfx::valbox_no_initialize::dont_do_it};
         });
 
         rt->add_function("ray_draw_line_strip", SCFXFUN(args) {
@@ -219,11 +219,11 @@ public:
 
         rt->add_function("ray_draw_line_bezier", SCFXFUN(args) {
             SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 4)
-            DrawLineBezier(SCFXTHIS(args, Vector2), SCFXCLASSARG(args, 1, Vector2), SCFXNUMARG(args, 2, int), SCFXCLASSARG(args, 3, Color)); return scfx::valbox{};
+            DrawLineBezier(SCFXTHIS(args, Vector2), SCFXCLASSARG(args, 1, Vector2), SCFXNUMARG(args, 2, int), SCFXCLASSARG(args, 3, Color)); return scfx::valbox{scfx::valbox_no_initialize::dont_do_it};
         });
         rt->add_function("ray_draw_circle", SCFXFUN(args) {
             SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 4)
-            DrawCircle(SCFXNUMARG(args, 0, int), SCFXNUMARG(args, 1, int), SCFXNUMARG(args, 2, float), SCFXCLASSARG(args, 3, Color)); return scfx::valbox{};
+            DrawCircle(SCFXNUMARG(args, 0, int), SCFXNUMARG(args, 1, int), SCFXNUMARG(args, 2, float), SCFXCLASSARG(args, 3, Color)); return scfx::valbox{scfx::valbox_no_initialize::dont_do_it};
         });
 
         rt->add_function("ray_draw_text", SCFXFUN(args) {
@@ -234,12 +234,12 @@ public:
                 SCFXNUMARG(args, 3, int),
                 SCFXCLASSARG(args, 4, Color)
             );
-            return scfx::valbox{};
+            return scfx::valbox{scfx::valbox_no_initialize::dont_do_it};
         });
 
         rt->add_function("ray_draw_rectangle", SCFXFUN(args) {
             SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 5)
-            DrawRectangle(SCFXNUMARG(args, 0, int), SCFXNUMARG(args, 1, int), SCFXNUMARG(args, 2, int), SCFXNUMARG(args, 3, int), SCFXCLASSARG(args, 4, Color)); return scfx::valbox{};
+            DrawRectangle(SCFXNUMARG(args, 0, int), SCFXNUMARG(args, 1, int), SCFXNUMARG(args, 2, int), SCFXNUMARG(args, 3, int), SCFXCLASSARG(args, 4, Color)); return scfx::valbox{scfx::valbox_no_initialize::dont_do_it};
         });
 
         rt->add_function("ray_is_key_pressed", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return IsKeyPressed(SCFXNUMARG(args, 0, int)); });

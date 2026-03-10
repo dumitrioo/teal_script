@@ -507,7 +507,7 @@ namespace scfx {
                     ctx->set_create_if_not_exists(old);
                     if(l.is_undefined_ref()) {
                         if(r.is_undefined_ref()) {
-                            res = valbox{};
+                            res = valbox{valbox_no_initialize::dont_do_it};
                         } else {
                             valbox ln{};
                             ln.become_same_type_as(r);
@@ -565,9 +565,9 @@ namespace scfx {
                     ctx->set_create_if_not_exists(old);
                     if(l.is_undefined_ref()) {
                         if(r.is_undefined_ref()) {
-                            res = valbox{};
+                            res = valbox{valbox_no_initialize::dont_do_it};
                         } else {
-                            valbox ln{};
+                            valbox ln{valbox_no_initialize::dont_do_it};
                             ln.become_same_type_as(r);
                             bool excepted{false};
                             runtime_error er{{}, {}, {}};
@@ -639,9 +639,9 @@ namespace scfx {
                     ctx->set_create_if_not_exists(old);
                     if(l.is_undefined_ref()) {
                         if(r.is_undefined_ref()) {
-                            res = (valbox{});
+                            res = valbox{valbox_no_initialize::dont_do_it};
                         } else {
-                            valbox ln{};
+                            valbox ln{valbox_no_initialize::dont_do_it};
                             ln.become_same_type_as(r);
                             bool excepted{false};
                             runtime_error er{{}, {}, {}};
@@ -713,9 +713,9 @@ namespace scfx {
                     ctx->set_create_if_not_exists(old);
                     if(l.is_undefined_ref()) {
                         if(r.is_undefined_ref()) {
-                            res = valbox{};
+                            res = valbox{valbox_no_initialize::dont_do_it};
                         } else {
-                            valbox ln{};
+                            valbox ln{valbox_no_initialize::dont_do_it};
                             ln.become_same_type_as(r);
                             bool excepted{false};
                             runtime_error er{{}, {}, {}};
@@ -769,7 +769,7 @@ namespace scfx {
                     ctx->set_create_if_not_exists(old);
                     if(l.is_undefined_ref()) {
                         if(r.is_undefined_ref()) {
-                            res = valbox{};
+                            res = valbox{valbox_no_initialize::dont_do_it};
                         } else {
                             valbox ln{};
                             ln.become_same_type_as(r);
@@ -1564,7 +1564,7 @@ namespace scfx {
                             if(it != ctx->self_fields()->end()) {
                                 res = it->second;
                             } else {
-                                res = valbox{};
+                                res = valbox{valbox_no_initialize::dont_do_it};
                             }
                         }
                     } else {
@@ -1583,7 +1583,7 @@ namespace scfx {
                                     res = found_fn;
                                     this_->sym_ = this_->rval_->symbol();
                                 } else {
-                                    res = valbox{};
+                                    res = valbox{valbox_no_initialize::dont_do_it};
                                 }
                             } else if(l.is_undefined_ref()) {
                                 if(!ctx->create_if_not_exists()) {
