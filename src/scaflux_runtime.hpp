@@ -1372,7 +1372,8 @@ namespace scfx {
             });
             add_function("hardware_concurrency", SCFXFUN() {
                 std::shared_lock l{threads_mtp_};
-                return num_of_threads_ > 0 ? threads_.size() : 1;
+                auto ts{threads_.size()};
+                return ts > 0 ? ts : 1;
             });
 
 
@@ -1695,12 +1696,10 @@ namespace scfx {
         }
 
         void terminate() {
-            std::unique_lock l{threads_mtp_};
             termination_requested_.store(1, std::memory_order_release);
         }
 
         void unterminate() {
-            std::unique_lock l{threads_mtp_};
             termination_requested_.store(0, std::memory_order_release);
         }
 
@@ -1740,7 +1739,6 @@ namespace scfx {
                 }
             }
             threads_.clear();
-            num_of_threads_ = 0;
             set_thread_mode_none();
         }
 
@@ -1777,10 +1775,8 @@ namespace scfx {
                             failure_.load(std::memory_order_acquire) == 0
                         ) {
                             exctx_ptr->clear_all_jumps_request();
-                            bool have_locked{false};
                             for(auto &&wrkcl: worker_cells_) {
                                 if(wrkcl.second.try_lock()) {
-                                    have_locked = true;
                                     worker_cell_instance &curr_cell{wrkcl.second};
                                     scfx::shut_on_destroy sod{[&]() { curr_cell.unlock(); }};
                                     std::string const &curr_cell_type_name{curr_cell.type_name()};
@@ -1899,9 +1895,6 @@ namespace scfx {
                                     exctx_ptr->clear_all_jumps_request();
                                 }
                             }
-                            // if(!have_locked) {
-                            //     std::this_thread::sleep_for(std::chrono::microseconds(100));
-                            // }
                             if(sleep_between_cycles_nanoseconds_ > 0) {
                                 std::this_thread::sleep_for(std::chrono::nanoseconds(sleep_between_cycles_nanoseconds_));
                             }
@@ -1919,7 +1912,6 @@ namespace scfx {
                     }
                 });
             }
-            num_of_threads_ = threads_.size();
         }
 
         bool failure() const noexcept {
@@ -2092,11 +2084,11 @@ namespace scfx {
     private:
         detail::console con_{};
 
-        std::atomic<std::int64_t> termination_requested_{0};
         std::atomic<std::int64_t> failure_{0};
         mutable shared_mutex failure_mtp_{};
         std::string failure_description_{};
 
+        std::atomic<std::int64_t> termination_requested_{0};
         enum class thread_mode{none, single, multi };
         thread_mode thread_mode_{thread_mode::none};
         void set_thread_mode_single() { thread_mode_ = thread_mode::single; }
@@ -2109,7 +2101,6 @@ namespace scfx {
 
         execution_context exctx_{};
         shared_mutex threads_mtp_{};
-        std::atomic<std::size_t> num_of_threads_{0};
         std::list<std::thread> threads_{};
         std::int64_t wait_granularity_nsec_{100LL};
 
