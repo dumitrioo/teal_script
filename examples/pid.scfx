@@ -27,7 +27,7 @@ forward kd(0.0000005);
 
 // 'km' km;
 // Math regulator coeffs emulation (mock values)
-forward km(1000.0);
+forward km(250.0);
 
 
 //////////////////////////////////////////////////////////////
@@ -67,7 +67,7 @@ math_regulator(err, km) {
     dt = t - this.prev_t;
     if(dt > 0.0) {
         this.prev_t = t;
-        this.output += km * dt * (err * err * err + 0.001 * sin(err * 30.0));
+        this.output += km * dt * (sign(err) * pow(err, 3) + 0.005 * sin(err * 16.0));
         if(!isnormal(this.output)) {
             this.output = 0.0;
         }
