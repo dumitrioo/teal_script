@@ -6,7 +6,7 @@
 #include <wchar.h>
 #endif
 #include "emhash/hash_table8.hpp"
-#ifndef STR_UTIL_DISABLE_CUSTOM_UNICODE_OPERATIONS
+#ifdef STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
 #include "unicode_operations.hpp"
 #endif
 
@@ -239,7 +239,7 @@ namespace scfx::str_util {
     }
 
     static int towupper(int c) {
-#ifndef STR_UTIL_DISABLE_CUSTOM_UNICODE_OPERATIONS
+#ifdef STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
         return unicode_operations::toupper(c);
 #else
         return std::towupper(c);
@@ -247,7 +247,7 @@ namespace scfx::str_util {
     }
 
     static int towlower(int c) {
-#ifndef STR_UTIL_DISABLE_CUSTOM_UNICODE_OPERATIONS
+#ifdef STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
         return unicode_operations::tolower(c);
 #else
         return std::towlower(c);
@@ -255,7 +255,7 @@ namespace scfx::str_util {
     }
 
     static int iswalpha(int c) {
-#ifndef STR_UTIL_DISABLE_CUSTOM_UNICODE_OPERATIONS
+#ifdef STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
         return unicode_operations::isalpha(c);
 #else
         return std::iswalpha(c);
@@ -263,7 +263,7 @@ namespace scfx::str_util {
     }
 
     static int iswdigit(int c) {
-#ifndef STR_UTIL_DISABLE_CUSTOM_UNICODE_OPERATIONS
+#ifdef STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
         return unicode_operations::isdigit(c);
 #else
         return std::iswdigit(c);
@@ -271,7 +271,7 @@ namespace scfx::str_util {
     }
 
     static int iswalnum(int c) {
-#ifndef STR_UTIL_DISABLE_CUSTOM_UNICODE_OPERATIONS
+#ifdef STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
         return unicode_operations::isalnum(c);
 #else
         return std::iswalnum(c);
@@ -279,7 +279,7 @@ namespace scfx::str_util {
     }
 
     static int iswlower(int c) {
-#ifndef STR_UTIL_DISABLE_CUSTOM_UNICODE_OPERATIONS
+#ifdef STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
         return unicode_operations::islower(c);
 #else
         return std::iswlower(c);
@@ -287,7 +287,7 @@ namespace scfx::str_util {
     }
 
     static int iswupper(int c) {
-#ifndef STR_UTIL_DISABLE_CUSTOM_UNICODE_OPERATIONS
+#ifdef STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
         return unicode_operations::isupper(c);
 #else
         return std::iswupper(c);
@@ -295,7 +295,7 @@ namespace scfx::str_util {
     }
 
     static int iswprint(int c) {
-#ifndef STR_UTIL_DISABLE_CUSTOM_UNICODE_OPERATIONS
+#ifdef STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
         return unicode_operations::isprint(c);
 #else
         return std::iswprint(c);
@@ -303,7 +303,7 @@ namespace scfx::str_util {
     }
 
     static int iswgraph(int c) {
-#ifndef STR_UTIL_DISABLE_CUSTOM_UNICODE_OPERATIONS
+#ifdef STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
         return unicode_operations::isgraph(c);
 #else
         return std::iswgraph(c);
@@ -311,7 +311,7 @@ namespace scfx::str_util {
     }
 
     static int iswascii_(int c) {
-#ifndef STR_UTIL_DISABLE_CUSTOM_UNICODE_OPERATIONS
+#ifdef STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
         return unicode_operations::isascii(c);
 #else
         return ::isascii(c);
@@ -319,7 +319,7 @@ namespace scfx::str_util {
     }
 
     static int iswcntrl(int c) {
-#ifndef STR_UTIL_DISABLE_CUSTOM_UNICODE_OPERATIONS
+#ifdef STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
         return unicode_operations::iscntrl(c);
 #else
         return std::iswcntrl(c);
@@ -327,7 +327,7 @@ namespace scfx::str_util {
     }
 
     static int iswpunct(int c) {
-#ifndef STR_UTIL_DISABLE_CUSTOM_UNICODE_OPERATIONS
+#ifdef STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
         return unicode_operations::ispunct(c);
 #else
         return std::iswpunct(c);
@@ -335,7 +335,7 @@ namespace scfx::str_util {
     }
 
     static int iswspace(int c) {
-#ifndef STR_UTIL_DISABLE_CUSTOM_UNICODE_OPERATIONS
+#ifdef STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
         return unicode_operations::isspace(c);
 #else
         return std::iswspace(c);
