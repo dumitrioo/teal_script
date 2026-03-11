@@ -3,35 +3,31 @@
 val_with_rand(v) {
     if(this.prev_t == undefined) {
         this.prev_t = steady_clock();
-        this.delta = (randf() - 0.5) * 4;
+        this.delta = (randf() - 0.5) * 100;
     }
     t = steady_clock();
     dt = t - this.prev_t;
     if(dt > 2) {
-        this.delta = (randf() - 0.5) * 4;
+        this.delta = (randf() - 0.5) * 100;
         this.prev_t = t;
     }
     return v + this.delta;
 }
-val_with_rand in(3.0);
-
+val_with_rand in(0.0);
 
 // 'kp' kp;
 // 'ki' ki;
 // 'kd' kd;
 // PID regulator coeffs emulation (mock values)
 forward kp(0.8);
-forward ki(0.2);
-forward kd(0.0000005);
-
+forward ki(0.4);
+forward kd(0.000001);
 
 // 'km' km;
 // Math regulator coeffs emulation (mock values)
-forward km(250.0);
-
+forward km(300.0);
 
 //////////////////////////////////////////////////////////////
-
 
 forward(val) return val;
 difference(a, b) return a - b;
@@ -56,7 +52,7 @@ pid_regulator(err, kp, ki, kd) {
     }
 }
 
-// Math formula regulator, an alternative for PID...
+// Math formula regulator, an alternative for PID regulator...
 // Looks like more efficient than PID
 math_regulator(err, km) {
     if(this.output == undefined) {
@@ -67,14 +63,14 @@ math_regulator(err, km) {
     dt = t - this.prev_t;
     if(dt > 0.0) {
         this.prev_t = t;
-        this.output += km * dt * (sign(err) * pow(err, 3) + 0.005 * sin(err * 16.0));
-        if(!isnormal(this.output)) {
-            this.output = 0.0;
+        delta = km * dt * (sign(err) * pow(abs(err), 3) + 0.005 * sin(err * 16.0));
+        if(abs(delta) > abs(err)) {
+            delta = 20.0 * dt * err;
         }
+        this.output += delta;
         return this.output;
     }
 }
-
 
 difference diff1(in, pid);
 pid_regulator pid(diff1, kp, ki, kd) 'pid_out';
@@ -88,16 +84,14 @@ allprint(in, e1, pidval, e2, mathval) {
         "  ||  err1: ", e1, ", PID val: ", pidval,
         "  ||  err2: ", e2, ", Math val: ", mathval
     );
-    sleep(0.1);
+    sleep(0.05);
 }
 allprint pv(in, diff1, pid, diff2, mr);
 
-
-single_init() {
+global_init() {
     if(this.initialized == undefined) {
         this.initialized = true;
-        set_cycle_nanosleep(5000000);
+        set_cycle_nanosleep(10000000);
     }
-    return 0;
 }
-single_init ini();
+global_init glbl_ini();
