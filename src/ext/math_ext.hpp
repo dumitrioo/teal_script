@@ -256,6 +256,11 @@ namespace scfx {
             rt->add_function("nextafter", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2) return std::nextafter(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>()); });
             rt->add_function("nexttoward", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2) return std::nexttoward(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>()); });
 
+            rt->add_function("isfp", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                auto t{args[0].val_or_pointed_type()};
+                return t == valbox::type::FLOAT || t == valbox::type::DOUBLE || t == valbox::type::LONG_DOUBLE;
+            });
             rt->add_function("fpclassify", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::fpclassify(args[0].cast_num_to_num<long double>()); });
             rt->add_function("isfinite", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 switch(args[0].val_or_pointed_type()) {
