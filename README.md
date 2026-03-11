@@ -2,7 +2,7 @@
 
 SCAFlux is a dynamically typed, embedded, extensible from the host code scripting language in the Data-flow Graph Paradigm intended to make the process of creation a complex control systems extremely easy.
 
-## The Problem
+## Why?
 
 The advantage of C++ is that it can solve almost any development task. And this is also its problem. C++ programmers typically use it for absolutely everything in their work, ignoring the fact that object-oriented and imperative approaches are unsuitable for certain tasks. There is a class of tasks that are much easier to solve using specialized tools. One such tool and a description of the tasks it can solve are presented here...
 
