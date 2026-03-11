@@ -1,28 +1,6 @@
-'in' in;
-// 'kp' kp;
-// 'ki' ki;
-// 'kd' kd;
-
-diff_template(a, b) return a - b;
-
-pid_template(err, kp, ki, kd) {
-    if(this.prev_t == undefined) {
-        this.prev_t = steady_clock();
-        this.prev_err = float(err);
-        this.integral = 0.0;
-    }
-    t = steady_clock();
-    dt = t - this.prev_t;
-    this.prev_t = t;
-    if(dt > 0) {
-        proportional = err;
-        this.integral += err * dt;
-        derivative = (err - this.prev_err) / dt;
-        this.prev_err = float(err);
-        output = kp * proportional + ki * this.integral + kd * derivative;
-        return output;
-    }
+my_drafts() {
+    println("drafts");
+    return exit(0);
 }
 
-diff_template diff(in, p);
-pid_template pid(d, 0.8, 0.2, 0.001) 'out';
+my_drafts mydrfts();

@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
     // -----------------------------------------------------------------------------------
 
 
-#ifndef DEBUG_SCFX_RUN_CYCLE
+#ifndef SCFX_DEBUGGING
     try {
 #endif
         for(std::size_t i{1}; i < args.size(); ++i) {
@@ -130,7 +130,7 @@ int main(int argc, char **argv) {
         if(rt.failure()) { throw std::runtime_error{rt.failure_description()}; }
 #endif
 
-#ifndef DEBUG_SCFX_RUN_CYCLE
+#ifndef SCFX_DEBUGGING
     } catch(std::exception const &e) {
         std::cerr << "error: " << e.what() << std::endl;
     }

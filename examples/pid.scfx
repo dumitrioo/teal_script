@@ -1,0 +1,103 @@
+// 'in' in;
+// target input value emulation (mock values)
+val_with_rand(v) {
+    if(this.prev_t == undefined) {
+        this.prev_t = steady_clock();
+        this.delta = (randf() - 0.5) * 4;
+    }
+    t = steady_clock();
+    dt = t - this.prev_t;
+    if(dt > 2) {
+        this.delta = (randf() - 0.5) * 4;
+        this.prev_t = t;
+    }
+    return v + this.delta;
+}
+val_with_rand in(3.0);
+
+
+// 'kp' kp;
+// 'ki' ki;
+// 'kd' kd;
+// PID regulator coeffs emulation (mock values)
+forward kp(0.8);
+forward ki(0.2);
+forward kd(0.0000005);
+
+
+// 'km' km;
+// Math regulator coeffs emulation (mock values)
+forward km(1000.0);
+
+
+//////////////////////////////////////////////////////////////
+
+
+forward(val) return val;
+difference(a, b) return a - b;
+
+// PID regulator
+pid_regulator(err, kp, ki, kd) {
+    if(this.prev_t == undefined) {
+        this.prev_t = steady_clock();
+        this.prev_err = float(err);
+        this.integral = 0.0;
+    }
+    t = steady_clock();
+    dt = t - this.prev_t;
+    if(dt > 0.0) {
+        this.prev_t = t;
+        proportional = err;
+        this.integral += err * dt;
+        derivative = (err - this.prev_err) / dt;
+        this.prev_err = float(err);
+        output = kp * proportional + ki * this.integral + kd * derivative;
+        return output;
+    }
+}
+
+// Math formula regulator, an alternative for PID...
+// Looks like more efficient than PID
+math_regulator(err, km) {
+    if(this.output == undefined) {
+        this.output = 0.0;
+        this.prev_t = steady_clock();
+    }
+    t = steady_clock();
+    dt = t - this.prev_t;
+    if(dt > 0.0) {
+        this.prev_t = t;
+        this.output += km * dt * (err * err * err + 0.001 * sin(err * 30.0));
+        if(!isnormal(this.output)) {
+            this.output = 0.0;
+        }
+        return this.output;
+    }
+}
+
+
+difference diff1(in, pid);
+pid_regulator pid(diff1, kp, ki, kd) 'pid_out';
+
+difference diff2(in, mr);
+math_regulator mr(diff2, km) 'pow_out';
+
+allprint(in, e1, pidval, e2, mathval) {
+    console.fixed();
+    println("target val: ", in,
+        "  ||  err1: ", e1, ", PID val: ", pidval,
+        "  ||  err2: ", e2, ", Math val: ", mathval
+    );
+    sleep(0.1);
+}
+allprint pv(in, diff1, pid, diff2, mr);
+
+
+single_init() {
+    if(this.initialized == undefined) {
+        this.initialized = true;
+        set_cycle_nanosleep(5000000);
+    }
+    return 0;
+}
+single_init ini();

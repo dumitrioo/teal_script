@@ -272,11 +272,19 @@ namespace scfx {
         }
 
         bool try_lock() {
+#if defined(SCFX_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
+            return locker_.try_lock();
+#else
             return locker_->try_lock();
+#endif
         }
 
         void unlock() {
+#if defined(SCFX_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
+            return locker_.unlock();
+#else
             locker_->unlock();
+#endif
         }
 
         statement_ptr body() {
@@ -303,7 +311,11 @@ namespace scfx {
         valbox val_{};
         std::string out_name_{};
         std::uint64_t type_info_transferred_{0};
+#if defined(SCFX_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
+        mutable shared_mutex locker_{};
+#else
         mutable std::unique_ptr<shared_mutex> locker_{std::make_unique<shared_mutex>()};
+#endif
     };
 
 

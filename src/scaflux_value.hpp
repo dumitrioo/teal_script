@@ -781,7 +781,7 @@ namespace scfx {
                 throw std::runtime_error{"not array"};
             }
             array_t const &a{as_array()};
-            valbox res{};
+            valbox res{valbox_no_initialize::dont_do_it};
             res.become_array();
             array_t &resarr{res.as_array()};
             if(n > 0 && start < a.size()) {
@@ -1537,7 +1537,7 @@ namespace scfx {
         }
 
         friend valbox operator+(valbox const &l, valbox const &r) {
-            valbox res{};
+            valbox res{valbox_no_initialize::dont_do_it};
             type st{};
             if(l.val_or_pointed_type() == r.val_or_pointed_type()) {
                 switch(l.val_or_pointed_type()) {
@@ -1939,7 +1939,7 @@ namespace scfx {
         }
 
         friend valbox operator-(valbox const &l, valbox const &r) {
-            valbox res{};
+            valbox res{valbox_no_initialize::dont_do_it};
             type st;
             auto lr{l.deref()};
             auto rr{r.deref()};
@@ -1977,7 +1977,7 @@ namespace scfx {
         }
 
         friend valbox operator*(valbox const &l, valbox const &r) {
-            valbox res;
+            valbox res{valbox_no_initialize::dont_do_it};
             type st;
             auto lr{l.deref()};
             auto rr{r.deref()};
@@ -2107,7 +2107,7 @@ namespace scfx {
         }
 
         friend valbox operator/(valbox const &l, valbox const &r) {
-            valbox res;
+            valbox res{valbox_no_initialize::dont_do_it};
             type st;
             auto lr{l.deref()};
             auto rr{r.deref()};
@@ -2202,7 +2202,7 @@ namespace scfx {
         }
 
         friend valbox operator%(valbox const &l, valbox const &r) {
-            valbox res{};
+            valbox res{valbox_no_initialize::dont_do_it};
             type st{type::UNDEFINED};
             auto lr{l.deref()};
             auto rr{r.deref()};
@@ -2323,7 +2323,7 @@ namespace scfx {
         }
 
         friend valbox operator>>(valbox const &l, valbox const &r) {
-            valbox res;
+            valbox res{valbox_no_initialize::dont_do_it};
             type st;
             auto lr{l.deref()};
             auto rr{r.deref()};
@@ -2359,7 +2359,7 @@ namespace scfx {
         }
 
         friend valbox operator&(valbox const &l, valbox const &r) {
-            valbox res;
+            valbox res{valbox_no_initialize::dont_do_it};
             type st;
             auto lr{l.deref()};
             auto rr{r.deref()};
@@ -2431,7 +2431,7 @@ namespace scfx {
         }
 
         friend valbox operator^(valbox const &l, valbox const &r) {
-            valbox res;
+            valbox res{valbox_no_initialize::dont_do_it};
             type st;
             auto lr{l.deref()};
             auto rr{r.deref()};

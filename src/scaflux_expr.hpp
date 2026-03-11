@@ -149,7 +149,8 @@ namespace scfx {
                 [](prefix_unop_expression *this_, execution_context *ctx) -> valbox {
                     if(this_->primary_) { return this_->primary_val_; }
                     expr_ptr &val{this_->val_};
-                    bool old{ctx->set_create_if_not_exists(false)}; scfx::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
+                    bool old{ctx->set_create_if_not_exists(false)};
+                    scfx::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
@@ -168,14 +169,18 @@ namespace scfx {
                     if(excepted) {
                         throw er;
                     }
-                    if(val->primary()) { std::unique_lock l{this_->primary_val_mtp_}; this_->primary_val_ = res; this_->primary_ = true; }
+                    if(val->primary()) {
+                        std::unique_lock l{this_->primary_val_mtp_};
+                        this_->primary_val_ = res; this_->primary_ = true;
+                    }
                     return res;
                 },
                 /* MINUS */
                 [](prefix_unop_expression *this_, execution_context *ctx) -> valbox {
                     if(this_->primary_) { return this_->primary_val_; }
                     expr_ptr &val{this_->val_};
-                    bool old{ctx->set_create_if_not_exists(false)}; scfx::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
+                    bool old{ctx->set_create_if_not_exists(false)};
+                    scfx::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
@@ -194,7 +199,10 @@ namespace scfx {
                     if(excepted) {
                         throw er;
                     }
-                    if(val->primary()) { std::unique_lock l{this_->primary_val_mtp_}; this_->primary_val_ = res; this_->primary_ = true; }
+                    if(val->primary()) {
+                        std::unique_lock l{this_->primary_val_mtp_};
+                        this_->primary_val_ = res; this_->primary_ = true;
+                    }
                     return res;
                 },
                 /* STAR */ nullptr,
@@ -206,9 +214,13 @@ namespace scfx {
                 [](prefix_unop_expression *this_, execution_context *ctx) -> valbox {
                     if(this_->primary_) { return this_->primary_val_; }
                     expr_ptr &val{this_->val_};
-                    bool old{ctx->set_create_if_not_exists(false)}; scfx::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
+                    bool old{ctx->set_create_if_not_exists(false)};
+                    scfx::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
                     valbox res{!val->eval(ctx, eval_caller_type::no_matter, nullptr).cast_to_bool()};
-                    if(val->primary()) { std::unique_lock l{this_->primary_val_mtp_}; this_->primary_val_ = res; this_->primary_ = true; }
+                    if(val->primary()) {
+                        std::unique_lock l{this_->primary_val_mtp_};
+                        this_->primary_val_ = res; this_->primary_ = true;
+                    }
                     return res;
                 },
                 /* NOTEQUAL */ nullptr,
@@ -232,7 +244,8 @@ namespace scfx {
                 /* RSHIFTASSIGN */ nullptr,
                 /* INCREMENT */
                 [](prefix_unop_expression *this_, execution_context *ctx) -> valbox {
-                    bool old{ctx->set_create_if_not_exists(true)}; scfx::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
+                    bool old{ctx->set_create_if_not_exists(true)};
+                    scfx::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
                     runtime_error er{{}, {}, {}};
                     try {
                         return ++this_->val_->eval(ctx, eval_caller_type::no_matter, nullptr);
@@ -247,7 +260,8 @@ namespace scfx {
                 },
                 /* DECREMENT */
                 [](prefix_unop_expression *this_, execution_context *ctx) -> valbox {
-                    bool old{ctx->set_create_if_not_exists(true)}; scfx::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
+                    bool old{ctx->set_create_if_not_exists(true)};
+                    scfx::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
                     runtime_error er{{}, {}, {}};
                     try {
                         return --this_->val_->eval(ctx, eval_caller_type::no_matter, nullptr);
@@ -270,7 +284,8 @@ namespace scfx {
                 [](prefix_unop_expression *this_, execution_context *ctx) -> valbox {
                     if(this_->primary_) { return this_->primary_val_; }
                     expr_ptr &val{this_->val_};
-                    bool old{ctx->set_create_if_not_exists(false)}; scfx::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
+                    bool old{ctx->set_create_if_not_exists(false)};
+                    scfx::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
@@ -289,7 +304,10 @@ namespace scfx {
                     if(excepted) {
                         throw er;
                     }
-                    if(val->primary()) { std::unique_lock l{this_->primary_val_mtp_}; this_->primary_val_ = res; this_->primary_ = true; }
+                    if(val->primary()) {
+                        std::unique_lock l{this_->primary_val_mtp_};
+                        this_->primary_val_ = res; this_->primary_ = true;
+                    }
                     return res;
                 },
                 /* XOR */ nullptr,
@@ -381,7 +399,6 @@ namespace scfx {
         valbox eval(execution_context *ctx, eval_caller_type, valbox *) override {
             bool old{ctx->set_create_if_not_exists(false)};
             scfx::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
-
             std::string errstr{};
             valbox left_of_dot{valbox_no_initialize::dont_do_it};
             valbox fn{func_->eval(ctx, eval_caller_type::func_call, &left_of_dot)};
@@ -499,7 +516,7 @@ namespace scfx {
                 /* SPACE */ nullptr,
                 /* IDENTIFIER */ nullptr,
                 /* PLUS */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool old{ctx->set_create_if_not_exists(false)};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
@@ -557,7 +574,7 @@ namespace scfx {
                     return res;
                 },
                 /* MINUS */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool old{ctx->set_create_if_not_exists(false)};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
@@ -631,7 +648,7 @@ namespace scfx {
                     return res;
                 },
                 /* STAR */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool old{ctx->set_create_if_not_exists(false)};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
@@ -705,7 +722,7 @@ namespace scfx {
                     return res;
                 },
                 /* SLASH */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool old{ctx->set_create_if_not_exists(false)};
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
@@ -761,7 +778,7 @@ namespace scfx {
                     return res;
                 },
                 /* MOD */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool old{ctx->set_create_if_not_exists(false)};
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
@@ -818,7 +835,7 @@ namespace scfx {
                 },
                 /* AT */ nullptr,
                 /* EQUAL */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
                     valbox res{valbox_no_initialize::dont_do_it};
                     auto l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
@@ -845,7 +862,7 @@ namespace scfx {
                 },
                 /* NOT */ nullptr,
                 /* NOTEQUAL */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
@@ -870,7 +887,7 @@ namespace scfx {
                     return res;
                 },
                 /* LESSEQUAL */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
@@ -895,7 +912,7 @@ namespace scfx {
                     return res;
                 },
                 /* LESS */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
@@ -920,13 +937,14 @@ namespace scfx {
                     return res;
                 },
                 /* GREATER */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
                     try {
-                        res = this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref() < // this is correct: l > r  -->  r < l
+                        // ok: r < l  --->  l > r
+                        res = this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref() <
                               this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref();
                     } catch (runtime_error const &e) {
                         er = e;
@@ -945,7 +963,7 @@ namespace scfx {
                     return res;
                 },
                 /* GREATEREQUAL */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
@@ -970,7 +988,7 @@ namespace scfx {
                     return res;
                 },
                 /* ASSIGN */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     auto vopt{r.val_or_pointed_type()};
                     if(vopt == valbox::type::ARRAY || vopt == valbox::type::OBJECT) {
@@ -988,7 +1006,7 @@ namespace scfx {
                     return l;
                 },
                 /* ADDASSIGN */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     bool excepted{false};
@@ -1011,7 +1029,7 @@ namespace scfx {
                     return l;
                 },
                 /* SUBASSIGN */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     bool old{ctx->set_create_if_not_exists(true)};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
@@ -1042,7 +1060,7 @@ namespace scfx {
                     return l;
                 },
                 /* MULASSIGN */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     bool old{ctx->set_create_if_not_exists(true)};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
@@ -1077,7 +1095,7 @@ namespace scfx {
                     return l;
                 },
                 /* DIVASSIGN */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     bool old{ctx->set_create_if_not_exists(true)};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
@@ -1110,7 +1128,7 @@ namespace scfx {
                     return l;
                 },
                 /* MODASSIGN */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     bool old{ctx->set_create_if_not_exists(true)};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
@@ -1143,7 +1161,7 @@ namespace scfx {
                     return l;
                 },
                 /* BITANDASSIGN */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     bool old{ctx->set_create_if_not_exists(true)};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
@@ -1176,7 +1194,7 @@ namespace scfx {
                 },
                 /* ANDASSIGN */ nullptr,
                 /* XORASSIGN */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     bool old{ctx->set_create_if_not_exists(true)};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
@@ -1207,7 +1225,7 @@ namespace scfx {
                     return l;
                 },
                 /* BITORASSIGN */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     bool old{ctx->set_create_if_not_exists(true)};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
@@ -1240,7 +1258,7 @@ namespace scfx {
                 /* ORASSIGN */ nullptr,
                 /* COLONCOLONASSIGN */ nullptr,
                 /* LSHIFTASSIGN */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     bool old{ctx->set_create_if_not_exists(true)};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
@@ -1271,7 +1289,7 @@ namespace scfx {
                     return l;
                 },
                 /* RSHIFTASSIGN */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     bool old{ctx->set_create_if_not_exists(true)};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
@@ -1304,7 +1322,7 @@ namespace scfx {
                 /* INCREMENT */ nullptr,
                 /* DECREMENT */ nullptr,
                 /* LSHIFT */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
@@ -1329,7 +1347,7 @@ namespace scfx {
                     return res;
                 },
                 /* RSHIFT */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
@@ -1359,7 +1377,7 @@ namespace scfx {
                 /* QUESTIONQUESTION */ nullptr,
                 /* BITNOT */ nullptr,
                 /* XOR */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
@@ -1385,7 +1403,7 @@ namespace scfx {
                 },
                 /* CIRCUMFLEXCIRCUMFLEX */ nullptr,
                 /* BITOR */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
@@ -1410,7 +1428,7 @@ namespace scfx {
                     return res;
                 },
                 /* OR */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
                     valbox res{valbox_no_initialize::dont_do_it};
                     res = this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref().cast_to_bool() ||
@@ -1419,13 +1437,14 @@ namespace scfx {
                     return res;
                 },
                 /* BITAND */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
                     try {
-                        res = this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref() & this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref();
+                        res = this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref() &
+                              this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref();
                     } catch (runtime_error const &e) {
                         er = e;
                         excepted = true;
@@ -1443,7 +1462,7 @@ namespace scfx {
                     return res;
                 },
                 /* AND */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
                     valbox res{valbox_no_initialize::dont_do_it};
                     res = this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref().cast_to_bool() &&
@@ -1458,7 +1477,7 @@ namespace scfx {
                 /* LPAREN */ nullptr,
                 /* RPAREN */ nullptr,
                 /* LBRACKET */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type /*caller_type*/, valbox */*dotlptr*/) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox res{valbox_no_initialize::dont_do_it};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};

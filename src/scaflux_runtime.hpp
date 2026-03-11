@@ -7,7 +7,9 @@
 #include "include/base64.hpp"
 #include "include/base85.hpp"
 #include "include/dlib.hpp"
-
+#if defined(SCFX_USE_ASYNC_CONSOLE)
+#include "include/containers/concurrentqueue.h"
+#endif
 #include "scaflux_util.hpp"
 #include "scaflux_token.hpp"
 #include "scaflux_lexer.hpp"
@@ -68,6 +70,7 @@
 namespace scfx {
 
     namespace detail {
+
 #if defined(SCFX_USE_ASYNC_CONSOLE)
         class console {
         public:
@@ -1331,6 +1334,15 @@ namespace scfx {
                 }
                 return time_to_sleep;
             });
+            add_function("set_cycle_nanosleep", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1);
+                uint64_t time_to_sleep{args[0].cast_to_u64()};
+                set_nanoseconds_of_sleeping_between_cycles(time_to_sleep);
+                return time_to_sleep;
+            });
+            add_function("cycle_nanosleep", SCFXFUN() {
+                return sleep_between_cycles_nanoseconds();
+            });
             add_function("exit", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2);
                 if(programmatic_termination_enabled_ != 0) {
@@ -1677,6 +1689,9 @@ namespace scfx {
                 }
                 exctx_.clear_all_jumps_request();
             }
+            if(sleep_between_cycles_nanoseconds_ > 0) {
+                std::this_thread::sleep_for(std::chrono::nanoseconds(sleep_between_cycles_nanoseconds_));
+            }
         }
 
         void terminate() {
@@ -1703,6 +1718,14 @@ namespace scfx {
 
         int exit_status() const noexcept {
             return exit_status_;
+        }
+
+        std::uint64_t sleep_between_cycles_nanoseconds() const noexcept {
+            return sleep_between_cycles_nanoseconds_;
+        }
+
+        void set_nanoseconds_of_sleeping_between_cycles(std::uint64_t val) noexcept {
+            sleep_between_cycles_nanoseconds_ = val;
         }
 
         void stop_mt() {
@@ -1743,7 +1766,9 @@ namespace scfx {
                 threads_.emplace_back([this]() {
                     bool excepted{false};
                     std::string exbuf{};
-                    // try {
+#ifndef SCFX_DEBUGGING
+                    try {
+#endif
                         std::shared_ptr<execution_context> exctx{std::make_shared<execution_context>()};
                         execution_context *exctx_ptr{exctx.get()};
                         exctx_ptr->set_runtime_interface(this);
@@ -1874,14 +1899,19 @@ namespace scfx {
                                     exctx_ptr->clear_all_jumps_request();
                                 }
                             }
-                            if(!have_locked) {
-                                std::this_thread::sleep_for(std::chrono::microseconds(100));
+                            // if(!have_locked) {
+                            //     std::this_thread::sleep_for(std::chrono::microseconds(100));
+                            // }
+                            if(sleep_between_cycles_nanoseconds_ > 0) {
+                                std::this_thread::sleep_for(std::chrono::nanoseconds(sleep_between_cycles_nanoseconds_));
                             }
                         }
-                    // } catch(std::exception const &e) {
-                    //     excepted = true;
-                    //     exbuf = e.what();
-                    // }
+#ifndef SCFX_DEBUGGING
+                    } catch(std::exception const &e) {
+                        excepted = true;
+                        exbuf = e.what();
+                    }
+#endif
                     if(excepted) {
                         std::unique_lock l{failure_mtp_};
                         failure_description_ = exbuf;
@@ -2075,6 +2105,7 @@ namespace scfx {
         bool is_current_thread_mode_none() const { return thread_mode_ == thread_mode::none; }
         bool is_current_thread_mode_single() const { return thread_mode_ == thread_mode::single; }
         bool is_current_thread_mode_multi() const { return thread_mode_ == thread_mode::multi; }
+        std::uint64_t sleep_between_cycles_nanoseconds_{0};
 
         execution_context exctx_{};
         shared_mutex threads_mtp_{};
@@ -2164,7 +2195,7 @@ namespace scfx {
         std::list<std::pair<std::shared_ptr<dlib>, extension_interface *>> loaded_extensions_{};
         static std::size_t constexpr version_major_{1};
         static std::size_t constexpr version_minor_{2};
-        static std::size_t constexpr version_patch_{105};
+        static std::size_t constexpr version_patch_{112};
     };
 
 }
