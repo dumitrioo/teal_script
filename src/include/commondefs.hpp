@@ -151,6 +151,7 @@
     #include <netinet/ip.h>
     #include <netinet/ip_icmp.h>
     #include <sys/random.h>
+    #include <sched.h>
 #elif defined(__linux__)
     #define PLATFORM_LINUX
     #if !defined(_XOPEN_SOURCE) || _XOPEN_SOURCE < 500
@@ -190,6 +191,7 @@
     #include <netinet/ip.h>
     #include <netinet/ip_icmp.h>
     #include <sys/random.h>
+    #include <sched.h>
 #elif defined(__unix) // all unices not caught above
     #define PLATFORM_UNIXISH
 #elif defined(__posix)

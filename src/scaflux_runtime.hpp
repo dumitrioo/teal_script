@@ -2186,7 +2186,7 @@ namespace scfx {
         std::list<std::pair<std::shared_ptr<dlib>, extension_interface *>> loaded_extensions_{};
         static std::size_t constexpr version_major_{1};
         static std::size_t constexpr version_minor_{2};
-        static std::size_t constexpr version_patch_{112};
+        static std::size_t constexpr version_patch_{115};
     };
 
 }

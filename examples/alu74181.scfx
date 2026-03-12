@@ -208,42 +208,10 @@ draw_bool dr_AeB(ray, alu_62, 120, 200, sfctr, "EQ", clr_pgeq);
 
 
 ///////////////////////// speed moderation
-sleepy(n) sleep(n);
-
-forward sleep_time_val(0.1);
-sleepy slp0(sleep_time_val);
-sleepy slp1(sleep_time_val);
-sleepy slp2(sleep_time_val);
-sleepy slp3(sleep_time_val);
-sleepy slp4(sleep_time_val);
-sleepy slp5(sleep_time_val);
-sleepy slp6(sleep_time_val);
-sleepy slp7(sleep_time_val);
-sleepy slp8(sleep_time_val);
-sleepy slp9(sleep_time_val);
-sleepy slp10(sleep_time_val);
-sleepy slp11(sleep_time_val);
-sleepy slp12(sleep_time_val);
-sleepy slp13(sleep_time_val);
-sleepy slp14(sleep_time_val);
-sleepy slp15(sleep_time_val);
-sleepy slp16(sleep_time_val);
-sleepy slp17(sleep_time_val);
-sleepy slp18(sleep_time_val);
-sleepy slp19(sleep_time_val);
-sleepy slp20(sleep_time_val);
-sleepy slp21(sleep_time_val);
-sleepy slp22(sleep_time_val);
-sleepy slp23(sleep_time_val);
-sleepy slp24(sleep_time_val);
-sleepy slp25(sleep_time_val);
-sleepy slp26(sleep_time_val);
-sleepy slp27(sleep_time_val);
-sleepy slp28(sleep_time_val);
-sleepy slp29(sleep_time_val);
-sleepy slp30(sleep_time_val);
-sleepy slp31(sleep_time_val);
-sleepy slp32(sleep_time_val);
-sleepy slp33(sleep_time_val);
-sleepy slp34(sleep_time_val);
-sleepy slp35(sleep_time_val);
+global_init() {
+    if(this.initialized == undefined) {
+        this.initialized = true;
+        set_cycle_nanosleep(100000000);
+    }
+}
+global_init glbl_ini();

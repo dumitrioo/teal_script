@@ -25,7 +25,7 @@ forward kd(0.000001);
 
 // 'km' km;
 // Math regulator coeffs emulation (mock values)
-forward km(300.0);
+forward km(500.0);
 
 //////////////////////////////////////////////////////////////
 
@@ -80,7 +80,7 @@ math_regulator mr(diff2, km) 'pow_out';
 
 allprint(in, e1, pidval, e2, mathval) {
     console.fixed();
-    println("target val: ", in,
+    println(timestamp().as_iso_8601(), " | target val: ", in,
         "  ||  err1: ", e1, ", PID val: ", pidval,
         "  ||  err2: ", e2, ", Math val: ", mathval
     );
@@ -91,7 +91,7 @@ allprint pv(in, diff1, pid, diff2, mr);
 global_init() {
     if(this.initialized == undefined) {
         this.initialized = true;
-        set_cycle_nanosleep(10000000);
+        set_cycle_nanosleep(1000000);
     }
 }
 global_init glbl_ini();

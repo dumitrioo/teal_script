@@ -232,11 +232,53 @@ namespace scfx::sys_util {
         return module_path;
     }
 
-    static int is_root() {
+    static bool is_root() {
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_UNIXISH) || defined(PLATFORM_POSIX) || defined(PLATFORM_ANDROID)
         return getuid() == 0;
+#elif defined(PLATFORM_WINDOWS)
+        BOOL fIsElevated{FALSE};
+        HANDLE hToken{NULL};
+        TOKEN_ELEVATION elevation{};
+        DWORD dwSize{};
+
+        do {
+            if(!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken)) {
+                break;
+            }
+            if(!GetTokenInformation(hToken, TokenElevation, &elevation, sizeof(elevation), &dwSize)) {
+                break;
+            }
+            fIsElevated = elevation.TokenIsElevated;
+        } while(false);
+
+        if(hToken) {
+            CloseHandle(hToken);
+        }
+
+        return fIsElevated != 0;
 #else
-    return false;
+        return false;
+#endif
+    }
+
+    static void set_high_priority() {
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
+        struct sched_param param;
+        param.sched_priority = 99; // Maximum priority
+
+        int result = sched_setscheduler(0, SCHED_FIFO, &param);
+        if (result != 0) {
+            std::stringstream ss{};
+            ss << "Error setting thread high priority: " << result;
+            throw std::runtime_error{ss.str()};
+        }
+#elif defined(PLATFORM_WINDOWS)
+        if(!SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL)) {
+            DWORD dwError{GetLastError()};
+            std::stringstream ss{};
+            ss << "Error setting thread high priority: " << dwError;
+            throw std::runtime_error{ss.str()};
+        }
 #endif
     }
 
