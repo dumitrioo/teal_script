@@ -3,20 +3,20 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////// real inputs
-// 'A0' a0;
-// 'A1' a1;
-// 'A2' a2;
-// 'A3' a3;
-// 'B0' b0;
-// 'B1' b1;
-// 'B2' b2;
-// 'B3' b3;
-// 'S0' s0;
-// 'S1' s1;
-// 'S2' s2;
-// 'S3' s3;
-// 'C_in' c_in;
-// 'M' m;
+'A0' i_a0;
+'A1' i_a1;
+'A2' i_a2;
+'A3' i_a3;
+'B0' i_b0;
+'B1' i_b1;
+'B2' i_b2;
+'B3' i_b3;
+'S0' i_s0;
+'S1' i_s1;
+'S2' i_s2;
+'S3' i_s3;
+'C_in' i_c_in;
+'M' i_m;
 
 ///////////////////////// randomly generated inputs
 rand_bool() {
@@ -25,21 +25,37 @@ rand_bool() {
     return this.res;
 }
 
-rand_bool s0();
-rand_bool s1();
-rand_bool s2();
-rand_bool s3();
-rand_bool a0();
-rand_bool a1();
-rand_bool a2();
-rand_bool a3();
-rand_bool b0();
-rand_bool b1();
-rand_bool b2();
-rand_bool b3();
-rand_bool c_in();
-rand_bool m();
+rand_bool r_s0();
+rand_bool r_s1();
+rand_bool r_s2();
+rand_bool r_s3();
+rand_bool r_a0();
+rand_bool r_a1();
+rand_bool r_a2();
+rand_bool r_a3();
+rand_bool r_b0();
+rand_bool r_b1();
+rand_bool r_b2();
+rand_bool r_b3();
+rand_bool r_c_in();
+rand_bool r_m();
 
+first_defined(a, b) return a == undefined ? b : a;
+
+first_defined s0(i_s0, r_s0);
+first_defined s1(i_s1, r_s1);
+first_defined s2(i_s2, r_s2);
+first_defined s3(i_s3, r_s3);
+first_defined a0(i_a0, r_a0);
+first_defined a1(i_a1, r_a1);
+first_defined a2(i_a2, r_a2);
+first_defined a3(i_a3, r_a3);
+first_defined b0(i_b0, r_b0);
+first_defined b1(i_b1, r_b1);
+first_defined b2(i_b2, r_b2);
+first_defined b3(i_b3, r_b3);
+first_defined c_in(i_c_in, r_c_in);
+first_defined m(i_m, r_m);
 
 ///////////////////////// logical gates
 not(a) { return !a; }

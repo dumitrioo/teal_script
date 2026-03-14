@@ -33,6 +33,7 @@
 #include <iterator>
 #include <complex>
 #include <type_traits>
+#include <cerrno>
 #if (__cplusplus >= 201103L)
 #include <valarray>
 #include <unordered_map>

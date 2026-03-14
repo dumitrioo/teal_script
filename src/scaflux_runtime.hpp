@@ -3,6 +3,7 @@
 #include "include/commondefs.hpp"
 #include "include/file_util.hpp"
 #include "include/str_util.hpp"
+#include "include/sys_util.hpp"
 #include "include/base16.hpp"
 #include "include/base64.hpp"
 #include "include/base85.hpp"
@@ -23,12 +24,14 @@
 #include "scaflux_interfaces.hpp"
 
 #include "ext/array_buffer_ext.hpp"
+#include "ext/dictionary_ext.hpp"
 #include "ext/file_ext.hpp"
 #include "ext/crypto_ext.hpp"
 #include "ext/cpu_ext.hpp"
 #include "ext/rand_ext.hpp"
 #include "ext/time_ext.hpp"
 #include "ext/math_ext.hpp"
+#include "ext/socket_ext.hpp"
 
 #ifdef PLATFORM_WINDOWS
 #define	EPERM		 1	/* Operation not permitted */
@@ -458,6 +461,41 @@ namespace scfx {
             add_var("EDOM", EDOM);       // 33  Math argument out of domain of func
             add_var("ERANGE", ERANGE);   // 34  Math result not representable
 
+            add_function("last_error", SCFXFUN() {
+#if defined(PLATFORM_WINDOWS)
+                return (int64_t)GetLastError();
+#elif defined(PLATFORM_LINUX)
+                return (int64_t)errno;
+#endif
+            });
+            add_function("error_str", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+#if defined(PLATFORM_WINDOWS)
+                DWORD errorMessageID{args[0].cast_to_u32()};
+                if(errorMessageID == 0) {
+                    return std::string{};
+                }
+                LPWSTR messageBuffer{nullptr};
+                size_t size = FormatMessageW(
+                    FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                    nullptr,
+                    errorMessageID,
+                    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                    (LPWSTR)&messageBuffer,
+                    0,
+                    nullptr
+                );
+                std::wstring message(messageBuffer, size);
+                LocalFree(messageBuffer);
+                return str_util::to_utf8(message);
+#elif defined(PLATFORM_LINUX)
+                std::system_error se{args[0].cast_to_s32(), std::system_category()};
+                std::stringstream ss{};
+                ss << se.what();
+                return ss.str();
+#endif
+            });
+
             add_function("execute", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 return std::system(args[0].cast_to_string().c_str());
@@ -581,9 +619,16 @@ namespace scfx {
             fpool_.register_runtime(this);
             perf_stat_.register_runtime(this);
             randlib_.register_runtime(this);
+            sockext_.register_runtime(this);
+            dict_ext_.register_runtime(this);
 
             add_var("console", scfx::valbox{&con_, "console"});
-            add_method("console", "info", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(args, detail::console *)->info(args1); return {valbox_no_initialize::dont_do_it}; });
+            add_method("console", "info", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_GE(args, 1)
+                std::vector<scfx::valbox> args1{args.begin() + 1, args.end()};
+                SCFXTHIS(args, detail::console *)->info(args1);
+                return {valbox_no_initialize::dont_do_it};
+            });
             add_method("console", "log", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(args, detail::console *)->log(args1); return {valbox_no_initialize::dont_do_it}; });
             add_method("console", "warn", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(args, detail::console *)->warn(args1); return {valbox_no_initialize::dont_do_it}; });
             add_method("console", "debug", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(args, detail::console *)->debug(args1); return {valbox_no_initialize::dont_do_it}; });
@@ -1254,6 +1299,42 @@ namespace scfx {
                 return std::string{"0.0"};
             });
 
+            add_function("toupper", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                if(args[0].is_char_ref()) {
+                    return scfx::str_util::toupper(args[0].as_char());
+                } else {
+                    return scfx::str_util::towupper(args[0].cast_to_u64());
+                }
+            });
+            add_function("tolower", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                if(args[0].is_char_ref()) {
+                    return scfx::str_util::tolower(args[0].as_char());
+                } else {
+                    return scfx::str_util::towlower(args[0].cast_to_u64());
+                }
+            });
+
+            add_function("strtoupper", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                if(args[0].is_string_ref()) {
+                    return scfx::str_util::fltr<std::string>::strtoupper(args[0].as_string());
+                } else if(args[0].is_wstring_ref()) {
+                    return scfx::str_util::fltr<std::wstring>::strtoupper(args[0].as_wstring());
+                } else {
+                    throw std::runtime_error{"invalid argument"};
+                }
+            });
+            add_function("strtolower", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                if(args[0].is_char_ref()) {
+                    return scfx::str_util::tolower(args[0].as_char());
+                } else {
+                    return scfx::str_util::towlower(args[0].cast_to_u64());
+                }
+            });
+
 
             add_function("get_bit_field", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 3)
@@ -1396,6 +1477,7 @@ namespace scfx {
                        (arg0.is_string_ref() && arg0.as_string().empty()) ||
                        (arg0.is_wstring_ref() && arg0.as_wstring().empty());
             });
+
         }
 
         runtime(runtime const &) = delete;
@@ -1418,6 +1500,8 @@ namespace scfx {
             user_functions_.clear();
 
             unload_extensions();
+            sockext_.unregister_runtime();
+            dict_ext_.unregister_runtime();
             crypt_.unregister_runtime();
             fpool_.unregister_runtime();
             perf_stat_.unregister_runtime();
@@ -1903,6 +1987,9 @@ namespace scfx {
                     } catch(std::exception const &e) {
                         excepted = true;
                         exbuf = e.what();
+                    } catch(valbox const &v) {
+                        excepted = true;
+                        exbuf = v.cast_to_string();
                     }
 #endif
                     if(excepted) {
@@ -2181,12 +2268,14 @@ namespace scfx {
         cpu_ext perf_stat_{};
         rand_ext randlib_{};
         array_buffer_ext array_buffer_ext_{};
+        socket_ext sockext_{};
+        dictionary_ext dict_ext_{};
 
         shared_mutex loaded_extensions_mtp_{};
         std::list<std::pair<std::shared_ptr<dlib>, extension_interface *>> loaded_extensions_{};
         static std::size_t constexpr version_major_{1};
         static std::size_t constexpr version_minor_{2};
-        static std::size_t constexpr version_patch_{115};
+        static std::size_t constexpr version_patch_{116};
     };
 
 }

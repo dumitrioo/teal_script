@@ -46,6 +46,8 @@ SOURCES += main.cpp
 
 HEADERS += \
     ../../src/ext/array_buffer_ext.hpp \
+    ../../src/ext/dictionary_ext.hpp \
+    ../../src/ext/socket_ext.hpp \
     ../../src/include/base16.hpp \
     ../../src/include/base64.hpp \
     ../../src/include/base85.hpp \
@@ -67,6 +69,8 @@ HEADERS += \
     ../../src/include/math/matrix4.hpp \
     ../../src/include/math/vector4.hpp \
     ../../src/include/mt_synchro.hpp \
+    ../../src/include/net/socket_poller.hpp \
+    ../../src/include/net/socket_wrapper.hpp \
     ../../src/include/sequence_generator.hpp \
     ../../src/include/serialization.hpp \
     ../../src/include/str_util.hpp \
@@ -117,5 +121,6 @@ DISTFILES += \
     ../extending_example.scfx \
     ../pid.scfx \
     ../quad_eq.scfx \
+    ../sockets_server.scfx \
     ../tbbt_2cola.scfx \
     ../tests.scfx

@@ -37,7 +37,7 @@ namespace scfx {
                     if(args[0].is_string_ref()) {
                         return scfx::valbox{std::make_shared<array_buffer>(args[0].as_string()), "array_buffer"};
                     } else if(args[0].is_class_ref() && args[0].class_name() == "array_buffer") {
-                        return scfx::valbox{std::make_shared<array_buffer>(*SCFXCLASSARG(args, 0, std::shared_ptr<array_buffer>)), "array_buffer"};
+                        return scfx::valbox{std::make_shared<array_buffer>(*SCFXTHIS(args, std::shared_ptr<array_buffer>)), "array_buffer"};
                     } else if(args[0].is_numeric()) {
                         std::shared_ptr<array_buffer> res{std::make_shared<array_buffer>()};
                         res->resize(args[0].cast_to_u64());

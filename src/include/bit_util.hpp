@@ -83,6 +83,23 @@ namespace scfx::bit_util {
     };
 
 
+    template<class T>
+    T from_bytes(void const *v) { return *reinterpret_cast<T const *>(v); }
+    template<class T>
+    void *to_bytes(T const &v, void *m_ptr) {
+        *reinterpret_cast<T *>(m_ptr) = swap_on_le{v}.val;
+        return reinterpret_cast<std::uint8_t *>(m_ptr) + sizeof(T);
+    }
+
+    template<class T>
+    T from_net_bytes(void const *v) { return swap_on_le{from_bytes<T>(v)}.val; }
+    template<class T>
+    void *to_net_bytes(T const &v, void *m_ptr) {
+        *reinterpret_cast<T *>(m_ptr) = swap_on_le{v}.val;
+        return reinterpret_cast<std::uint8_t *>(m_ptr) + sizeof(T);
+    }
+
+
     template<typename T>
     class bits {
     public:
