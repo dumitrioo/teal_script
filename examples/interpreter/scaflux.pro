@@ -16,6 +16,8 @@ TEMPLATE = app
 
 ###############################################################################
 # DEFINES += SCFX_USE_CUSTOM_MUTEX
+DEFINES += MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING
+DEFINES += MUTEX_ATOMIC_SM_SLEEP_NANOS=100000
 ###############################################################################
 
 ###############################################################################
@@ -119,7 +121,7 @@ DISTFILES += \
     ../example.scfx \
     ../alu74181.png \
     ../extending_example.scfx \
-    ../pid.scfx \
+    ../pid_regulator.scfx \
     ../quad_eq.scfx \
     ../sockets_server.scfx \
     ../tbbt_2cola.scfx \

@@ -1,1 +1,1 @@
-./bin/scaflux ./examples/pid.scfx
+./bin/scaflux ./examples/pid_regulator.scfx

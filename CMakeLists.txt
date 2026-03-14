@@ -28,6 +28,8 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -falign-loops -fstrict-aliasing -Wall -Wextr
 
 ###############################################################################
 #add_definitions(-DSCFX_USE_CUSTOM_MUTEX)
+add_definitions(-DMUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
+add_definitions(-DMUTEX_ATOMIC_SM_SLEEP_NANOS=100000)
 ###############################################################################
 
 ###############################################################################

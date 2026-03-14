@@ -8,7 +8,7 @@ namespace scfx::mt {
     public:
         atomic_spin_mutex() = default;
         ~atomic_spin_mutex() = default;
-#ifdef RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING
+#ifdef MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING
         atomic_spin_mutex(const atomic_spin_mutex &) {}
         atomic_spin_mutex& operator=(const atomic_spin_mutex &) { return *this; }
         atomic_spin_mutex(atomic_spin_mutex &&) noexcept {}
