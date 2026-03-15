@@ -1859,8 +1859,10 @@ namespace scfx {
                             failure_.load(std::memory_order_acquire) == 0
                         ) {
                             exctx_ptr->clear_all_jumps_request();
+                            bool have_locked{false};
                             for(auto &&wrkcl: worker_cells_) {
                                 if(wrkcl.second.try_lock()) {
+                                    have_locked = true;
                                     worker_cell_instance &curr_cell{wrkcl.second};
                                     scfx::shut_on_destroy sod{[&]() { curr_cell.unlock(); }};
                                     std::string const &curr_cell_type_name{curr_cell.type_name()};
@@ -1978,6 +1980,9 @@ namespace scfx {
                                     }
                                     exctx_ptr->clear_all_jumps_request();
                                 }
+                            }
+                            if(!have_locked) {
+                                std::this_thread::sleep_for(std::chrono::microseconds(100));
                             }
                             if(sleep_between_cycles_nanoseconds_ > 0) {
                                 std::this_thread::sleep_for(std::chrono::nanoseconds(sleep_between_cycles_nanoseconds_));
