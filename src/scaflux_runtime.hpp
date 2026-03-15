@@ -7,7 +7,7 @@
 #include "include/base16.hpp"
 #include "include/base64.hpp"
 #include "include/base85.hpp"
-#include "include/dlib.hpp"
+#include "include/so.hpp"
 #if defined(SCFX_USE_ASYNC_CONSOLE)
 #include "include/containers/concurrentqueue.h"
 #endif
@@ -2139,7 +2139,7 @@ namespace scfx {
         bool load_library(std::string const &fname) {
             bool res{false};
             try {
-                std::shared_ptr<scfx::dlib> dll_ptr{std::make_shared<scfx::dlib>(fname)};
+                std::shared_ptr<scfx::so> dll_ptr{std::make_shared<scfx::so>(fname)};
                 if(dll_ptr->ok()) {
                     auto ld_fn{dll_ptr->symbol<scfx::extension_interface *(*)()>("create_scfx_extension")};
                     auto unld_fn{dll_ptr->symbol<void (*)(scfx::extension_interface *)>("remove_scfx_extension")};
@@ -2272,7 +2272,7 @@ namespace scfx {
         containers_ext dict_ext_{};
 
         shared_mutex loaded_extensions_mtp_{};
-        std::list<std::pair<std::shared_ptr<dlib>, extension_interface *>> loaded_extensions_{};
+        std::list<std::pair<std::shared_ptr<so>, extension_interface *>> loaded_extensions_{};
         static std::size_t constexpr version_major_{1};
         static std::size_t constexpr version_minor_{2};
         static std::size_t constexpr version_patch_{117};

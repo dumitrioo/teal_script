@@ -61,7 +61,6 @@ HEADERS += \
     ../../src/include/crypto/sha256.hpp \
     ../../src/include/crypto/sha3_512.hpp \
     ../../src/include/crypto/sha512.hpp \
-    ../../src/include/dlib.hpp \
     ../../src/include/file_util.hpp \
     ../../src/include/fsm_tokenizer.hpp \
     ../../src/include/hash/adler.hpp \
@@ -75,6 +74,7 @@ HEADERS += \
     ../../src/include/net/socket_wrapper.hpp \
     ../../src/include/sequence_generator.hpp \
     ../../src/include/serialization.hpp \
+    ../../src/include/so.hpp \
     ../../src/include/str_util.hpp \
     ../../src/include/sys_util.hpp \
     ../../src/include/timespec_wrapper.hpp \

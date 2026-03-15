@@ -4,17 +4,17 @@
 
 namespace scfx {
 
-    class dlib {
+    class so {
     public:
-        dlib() = default;
-        dlib(std::string const &file_name) {
+        so() = default;
+        so(std::string const &file_name) {
             this->open(file_name);
         }
-        dlib(dlib const &) = delete;
-        dlib &operator=(dlib const &) = delete;
-        dlib(dlib &&) = delete;
-        dlib &operator=(dlib &&) = delete;
-        ~dlib() {
+        so(so const &) = delete;
+        so &operator=(so const &) = delete;
+        so(so &&) = delete;
+        so &operator=(so &&) = delete;
+        ~so() {
             close();
         }
 
