@@ -703,7 +703,7 @@ namespace scfx {
             return serialized_data_;
         }
 
-        scfx::bytevec data_vec() && {
+        scfx::bytevec take_vec() {
             return std::move(serialized_data_);
         }
 

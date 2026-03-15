@@ -48,7 +48,7 @@ SOURCES += main.cpp
 
 HEADERS += \
     ../../src/ext/array_buffer_ext.hpp \
-    ../../src/ext/dictionary_ext.hpp \
+    ../../src/ext/containers_ext.hpp \
     ../../src/ext/socket_ext.hpp \
     ../../src/include/base16.hpp \
     ../../src/include/base64.hpp \

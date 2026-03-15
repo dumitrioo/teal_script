@@ -24,7 +24,7 @@
 #include "scaflux_interfaces.hpp"
 
 #include "ext/array_buffer_ext.hpp"
-#include "ext/dictionary_ext.hpp"
+#include "ext/containers_ext.hpp"
 #include "ext/file_ext.hpp"
 #include "ext/crypto_ext.hpp"
 #include "ext/cpu_ext.hpp"
@@ -2269,13 +2269,13 @@ namespace scfx {
         rand_ext randlib_{};
         array_buffer_ext array_buffer_ext_{};
         socket_ext sockext_{};
-        dictionary_ext dict_ext_{};
+        containers_ext dict_ext_{};
 
         shared_mutex loaded_extensions_mtp_{};
         std::list<std::pair<std::shared_ptr<dlib>, extension_interface *>> loaded_extensions_{};
         static std::size_t constexpr version_major_{1};
         static std::size_t constexpr version_minor_{2};
-        static std::size_t constexpr version_patch_{116};
+        static std::size_t constexpr version_patch_{117};
     };
 
 }

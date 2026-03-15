@@ -1463,7 +1463,7 @@ namespace scfx {
         std::vector<std::uint8_t> bserialize() const {
             scfx::serializer ser{};
             bserialize_actual(ser);
-            return std::move(ser).data_vec();
+            return ser.take_vec();
         }
 
         static json bdeserialize(std::vector<std::uint8_t> const &vk) {
