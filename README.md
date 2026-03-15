@@ -34,4 +34,4 @@ To add support for SCAFlux into your C++ application, you need at least C++20 st
 
 # More information
 
-For more information, read this [document](doc/scaflux_overview.pdf)...
+For more information, read this [PDF document](doc/scaflux_overview.pdf)
