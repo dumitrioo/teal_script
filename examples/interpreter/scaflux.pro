@@ -107,7 +107,7 @@ QMAKE_CFLAGS_RELEASE -= -O2
 QMAKE_CFLAGS_RELEASE += -O3
 
 LIBS += -lpthread -ldl
-LIBS += -lz-ng
+LIBS += -lz
 LIBS += -lmagic
 LIBS += -lraylib
 LIBS += -lzmq
