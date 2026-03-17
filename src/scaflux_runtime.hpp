@@ -2173,11 +2173,6 @@ namespace scfx {
             {"M_E", valbox{2.7182818284590452353602874713526624977572470936999595749669676277240766L}},
             {"M_PI", valbox{3.1415926535897932384626433832795028841971693993751058209749445923078164L}},
             {"M_PHI", valbox{1.6180339887498948482045868343656381177203091798057628621354486227052605L}},
-            {"FP_INFINITE", valbox{FP_INFINITE}},
-            {"FP_NAN", valbox{FP_NAN}},
-            {"FP_ZERO", valbox{FP_ZERO}},
-            {"FP_SUBNORMAL", valbox{FP_SUBNORMAL}},
-            {"FP_NORMAL", valbox{FP_NORMAL}},
         };
         dict_map_t<std::string, valbox> global_functions_dictionary_{};
         dict_map_t<std::string, dict_map_t<std::string, valbox>> global_methods_dictionary_{};

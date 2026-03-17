@@ -69,7 +69,10 @@ namespace scfx::math {
     T abs(T v) noexcept { return v < 0 ? -v : v; }
 
     template<typename T>
-    T sqr(T v) noexcept { return v * v; }
+    T square(T v) noexcept { return v * v; }
+
+    template<typename T>
+    T cube(T v) noexcept { return v * v * v; }
 
     template<typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
     T deg2rad(T d) noexcept { return d * M_PIl / 180.0L; }
@@ -104,7 +107,7 @@ namespace scfx::math {
     template<typename T>
     vector4<T> cartesian_to_spheric(T x, T y, T z) noexcept {
         vector4<T> res{0, 0, 0, 1};
-        T l{std::sqrt(sqr(x) + sqr(y) + sqr(z))};
+        T l{std::sqrt(square(x) + square(y) + square(z))};
         res.r() = l;
         res.theta() = std::acos(z / l);
         res.phi() = std::atan(y / x);
@@ -151,7 +154,7 @@ namespace scfx::math {
 
     template<typename FP_T>
     FP_T gaussian(FP_T x, FP_T mat_exp = 0, FP_T std_dev = 1) noexcept {
-        return std::exp(-sqr(x - mat_exp) / (2 * sqr(std_dev))) / (std_dev * std::sqrt(2 * M_PI));
+        return std::exp(-square(x - mat_exp) / (2 * square(std_dev))) / (std_dev * std::sqrt(2 * M_PI));
     }
 
     template<typename FP_T>

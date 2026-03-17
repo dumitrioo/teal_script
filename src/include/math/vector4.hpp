@@ -204,6 +204,15 @@ namespace scfx::math {
             return vector4{*this}.normalize();
         }
 
+        vector4 all_positive() const {
+            vector4 res{};
+            res.v_[0] = std::abs(v_[0]);
+            res.v_[1] = std::abs(v_[1]);
+            res.v_[2] = std::abs(v_[2]);
+            res.v_[3] = std::abs(v_[3]);
+            return res;
+        }
+
         friend vector4 operator+(vector4 const &u, vector4 const &v) {
             return vector4{u.v_[0] + v.v_[0], u.v_[1] + v.v_[1], u.v_[2] + v.v_[2], u.v_[3] + v.v_[3]};
         }

@@ -3,9 +3,11 @@
 #include "../commondefs.hpp"
 #include "../str_util.hpp"
 #include "../bit_util.hpp"
-#ifdef PLATFORM_LINUX
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
 #include <netinet/in.h>
 #include <netinet/ip6.h>
+#include <sys/un.h>
+#include <sys/uio.h>
 #endif
 
 namespace scfx::net {
@@ -15,7 +17,7 @@ namespace scfx::net {
         inet4 = AF_INET,
         inet6 = AF_INET6,
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
-        unix = AF_UNIX,
+        unix_socket = AF_UNIX,
 #endif
     };
 

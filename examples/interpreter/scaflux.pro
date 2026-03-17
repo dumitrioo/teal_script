@@ -100,7 +100,7 @@ HEADERS += \
     optext/ray_ext.hpp \
     optext/zmq_ext.hpp
 
-QMAKE_CXXFLAGS += -std=c++20 -Wno-unused-function -Wl,-rpath,.
+QMAKE_CXXFLAGS += -std=c++20 -Wno-unused-parameter -Wno-unused-function -Wl,-rpath,.
 QMAKE_CXXFLAGS_RELEASE -= -O2
 QMAKE_CXXFLAGS_RELEASE += -O3
 QMAKE_CFLAGS_RELEASE -= -O2

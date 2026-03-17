@@ -35,7 +35,7 @@ namespace scfx {
             rt->add_var("address_family_inet4", static_cast<int>(scfx::net::address_family::inet4));
             rt->add_var("address_family_inet6", static_cast<int>(scfx::net::address_family::inet6));
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
-            rt->add_var("address_family_unix", static_cast<int>(scfx::net::address_family::unix));
+            rt->add_var("address_family_unix", static_cast<int>(scfx::net::address_family::unix_socket));
 #endif
             rt->add_var("sock_stream", static_cast<int>(scfx::net::sock_type::stream));
             rt->add_var("sock_dgram", static_cast<int>(scfx::net::sock_type::dgram));

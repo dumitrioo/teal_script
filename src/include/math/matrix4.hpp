@@ -196,6 +196,14 @@ namespace scfx::math {
             return {};
         }
 
+        matrix4 all_positive() const {
+            matrix4 res{};
+            for(int i{0}; i < 16; ++i) {
+                res.m_[i] = std::abs(m_[i]);
+            }
+            return res;
+        }
+
         friend matrix4 operator+(const matrix4& a, const matrix4& b) {
             matrix4 res{};
             for(std::size_t i{0}; i < 16; i++) {

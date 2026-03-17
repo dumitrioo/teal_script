@@ -69,7 +69,7 @@ namespace scfx::net {
                 }
             }
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
-            else if(domain == address_family::unix) {
+            else if(domain == address_family::unix_socket) {
                 if((sock_fd_ = ::socket(AF_UNIX, (int)type, proto)) > 0) {
                     sock_type_ = domain;
                     return true;
@@ -96,7 +96,7 @@ namespace scfx::net {
                     }
                 }
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
-                else if(sock_type_ == address_family::unix) {
+                else if(sock_type_ == address_family::unix_socket) {
                     common_addr_.sock_addr_unix_.sun_family = AF_UNIX;
                     if(file_util::file_exists(address)) {
                         ::unlink(address.c_str());
@@ -134,10 +134,10 @@ namespace scfx::net {
                     client_sock.sock_type_ = address_family::inet6;
                 }
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
-                else if(sock_type_ == address_family::unix) {
+                else if(sock_type_ == address_family::unix_socket) {
                     size = sizeof(client_sock.common_addr_.sock_addr_unix_);
                     client_sock.sock_fd_ = ::accept(sock_fd_, (struct sockaddr *)&client_sock.common_addr_.sock_addr_unix_, &size);
-                    client_sock.sock_type_ = address_family::unix;
+                    client_sock.sock_type_ = address_family::unix_socket;
                 }
 #endif
                 else {
@@ -195,7 +195,7 @@ namespace scfx::net {
                     }
                 }
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
-                else if(sock_type_ == address_family::unix) {
+                else if(sock_type_ == address_family::unix_socket) {
                     struct sockaddr_un sock_addr;
                     sock_addr.sun_family = AF_UNIX;
                     strcpy(sock_addr.sun_path, address.c_str());
@@ -272,7 +272,7 @@ namespace scfx::net {
                 }
             }
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
-            if(sock_type_ == address_family::unix && !unix_server_socket_path_.empty()) {
+            if(sock_type_ == address_family::unix_socket && !unix_server_socket_path_.empty()) {
                 ::unlink(unix_server_socket_path_.c_str());
                 unix_server_socket_path_.clear();
             }
@@ -488,7 +488,7 @@ namespace scfx::net {
                    ||
                    sock_type_ == address_family::inet6
                    ||
-                   sock_type_ == address_family::unix
+                   sock_type_ == address_family::unix_socket
                 )
             ;
         }

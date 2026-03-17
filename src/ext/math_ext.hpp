@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../include/commondefs.hpp"
+#include "../include/math/math_util.hpp"
 
 #include "../scaflux_value.hpp"
 #include "../scaflux_util.hpp"
@@ -24,32 +25,37 @@ namespace scfx {
             if(rt_ != nullptr) { return; }
             rt_ = rt;
             if(rt_ == nullptr) { return; }
-            rt->add_function("abs", SCFXFUN(args) {
-                static std::unordered_map<valbox::type, std::function<valbox(valbox const &)>, valbox::valbox_type_hash> const abses{
-                    { valbox::type::CHAR, [](valbox const &v) -> valbox { return std::abs(v.as_char()); } },
-                    { valbox::type::U8, [](valbox const &v) -> valbox { return v; } },
-                    { valbox::type::S8, [](valbox const &v) -> valbox { return std::abs(v.as_s8()); } },
-                    { valbox::type::S16, [](valbox const &v) -> valbox { return std::abs(v.as_s16()); } },
-                    { valbox::type::U16, [](valbox const &v) -> valbox { return v; } },
-                    { valbox::type::WCHAR, [](valbox const &v) -> valbox { return std::abs(v.as_wchar()); } },
-                    { valbox::type::S32, [](valbox const &v) -> valbox { return std::abs(v.as_s32()); } },
-                    { valbox::type::U32, [](valbox const &v) -> valbox { return v; } },
-                    { valbox::type::S64, [](valbox const &v) -> valbox { return std::abs(v.as_s64()); } },
-                    { valbox::type::U64, [](valbox const &v) -> valbox { return v; } },
-                    { valbox::type::FLOAT, [](valbox const &v) -> valbox { return std::abs(v.as_float()); } },
-                    { valbox::type::DOUBLE, [](valbox const &v) -> valbox { return std::abs(v.as_double()); } },
-                    { valbox::type::LONG_DOUBLE, [](valbox const &v) -> valbox { return std::abs(v.as_long_double()); } },
-                    { valbox::type::CLASS, [](valbox const &v) -> valbox { return v; } },
-                    { valbox::type::POINTER, [](valbox const &v) -> valbox { return v; } },
-                    { valbox::type::FUNC, [](valbox const &v) -> valbox { return v; } },
-                    { valbox::type::STRING, [](valbox const &v) -> valbox { return v; } },
-                    { valbox::type::WSTRING, [](valbox const &v) -> valbox { return v; } },
-                    { valbox::type::BOOL, [](valbox const &v) -> valbox { return v; } },
-                    { valbox::type::UNDEFINED, [](valbox const &v) -> valbox { return v; } },
-                };
-                return abses.at(args[0].val_type())(args[0]);
-            });
 
+            rt->add_function("abs", SCFXFUN(args) {
+                static std::array<std::function<valbox(valbox const &)>, 25> const abses{
+                    [](valbox const &v) -> valbox { return v; },
+                    [](valbox const &v) -> valbox { return std::abs(v.as_char()); },
+                    [](valbox const &v) -> valbox { return std::abs(v.as_s8()); },
+                    [](valbox const &v) -> valbox { return v; },
+                    [](valbox const &v) -> valbox { return std::abs(v.as_s16()); },
+                    [](valbox const &v) -> valbox { return v; },
+                    [](valbox const &v) -> valbox { return v; },
+                    [](valbox const &v) -> valbox { return std::abs(v.as_s32()); },
+                    [](valbox const &v) -> valbox { return v; },
+                    [](valbox const &v) -> valbox { return std::abs(v.as_s64()); },
+                    [](valbox const &v) -> valbox { return v; },
+                    [](valbox const &v) -> valbox { return std::abs(v.as_float()); },
+                    [](valbox const &v) -> valbox { return std::abs(v.as_double()); },
+                    [](valbox const &v) -> valbox { return std::abs(v.as_long_double()); },
+                    [](valbox const &v) -> valbox { return v.as_vec4().all_positive(); },
+                    [](valbox const &v) -> valbox { return v.as_mat4().all_positive(); },
+                    [](valbox const &v) -> valbox { return v; },
+                    [](valbox const &v) -> valbox { return v; },
+                    [](valbox const &v) -> valbox { return v; },
+                    [](valbox const &v) -> valbox { return v; },
+                    [](valbox const &v) -> valbox { return v; },
+                    [](valbox const &v) -> valbox { return v; },
+                    [](valbox const &v) -> valbox { return v; },
+                    [](valbox const &v) -> valbox { return v; },
+                    [](valbox const &v) -> valbox { return v; },
+                };
+                return abses[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
 
             rt->add_function("mod", SCFXFUN(args) {
                 static std::unordered_map<valbox::type, std::function<valbox(valbox const &, valbox const &)>> const abses{
@@ -74,7 +80,7 @@ namespace scfx {
                     { valbox::type::BOOL,        [](valbox const &x, valbox const &/*y*/) -> valbox { return x; } },
                     { valbox::type::UNDEFINED,        [](valbox const &x, valbox const &/*y*/) -> valbox { return x; } },
                 };
-                auto vt{args[0].val_type()};
+                auto vt{args[0].val_or_pointed_type()};
                 return abses.at(vt)(args[0], args[1]);
             });
 
@@ -101,7 +107,7 @@ namespace scfx {
                     { valbox::type::BOOL,        [](valbox const &x, valbox const &/*y*/) -> valbox { return x; } },
                     { valbox::type::UNDEFINED,        [](valbox const &x, valbox const &/*y*/) -> valbox { return x; } },
                 };
-                return abses.at(args[0].val_type())(args[0], args[1]);
+                return abses.at(args[0].val_or_pointed_type())(args[0], args[1]);
             });
 
             rt->add_function("fma", SCFXFUN(args) {
@@ -127,7 +133,7 @@ namespace scfx {
                     { valbox::type::BOOL,        [](valbox const &x, valbox const &/*y*/, valbox const &/*z*/) -> valbox { return x; } },
                     { valbox::type::UNDEFINED,        [](valbox const &x, valbox const &/*y*/, valbox const &/*z*/) -> valbox { return x; } },
                 };
-                return abses.at(args[0].val_type())(args[0], args[1], args[2]);
+                return abses.at(args[0].val_or_pointed_type())(args[0], args[1], args[2]);
             });
 
             rt->add_function("deg2rad", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return scfx::math::deg2rad(args[0].cast_num_to_num<long double>()); });
@@ -144,22 +150,415 @@ namespace scfx {
                 return 0.0L;
             });
 
-            rt->add_function("cos", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::cos(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("sin", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::sin(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("tan", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::tan(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("acos", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::acos(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("asin", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::asin(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("atan", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::atan(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("atan2", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2) return std::atan2(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>()); });
+            rt->add_function("cos", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::cos(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::cos(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::cos(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::cos(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::cos(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::cos(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::cos(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::cos(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::cos(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::cos(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::cos(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::cos(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::cos(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("sin", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::sin(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::sin(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::sin(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::sin(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::sin(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::sin(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::sin(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::sin(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::sin(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::sin(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::sin(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::sin(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::sin(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("tan", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::tan(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::tan(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::tan(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::tan(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::tan(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::tan(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::tan(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::tan(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::tan(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::tan(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::tan(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::tan(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::tan(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("acos", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::acos(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::acos(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::acos(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::acos(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::acos(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::acos(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::acos(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::acos(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::acos(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::acos(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::acos(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::acos(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::acos(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("asin", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::asin(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::asin(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::asin(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::asin(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::asin(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::asin(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::asin(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::asin(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::asin(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::asin(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::asin(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::asin(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::asin(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("atan", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::atan(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::atan(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::atan(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::atan(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::atan(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::atan(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::atan(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::atan(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::atan(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::atan(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::atan(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::atan(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::atan(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("atan2", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                return std::atan2(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>());
+            });
 
-            rt->add_function("cosh", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::cosh(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("sinh", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::sinh(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("tanh", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::tanh(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("acosh", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::acosh(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("asinh", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::asinh(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("atanh", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::atanh(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("cosh", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::cosh(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::cosh(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::cosh(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::cosh(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::cosh(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::cosh(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::cosh(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::cosh(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::cosh(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::cosh(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::cosh(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::cosh(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::cosh(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("sinh", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::sinh(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::sinh(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::sinh(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::sinh(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::sinh(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::sinh(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::sinh(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::sinh(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::sinh(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::sinh(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::sinh(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::sinh(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::sinh(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("tanh", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::tanh(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::tanh(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::tanh(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::tanh(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::tanh(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::tanh(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::tanh(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::tanh(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::tanh(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::tanh(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::tanh(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::tanh(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::tanh(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("acosh", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::acosh(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::acosh(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::acosh(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::acosh(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::acosh(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::acosh(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::acosh(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::acosh(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::acosh(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::acosh(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::acosh(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::acosh(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::acosh(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("asinh", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::asinh(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::asinh(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::asinh(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::asinh(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::asinh(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::asinh(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::asinh(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::asinh(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::asinh(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::asinh(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::asinh(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::asinh(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::asinh(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("atanh", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::atanh(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::atanh(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::atanh(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::atanh(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::atanh(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::atanh(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::atanh(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::atanh(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::atanh(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::atanh(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::atanh(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::atanh(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::atanh(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
 
-            rt->add_function("exp", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::exp(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("exp", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::exp(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::exp(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::exp(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::exp(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::exp(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::exp(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::exp(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::exp(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::exp(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::exp(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::exp(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::exp(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::exp(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
             rt->add_function("frexp", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 int exp{};
@@ -168,47 +567,857 @@ namespace scfx {
                 return res;
             });
             rt->add_function("ldexp", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2) return std::ldexp(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>()); });
-            rt->add_function("log", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::log(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("log10", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::log10(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("log", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::log(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::log(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::log(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::log(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::log(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::log(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::log(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::log(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::log(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::log(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::log(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::log(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::log(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("log10", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::log10(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::log10(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::log10(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::log10(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::log10(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::log10(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::log10(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::log10(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::log10(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::log10(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::log10(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::log10(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::log10(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
             rt->add_function("modf", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                static std::array<std::function<valbox(valbox const &, long double &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & , long double & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v, long double &i) -> valbox { return std::modf(static_cast<long double>(v.as_char()), &i); },
+  /* S8 */          [](valbox const &v, long double &i) -> valbox { return std::modf(static_cast<long double>(v.as_s8()), &i); },
+  /* U8 */          [](valbox const &v, long double &i) -> valbox { return std::modf(static_cast<long double>(v.as_u8()), &i); },
+  /* S16 */         [](valbox const &v, long double &i) -> valbox { return std::modf(static_cast<long double>(v.as_s16()), &i); },
+  /* U16 */         [](valbox const &v, long double &i) -> valbox { return std::modf(static_cast<long double>(v.as_u16()), &i); },
+  /* WCHAR */       [](valbox const &v, long double &i) -> valbox { return std::modf(static_cast<long double>(v.as_wchar()), &i); },
+  /* S32 */         [](valbox const &v, long double &i) -> valbox { return std::modf(static_cast<long double>(v.as_s32()), &i); },
+  /* U32 */         [](valbox const &v, long double &i) -> valbox { return std::modf(static_cast<long double>(v.as_u32()), &i); },
+  /* S64 */         [](valbox const &v, long double &i) -> valbox { return std::modf(static_cast<long double>(v.as_s64()), &i); },
+  /* U64 */         [](valbox const &v, long double &i) -> valbox { return std::modf(static_cast<long double>(v.as_u64()), &i); },
+  /* FLOAT */       [](valbox const &v, long double &i) -> valbox { return std::modf(static_cast<long double>(v.as_float()), &i); },
+  /* DOUBLE */      [](valbox const &v, long double &i) -> valbox { return std::modf(static_cast<long double>(v.as_double()), &i); },
+  /* LONG_DOUBLE */ [](valbox const &v, long double &i) -> valbox { return std::modf(v.as_long_double(), &i); },
+  /* VEC4 */        [](valbox const & , long double & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & , long double & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & , long double & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & , long double & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & , long double & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & , long double & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & , long double & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & , long double & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & , long double & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & , long double & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & , long double & ) -> valbox { return valbox{}; },
+                };
                 long double i{};
-                long double res{std::modf(args[0].cast_num_to_num<long double>(), &i)};
+                valbox res{funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0], i)};
                 args[1].assign(i);
                 return res;
             });
-            rt->add_function("exp2", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::exp2(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("expm1", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::expm1(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("ilogb", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::ilogb(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("log1p", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::log1p(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("log2", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::log2(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("logb", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::logb(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("exp2", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::exp2(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::exp2(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::exp2(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::exp2(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::exp2(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::exp2(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::exp2(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::exp2(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::exp2(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::exp2(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::exp2(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::exp2(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::exp2(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("expm1", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::expm1(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::expm1(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::expm1(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::expm1(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::expm1(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::expm1(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::expm1(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::expm1(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::expm1(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::expm1(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::expm1(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::expm1(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::expm1(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("ilogb", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::ilogb(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::ilogb(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::ilogb(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::ilogb(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::ilogb(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::ilogb(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::ilogb(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::ilogb(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::ilogb(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::ilogb(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::ilogb(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::ilogb(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::ilogb(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("log1p", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::log1p(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::log1p(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::log1p(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::log1p(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::log1p(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::log1p(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::log1p(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::log1p(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::log1p(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::log1p(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::log1p(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::log1p(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::log1p(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("log2", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::log2(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::log2(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::log2(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::log2(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::log2(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::log2(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::log2(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::log2(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::log2(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::log2(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::log2(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::log2(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::log2(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("logb", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::logb(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::logb(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::logb(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::logb(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::logb(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::logb(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::logb(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::logb(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::logb(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::logb(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::logb(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::logb(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::logb(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
             rt->add_function("scalbn", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2) return std::scalbn(args[0].cast_num_to_num<long double>(), args[1].cast_to_s64()); });
-            rt->add_function("scalbln", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 3) return std::scalbln(args[0].cast_num_to_num<long double>(), args[1].cast_to_s64()); });
+            rt->add_function("scalbln", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2) return std::scalbln(args[0].cast_num_to_num<long double>(), args[1].cast_to_s64()); });
 
             rt->add_function("pow", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2) return std::pow(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>()); });
-            rt->add_function("square", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0] * args[0]; });
-            rt->add_function("qube", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) auto a{args[0].cast_num_to_num<long double>()}; return a * a * a; });
-            rt->add_function("sqrt", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::sqrt(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("cbrt", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::cbrt(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("hypot", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2) return std::hypot(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>()); });
+            rt->add_function("square", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return scfx::math::square(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return scfx::math::square(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return scfx::math::square(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return scfx::math::square(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return scfx::math::square(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return scfx::math::square(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return scfx::math::square(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return scfx::math::square(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return scfx::math::square(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return scfx::math::square(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return scfx::math::square(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return scfx::math::square(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return scfx::math::square(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("qube", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return scfx::math::cube(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return scfx::math::cube(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return scfx::math::cube(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return scfx::math::cube(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return scfx::math::cube(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return scfx::math::cube(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return scfx::math::cube(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return scfx::math::cube(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return scfx::math::cube(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return scfx::math::cube(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return scfx::math::cube(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return scfx::math::cube(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return scfx::math::cube(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("sqrt", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::sqrt(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::sqrt(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::sqrt(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::sqrt(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::sqrt(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::sqrt(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::sqrt(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::sqrt(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::sqrt(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::sqrt(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::sqrt(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::sqrt(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::sqrt(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("cbrt", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::cbrt(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::cbrt(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::cbrt(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::cbrt(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::cbrt(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::cbrt(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::cbrt(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::cbrt(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::cbrt(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::cbrt(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::cbrt(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::cbrt(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::cbrt(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("hypot", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                return std::hypot(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>());
+            });
 
-            rt->add_function("erf", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::erf(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("erfc", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::erfc(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("tgamma", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::tgamma(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("lgamma", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::lgamma(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("erf", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::erf(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::erf(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::erf(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::erf(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::erf(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::erf(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::erf(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::erf(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::erf(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::erf(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::erf(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::erf(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::erf(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("erfc", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::erfc(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::erfc(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::erfc(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::erfc(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::erfc(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::erfc(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::erfc(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::erfc(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::erfc(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::erfc(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::erfc(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::erfc(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::erfc(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("tgamma", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::tgamma(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::tgamma(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::tgamma(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::tgamma(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::tgamma(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::tgamma(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::tgamma(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::tgamma(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::tgamma(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::tgamma(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::tgamma(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::tgamma(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::tgamma(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("lgamma", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::lgamma(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::lgamma(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::lgamma(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::lgamma(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::lgamma(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::lgamma(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::lgamma(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::lgamma(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::lgamma(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::lgamma(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::lgamma(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::lgamma(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::lgamma(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
 
-            rt->add_function("ceil", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::ceil(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("floor", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::floor(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("ceil", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return static_cast<long double>(v.as_char()); },
+  /* S8 */          [](valbox const &v) -> valbox { return static_cast<long double>(v.as_s8()); },
+  /* U8 */          [](valbox const &v) -> valbox { return static_cast<long double>(v.as_u8()); },
+  /* S16 */         [](valbox const &v) -> valbox { return static_cast<long double>(v.as_s16()); },
+  /* U16 */         [](valbox const &v) -> valbox { return static_cast<long double>(v.as_u16()); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return static_cast<long double>(v.as_wchar()); },
+  /* S32 */         [](valbox const &v) -> valbox { return static_cast<long double>(v.as_s32()); },
+  /* U32 */         [](valbox const &v) -> valbox { return static_cast<long double>(v.as_u32()); },
+  /* S64 */         [](valbox const &v) -> valbox { return static_cast<long double>(v.as_s64()); },
+  /* U64 */         [](valbox const &v) -> valbox { return static_cast<long double>(v.as_u64()); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::ceil(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::ceil(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::ceil(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("floor", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return static_cast<long double>(v.as_char()); },
+  /* S8 */          [](valbox const &v) -> valbox { return static_cast<long double>(v.as_s8()); },
+  /* U8 */          [](valbox const &v) -> valbox { return static_cast<long double>(v.as_u8()); },
+  /* S16 */         [](valbox const &v) -> valbox { return static_cast<long double>(v.as_s16()); },
+  /* U16 */         [](valbox const &v) -> valbox { return static_cast<long double>(v.as_u16()); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return static_cast<long double>(v.as_wchar()); },
+  /* S32 */         [](valbox const &v) -> valbox { return static_cast<long double>(v.as_s32()); },
+  /* U32 */         [](valbox const &v) -> valbox { return static_cast<long double>(v.as_u32()); },
+  /* S64 */         [](valbox const &v) -> valbox { return static_cast<long double>(v.as_s64()); },
+  /* U64 */         [](valbox const &v) -> valbox { return static_cast<long double>(v.as_u64()); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::floor(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::floor(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::floor(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
             rt->add_function("fmod", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2) return std::fmod(args[0].cast_num_to_num<long double>(), args[1].cast_num_to_num<long double>()); });
-            rt->add_function("trunc", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::trunc(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("round", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::round(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("lround", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::lround(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("llround", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::llround(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("rint", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::rint(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("lrint", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::lrint(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("llrint", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::llrint(args[0].cast_num_to_num<long double>()); });
-            rt->add_function("nearbyint", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::nearbyint(args[0].cast_num_to_num<long double>()); });
+            rt->add_function("trunc", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::trunc(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::trunc(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::trunc(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::trunc(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::trunc(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::trunc(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::trunc(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::trunc(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::trunc(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::trunc(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::trunc(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::trunc(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::trunc(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("round", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::round(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::round(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::round(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::round(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::round(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::round(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::round(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::round(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::round(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::round(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::round(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::round(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::round(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("lround", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::lround(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::lround(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::lround(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::lround(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::lround(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::lround(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::lround(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::lround(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::lround(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::lround(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::lround(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::lround(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::lround(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("llround", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::llround(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::llround(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::llround(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::llround(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::llround(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::llround(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::llround(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::llround(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::llround(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::llround(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::llround(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::llround(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::llround(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("rint", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::rint(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::rint(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::rint(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::rint(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::rint(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::rint(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::rint(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::rint(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::rint(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::rint(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::rint(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::rint(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::rint(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("lrint", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::lrint(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::lrint(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::lrint(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::lrint(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::lrint(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::lrint(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::lrint(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::lrint(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::lrint(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::lrint(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::lrint(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::lrint(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::lrint(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("llrint", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::llrint(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::llrint(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::llrint(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::llrint(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::llrint(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::llrint(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::llrint(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::llrint(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::llrint(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::llrint(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::llrint(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::llrint(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::llrint(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
+            rt->add_function("nearbyint", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
+  /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* CHAR */        [](valbox const &v) -> valbox { return std::nearbyint(static_cast<long double>(v.as_char())); },
+  /* S8 */          [](valbox const &v) -> valbox { return std::nearbyint(static_cast<long double>(v.as_s8())); },
+  /* U8 */          [](valbox const &v) -> valbox { return std::nearbyint(static_cast<long double>(v.as_u8())); },
+  /* S16 */         [](valbox const &v) -> valbox { return std::nearbyint(static_cast<long double>(v.as_s16())); },
+  /* U16 */         [](valbox const &v) -> valbox { return std::nearbyint(static_cast<long double>(v.as_u16())); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return std::nearbyint(static_cast<long double>(v.as_wchar())); },
+  /* S32 */         [](valbox const &v) -> valbox { return std::nearbyint(static_cast<long double>(v.as_s32())); },
+  /* U32 */         [](valbox const &v) -> valbox { return std::nearbyint(static_cast<long double>(v.as_u32())); },
+  /* S64 */         [](valbox const &v) -> valbox { return std::nearbyint(static_cast<long double>(v.as_s64())); },
+  /* U64 */         [](valbox const &v) -> valbox { return std::nearbyint(static_cast<long double>(v.as_u64())); },
+  /* FLOAT */       [](valbox const &v) -> valbox { return std::nearbyint(v.as_float()); },
+  /* DOUBLE */      [](valbox const &v) -> valbox { return std::nearbyint(v.as_double()); },
+  /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::nearbyint(v.as_long_double()); },
+  /* VEC4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* MAT4 */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* POINTER */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* CLASS */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* FUNC */        [](valbox const & ) -> valbox { return valbox{}; },
+  /* ARRAY */       [](valbox const & ) -> valbox { return valbox{}; },
+  /* OBJECT */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* STRING */      [](valbox const & ) -> valbox { return valbox{}; },
+  /* WSTRING */     [](valbox const & ) -> valbox { return valbox{}; },
+  /* UNDEFINED */   [](valbox const & ) -> valbox { return valbox{}; },
+  /* VALBOX */      [](valbox const & ) -> valbox { return valbox{}; },
+                };
+                return funcs[static_cast<int>(args[0].val_or_pointed_type())](args[0]);
+            });
 
             rt->add_function("sign", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
@@ -261,7 +1470,22 @@ namespace scfx {
                 auto t{args[0].val_or_pointed_type()};
                 return t == valbox::type::FLOAT || t == valbox::type::DOUBLE || t == valbox::type::LONG_DOUBLE;
             });
-            rt->add_function("fpclassify", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return std::fpclassify(args[0].cast_num_to_num<long double>()); });
+
+            rt_->add_var("FP_INFINITE", static_cast<int>(FP_INFINITE));
+            rt_->add_var("FP_NAN", static_cast<int>(FP_NAN));
+            rt_->add_var("FP_ZERO", static_cast<int>(FP_ZERO));
+            rt_->add_var("FP_SUBNORMAL", static_cast<int>(FP_SUBNORMAL));
+            rt_->add_var("FP_NORMAL", static_cast<int>(FP_NORMAL));
+
+            rt_->add_function("fpclassify", SCFXFUN(args) {
+                switch(args[0].val_or_pointed_type()) {
+                    case valbox::type::FLOAT: return std::fpclassify(args[0].as_float());
+                    case valbox::type::DOUBLE: return std::fpclassify(args[0].as_double());
+                    case valbox::type::LONG_DOUBLE: return std::fpclassify(args[0].as_long_double());
+                    default: break;
+                }
+                throw std::runtime_error{"operation not applicable - floating point type required"};
+            });
             rt->add_function("isfinite", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 switch(args[0].val_or_pointed_type()) {
                     case valbox::type::FLOAT: return std::isfinite(args[0].as_float());
