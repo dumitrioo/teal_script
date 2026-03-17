@@ -202,7 +202,6 @@ namespace scfx {
                 return std::string{vec.begin(), vec.end()};
             });
 
-            rt->add_var("AF_UNIX", static_cast<int>(AF_UNIX));
 #ifdef PLATFORM_APPLE
             rt->add_var("POLL_EVENT_IN", scfx::net::POLL_EVENT_IN);
             rt->add_var("POLL_EVENT_PRI", scfx::net::POLL_EVENT_PRI);
@@ -348,6 +347,55 @@ namespace scfx {
             rt_->remove_method("socket", "error_status");
             rt_->remove_method("socket", "send_message");
             rt_->remove_method("socket", "receive_message");
+
+#ifdef PLATFORM_APPLE
+            rt_->remove_var("POLL_EVENT_IN");
+            rt_->remove_var("POLL_EVENT_PRI");
+            rt_->remove_var("POLL_EVENT_OUT");
+            rt_->remove_var("POLL_EVENT_RDNORM");
+            rt_->remove_var("POLL_EVENT_RDBAND");
+            rt_->remove_var("POLL_EVENT_WRNORM");
+            rt_->remove_var("POLL_EVENT_WRBAND");
+#ifdef __USE_GNU
+            rt_->remove_var("POLL_EVENT_MSG");
+            rt_->remove_var("POLL_EVENT_RDHUP");
+#endif
+            rt_->remove_var("POLL_EVENT_ERR");
+            rt_->remove_var("POLL_EVENT_HUP");
+#elif defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
+            rt_->remove_var("POLL_EVENT_IN");
+            rt_->remove_var("POLL_EVENT_PRI");
+            rt_->remove_var("POLL_EVENT_OUT");
+            rt_->remove_var("POLL_EVENT_RDNORM");
+            rt_->remove_var("POLL_EVENT_RDBAND");
+            rt_->remove_var("POLL_EVENT_WRNORM");
+            rt_->remove_var("POLL_EVENT_WRBAND");
+            rt_->remove_var("POLL_EVENT_MSG");
+            rt_->remove_var("POLL_EVENT_ERR");
+            rt_->remove_var("POLL_EVENT_HUP");
+            rt_->remove_var("POLL_EVENT_RDHUP");
+            rt_->remove_var("POLL_EVENT_EXCLUSIVE");
+            rt_->remove_var("POLL_EVENT_WAKEUP");
+            rt_->remove_var("POLL_EVENT_ONESHOT");
+            rt_->remove_var("POLL_EVENT_ET");
+#elif defined(PLATFORM_WINDOWS)
+            rt_->remove_var("POLL_EVENT_ET");
+            rt_->remove_var("POLL_EVENT_IN");
+            rt_->remove_var("POLL_EVENT_PRI");
+            rt_->remove_var("POLL_EVENT_OUT");
+            rt_->remove_var("POLL_EVENT_RDNORM");
+            rt_->remove_var("POLL_EVENT_RDBAND");
+            rt_->remove_var("POLL_EVENT_WRNORM");
+            rt_->remove_var("POLL_EVENT_WRBAND");
+            rt_->remove_var("POLL_EVENT_ERR");
+            rt_->remove_var("POLL_EVENT_HUP");
+#endif
+            rt_->remove_function("socket_poller");
+            rt_->remove_method("socket_poller", "add_event");
+            rt_->remove_method("socket_poller", "del_event");
+            rt_->remove_method("socket_poller", "re_enable");
+            rt_->remove_method("socket_poller", "close");
+            rt_->remove_method("socket_poller", "wait");
 
             rt_ = nullptr;
         }

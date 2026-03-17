@@ -1072,7 +1072,7 @@ namespace scfx {
             throw std::runtime_error{"operation not applicable"};
         }
 
-        void become_undefined() {
+        valbox &become_undefined() {
             valbox &thisref{deref()};
             if(!thisref.is_undefined()) {
                 thisref.box_->type_ = type::UNDEFINED;
@@ -1081,12 +1081,13 @@ namespace scfx {
                 thisref.box_->value_ = value_t{};
                 thisref.pointed_box_.reset();
             }
+            return *this;
         }
 
-        void become_same_type_as(valbox const &that) {
+        valbox &become_same_type_as(valbox const &that) {
             valbox const &thatref{that.deref()};
             valbox &thisref{deref()};
-            if(thatref.val_type() == thisref.val_type()) { return; }
+            if(thatref.val_type() == thisref.val_type()) { return *this; }
             thisref.pointed_box_.reset();
             if(thatref.val_type() == type::UNDEFINED) {
                 if(!thisref.is_undefined()) {
@@ -1095,11 +1096,11 @@ namespace scfx {
                     thisref.box_->class_.clear();
                     thisref.box_->value_ = value_t{};
                 }
-                return;
+                return *this;
             }
-            if(thisref.val_type() == type::UNDEFINED) { thisref.become_type(thatref.val_type()); return; }
-            if(thisref.box_ && thatref.box_ && thisref.box_->type_ == thatref.box_->type_) { return; }
-            if(!thatref.box_) { thisref.box_.reset(); return; }
+            if(thisref.val_type() == type::UNDEFINED) { thisref.become_type(thatref.val_type()); return *this; }
+            if(thisref.box_ && thatref.box_ && thisref.box_->type_ == thatref.box_->type_) { return *this; }
+            if(!thatref.box_) { thisref.box_.reset(); return *this; }
             switch(thatref.box_->type_) {
                 case type::U64:         thisref.box_->value_ = thisref.cast_to_u64(); break;
                 case type::S64:         thisref.box_->value_ = thisref.cast_to_s64(); break;
@@ -1127,12 +1128,13 @@ namespace scfx {
                     break;
                 case type::ARRAY:       thisref.box_->value_ = thisref.cast_to_array(); break;
                 case type::OBJECT:      thisref.box_->value_ = thisref.cast_to_object(); break;
-                default: return;
+                default: return *this;
             }
             thisref.box_->type_ = thatref.box_->type_;
+            return *this;
         }
 
-        void become_type(type t) {
+        valbox &become_type(type t) {
             valbox &vref{deref()};
             vref.pointed_box_.reset();
             if(!vref.box_) {
@@ -1157,10 +1159,10 @@ namespace scfx {
                     case type::OBJECT:      vref.box_ = std::make_shared<box_data>(object_t{}, type::OBJECT); break;
                     default: break;
                 }
-                return;
+                return *this;
             }
             if(vref.box_->type_ == t) {
-                return;
+                return *this;
             }
             switch(t) {
                 case type::U64:         vref.box_->value_ = cast_to_u64(); break;
@@ -1189,11 +1191,12 @@ namespace scfx {
                     break;
                 case type::ARRAY:       vref.box_->value_ = cast_to_array(); break;
                 case type::OBJECT:      vref.box_->value_ = cast_to_object(); break;
-                default: return;
+                default: return *this;
             }
             vref.box_->pointed_type_ = type::UNDEFINED;
             vref.box_->class_.clear();
             vref.box_->type_ = t;
+            return *this;
         }
 
         template<typename T>

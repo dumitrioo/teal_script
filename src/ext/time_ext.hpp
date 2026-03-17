@@ -50,6 +50,11 @@ namespace scfx {
             rt->add_method("timespec_wrapper", "sec", SCFXFUN(args) { return SCFXTHIS(args, scfx::timespec_wrapper).sec_with_subsec(); });
             rt->add_method("timespec_wrapper", "seconds", SCFXFUN(args) { return SCFXTHIS(args, scfx::timespec_wrapper).seconds(); });
             rt->add_method("timespec_wrapper", "fseconds", SCFXFUN(args) { return SCFXTHIS(args, scfx::timespec_wrapper).fseconds(); });
+            rt->add_method("timespec_wrapper", "to_string", SCFXFUN(args) {
+                std::size_t prec{static_cast<std::size_t>(9)};
+                if(args.size() > 1) { prec = args[1].cast_num_to_num<std::size_t>(); }
+                return SCFXTHIS(args, scfx::timespec_wrapper).as_iso_8601_str(prec);
+            });
             rt->add_method("timespec_wrapper", "as_iso_8601", SCFXFUN(args) {
                 std::size_t prec{static_cast<std::size_t>(9)};
                 if(args.size() > 1) { prec = args[1].cast_num_to_num<std::size_t>(); }
@@ -75,6 +80,7 @@ namespace scfx {
                 return scfx::timespec_wrapper::gmtnow().fseconds();
             });
         }
+
         void unregister_runtime() override {
             std::unique_lock l{rt_mtp_};
             if(rt_ == nullptr) {
@@ -82,6 +88,7 @@ namespace scfx {
             }
             rt_->remove_function("timestamp");
             rt_->remove_function("gmtimestamp");
+            rt_->remove_function("steady_clock");
             rt_->remove_function("time");
             rt_->remove_function("gmtime");
             rt_->remove_method("timespec_wrapper", "year");

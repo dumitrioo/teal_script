@@ -1,16 +1,7 @@
-global_init() {
-    if(this.initialized == undefined) {
-        this.initialized = true;
-        set_cycle_nanosleep(1000000);
-    }
-}
-
+global_init() if this.initialized == undefined { this.initialized = true; set_cycle_nanosleep(1000000); }
 global_init glbl_ini();
 
 my_drafts() {
-    d = dictionary();
-    d.at(3).number = 4;
-    println(d.at(3));
     return exit(0);
 }
 
