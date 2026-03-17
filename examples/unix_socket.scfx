@@ -19,11 +19,12 @@ u_serv() {
             this.listener_sock.listen() &&
             this.poller.add_event(this.listener_sock, POLL_EVENT_IN)
         ) {
-            println("unix server started");
+            console.info("unix domain socket server: started");
         } else {
             es = error_str(last_error());
             if(es.size() > 0) { es[0] = tolower(es[0]); }
-            throw "error starting server - " + es;
+            console.error("unix domain socket server: error starting unix domain socket server - " + es);
+            throw "unix domain socket server: error starting unix domain socket server - " + es;
         }
         this.contexts = object();
         this.contexts.sockets = dictionary();
@@ -38,30 +39,30 @@ u_serv() {
                     newsk != undefined &&
                     newsk.make_nonblocking()
                 ) {
-                    println("new conn ", newsk.handle());
+                    console.info("unix domain socket server: new conn ", newsk.handle());
                     this.poller.add_event(newsk, POLL_EVENT_IN | POLL_EVENT_ET);
                     this.contexts.sockets.at(newsk.handle()) = newsk;
                 } else {
-                    println("error setup new connection ", error_str(last_error()));
+                    console.error("unix domain socket server: failed to setup new connection ", error_str(last_error()));
                 }
             } else {
-                println("new event on socket ", wres[i].data.fd);
+                console.info("unix domain socket server: new event on socket ", wres[i].data.fd);
                 if(this.contexts.sockets.key_exists(wres[i].data.fd)) {
                     skt = this.contexts.sockets.at(wres[i].data.fd);
                     if(skt != undefined) {
                         try {
                             indata = skt.receive(100000);
                             if(indata.size() == 0) {
-                                println("read zero bytes - closing connection ", wres[i].data.fd);
+                                console.info("unix domain socket server: read zero bytes - closing connection ", wres[i].data.fd);
                                 this.poller.del_event(wres[i].data.fd);
                                 this.contexts.sockets.erase(wres[i].data.fd);
                             } else {
-                                in.skfd = wres[i].data.fd;
-                                in.data = indata;
-                                in.println();
+                                console.info("unix domain socket server: received \"", indata, "\"");
+                                console.info("unix domain socket server: sending response \"22\"");
+                                skt.send("22");
                             }
                         } catch(e) {
-                            println("error: ", e);
+                            console.error(e);
                             this.poller.del_event(wres[i].data.fd);
                             this.contexts.sockets.erase(wres[i].data.fd);
                         }
@@ -70,9 +71,10 @@ u_serv() {
             }
         } else {
             if(wres[i].data.fd == this.listener_sock.handle()) {
-                throw "server failure - termination";
+                console.error("unix domain socket server: failure - termination");
+                throw "unix domain socket server: server failure - termination";
             } else {
-                println("connection ", wres[i].data.fd, " closed");
+                console.warning("unix domain socket server: connection ", wres[i].data.fd, " closed");
                 this.poller.del_event(wres[i].data.fd);
                 this.contexts.sockets.erase(wres[i].data.fd);
             }
@@ -88,23 +90,68 @@ u_cli(srvctx) {
     if srvctx == undefined return 0;
     if(this.connecting_sock == undefined) {
         this.prevt = steady_clock();
-        println("prevt = ", this.prevt);
         this.connecting_sock = socket();
-        println("connecting_sock = ", this.connecting_sock);
+        this.poller = socket_poller();
         if(
             this.connecting_sock.create(address_family_unix) &&
-            this.connecting_sock.connect("./.opaopaopapa")
+            this.connecting_sock.connect("./.opaopaopapa") &&
+            this.poller.add_event(this.connecting_sock, POLL_EVENT_IN)
         ) {
-            println("unix client connected");
+            console.info("unix domain socket client: connected");
         } else {
             es = error_str(last_error());
             if(es.size() > 0) { es[0] = tolower(es[0]); }
-            throw "error connecting to server - " + es;
+            console.error("unix domain socket client: error connecting to unix domain socket server - " + es);
+            throw "unix domain socket client: error connecting to unix domain socket server - " + es;
         }
     }
 
-    if(steady_clock() - this.prevt > 2) {
+    wres = this.poller.wait(10, 0.1);
+    for(i = 0; i < wres.size(); ++i) {
+        need_reconnect = false;
+        if(wres[i].events & POLL_EVENT_IN) {
+            if(wres[i].data.fd == this.connecting_sock.handle()) {
+                console.info("unix domain socket client: new event on socket ", wres[i].data.fd);
+                try {
+                    indata = this.connecting_sock.receive(100000);
+                    if(indata.size() == 0) {
+                        console.warning("unix domain socket client: read zero bytes - closing connection ", wres[i].data.fd);
+                        this.poller.del_event(wres[i].data.fd);
+                        this.contexts.sockets.erase(wres[i].data.fd);
+                    } else {
+                        in.skfd = wres[i].data.fd;
+                        in.data = indata;
+                        console.info("unix domain socket client: received \"", indata, "\"");
+                    }
+                } catch(e) {
+                    console.error(e);
+                    need_reconnect = true;
+                }
+            }
+        } else {
+            console.warning("unix domain socket client: old unix domain socket client termination");
+            need_reconnect = true;
+        }
+        if(need_reconnect) {
+            this.poller.del_event(this.connecting_sock.handle());
+            this.connecting_sock = socket();
+            if(
+                this.connecting_sock.create(address_family_unix) &&
+                this.connecting_sock.connect("./.opaopaopapa") &&
+                this.poller.add_event(this.connecting_sock, POLL_EVENT_IN)
+            ) {
+                console.info("unix domain socket client: new unix domain socket client connected");
+            } else {
+                es = error_str(last_error());
+                if(es.size() > 0) { es[0] = tolower(es[0]); }
+                throw "unix domain socket client: error connecting to unix domain socket server - " + es;
+            }
+        }
+    }
+
+    if(steady_clock() - this.prevt > 1) {
         this.prevt = steady_clock();
+        console.info("unix domain socket client: sending \"11\"");
         this.connecting_sock.send("11");
     }
 
