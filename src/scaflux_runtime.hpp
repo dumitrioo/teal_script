@@ -462,38 +462,11 @@ namespace scfx {
             add_var("ERANGE", ERANGE);   // 34  Math result not representable
 
             add_function("last_error", SCFXFUN() {
-#if defined(PLATFORM_WINDOWS)
-                return (int64_t)GetLastError();
-#elif defined(PLATFORM_LINUX)
-                return (int64_t)errno;
-#endif
+                return sys_util::last_error();
             });
             add_function("error_str", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-#if defined(PLATFORM_WINDOWS)
-                DWORD errorMessageID{args[0].cast_to_u32()};
-                if(errorMessageID == 0) {
-                    return std::string{};
-                }
-                LPWSTR messageBuffer{nullptr};
-                size_t size = FormatMessageW(
-                    FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                    nullptr,
-                    errorMessageID,
-                    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                    (LPWSTR)&messageBuffer,
-                    0,
-                    nullptr
-                );
-                std::wstring message(messageBuffer, size);
-                LocalFree(messageBuffer);
-                return str_util::to_utf8(message);
-#elif defined(PLATFORM_LINUX)
-                std::system_error se{args[0].cast_to_s32(), std::system_category()};
-                std::stringstream ss{};
-                ss << se.what();
-                return ss.str();
-#endif
+                return sys_util::error_str(args[0].cast_to_s64());
             });
 
             add_function("execute", SCFXFUN(args) {

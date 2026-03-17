@@ -13,6 +13,7 @@
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
 #include <netinet/tcp.h>
 #include <sys/uio.h>
+#include <sys/un.h>
 #elif defined(PLATFORM_POSIX) || defined(PLATFORM_UNIXISH) || defined(PLATFORM_APPLE)
 #include <netinet/tcp.h>
 #endif
@@ -52,21 +53,29 @@ namespace scfx::net {
             }
             close();
         }
-        bool create(address_family sock_type = address_family::inet4) {
+        bool create(address_family domain = address_family::inet4, sock_type type = sock_type::stream, int proto = 0) {
             if(ok()) {
                 throw socket_error{"socket::create() call on already initialized socket"};
             }
-            if(sock_type == address_family::inet4) {
-                if((sock_fd_ = ::socket(AF_INET, SOCK_STREAM, 0)) > 0) {
-                    sock_type_ = sock_type;
+            if(domain == address_family::inet4) {
+                if((sock_fd_ = ::socket(AF_INET, (int)type, proto)) > 0) {
+                    sock_type_ = domain;
                     return true;
                 }
-            } else if(sock_type == address_family::inet6) {
-                if((sock_fd_ = ::socket(AF_INET6, SOCK_STREAM, 0)) > 0) {
-                    sock_type_ = sock_type;
+            } else if(domain == address_family::inet6) {
+                if((sock_fd_ = ::socket(AF_INET6, (int)type, proto)) > 0) {
+                    sock_type_ = domain;
                     return true;
                 }
             }
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
+            else if(domain == address_family::unix) {
+                if((sock_fd_ = ::socket(AF_UNIX, (int)type, proto)) > 0) {
+                    sock_type_ = domain;
+                    return true;
+                }
+            }
+#endif
             return false;
         }
         bool bind(const std::string &address, std::uint16_t port) {
@@ -86,6 +95,19 @@ namespace scfx::net {
                         return true;
                     }
                 }
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
+                else if(sock_type_ == address_family::unix) {
+                    common_addr_.sock_addr_unix_.sun_family = AF_UNIX;
+                    if(file_util::file_exists(address)) {
+                        ::unlink(address.c_str());
+                    }
+                    strcpy(common_addr_.sock_addr_unix_.sun_path, address.c_str());
+                    if(::bind(sock_fd_, (struct sockaddr *)&common_addr_.sock_addr6_, sizeof(struct sockaddr)) == 0) {
+                        unix_server_socket_path_ = address;
+                        return true;
+                    }
+                }
+#endif
             }
             return false;
         }
@@ -103,17 +125,27 @@ namespace scfx::net {
             if(ok()) {
                 socklen_t size{sizeof(struct sockaddr)};
                 if(sock_type_ == address_family::inet4) {
+                    size = sizeof(client_sock.common_addr_.sock_addr_);
                     client_sock.sock_fd_ = ::accept(sock_fd_, (struct sockaddr *)&client_sock.common_addr_.sock_addr_, &size);
                     client_sock.sock_type_ = address_family::inet4;
                 } else if(sock_type_ == address_family::inet6) {
+                    size = sizeof(client_sock.common_addr_.sock_addr6_);
                     client_sock.sock_fd_ = ::accept(sock_fd_, (struct sockaddr *)&client_sock.common_addr_.sock_addr6_, &size);
                     client_sock.sock_type_ = address_family::inet6;
-                } else {
+                }
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
+                else if(sock_type_ == address_family::unix) {
+                    size = sizeof(client_sock.common_addr_.sock_addr_unix_);
+                    client_sock.sock_fd_ = ::accept(sock_fd_, (struct sockaddr *)&client_sock.common_addr_.sock_addr_unix_, &size);
+                    client_sock.sock_type_ = address_family::unix;
+                }
+#endif
+                else {
                     throw socket_error{"socket::accept() unspecified socket type"};
                 }
                 if(client_sock.sock_fd_ == -1) {
                     client_sock.sock_type_ = address_family::unspecified;
-                    throw socket_error{scfx::sys_util::error_string(errno)};
+                    throw socket_error{scfx::sys_util::error_str(scfx::sys_util::last_error())};
                 }
             } else {
                 throw socket_error{"socket::accept() call on uninitialized socket"};
@@ -161,7 +193,19 @@ namespace scfx::net {
                             return true;
                         }
                     }
-                } else {
+                }
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
+                else if(sock_type_ == address_family::unix) {
+                    struct sockaddr_un sock_addr;
+                    sock_addr.sun_family = AF_UNIX;
+                    strcpy(sock_addr.sun_path, address.c_str());
+                    int conn_res{::connect(sock_fd_, (struct sockaddr *)&sock_addr, sizeof(struct sockaddr))};
+                    if(conn_res == 0) {
+                        return true;
+                    }
+                }
+#endif
+                else {
                     throw socket_error{"unspecified socket type"};
                 }
             } else {
@@ -180,7 +224,7 @@ namespace scfx::net {
                 if(rd >= 0) {
                     if(rd != len) { result.resize(rd); }
                 } else {
-                    throw socket_error{scfx::sys_util::error_string(errno)};
+                    throw socket_error{scfx::sys_util::error_str(scfx::sys_util::last_error())};
                 }
             } else {
                 throw socket_error("socket::receive(): socket not ready");
@@ -227,6 +271,12 @@ namespace scfx::net {
                     sock_type_ = address_family::unspecified;
                 }
             }
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
+            if(sock_type_ == address_family::unix && !unix_server_socket_path_.empty()) {
+                ::unlink(unix_server_socket_path_.c_str());
+                unix_server_socket_path_.clear();
+            }
+#endif
             return close_res == 0;
         }
         bool shutdown() {
@@ -437,6 +487,8 @@ namespace scfx::net {
                    sock_type_ == address_family::inet4
                    ||
                    sock_type_ == address_family::inet6
+                   ||
+                   sock_type_ == address_family::unix
                 )
             ;
         }
@@ -494,7 +546,7 @@ namespace scfx::net {
                             }
                         }
                         if(e != 0) {
-                            throw socket_error{scfx::sys_util::error_string(errno)};
+                            throw socket_error{scfx::sys_util::error_str(scfx::sys_util::last_error())};
                         }
                     }
                     total_sent += wrote_count;
@@ -515,7 +567,7 @@ namespace scfx::net {
                             }
                         }
                         if(e != 0) {
-                            throw socket_error{scfx::sys_util::error_string(errno)};
+                            throw socket_error{scfx::sys_util::error_str(scfx::sys_util::last_error())};
                         }
                     }
                     total_sent += wrote_count;
@@ -593,9 +645,15 @@ namespace scfx::net {
     protected:
         int sock_fd_{-1};
         address_family sock_type_{address_family::unspecified};
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
+        std::string unix_server_socket_path_{};
+#endif
         union {
             struct sockaddr_in sock_addr_;
             struct sockaddr_in6 sock_addr6_;
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
+            struct sockaddr_un sock_addr_unix_;
+#endif
         } common_addr_;
     };
 

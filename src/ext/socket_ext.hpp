@@ -31,56 +31,53 @@ namespace scfx {
             if(rt_ == nullptr) {
                 return;
             }
-            // rt->add_var("AF_UNIX", static_cast<int>(AF_UNIX));
-            // rt->add_var("AF_LOCAL", static_cast<int>(AF_LOCAL));
-            // rt->add_var("AF_INET", static_cast<int>(AF_INET));
-            // rt->add_var("AF_AX25", static_cast<int>(AF_AX25));
-            // rt->add_var("AF_IPX", static_cast<int>(AF_IPX));
-            // rt->add_var("AF_APPLETALK", static_cast<int>(AF_APPLETALK));
-            // rt->add_var("AF_X25", static_cast<int>(AF_X25));
-            // rt->add_var("AF_INET6", static_cast<int>(AF_INET6));
-            // rt->add_var("AF_DECnet", static_cast<int>(AF_DECnet));
-            // rt->add_var("AF_KEY", static_cast<int>(AF_KEY));
-            // rt->add_var("AF_NETLINK", static_cast<int>(AF_NETLINK));
-            // rt->add_var("AF_PACKET", static_cast<int>(AF_PACKET));
-            // rt->add_var("AF_RDS", static_cast<int>(AF_RDS));
-            // rt->add_var("AF_PPPOX", static_cast<int>(AF_PPPOX));
-            // rt->add_var("AF_LLC", static_cast<int>(AF_LLC));
-            // rt->add_var("AF_IB", static_cast<int>(AF_IB));
-            // rt->add_var("AF_MPLS", static_cast<int>(AF_MPLS));
-            // rt->add_var("AF_CAN", static_cast<int>(AF_CAN));
-            // rt->add_var("AF_TIPC", static_cast<int>(AF_TIPC));
-            // rt->add_var("AF_BLUETOOTH", static_cast<int>(AF_BLUETOOTH));
-            // rt->add_var("AF_ALG", static_cast<int>(AF_ALG));
-            // rt->add_var("AF_VSOCK", static_cast<int>(AF_VSOCK));
-            // rt->add_var("AF_KCM", static_cast<int>(AF_KCM));
-            // rt->add_var("AF_XDP", static_cast<int>(AF_XDP));
-
-            // rt->add_var("SOCK_STREAM", static_cast<int>(SOCK_STREAM));
-            // rt->add_var("SOCK_DGRAM", static_cast<int>(SOCK_DGRAM));
-            // rt->add_var("SOCK_SEQPACKET", static_cast<int>(SOCK_SEQPACKET));
-            // rt->add_var("SOCK_RAW", static_cast<int>(SOCK_RAW));
-            // rt->add_var("SOCK_RDM", static_cast<int>(SOCK_RDM));
-            // rt->add_var("SOCK_PACKET", static_cast<int>(SOCK_PACKET));
-            // rt->add_var("SOCK_NONBLOCK", static_cast<int>(SOCK_NONBLOCK));
-            // rt->add_var("SOCK_CLOEXEC", static_cast<int>(SOCK_CLOEXEC));
 
             rt->add_var("address_family_inet4", static_cast<int>(scfx::net::address_family::inet4));
             rt->add_var("address_family_inet6", static_cast<int>(scfx::net::address_family::inet6));
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
+            rt->add_var("address_family_unix", static_cast<int>(scfx::net::address_family::unix));
+#endif
+            rt->add_var("sock_stream", static_cast<int>(scfx::net::sock_type::stream));
+            rt->add_var("sock_dgram", static_cast<int>(scfx::net::sock_type::dgram));
+            rt->add_var("sock_raw", static_cast<int>(scfx::net::sock_type::raw));
+            rt->add_var("sock_rdm", static_cast<int>(scfx::net::sock_type::rdm));
+            rt->add_var("sock_seqpacket", static_cast<int>(scfx::net::sock_type::seqpacket));
+            rt->add_var("sock_dccp", static_cast<int>(scfx::net::sock_type::dccp));
+            rt->add_var("sock_packet", static_cast<int>(scfx::net::sock_type::packet));
+            rt->add_var("sock_cloexec", static_cast<int>(scfx::net::sock_type::cloexec));
+            rt->add_var("sock_nonblock", static_cast<int>(scfx::net::sock_type::nonblock));
 
             rt->add_function("socket", SCFXFUN() {
                 return valbox{std::make_shared<scfx::net::socket>(), "socket"};
             });
             rt->add_method("socket", "create", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2)
+                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 4)
                 if(args.size() == 1) {
                     return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->create();
+                } else if(args.size() == 2) {
+                    return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->create(
+                        static_cast<scfx::net::address_family>(args[1].cast_to_int())
+                    );
+                } else if(args.size() == 3) {
+                    return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->create(
+                        static_cast<scfx::net::address_family>(args[1].cast_to_int()),
+                        static_cast<scfx::net::sock_type>(args[2].cast_to_int())
+                    );
+                } else if(args.size() == 4) {
+                    return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->create(
+                        static_cast<scfx::net::address_family>(args[1].cast_to_int()),
+                        static_cast<scfx::net::sock_type>(args[2].cast_to_int()),
+                        args[3].cast_to_int()
+                    );
                 }
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->create(static_cast<scfx::net::address_family>(args[1].cast_to_s32()));
+                return false;
             });
             rt->add_method("socket", "bind", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 3)
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->bind(args[1].cast_to_string(), args[2].cast_to_u16());
+                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 2, 3)
+                if(args.size() == 3) {
+                    return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->bind(args[1].cast_to_string(), args[2].cast_to_u16());
+                }
+                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->bind(args[1].cast_to_string(), 0);
             });
             rt->add_method("socket", "listen", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2)
@@ -95,8 +92,11 @@ namespace scfx {
                 return valbox{client_sock, "socket"};
             });
             rt->add_method("socket", "connect", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 3)
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->bind(args[1].cast_to_string(), args[2].cast_to_u16());
+                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 2, 3)
+                if(args.size() == 3) {
+                    return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->connect(args[1].cast_to_string(), args[2].cast_to_u16());
+                }
+                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->connect(args[1].cast_to_string(), 0);
             });
             rt->add_method("socket", "receive", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)

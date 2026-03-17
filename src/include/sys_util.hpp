@@ -84,6 +84,41 @@ namespace scfx::sys_util {
         return file_util::native_path_separator<S_T>();
     }
 
+    static int64_t last_error() {
+#if defined(PLATFORM_WINDOWS)
+        return GetLastError();
+#else
+        return errno;
+#endif
+    }
+
+    std::string error_str(int64_t e) {
+#if defined(PLATFORM_WINDOWS)
+        DWORD errorMessageID{(DWORD)e};
+        if(errorMessageID == 0) {
+            return std::string{};
+        }
+        LPWSTR messageBuffer{nullptr};
+        size_t size = FormatMessageW(
+            FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+            nullptr,
+            errorMessageID,
+            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+            (LPWSTR)&messageBuffer,
+            0,
+            nullptr
+        );
+        std::wstring message(messageBuffer, size);
+        LocalFree(messageBuffer);
+        return str_util::to_utf8(message);
+#elif defined(PLATFORM_LINUX)
+        std::system_error se{(int)e, std::system_category()};
+        std::stringstream ss{};
+        ss << se.what();
+        return ss.str();
+#endif
+    }
+
 #ifdef PLATFORM_WINDOWS
     template<typename FUNC_T>
     void for_reg_key(HKEY hk,
@@ -157,47 +192,47 @@ namespace scfx::sys_util {
     }
 #endif
 
-    static std::string error_string(int e) {
-        switch(e) {
-            case EPERM: return "EPERM";
-            case ENOENT: return "ENOENT";
-            case ESRCH: return "ESRCH";
-            case EINTR: return "EINTR";
-            case EIO: return "EIO";
-            case ENXIO: return "ENXIO";
-            case E2BIG: return "E2BIG";
-            case ENOEXEC: return "ENOEXEC";
-            case EBADF: return "EBADF";
-            case ECHILD: return "ECHILD";
-            case EAGAIN: return "EAGAIN";
-            case ENOMEM: return "ENOMEM";
-            case EACCES: return "EACCES";
-            case EFAULT: return "EFAULT";
-#ifndef _WIN32
-            case ENOTBLK: return "ENOTBLK";
-#endif
-            case EBUSY: return "EBUSY";
-            case EEXIST: return "EEXIST";
-            case EXDEV: return "EXDEV";
-            case ENODEV: return "ENODEV";
-            case ENOTDIR: return "ENOTDIR";
-            case EISDIR: return "EISDIR";
-            case EINVAL: return "EINVAL";
-            case ENFILE: return "ENFILE";
-            case EMFILE: return "EMFILE";
-            case ENOTTY: return "ENOTTY";
-            case ETXTBSY: return "ETXTBSY";
-            case EFBIG: return "EFBIG";
-            case ENOSPC: return "ENOSPC";
-            case ESPIPE: return "ESPIPE";
-            case EROFS: return "EROFS";
-            case EMLINK: return "EMLINK";
-            case EPIPE: return "EPIPE";
-            case EDOM: return "EDOM";
-            case ERANGE: return "ERANGE";
-            default: return "<UNKNOWN>";
-        }
-    }
+//     static std::string error_string(int e) {
+//         switch(e) {
+//             case EPERM: return "EPERM";
+//             case ENOENT: return "ENOENT";
+//             case ESRCH: return "ESRCH";
+//             case EINTR: return "EINTR";
+//             case EIO: return "EIO";
+//             case ENXIO: return "ENXIO";
+//             case E2BIG: return "E2BIG";
+//             case ENOEXEC: return "ENOEXEC";
+//             case EBADF: return "EBADF";
+//             case ECHILD: return "ECHILD";
+//             case EAGAIN: return "EAGAIN";
+//             case ENOMEM: return "ENOMEM";
+//             case EACCES: return "EACCES";
+//             case EFAULT: return "EFAULT";
+// #ifndef _WIN32
+//             case ENOTBLK: return "ENOTBLK";
+// #endif
+//             case EBUSY: return "EBUSY";
+//             case EEXIST: return "EEXIST";
+//             case EXDEV: return "EXDEV";
+//             case ENODEV: return "ENODEV";
+//             case ENOTDIR: return "ENOTDIR";
+//             case EISDIR: return "EISDIR";
+//             case EINVAL: return "EINVAL";
+//             case ENFILE: return "ENFILE";
+//             case EMFILE: return "EMFILE";
+//             case ENOTTY: return "ENOTTY";
+//             case ETXTBSY: return "ETXTBSY";
+//             case EFBIG: return "EFBIG";
+//             case ENOSPC: return "ENOSPC";
+//             case ESPIPE: return "ESPIPE";
+//             case EROFS: return "EROFS";
+//             case EMLINK: return "EMLINK";
+//             case EPIPE: return "EPIPE";
+//             case EDOM: return "EDOM";
+//             case ERANGE: return "ERANGE";
+//             default: return "<UNKNOWN>";
+//         }
+//     }
 
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
     static std::string backtrace() {

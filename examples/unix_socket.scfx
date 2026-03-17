@@ -1,0 +1,114 @@
+global_init() {
+    if(this.initialized == undefined) {
+        this.initialized = true;
+        set_cycle_nanosleep(1000000);
+    }
+}
+
+global_init glbl_ini();
+
+
+u_serv() {
+    if(this.listener_sock == undefined) {
+        this.listener_sock = socket();
+        this.poller = socket_poller();
+        if(
+            this.listener_sock.create(address_family_unix) &&
+            this.listener_sock.make_nonblocking() &&
+            this.listener_sock.bind("./.opaopaopapa") &&
+            this.listener_sock.listen() &&
+            this.poller.add_event(this.listener_sock, POLL_EVENT_IN)
+        ) {
+            println("unix server started");
+        } else {
+            es = error_str(last_error());
+            if(es.size() > 0) { es[0] = tolower(es[0]); }
+            throw "error starting server - " + es;
+        }
+        this.contexts = object();
+        this.contexts.sockets = dictionary();
+    }
+
+    wres = this.poller.wait(10, 0.25);
+    for(i = 0; i < wres.size(); ++i) {
+        if(wres[i].events & POLL_EVENT_IN) {
+            if(wres[i].data.fd == this.listener_sock.handle()) {
+                newsk = this.listener_sock.accept();
+                if(
+                    newsk != undefined &&
+                    newsk.make_nonblocking()
+                ) {
+                    println("new conn ", newsk.handle());
+                    this.poller.add_event(newsk, POLL_EVENT_IN | POLL_EVENT_ET);
+                    this.contexts.sockets.at(newsk.handle()) = newsk;
+                } else {
+                    println("error setup new connection ", error_str(last_error()));
+                }
+            } else {
+                println("new event on socket ", wres[i].data.fd);
+                if(this.contexts.sockets.key_exists(wres[i].data.fd)) {
+                    skt = this.contexts.sockets.at(wres[i].data.fd);
+                    if(skt != undefined) {
+                        try {
+                            indata = skt.receive(100000);
+                            if(indata.size() == 0) {
+                                println("read zero bytes - closing connection ", wres[i].data.fd);
+                                this.poller.del_event(wres[i].data.fd);
+                                this.contexts.sockets.erase(wres[i].data.fd);
+                            } else {
+                                in.skfd = wres[i].data.fd;
+                                in.data = indata;
+                                in.println();
+                            }
+                        } catch(e) {
+                            println("error: ", e);
+                            this.poller.del_event(wres[i].data.fd);
+                            this.contexts.sockets.erase(wres[i].data.fd);
+                        }
+                    }
+                }
+            }
+        } else {
+            if(wres[i].data.fd == this.listener_sock.handle()) {
+                throw "server failure - termination";
+            } else {
+                println("connection ", wres[i].data.fd, " closed");
+                this.poller.del_event(wres[i].data.fd);
+                this.contexts.sockets.erase(wres[i].data.fd);
+            }
+        }
+    }
+    return this.contexts;
+}
+
+u_serv usr();
+
+
+u_cli(srvctx) {
+    if srvctx == undefined return 0;
+    if(this.connecting_sock == undefined) {
+        this.prevt = steady_clock();
+        println("prevt = ", this.prevt);
+        this.connecting_sock = socket();
+        println("connecting_sock = ", this.connecting_sock);
+        if(
+            this.connecting_sock.create(address_family_unix) &&
+            this.connecting_sock.connect("./.opaopaopapa")
+        ) {
+            println("unix client connected");
+        } else {
+            es = error_str(last_error());
+            if(es.size() > 0) { es[0] = tolower(es[0]); }
+            throw "error connecting to server - " + es;
+        }
+    }
+
+    if(steady_clock() - this.prevt > 2) {
+        this.prevt = steady_clock();
+        this.connecting_sock.send("11");
+    }
+
+    return 0;
+}
+
+u_cli ucl(usr);

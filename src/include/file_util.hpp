@@ -143,20 +143,79 @@ namespace scfx::file_util {
 #endif
     }
 
+    namespace detail {
+
+        static int64_t last_error() {
+#if defined(PLATFORM_WINDOWS)
+            return GetLastError();
+#else
+            return errno;
+#endif
+        }
+
+        std::string error_str(int64_t e) {
+#if defined(PLATFORM_WINDOWS)
+            DWORD errorMessageID{(DWORD)e};
+            if(errorMessageID == 0) {
+                return std::string{};
+            }
+            LPWSTR messageBuffer{nullptr};
+            size_t size = FormatMessageW(
+                FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                nullptr,
+                errorMessageID,
+                MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                (LPWSTR)&messageBuffer,
+                0,
+                nullptr
+            );
+            std::wstring message(messageBuffer, size);
+            LocalFree(messageBuffer);
+            return str_util::to_utf8(message);
+#elif defined(PLATFORM_LINUX)
+            std::system_error se{(int)e, std::system_category()};
+            std::stringstream ss{};
+            ss << se.what();
+            return ss.str();
+#endif
+        }
+    }
+
     static bool file_exists(const std::string &file_name) {
 #if (__cplusplus < 201700L)
-#if defined(PLATFORM_LINUX) || defined(PLATFORM_APPLE) || defined(PLATFORM_ANDROID)
+    #if defined(PLATFORM_LINUX) || defined(PLATFORM_APPLE) || defined(PLATFORM_ANDROID)
         struct stat sb;
-        if(stat(file_name.c_str(), &sb) == 0 && S_ISREG(sb.st_mode)) {
-            return true;
+        int stres{stat(file_name.c_str(), &sb)};
+        if(stres != 0) {
+            return false;
         }
-        return false;
-#elif defined(PLATFORM_WINDOWS)
+        switch (sb.st_mode & S_IFMT) {
+            case S_IFBLK:  return true; /* printf("block device\n"); */
+            case S_IFCHR:  return true; /* printf("character device\n"); */
+            case S_IFDIR:  return false; /* printf("directory\n"); */
+            case S_IFIFO:  return true; /* printf("FIFO/pipe\n"); */
+            case S_IFLNK:  return true; /* printf("symlink\n"); */
+            case S_IFREG:  return true; /* printf("regular file\n"); */
+            case S_IFSOCK: return true; /* printf("socket\n"); */
+            default:       return false; /*printf("unknown?\n");*/
+        }
+    #elif defined(PLATFORM_WINDOWS)
         DWORD dwAttrib = GetFileAttributesA(file_name.c_str());
         return (dwAttrib != INVALID_FILE_ATTRIBUTES && ((dwAttrib & FILE_ATTRIBUTE_DIRECTORY) == 0));
-#endif
+    #endif
 #else
-        return std::filesystem::is_regular_file(file_name);
+        return std::filesystem::exists(file_name) &&
+               (
+                std::filesystem::is_regular_file(file_name)
+                ||
+                std::filesystem::is_block_file(file_name)
+                ||
+                std::filesystem::is_character_file(file_name)
+                ||
+                std::filesystem::is_fifo(file_name)
+                ||
+                std::filesystem::is_socket(file_name)
+               );
 #endif
     }
 

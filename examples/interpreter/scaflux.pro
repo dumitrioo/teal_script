@@ -125,4 +125,5 @@ DISTFILES += \
     ../quad_eq.scfx \
     ../sockets_server.scfx \
     ../tbbt_2cola.scfx \
-    ../tests.scfx
+    ../tests.scfx \
+    ../unix_socket.scfx

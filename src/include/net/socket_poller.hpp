@@ -256,7 +256,7 @@ namespace scfx::net {
                     return events;
                 } else if(wait_result < 0) {
                     last_error_ = errno;
-                    throw poll_error{scfx::sys_util::error_string(errno)};
+                    throw poll_error{scfx::sys_util::error_str(scfx::sys_util::last_error())};
                 }
 
                 return {};

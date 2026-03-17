@@ -14,6 +14,22 @@ namespace scfx::net {
         unspecified = AF_UNSPEC,
         inet4 = AF_INET,
         inet6 = AF_INET6,
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
+        unix = AF_UNIX,
+#endif
+    };
+
+    enum class sock_type: int {
+        unspecified = 0,
+        stream = SOCK_STREAM,
+        dgram = SOCK_DGRAM,
+        raw = SOCK_RAW,
+        rdm = SOCK_RDM,
+        seqpacket = SOCK_SEQPACKET,
+        dccp = SOCK_DCCP,
+        packet = SOCK_PACKET,
+        cloexec = SOCK_CLOEXEC,
+        nonblock = SOCK_NONBLOCK,
     };
 
     static bool is_valid_ipv4_adr_string(std::string addr_str) {
