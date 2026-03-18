@@ -61,20 +61,28 @@ namespace scfx::str_util {
         if((radix < 2) || (radix > 36)) {
             throw std::runtime_error("invalid base system radix");
         }
-        std::vector<char> char_stack{}; char_stack.reserve(32);
+        std::array<char, 128> char_stack{};
+        std::int64_t char_stack_size{0};
         if(value == 0) {
-            char_stack.push_back('0');
+            char_stack[char_stack_size++] = '0';
         } else {
             for(; value != 0; value /= radix) {
                 std::uint64_t k{value % radix};
-                char_stack.push_back(digits[upcase ? 1 : 0][k]);
+                char_stack[char_stack_size++] = digits[upcase ? 1 : 0][k];
             }
         }
-        while(width > 0 && (std::int64_t)char_stack.size() < width) {
-            char_stack.push_back('0');
+        std::string res{};
+        res.reserve(char_stack_size + 1);
+        std::int64_t num_prepends{width - char_stack_size};
+        if(width > 0 && num_prepends > 0) {
+            res.reserve(num_prepends + char_stack_size);
+            for(int64_t i{}; i < num_prepends; ++i) {
+                res.push_back('0');
+            }
+        } else {
+            res.reserve(char_stack_size);
         }
-        std::string res{}; res.reserve(char_stack.size() + 1);
-        for(std::int64_t i{(std::int64_t)char_stack.size() - 1}; i >= 0; --i) {
+        for(std::int64_t i{char_stack_size - 1}; i >= 0; --i) {
             res.push_back(char_stack[i]);
         }
         return res;
@@ -88,24 +96,34 @@ namespace scfx::str_util {
         if((radix < 2) || (radix > 36)) {
             throw std::runtime_error("invalid base system radix");
         }
-        std::vector<char> char_stack{}; char_stack.reserve(32);
+        std::array<char, 128> char_stack{};
+        std::int64_t char_stack_size{0};
         bool sign{value < 0};
         if(value == 0) {
-            char_stack.push_back('0');
+            char_stack[char_stack_size++] = '0';
         } else {
             for(std::int64_t val{sign ? -value : value}; val != 0; val /= radix) {
                 std::int64_t k = val % radix;
-                char_stack.push_back(digits[upcase ? 1 : 0][k]);
+                char_stack[char_stack_size++] = digits[upcase ? 1 : 0][k];
             }
         }
-        while(width > 0 && (std::int64_t)char_stack.size() < width) {
-            char_stack.push_back('0');
+        std::string res{};
+        std::int64_t num_prepends{width - char_stack_size - (sign ? 1 : 0)};
+        if(width > 0 && num_prepends > 0) {
+            res.reserve(num_prepends + char_stack_size + 1);
+            if(sign) {
+                res.push_back('-');
+            }
+            for(int64_t i{}; i < num_prepends; ++i) {
+                res.push_back('0');
+            }
+        } else {
+            res.reserve(char_stack_size + 1);
+            if(sign) {
+                res.push_back('-');
+            }
         }
-        if(sign) {
-            char_stack.push_back('-');
-        }
-        std::string res{}; res.reserve(char_stack.size() + 1);
-        for(std::int64_t i{(std::int64_t)char_stack.size() - 1}; i >= 0; --i) {
+        for(std::int64_t i{char_stack_size - 1}; i >= 0; --i) {
             res.push_back(char_stack[i]);
         }
         return res;
@@ -1117,7 +1135,7 @@ namespace scfx::str_util {
         static bool isspace(std::string::value_type sym) { return scfx::str_util::isspace(sym) != 0; }
         static bool isalpha(std::string::value_type sym) { return scfx::str_util::isalpha(sym) != 0; }
         static bool isdigit(std::string::value_type sym) { return scfx::str_util::isdigit(sym) != 0; }
-        static bool isalnum(std::wstring::value_type sym) { return scfx::str_util::isalnum(sym) != 0; }
+        static bool isalnum(std::string::value_type sym) { return scfx::str_util::isalnum(sym) != 0; }
         static bool ispunct(std::string::value_type sym) { return scfx::str_util::ispunct(sym) != 0; }
         static bool iscntrl(std::string::value_type sym) { return scfx::str_util::iscntrl(sym) != 0; }
         static bool ishexdigit(int c) { return scfx::str_util::ishex(c) != 0; }
