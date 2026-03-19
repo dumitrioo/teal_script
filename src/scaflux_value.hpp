@@ -948,83 +948,65 @@ namespace scfx {
                     if(t == type::UNDEFINED) {
                         der.become_array();
                         t = type::ARRAY;
-                    }
-                    if(t == type::ARRAY) {
+                    } else if(t == type::ARRAY) {
                         auto &a{as_array()};
                         if(a.size() <= i) { a.resize(i + 1); }
                         return a[i];
-                    }
-                    if(t == type::MAT4) {
+                    } else if(t == type::MAT4) {
                         mat4_t &a{as_mat4()};
                         if(i < 4) {
                             return a[i].ptr();
                         } else {
                             throw std::range_error{"index out of range"};
                         }
-                    }
-                    if(t == type::VEC4) {
+                    } else if(t == type::VEC4) {
                         vec4_t &a{as_vec4()};
                         valbox res{&a[i]};
                         return res;
-                    }
-                    if(der.is_ptr()) {
+                    } else if(der.is_ptr()) {
                         if(der.pointed_type() == type::LONG_DOUBLE) {
                             valbox res{der.as_typed_ptr<long double>() + i};
                             return res;
-                        }
-                        if(der.pointed_type() == type::BOOL) {
+                        } else if(der.pointed_type() == type::BOOL) {
                             valbox res{der.as_typed_ptr<bool>() + i};
                             return res;
-                        }
-                        if(der.pointed_type() == type::CHAR) {
+                        } else if(der.pointed_type() == type::CHAR) {
                             valbox res{der.as_typed_ptr<char>() + i};
                             return res;
-                        }
-                        if(der.pointed_type() == type::S8) {
+                        } else if(der.pointed_type() == type::S8) {
                             valbox res{der.as_typed_ptr<std::int8_t>() + i};
                             return res;
-                        }
-                        if(der.pointed_type() == type::U8) {
+                        } else if(der.pointed_type() == type::U8) {
                             valbox res{der.as_typed_ptr<std::uint8_t>() + i};
                             return res;
-                        }
-                        if(der.pointed_type() == type::S16) {
+                        } else if(der.pointed_type() == type::S16) {
                             valbox res{der.as_typed_ptr<std::int16_t>() + i};
                             return res;
-                        }
-                        if(der.pointed_type() == type::U16) {
+                        } else if(der.pointed_type() == type::U16) {
                             valbox res{der.as_typed_ptr<std::uint16_t>() + i};
                             return res;
-                        }
-                        if(der.pointed_type() == type::WCHAR) {
+                        } else if(der.pointed_type() == type::WCHAR) {
                             valbox res{der.as_typed_ptr<wchar_t>() + i};
                             return res;
-                        }
-                        if(der.pointed_type() == type::S32) {
+                        } else if(der.pointed_type() == type::S32) {
                             valbox res{der.as_typed_ptr<std::int32_t>() + i};
                             return res;
-                        }
-                        if(der.pointed_type() == type::U32) {
+                        } else if(der.pointed_type() == type::U32) {
                             valbox res{der.as_typed_ptr<std::uint32_t>() + i};
                             return res;
-                        }
-                        if(der.pointed_type() == type::S64) {
+                        } else if(der.pointed_type() == type::S64) {
                             valbox res{der.as_typed_ptr<std::int64_t>() + i};
                             return res;
-                        }
-                        if(der.pointed_type() == type::U64) {
+                        } else if(der.pointed_type() == type::U64) {
                             valbox res{der.as_typed_ptr<std::uint64_t>() + i};
                             return res;
-                        }
-                        if(der.pointed_type() == type::FLOAT) {
+                        } else if(der.pointed_type() == type::FLOAT) {
                             valbox res{der.as_typed_ptr<float>() + i};
                             return res;
-                        }
-                        if(der.pointed_type() == type::DOUBLE) {
+                        } else if(der.pointed_type() == type::DOUBLE) {
                             valbox res{der.as_typed_ptr<double>() + i};
                             return res;
-                        }
-                        if(der.pointed_type() == type::LONG_DOUBLE) {
+                        } else if(der.pointed_type() == type::LONG_DOUBLE) {
                             valbox res{der.as_typed_ptr<long double>() + i};
                             return res;
                         }
@@ -1317,30 +1299,30 @@ namespace scfx {
         valbox &operator--() {
             type t{val_or_pointed_type()};
             switch(t) {
-            case type::S64: --as_s64(); break;
-            case type::U64: --as_u64(); break;
-            case type::S32: --as_s32(); break;
-            case type::U32: --as_u32(); break;
-            case type::S8: --as_s8(); break;
-            case type::U8: --as_u8(); break;
-            case type::S16: --as_s16(); break;
-            case type::U16: --as_u16(); break;
-            case type::CHAR: --as_char(); break;
-            case type::WCHAR: --as_wchar(); break;
-            case type::BOOL: as_bool() = false; break;
-            case type::UNDEFINED: {
-                auto dr{deref()};
-                dr.pointed_box_.reset();
-                if(!dr.box_) {
-                    dr.box_ = std::make_shared<box_data>(static_cast<std::int64_t>(-1), type::S64);
-                } else {
-                    dr.box_->value_ = static_cast<std::int64_t>(-1);
-                    dr.box_->type_ = type::S64;
+                case type::S64: --as_s64(); break;
+                case type::U64: --as_u64(); break;
+                case type::S32: --as_s32(); break;
+                case type::U32: --as_u32(); break;
+                case type::S8: --as_s8(); break;
+                case type::U8: --as_u8(); break;
+                case type::S16: --as_s16(); break;
+                case type::U16: --as_u16(); break;
+                case type::CHAR: --as_char(); break;
+                case type::WCHAR: --as_wchar(); break;
+                case type::BOOL: as_bool() = false; break;
+                case type::UNDEFINED: {
+                    auto dr{deref()};
+                    dr.pointed_box_.reset();
+                    if(!dr.box_) {
+                        dr.box_ = std::make_shared<box_data>(static_cast<std::int64_t>(-1), type::S64);
+                    } else {
+                        dr.box_->value_ = static_cast<std::int64_t>(-1);
+                        dr.box_->type_ = type::S64;
+                    }
+                    break;
                 }
-                break;
-            }
-            default:
-                throw std::runtime_error{"operation not applicable"};
+                default:
+                    throw std::runtime_error{"operation not applicable"};
             }
             return *this;
         }
