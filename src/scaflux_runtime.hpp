@@ -1108,6 +1108,16 @@ namespace scfx {
                 }
             });
 
+            add_function("isspace", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::isspace(args[0].cast_to_int()); });
+            add_function("isalpha", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::isalpha(args[0].cast_to_int()); });
+            add_function("isdigit", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::isdigit(args[0].cast_to_int()); });
+            add_function("isalnum", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::isalnum(args[0].cast_to_int()); });
+            add_function("ispunct", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::ispunct(args[0].cast_to_int()); });
+            add_function("iscntrl", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::iscntrl(args[0].cast_to_int()); });
+            add_function("ishexdigit", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::ishexdigit(args[0].cast_to_int()); });
+            add_function("isoctdigit", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::isoctdigit(args[0].cast_to_int()); });
+            add_function("isbindigit", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::isbindigit(args[0].cast_to_int()); });
+
             add_function("subarray", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 3)
                 if(args[0].is_array_ref()) {
@@ -2248,7 +2258,7 @@ namespace scfx {
         std::list<std::pair<std::shared_ptr<so>, extension_interface *>> loaded_extensions_{};
         static std::size_t constexpr version_major_{1};
         static std::size_t constexpr version_minor_{2};
-        static std::size_t constexpr version_patch_{118};
+        static std::size_t constexpr version_patch_{121};
     };
 
 }
