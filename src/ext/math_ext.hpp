@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../include/commondefs.hpp"
-#include "../include/math/math_util.hpp"
+#include "../inc/commondefs.hpp"
+#include "../inc/math/math_util.hpp"
 
 #include "../scaflux_value.hpp"
 #include "../scaflux_util.hpp"

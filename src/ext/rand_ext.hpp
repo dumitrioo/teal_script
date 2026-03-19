@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../include/commondefs.hpp"
+#include "../inc/commondefs.hpp"
 
 #include "../scaflux_value.hpp"
 #include "../scaflux_util.hpp"

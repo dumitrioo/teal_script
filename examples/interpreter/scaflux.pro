@@ -50,35 +50,35 @@ HEADERS += \
     ../../src/ext/array_buffer_ext.hpp \
     ../../src/ext/containers_ext.hpp \
     ../../src/ext/socket_ext.hpp \
-    ../../src/include/base16.hpp \
-    ../../src/include/base64.hpp \
-    ../../src/include/base85.hpp \
-    ../../src/include/bit_util.hpp \
-    ../../src/include/commondefs.hpp \
-    ../../src/include/containers/circular_buffer.hpp \
-    ../../src/include/containers/static_buffer.hpp \
-    ../../src/include/crypto/keccak.hpp \
-    ../../src/include/crypto/sha256.hpp \
-    ../../src/include/crypto/sha3_512.hpp \
-    ../../src/include/crypto/sha512.hpp \
-    ../../src/include/file_util.hpp \
-    ../../src/include/fsm_tokenizer.hpp \
-    ../../src/include/hash/adler.hpp \
-    ../../src/include/json.hpp \
-    ../../src/include/lzari.hpp \
-    ../../src/include/math/math_util.hpp \
-    ../../src/include/math/matrix4.hpp \
-    ../../src/include/math/vector4.hpp \
-    ../../src/include/mt_synchro.hpp \
-    ../../src/include/net/socket_poller.hpp \
-    ../../src/include/net/socket_wrapper.hpp \
-    ../../src/include/sequence_generator.hpp \
-    ../../src/include/serialization.hpp \
-    ../../src/include/so.hpp \
-    ../../src/include/str_util.hpp \
-    ../../src/include/sys_util.hpp \
-    ../../src/include/timespec_wrapper.hpp \
-    ../../src/include/unicode_operations.hpp \
+    ../../src/inc/base16.hpp \
+    ../../src/inc/base64.hpp \
+    ../../src/inc/base85.hpp \
+    ../../src/inc/bit_util.hpp \
+    ../../src/inc/commondefs.hpp \
+    ../../src/inc/containers/circular_buffer.hpp \
+    ../../src/inc/containers/static_buffer.hpp \
+    ../../src/inc/crypto/keccak.hpp \
+    ../../src/inc/crypto/sha256.hpp \
+    ../../src/inc/crypto/sha3_512.hpp \
+    ../../src/inc/crypto/sha512.hpp \
+    ../../src/inc/file_util.hpp \
+    ../../src/inc/fsm_tokenizer.hpp \
+    ../../src/inc/hash/adler.hpp \
+    ../../src/inc/json.hpp \
+    ../../src/inc/lzari.hpp \
+    ../../src/inc/math/math_util.hpp \
+    ../../src/inc/math/matrix4.hpp \
+    ../../src/inc/math/vector4.hpp \
+    ../../src/inc/mt_synchro.hpp \
+    ../../src/inc/net/socket_poller.hpp \
+    ../../src/inc/net/socket_wrapper.hpp \
+    ../../src/inc/sequence_generator.hpp \
+    ../../src/inc/serialization.hpp \
+    ../../src/inc/so.hpp \
+    ../../src/inc/str_util.hpp \
+    ../../src/inc/sys_util.hpp \
+    ../../src/inc/timespec_wrapper.hpp \
+    ../../src/inc/unicode_operations.hpp \
     ../../src/ext/cpu_ext.hpp \
     ../../src/ext/crypto_ext.hpp \
     ../../src/ext/file_ext.hpp \

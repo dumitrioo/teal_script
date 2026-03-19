@@ -4,10 +4,10 @@
 #include <sys/times.h>
 #endif
 
-#include "../include/commondefs.hpp"
-#include "../include/timespec_wrapper.hpp"
-#include "../include/containers/circular_buffer.hpp"
-#include "../include/mt_synchro.hpp"
+#include "../inc/commondefs.hpp"
+#include "../inc/timespec_wrapper.hpp"
+#include "../inc/containers/circular_buffer.hpp"
+#include "../inc/mt_synchro.hpp"
 
 #include "../scaflux_value.hpp"
 #include "../scaflux_util.hpp"

@@ -1,15 +1,15 @@
 #pragma once
 
-#include "include/commondefs.hpp"
-#include "include/file_util.hpp"
-#include "include/str_util.hpp"
-#include "include/sys_util.hpp"
-#include "include/base16.hpp"
-#include "include/base64.hpp"
-#include "include/base85.hpp"
-#include "include/so.hpp"
+#include "inc/commondefs.hpp"
+#include "inc/file_util.hpp"
+#include "inc/str_util.hpp"
+#include "inc/sys_util.hpp"
+#include "inc/base16.hpp"
+#include "inc/base64.hpp"
+#include "inc/base85.hpp"
+#include "inc/so.hpp"
 #if defined(SCFX_USE_ASYNC_CONSOLE)
-#include "include/containers/concurrentqueue.h"
+#include "inc/containers/concurrentqueue.h"
 #endif
 #include "scaflux_util.hpp"
 #include "scaflux_token.hpp"

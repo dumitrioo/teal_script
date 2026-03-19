@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../include/commondefs.hpp"
-#include "../include/str_util.hpp"
-#include "../include/net/socket_wrapper.hpp"
-#include "../include/net/socket_poller.hpp"
+#include "../inc/commondefs.hpp"
+#include "../inc/str_util.hpp"
+#include "../inc/net/socket_wrapper.hpp"
+#include "../inc/net/socket_poller.hpp"
 
 #include "../scaflux_value.hpp"
 #include "../scaflux_util.hpp"

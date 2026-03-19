@@ -1,12 +1,12 @@
 #pragma once
 
-#include "include/commondefs.hpp"
-#include "include/file_util.hpp"
-#include "include/str_util.hpp"
-#include "include/json.hpp"
-#include "include/math/vector4.hpp"
-#include "include/math/matrix4.hpp"
-#include "include/math/math_util.hpp"
+#include "inc/commondefs.hpp"
+#include "inc/file_util.hpp"
+#include "inc/str_util.hpp"
+#include "inc/json.hpp"
+#include "inc/math/vector4.hpp"
+#include "inc/math/matrix4.hpp"
+#include "inc/math/math_util.hpp"
 
 #include "scaflux_util.hpp"
 

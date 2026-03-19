@@ -1,8 +1,8 @@
 #pragma once
 
-#include "include/commondefs.hpp"
-#include "include/file_util.hpp"
-#include "include/str_util.hpp"
+#include "inc/commondefs.hpp"
+#include "inc/file_util.hpp"
+#include "inc/str_util.hpp"
 
 #include "scaflux_util.hpp"
 

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "include/commondefs.hpp"
-#include "include/str_util.hpp"
-#include "include/json.hpp"
+#include "inc/commondefs.hpp"
+#include "inc/str_util.hpp"
+#include "inc/json.hpp"
 
 #include "scaflux_util.hpp"
 #include "scaflux_token.hpp"
