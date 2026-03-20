@@ -1,8 +1,32 @@
-global_init() if this.initialized == undefined { this.initialized = true; set_cycle_nanosleep(1000000); }
+global_init() if cycle_nanosleep() == 0 set_cycle_nanosleep(1000000);
 global_init glbl_ini();
 
+
 my_drafts() {
+    b = steady_clock();
+    s = "";
+    tot_num = 1024;
+    for(i = 0; i < tot_num; ++i) {
+        s += "0123456789abcdef";
+    }
+
+    e = steady_clock();
+    s.println();
+    (e - b).println();
+
+    for(i = 0; i < 256; ++i) {
+        println(i, " (", itoa(i, 16), "): ", isspace(i) ? "space" : "");
+    }
+
+    sum = 0;
+    for(i = 1; i < 10000; ++i) {
+        s = itoa(i);
+        sum += s.size();
+        if(sum >= 1095) {
+            println(i, " (", sum, ")");
+            break;
+        }
+    }
     return exit(0);
 }
-
 my_drafts drf();

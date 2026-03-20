@@ -95,14 +95,16 @@ namespace scfx {
     using map_t = emhash8::HashMap<K_T, V_T, HASH_T>;
     template<typename K_T, typename V_T, typename HASH_T = std::hash<K_T>>
     using self_fields_map_t = emhash8::HashMap<K_T, V_T, HASH_T>;
+    template<typename K_T, typename V_T, typename HASH_T = std::hash<K_T>>
+    using dict_map_t = emhash8::HashMap<K_T, V_T, HASH_T>;
     #else
     template<typename K_T, typename V_T>
-    using map_t = std::unordered_map<K_T, V_T>;
+    using map_t = std::map<K_T, V_T>;
     template<typename K_T, typename V_T>
-    using self_fields_map_t = std::unordered_map<K_T, V_T>;
-    #endif
+    using self_fields_map_t = std::map<K_T, V_T>;
     template<typename K_T, typename V_T>
     using dict_map_t = std::unordered_map<K_T, V_T>;
+    #endif
 #endif
 
 

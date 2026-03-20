@@ -61,6 +61,16 @@ HEADERS += \
     ../../src/inc/crypto/sha256.hpp \
     ../../src/inc/crypto/sha3_512.hpp \
     ../../src/inc/crypto/sha512.hpp \
+    ../../src/inc/emhash/hash_set2.hpp \
+    ../../src/inc/emhash/hash_set3.hpp \
+    ../../src/inc/emhash/hash_set4.hpp \
+    ../../src/inc/emhash/hash_set8.hpp \
+    ../../src/inc/emhash/hash_table5.hpp \
+    ../../src/inc/emhash/hash_table6.hpp \
+    ../../src/inc/emhash/hash_table7.hpp \
+    ../../src/inc/emhash/hash_table8.hpp \
+    ../../src/inc/emhash/lru_size.h \
+    ../../src/inc/emhash/lru_time.h \
     ../../src/inc/file_util.hpp \
     ../../src/inc/fsm_tokenizer.hpp \
     ../../src/inc/hash/adler.hpp \
@@ -70,6 +80,7 @@ HEADERS += \
     ../../src/inc/math/matrix4.hpp \
     ../../src/inc/math/vector4.hpp \
     ../../src/inc/mt_synchro.hpp \
+    ../../src/inc/net/net_utils.hpp \
     ../../src/inc/net/socket_poller.hpp \
     ../../src/inc/net/socket_wrapper.hpp \
     ../../src/inc/sequence_generator.hpp \
@@ -100,7 +111,8 @@ HEADERS += \
     optext/ray_ext.hpp \
     optext/zmq_ext.hpp
 
-QMAKE_CXXFLAGS += -std=c++20 -Wno-unused-parameter -Wno-unused-function -Wl,-rpath,.
+QMAKE_CXXFLAGS += -std=c++20 -march=native -Wno-unused-parameter -Wno-unused-function -Wl,-rpath,.
+QMAKE_CXXFLAGS += -ftree-vectorize -mavx2 -ftree-vectorizer-verbose=5
 QMAKE_CXXFLAGS_RELEASE -= -O2
 QMAKE_CXXFLAGS_RELEASE += -O3
 QMAKE_CFLAGS_RELEASE -= -O2

@@ -131,21 +131,26 @@ namespace scfx::str_util {
 
     template<typename S_T>
     std::int64_t atoi(const S_T &a, int radix = 10, bool enable_separators = false) {
-        static std::array<int, 128> constexpr digits{
+        static std::array<int, 256> constexpr digits{
             -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
             -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
             -2,-1,-1,-1,-1,-1,-1,-2,-1,-1,-1,-1,-2,-1,-1,-1,
-             0, 1, 2, 3, 4, 5, 6, 7, 8, 9,-1,-1,-1,-1,-1,-1,
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9,-1,-1,-1,-1,-1,-1,
             -1,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,
             25,26,27,28,29,30,31,32,33,34,35,-1,-1,-1,-1,-1,
             -1,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,
             25,26,27,28,29,30,31,32,33,34,35,-1,-1,-1,-1,-1,
+            -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+            -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+            -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+            -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+            -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+            -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+            -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+            -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
         };
         size_t str_size{a.size()};
-        if(str_size == 0) {
-            throw std::runtime_error{"empty string passed"};
-        }
-        if((radix < 2) || (radix > 36)) {
+        if(radix < 2 || radix > 36) {
             throw std::runtime_error{"invalid radix"};
         }
         std::size_t start_index{0};
@@ -158,20 +163,31 @@ namespace scfx::str_util {
             start_index = 1;
         }
         std::int64_t result{0};
+        int s{0};
+        int nn{0};
         for(std::size_t i{start_index}; i < str_size; ++i) {
-            uint32_t c{static_cast<uint32_t>(a[i])};
-            if(c >= 128) {
-                throw std::runtime_error{"invalid number"};
-            }
+            uint8_t c{static_cast<uint8_t>(a[i])};
             std::int64_t d{static_cast<std::int64_t>(digits[c])};
-            if(d >= radix || (enable_separators && d == -1) || (!enable_separators && d < 0)) {
-                throw std::runtime_error{"invalid number"};
-            }
             if(enable_separators && d == -2) {
+                if(s <= 0) {
+                    throw std::runtime_error{"invalid number"};
+                }
+                s = -1;
                 continue;
+            }
+            if(d >= radix || d < 0) {
+                throw std::runtime_error{"invalid number"};
             }
             result *= static_cast<std::int64_t>(radix);
             result += d;
+            ++nn;
+            s = 1;
+        }
+        if(nn <= 0) {
+            throw std::runtime_error{"string does not contain a number"};
+        }
+        if(s <= 0) {
+            throw std::runtime_error{"wrong number format"};
         }
         return negative ? -result : result;
     }
@@ -187,7 +203,7 @@ namespace scfx::str_util {
 
     template<typename S_T>
     std::uint64_t atoui(S_T const &a, int radix = 10, bool enable_separators = false) {
-        static std::array<int, 128> constexpr digits{
+        static std::array<int, 256> constexpr digits{
             -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
             -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
             -2,-1,-1,-1,-1,-1,-1,-2,-1,-1,-1,-1,-2,-1,-1,-1,
@@ -196,12 +212,20 @@ namespace scfx::str_util {
             25,26,27,28,29,30,31,32,33,34,35,-1,-1,-1,-1,-1,
             -1,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,
             25,26,27,28,29,30,31,32,33,34,35,-1,-1,-1,-1,-1,
+            -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+            -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+            -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+            -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+            -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+            -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+            -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+            -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
         };
         size_t str_size{a.size()};
         if(str_size == 0) {
             throw std::runtime_error{"empty string passed"};
         }
-        if((radix < 2) || (radix > 36)) {
+        if(radix < 2 || radix > 36) {
             throw std::runtime_error{"invalid radix"};
         }
         std::size_t start_index{0};
@@ -214,20 +238,31 @@ namespace scfx::str_util {
             start_index = 1;
         }
         std::uint64_t result{0};
+        int s{0};
+        int nn{0};
         for(std::size_t i{start_index}; i < str_size; ++i) {
-            uint32_t c{static_cast<uint32_t>(a[i])};
-            if(c >= 128) {
-                throw std::runtime_error{"invalid number"};
-            }
+            uint8_t c{static_cast<uint8_t>(a[i])};
             std::int64_t d{static_cast<std::int64_t>(digits[c])};
-            if(d >= radix || (enable_separators && d == -1) || (!enable_separators && d < 0)) {
-                throw std::runtime_error{"invalid number"};
-            }
             if(enable_separators && d == -2) {
+                if(s <= 0) {
+                    throw std::runtime_error{"wrong number format"};
+                }
+                s = -1;
                 continue;
+            }
+            if(d >= radix || d < 0) {
+                throw std::runtime_error{"invalid number"};
             }
             result *= static_cast<std::uint64_t>(radix);
             result += static_cast<std::uint64_t>(d);
+            ++nn;
+            s = 1;
+        }
+        if(nn <= 0) {
+            throw std::runtime_error{"string does not contain a number"};
+        }
+        if(s <= 0) {
+            throw std::runtime_error{"wrong number format"};
         }
         return negative ? -result : result;
     }
@@ -1180,6 +1215,18 @@ namespace scfx::str_util {
     template<typename STR_T>
     STR_T trim(STR_T const &s) {
         return rtrim<STR_T>(ltrim<STR_T>(s));
+    }
+
+    template<typename STR_T>
+    STR_T remove_char(STR_T const &s, typename STR_T::value_type c) {
+        STR_T res{};
+        if(!s.empty()) { res.reserve(s.size()); }
+        for(auto &&cc: s) {
+            if(cc != c) {
+                res.push_back(cc);
+            }
+        }
+        return res;
     }
 
 }

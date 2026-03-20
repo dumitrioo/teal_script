@@ -7,7 +7,7 @@
 namespace scfx {
 
     static std::string data_to_hex_str(const void *data, int data_size) {
-        static char hex_digits[] = {
+        static std::array<char, 16> constexpr hex_digits{
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
         };
         if(data == 0 || data_size == 0) {
@@ -38,7 +38,7 @@ namespace scfx {
     }
 
     static std::vector<std::uint8_t> hex_str_to_data(const std::string &str) {
-        static constexpr std::int16_t hex_do_digit[256] {
+        static std::array<int, 256> constexpr  hex_do_digit{
   /*       0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f */
   /*00*/  -1,-1,-1,-1,-1,-1,-1,-1,-1,-2,-2,-2,-2,-2,-1,-1,
   /*10*/  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-2,-2,-2,-2,

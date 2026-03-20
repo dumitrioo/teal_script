@@ -337,6 +337,12 @@ namespace scfx {
                 m_.clear();
             }
 
+            void undefine() {
+                for(auto &&p: m_) {
+                    p.second.become_undefined();
+                }
+            }
+
         private:
             map_t<std::string, valbox> m_{};
         };

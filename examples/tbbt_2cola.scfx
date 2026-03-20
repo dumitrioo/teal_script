@@ -7,6 +7,7 @@
 
 function serialize_tbbt_array(a) {
     res = "";
+    res.reserve(4096);
     as = a.size();
     res += "[" + a[0].name;
     j = 1;
@@ -59,9 +60,5 @@ tbbt2cola() {
 tbbt2cola duplicating_beverage();
 
 
-tbbtetl_execution_time_limit(t) {
-    if(this.t == undefined) this.t = timestamp().fseconds() + t;
-    if(timestamp().fseconds() > this.t) exit();
-}
-
+tbbtetl_execution_time_limit(t) if this.t == undefined this.t = timestamp().fseconds() + t; else if timestamp().fseconds() > this.t exit();
 tbbtetl_execution_time_limit tbbtetl(1);

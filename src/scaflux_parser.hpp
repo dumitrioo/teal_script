@@ -1221,7 +1221,17 @@ namespace scfx {
                 res["type"] = "expression";
                 res["subtype"] = "literal";
                 res["literal"] = "int";
-                res["content"] = scfx::str_util::atoi(scfx::str_util::to_utf8(tk.lexem()), 10);
+                std::string msg{};
+                bool bam{false};
+                try {
+                    res["content"] = scfx::str_util::atoi(scfx::str_util::to_utf8(tk.lexem()), 10, true);
+                } catch (std::exception const &e) {
+                    msg = e.what();
+                    bam = true;
+                }
+                if(bam) {
+                    throw compilation_error{tk.line(), tk.col(), msg};
+                }
                 return res;
             } else if(tk.type_is(token::type::HEX_LITERAL)) {
                 increment_pos();
@@ -1231,7 +1241,17 @@ namespace scfx {
                 res["type"] = "expression";
                 res["subtype"] = "literal";
                 res["literal"] = "hex";
-                res["content"] = scfx::str_util::atoui(scfx::str_util::to_utf8(tk.lexem()), 16);
+                std::string msg{};
+                bool bam{false};
+                try {
+                    res["content"] = scfx::str_util::atoui(scfx::str_util::to_utf8(tk.lexem()), 16, true);
+                } catch (std::exception const &e) {
+                    msg = e.what();
+                    bam = true;
+                }
+                if(bam) {
+                    throw compilation_error{tk.line(), tk.col(), msg};
+                }
                 return res;
             } else if(tk.type_is(token::type::OCT_LITERAL)) {
                 increment_pos();
@@ -1241,7 +1261,17 @@ namespace scfx {
                 res["type"] = "expression";
                 res["subtype"] = "literal";
                 res["literal"] = "oct";
-                res["content"] = scfx::str_util::atoui(scfx::str_util::to_utf8(tk.lexem()), 8);
+                std::string msg{};
+                bool bam{false};
+                try {
+                    res["content"] = scfx::str_util::atoui(scfx::str_util::to_utf8(tk.lexem()), 8, true);
+                } catch (std::exception const &e) {
+                    msg = e.what();
+                    bam = true;
+                }
+                if(bam) {
+                    throw compilation_error{tk.line(), tk.col(), msg};
+                }
                 return res;
             } else if(tk.type_is(token::type::BIN_LITERAL)) {
                 increment_pos();
@@ -1251,7 +1281,17 @@ namespace scfx {
                 res["type"] = "expression";
                 res["subtype"] = "literal";
                 res["literal"] = "bin";
-                res["content"] = scfx::str_util::atoui(scfx::str_util::to_utf8(tk.lexem()), 2);
+                std::string msg{};
+                bool bam{false};
+                try {
+                    res["content"] = scfx::str_util::atoui(scfx::str_util::to_utf8(tk.lexem()), 2, true);
+                } catch (std::exception const &e) {
+                    msg = e.what();
+                    bam = true;
+                }
+                if(bam) {
+                    throw compilation_error{tk.line(), tk.col(), msg};
+                }
                 return res;
             } else if(tk.type_is(token::type::STRING_LITERAL)) {
                 increment_pos();

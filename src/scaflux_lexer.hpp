@@ -207,11 +207,25 @@ namespace scfx {
         void num(std::int64_t c) {
             if(scfx::str_util::fltr<std::wstring>::isdigit(c)) {
                 buff_ += c;
+            } else if(c == '\'') {
+                if(!buff_.empty() && buff_[buff_.size() - 1] != '\'') {
+                    buff_ += c;
+                } else {
+                    throw compilation_error{row_, col_, "wrong placed separator in numeric literal "};
+                }
             } else if(c == '.') {
+                if(buff_.find('\'') != std::wstring::npos) {
+                    str_util::atoui(buff_, 10, true);
+                    buff_ = str_util::remove_char(buff_, '\'');
+                }
                 float_phase_ = ".";
                 buff_ += c;
                 state_ = "float";
-            } else if(c == '.' || c == 'e' || c == 'E') {
+            } else if(c == 'e' || c == 'E') {
+                if(buff_.find('\'') != std::wstring::npos && buff_.find('.') == std::wstring::npos) {
+                    str_util::atoui(buff_, 10, true);
+                    buff_ = str_util::remove_char(buff_, '\'');
+                }
                 float_phase_ = "e";
                 buff_ += c;
                 state_ = "float";
@@ -244,6 +258,8 @@ namespace scfx {
         void hex(std::int64_t c) {
             if(scfx::str_util::ishex(c)) {
                 buff_ += c;
+            } else if(c == '\'') {
+                buff_ += c;
             } else {
                 report_token(token::type::HEX_LITERAL, c);
             }
@@ -252,6 +268,8 @@ namespace scfx {
         void oct(std::int64_t c) {
             if(c >= '0' && c < '8') {
                 buff_ += c;
+            } else if(c == '\'') {
+                buff_ += c;
             } else {
                 report_token(token::type::OCT_LITERAL, c);
             }
@@ -259,6 +277,8 @@ namespace scfx {
 
         void bin(std::int64_t c) {
             if(c == '0' || c == '1') {
+                buff_ += c;
+            } else if(c == '\'') {
                 buff_ += c;
             } else {
                 report_token(token::type::BIN_LITERAL, c);

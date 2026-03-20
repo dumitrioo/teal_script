@@ -75,30 +75,30 @@ namespace scfx {
         valbox eval(execution_context *ctx, eval_caller_type, valbox *) override {
             valbox res{valbox_no_initialize::dont_do_it};
             if(fun_ref()) {
-                valbox res{ctx->find_func(name_)};
+                res = ctx->find_func(name_);
                 execution_context::obj_type objtyp{execution_context::obj_type::unknown};
                 if(!res.is_func_ref()) {
                     res = ctx->find_val_by_sym_name(name_, line(), col(), objtyp);
                 }
-                return res;
-            }
-            bool excepted{false};
-            runtime_error er{{}, {}, {}};
-            try {
-                execution_context::obj_type objtyp{execution_context::obj_type::unknown};
-                res = ctx->find_val_by_sym_name(name_, line(), col(), objtyp);
-            } catch (runtime_error const &e) {
-                er = e;
-                excepted = true;
-            } catch (std::exception const &e) {
-                er = runtime_error{line_, col_, e.what()};
-                excepted = true;
-            } catch (...) {
-                er = runtime_error{line_, col_, "unknown error"};
-                excepted = true;
-            }
-            if(excepted) {
-                throw er;
+            } else {
+                bool excepted{false};
+                runtime_error er{{}, {}, {}};
+                try {
+                    execution_context::obj_type objtyp{execution_context::obj_type::unknown};
+                    res = ctx->find_val_by_sym_name(name_, line(), col(), objtyp);
+                } catch (runtime_error const &e) {
+                    er = e;
+                    excepted = true;
+                } catch (std::exception const &e) {
+                    er = runtime_error{line_, col_, e.what()};
+                    excepted = true;
+                } catch (...) {
+                    er = runtime_error{line_, col_, "unknown error"};
+                    excepted = true;
+                }
+                if(excepted) {
+                    throw er;
+                }
             }
             return res;
         }

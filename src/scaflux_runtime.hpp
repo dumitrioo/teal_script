@@ -164,6 +164,7 @@ namespace scfx {
             char fill() { return fill_char_; }
             bool colors_enabled() const { return terminal_colours_; }
             void enable_colors(bool v) { terminal_colours_ = v; }
+            bool setsync(bool v) const { return std::ios::sync_with_stdio(v); }
 
         private:
             void cerr_out(std::string const &type, std::vector<scfx::valbox> const &args) {
@@ -352,6 +353,7 @@ namespace scfx {
             char fill() { return fill_char_; }
             bool colors_enabled() const { return terminal_colours_; }
             void enable_colors(bool v) { terminal_colours_ = v; }
+            bool setsync(bool v) const { return std::ios::sync_with_stdio(v); }
 
         private:
             void cerr_out(std::string const &type, std::vector<scfx::valbox> const &args) {
@@ -620,6 +622,7 @@ namespace scfx {
             add_method("console", "fill", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return SCFXTHIS(args, detail::console *)->fill(); });
             add_method("console", "enable_colors", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2) SCFXTHIS(args, detail::console *)->enable_colors(args[1].cast_to_bool()); return scfx::valbox{valbox_no_initialize::dont_do_it}; });
             add_method("console", "colors_enabled", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return SCFXTHIS(args, detail::console *)->colors_enabled(); });
+            add_method("console", "sync_stdio", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2) return SCFXTHIS(args, detail::console *)->setsync(args[1].cast_to_bool()); });
             add_function("println", SCFXFUN(args) { con_.println(args); return {valbox_no_initialize::dont_do_it}; });
             add_function("print", SCFXFUN(args) { con_.print(args); return {valbox_no_initialize::dont_do_it}; });
 
@@ -998,6 +1001,17 @@ namespace scfx {
                 return std::string{};
             });
 
+            add_function("reserve", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                if(args[0].is_string_ref()) {
+                    args[0].as_string().reserve(args[1].cast_to_size_t());
+                    return true;
+                } else if(args[0].is_wstring_ref()) {
+                    args[0].as_wstring().reserve(args[1].cast_to_size_t());
+                    return true;
+                }
+                return false;
+            });
 
             add_function("substr", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 3)
@@ -2258,7 +2272,7 @@ namespace scfx {
         std::list<std::pair<std::shared_ptr<so>, extension_interface *>> loaded_extensions_{};
         static std::size_t constexpr version_major_{1};
         static std::size_t constexpr version_minor_{2};
-        static std::size_t constexpr version_patch_{121};
+        static std::size_t constexpr version_patch_{122};
     };
 
 }

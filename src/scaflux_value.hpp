@@ -3439,6 +3439,10 @@ namespace scfx {
             pointed_box_ = vbp.box_;
         }
 
+        std::size_t num_refs() const {
+            return box_.use_count();
+        }
+
     private:
         valbox(std::shared_ptr<box_data> &&b): box_{std::move(b)} {}
 
