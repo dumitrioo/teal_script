@@ -22,10 +22,17 @@ function serialize_tbbt_array(a) {
     return res + "]";
 }
 
-tbbt2cola() {
-    n = ++this.curr;
+tbbt2cola(sg) {
+    if(sg == undefined) {
+        return 0;
+    }
 
-    console.println("Target turn number: ", n);
+    // n = ++this.curr;
+    n = sg.next();
+
+    outstr = "Target turn number: " + string(n) + "\n";
+
+    //console.println("Target turn number: ", n);
 
     a[0].name = "Sheldon"; a[0].num = 1;
     a[1].name = "Leonard"; a[1].num = 1;
@@ -49,15 +56,26 @@ tbbt2cola() {
             a.push_back(t);
         }
     }
-    console.println("The character to take a drink at step No ", n, " is \"", a[0].name, "\"");
-
-    console.println("Current queue state: ", serialize_tbbt_array(a));
-    console.println("Current RLE-optimized queue state: ", a);
-    console.println("----------------------------------------------------------------");
+    outstr += "The character to take a drink at step No " + n + " is \"" + a[0].name + "\"\n";
+    outstr += "Current queue state: " + serialize_tbbt_array(a) + "\n";
+    outstr += "Current RLE-optimized queue state: " + a.to_string() + "\n";
+    outstr += "----------------------------------------------------------------";
+    console.println(outstr);
     return 0;
 }
 
-tbbt2cola duplicating_beverage();
+tbbt2cola duplicating_beverage1(sqg);
+tbbt2cola duplicating_beverage2(sqg);
+tbbt2cola duplicating_beverage3(sqg);
+tbbt2cola duplicating_beverage4(sqg);
+tbbt2cola duplicating_beverage5(sqg);
+tbbt2cola duplicating_beverage6(sqg);
+tbbt2cola duplicating_beverage7(sqg);
+tbbt2cola duplicating_beverage8(sqg);
+
+
+sqgen() { if(this.gen == undefined) { this.gen = sequence_generator(); } return this.gen; }
+sqgen sqg();
 
 
 tbbtetl_execution_time_limit(t) if this.t == undefined this.t = timestamp().fseconds() + t; else if timestamp().fseconds() > this.t exit();

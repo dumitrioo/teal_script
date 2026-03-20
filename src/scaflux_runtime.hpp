@@ -627,6 +627,14 @@ namespace scfx {
             add_function("print", SCFXFUN(args) { con_.print(args); return {valbox_no_initialize::dont_do_it}; });
 
 
+            add_function("to_string", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                std::stringstream ss{};
+                ss << args[0];
+                return ss.str();
+            });
+
+
             add_function("typeof", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 valbox::type t{args[0].deref().val_type()};
@@ -2272,7 +2280,7 @@ namespace scfx {
         std::list<std::pair<std::shared_ptr<so>, extension_interface *>> loaded_extensions_{};
         static std::size_t constexpr version_major_{1};
         static std::size_t constexpr version_minor_{2};
-        static std::size_t constexpr version_patch_{122};
+        static std::size_t constexpr version_patch_{123};
     };
 
 }

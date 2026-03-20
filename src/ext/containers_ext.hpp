@@ -102,6 +102,22 @@ namespace scfx {
                 return SCFXTHIS(args, std::shared_ptr<queue>)->clear();
             });
 
+
+            rt_->add_function("sequence_generator", SCFXFUN() {
+                return valbox{std::make_shared<atomic_sequence_generator<uint64_t>>(), "sequence_generator"};
+            });
+            rt_->add_method("sequence_generator", "reset", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2)
+                if(args.size() == 2) {
+                    SCFXTHIS(args, std::shared_ptr<atomic_sequence_generator<uint64_t>>)->reset(args[1].cast_to_u64());
+                }
+                return args[1];
+            });
+            rt_->add_method("sequence_generator", "next", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                return SCFXTHIS(args, std::shared_ptr<atomic_sequence_generator<uint64_t>>)->next();
+            });
+
         }
 
         void unregister_runtime() override {
@@ -127,6 +143,10 @@ namespace scfx {
             rt_->remove_method("queue", "at");
             rt_->remove_method("queue", "erase");
             rt_->remove_method("queue", "clear");
+
+            rt_->remove_function("sequence_generator");
+            rt_->remove_method("sequence_generator", "reset");
+            rt_->remove_method("sequence_generator", "next");
 
             rt_ = nullptr;
         }
