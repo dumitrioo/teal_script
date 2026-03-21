@@ -33,8 +33,6 @@ tbbt2cola(sg) {
     outstr.reserve(4096);
     outstr += "Target turn number: " + string(n) + "\n";
 
-    console.println("Target turn number: ", n);
-
     a[0].name = "Sheldon"; a[0].num = 1;
     a[1].name = "Leonard"; a[1].num = 1;
     a[2].name = "Penny";   a[2].num = 1;
@@ -57,7 +55,7 @@ tbbt2cola(sg) {
             a.push_back(t);
         }
     }
-    outstr += "The character to take a drink at step No " + string(n) + " is \"" + a[0].name + "\"\n";
+    outstr += "The character to take a drink is \"" + a[0].name + "\"\n";
     outstr += "Current queue state: " + serialize_tbbt_array(a) + "\n";
     outstr += "Current RLE-optimized queue state: " + a.to_string() + "\n";
     outstr += "----------------------------------------------------------------";
@@ -65,14 +63,22 @@ tbbt2cola(sg) {
     return 0;
 }
 
-tbbt2cola duplicating_beverage1(sqg);
-tbbt2cola duplicating_beverage2(sqg);
-tbbt2cola duplicating_beverage3(sqg);
-tbbt2cola duplicating_beverage4(sqg);
-tbbt2cola duplicating_beverage5(sqg);
-tbbt2cola duplicating_beverage6(sqg);
-tbbt2cola duplicating_beverage7(sqg);
-tbbt2cola duplicating_beverage8(sqg);
+tbbt2cola duplicating_beverage_0(sqg);
+tbbt2cola duplicating_beverage_1(sqg);
+tbbt2cola duplicating_beverage_2(sqg);
+tbbt2cola duplicating_beverage_3(sqg);
+tbbt2cola duplicating_beverage_4(sqg);
+tbbt2cola duplicating_beverage_5(sqg);
+tbbt2cola duplicating_beverage_6(sqg);
+tbbt2cola duplicating_beverage_7(sqg);
+tbbt2cola duplicating_beverage_8(sqg);
+tbbt2cola duplicating_beverage_9(sqg);
+tbbt2cola duplicating_beverage_a(sqg);
+tbbt2cola duplicating_beverage_b(sqg);
+tbbt2cola duplicating_beverage_c(sqg);
+tbbt2cola duplicating_beverage_d(sqg);
+tbbt2cola duplicating_beverage_e(sqg);
+tbbt2cola duplicating_beverage_f(sqg);
 
 
 sqgen() { if(this.gen == undefined) { this.gen = sequence_generator(); } return this.gen; }

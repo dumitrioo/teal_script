@@ -1555,6 +1555,7 @@ namespace scfx {
 
         void add_function(std::string const &func_name, std::function<valbox(std::vector<valbox> &)> f) override {
             if(!is_identifier(func_name)) { throw std::runtime_error{std::string{"invalid identifier: \""} + func_name + "\""}; }
+            if(is_keyword(str_util::from_utf8(func_name))) { throw std::runtime_error{std::string{"name \""} + func_name + "\" is a keyword"}; }
             if(global_functions_dictionary_.find(func_name) != global_functions_dictionary_.end()) {
                 throw std::runtime_error{
                     std::string{"symbol already exists: \""} + func_name + "\""
@@ -1572,6 +1573,7 @@ namespace scfx {
 
         void add_var(std::string const &var_name, valbox const &v) override {
             if(!is_identifier(var_name)) { throw std::runtime_error{std::string{"invalid identifier: \""} + var_name + "\""}; }
+            if(is_keyword(str_util::from_utf8(var_name))) { throw std::runtime_error{std::string{"name \""} + var_name + "\" is a keyword"}; }
             if(global_constants_dictionary_.find(var_name) != global_constants_dictionary_.end()) {
                 throw std::runtime_error{
                     std::string{"symbol already exists: \""} + var_name + "\""
@@ -1589,7 +1591,9 @@ namespace scfx {
 
         void add_method(std::string const &class_name, std::string const &method_name, std::function<valbox(std::vector<valbox> &)> f) override {
             if(!is_identifier(class_name)) { throw std::runtime_error{std::string{"invalid identifier: \""} + class_name + "\""}; }
+            if(is_keyword(str_util::from_utf8(class_name))) { throw std::runtime_error{std::string{"name \""} + class_name + "\" is a keyword"}; }
             if(!is_identifier(method_name)) { throw std::runtime_error{std::string{"invalid identifier: \""} + method_name + "\""}; }
+            if(is_keyword(str_util::from_utf8(method_name))) { throw std::runtime_error{std::string{"name \""} + method_name + "\" is a keyword"}; }
             if(global_methods_dictionary_[class_name].find(method_name) != global_methods_dictionary_[class_name].end()) {
                 throw std::runtime_error{std::string{"method already exists: \""} + method_name + "\""};
             }

@@ -178,34 +178,25 @@ namespace scfx {
                     stb = stack_barrier();
                 }
             }
-            dict_map_t<std::string, valbox>::iterator gvd_it{};
-            bool searched{false};
-            if(create_if_not_exists()) {
-                gvd_it = rt_ptr_->global_constants_dictionary()->find(name);
-                searched = true;
-                if(gvd_it != rt_ptr_->global_constants_dictionary()->end()) {
-                    throw scfx_global_identifier_exists{l, c,
-                        std::string{"global identifier named \""} + name + "\" already exists"
-                    };
-                }
-                valbox res{};
-                stack_[stack_ptr_].put(name, res);
-                objtyp = obj_type::stack_var;
-                return res;
-            }
-            if(!searched) { gvd_it = rt_ptr_->global_constants_dictionary()->find(name); }
+            dict_map_t<std::string, valbox>::iterator gvd_it{rt_ptr_->global_constants_dictionary()->find(name)};
             if(gvd_it != rt_ptr_->global_constants_dictionary()->end()) {
                 objtyp = obj_type::global_var;
-                return gvd_it->second;
+                return gvd_it->second.clone();
+            }
+            gvd_it = rt_ptr_->global_functions_dictionary()->find(name);
+            if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
+                objtyp = obj_type::global_fun;
+                return gvd_it->second.clone();
             }
             if((rt_ptr_->user_functions_search())(name)) {
                 objtyp = obj_type::user_fun;
                 return valbox{rt_ptr_->user_function_selector(), name, true};
             }
-            gvd_it = rt_ptr_->global_functions_dictionary()->find(name);
-            if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
-                objtyp = obj_type::global_fun;
-                return gvd_it->second;
+            if(create_if_not_exists()) {
+                valbox res{};
+                stack_[stack_ptr_].put(name, res);
+                objtyp = obj_type::stack_var;
+                return res;
             }
             throw scfx_identifier_not_found{l, c,
                 std::string{"identifier \""} + name + "\" not found"

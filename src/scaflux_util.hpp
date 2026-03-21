@@ -15,19 +15,19 @@
 #define SCFXNUMARG(ARGS, INDX, TYPE) ARGS[INDX].cast_num_to_num<TYPE>()
 #define SCFX_CHCK_FUN_PARMS_NUM_EQ(ARGS, NUM_ARGS) \
     if(ARGS.size() != (NUM_ARGS)) { \
-        throw std::runtime_error{"wrong function arguments count"}; \
+        throw std::runtime_error{"wrong actual function arguments number"}; \
     }
 #define SCFX_CHCK_FUN_PARMS_NUM_LE(ARGS, NUM_ARGS) \
     if(ARGS.size() > (NUM_ARGS)) { \
-        throw std::runtime_error{"wrong function arguments count"}; \
+        throw std::runtime_error{"wrong actual function arguments number"}; \
     }
 #define SCFX_CHCK_FUN_PARMS_NUM_GE(ARGS, NUM_ARGS) \
     if(ARGS.size() < (NUM_ARGS)) { \
-        throw std::runtime_error{"wrong function arguments count"}; \
+        throw std::runtime_error{"wrong actual function arguments number"}; \
     }
 #define SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(ARGS, NUM_ARGS_MIN, NUM_ARGS_MAX) \
     if(!(ARGS.size() >= (NUM_ARGS_MIN) && ARGS.size() <= (NUM_ARGS_MAX))) { \
-        throw std::runtime_error{"wrong function arguments count"}; \
+        throw std::runtime_error{"wrong actual function arguments number"}; \
     }
 #define SCFXCLASSARG(ARGS, INDX, TYPE) ARGS[INDX].as_class<TYPE>()
 #define SCFXTHIS(ARGS, TYPE) ARGS[0].as_class<TYPE>()
@@ -152,7 +152,8 @@ namespace scfx {
                str == L"try" ||
                str == L"catch" ||
                str == L"throw" ||
-               str == L"function"
+               str == L"function" ||
+               str == L"this"
         ;
     }
 

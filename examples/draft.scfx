@@ -3,16 +3,32 @@ global_init glbl_ini();
 
 
 my_drafts() {
+    // undefine = undefined;
+    k = undefine;
+    s = "123";
+    k(s);
+    s.println();
+    k(k);
+    k.println();
+    s = "123";
+    try k(s); catch(e) e.println(" (caught)");
+    s.println();
+    undefine(undefine);
+    undefine(s);
+    s.println();
+    return exit();
+
+    s = string();
+    tot_num = 1024 * 2;
+    // s.reserve(tot_num * 17);
     b = steady_clock();
-    s = "";
-    tot_num = 1024;
     for(i = 0; i < tot_num; ++i) {
         s += "0123456789abcdef";
     }
-
     e = steady_clock();
     s.println();
     (e - b).println();
+    return exit();
 
     for(i = 0; i < 256; ++i) {
         println(i, " (", itoa(i, 16), "): ", isspace(i) ? "space" : "");

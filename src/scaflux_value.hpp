@@ -1060,7 +1060,7 @@ namespace scfx {
                 thisref.box_->type_ = type::UNDEFINED;
                 thisref.box_->pointed_type_ = type::UNDEFINED;
                 thisref.box_->class_.clear();
-                thisref.box_->value_ = value_t{};
+                thisref.box_->value_ = value_t{nullptr};
                 thisref.pointed_box_.reset();
             }
             return *this;
@@ -2714,6 +2714,23 @@ namespace scfx {
                 }
                 ref.pointed_box_ = that_ref.pointed_box_;
             }
+            return *this;
+        }
+
+        valbox &fetch_from(valbox &&that) {
+            valbox &that_ref{that.deref()};
+            valbox &ref{deref()};
+            if(ref.box_.get() == that_ref.box_.get()) {
+                return *this;
+            }
+            if(!ref.box_) {
+                ref.box_ = std::make_shared<box_data>();
+            }
+            ref.box_->value_ = std::move(that_ref.box_->value_);
+            ref.box_->type_ = std::move(that_ref.box_->type_);
+            ref.box_->pointed_type_ = std::move(that_ref.box_->pointed_type_);
+            ref.box_->class_ = std::move(that_ref.box_->class_);
+            ref.pointed_box_ = std::move(that_ref.pointed_box_);
             return *this;
         }
 

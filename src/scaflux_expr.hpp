@@ -440,7 +440,15 @@ namespace scfx {
                 ctx->clear_return_request();
                 return res;
             } else {
-                return fn.as_func()(act_args);
+                runtime_error rte{0, 0, ""};
+                try {
+                    return fn.as_func()(act_args);
+                } catch (runtime_error const &e) {
+                    rte = e;
+                } catch (std::exception const &e) {
+                    rte = runtime_error{line(), col(), e.what()};
+                }
+                throw rte;
             }
         }
 

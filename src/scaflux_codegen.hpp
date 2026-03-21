@@ -92,6 +92,13 @@ namespace scfx {
                 } else if(cur["subtype"].as_string() == "function_definition") {
                     scfx::json const &cur_cnt{cur["content"]};
                     std::string func_name{cur_cnt["function_name"].as_string()};
+                    if(is_keyword(str_util::from_utf8(func_name))) {
+                        throw compilation_error{
+                            cur["loc"]["line"].try_as_number(),
+                            cur["loc"]["col"].try_as_number(),
+                            std::string{"name \""} + func_name + "\" is a keyword"
+                        };
+                    }
                     if(
                         user_functions.find(func_name) != user_functions.end() ||
                         global_functions_dictionary.find(func_name) != global_functions_dictionary.end()
@@ -99,7 +106,7 @@ namespace scfx {
                         throw compilation_error{
                             cur["loc"]["line"].try_as_number(),
                             cur["loc"]["col"].try_as_number(),
-                            "symbol already exists"
+                            func_name + ": symbol already exists"
                         };
                     }
                     statement_ptr cb{chop_statement(cur_cnt["function_body"])};

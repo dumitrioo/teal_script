@@ -563,9 +563,12 @@ namespace scfx {
         using ssize_type = std::int64_t;
 
     private:
+#ifdef SCFX_DEBUGGING
+        using o_t = std::map<std::string, json>;
+#else
         using o_t = emhash8::HashMap<std::string, json>;
+#endif
         using a_t = std::vector<json>;
-
     public:
         json() = default;
         ~json() = default;
