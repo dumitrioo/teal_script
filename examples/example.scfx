@@ -287,7 +287,7 @@ example3 ex3();
 
 
 example2() {
-    if (this.a = undefined) {
+    if (this.a == undefined) {
         this.rule = 30;
         // this.rule = 153;
         // this.rule = 106;
