@@ -343,7 +343,9 @@ namespace scfx {
                         std::move(o),
                         dr.box_->type_,
                         dr.box_->pointed_type_,
-                        dr.box_->class_
+                        dr.box_->class_,
+                        dr.box_->func_name_,
+                        dr.box_->user_func_
                     )
                 };
                 res.pointed_box_ = dr.pointed_box_;
@@ -358,7 +360,9 @@ namespace scfx {
                         std::move(a),
                         dr.box_->type_,
                         dr.box_->pointed_type_,
-                        dr.box_->class_
+                        dr.box_->class_,
+                        dr.box_->func_name_,
+                        dr.box_->user_func_
                     )
                 };
                 res.pointed_box_ = dr.pointed_box_;
@@ -368,7 +372,9 @@ namespace scfx {
                         dr.box_->value_,
                         dr.box_->type_,
                         dr.box_->pointed_type_,
-                        dr.box_->class_
+                        dr.box_->class_,
+                        dr.box_->func_name_,
+                        dr.box_->user_func_
                     )
                 };
                 res.pointed_box_ = dr.pointed_box_;
@@ -2704,13 +2710,17 @@ namespace scfx {
                         that_ref.box_->value_,
                         that_ref.box_->type_,
                         that_ref.box_->pointed_type_,
-                        that_ref.box_->class_
+                        that_ref.box_->class_,
+                        that_ref.box_->func_name_,
+                        that_ref.box_->user_func_
                     );
                 } else {
                     ref.box_->value_ = that_ref.box_->value_;
                     ref.box_->type_ = that_ref.box_->type_;
                     ref.box_->pointed_type_ = that_ref.box_->pointed_type_;
                     ref.box_->class_ = that_ref.box_->class_;
+                    ref.box_->func_name_ = that_ref.box_->func_name_;
+                    ref.box_->user_func_ = that_ref.box_->user_func_;
                 }
                 ref.pointed_box_ = that_ref.pointed_box_;
             }
@@ -2730,6 +2740,8 @@ namespace scfx {
             ref.box_->type_ = std::move(that_ref.box_->type_);
             ref.box_->pointed_type_ = std::move(that_ref.box_->pointed_type_);
             ref.box_->class_ = std::move(that_ref.box_->class_);
+            ref.box_->func_name_ = std::move(that_ref.box_->func_name_);
+            ref.box_->user_func_ = std::move(that_ref.box_->user_func_);
             ref.pointed_box_ = std::move(that_ref.pointed_box_);
             return *this;
         }

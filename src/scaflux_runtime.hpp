@@ -641,6 +641,12 @@ namespace scfx {
                 return t == valbox::type::CLASS ? args[0].ref_class_name() : valbox::type_to_str(t);
             });
 
+
+            add_function("sizeof", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                return sizeof_func_(args[0]);
+            });
+
             add_function("is_i64", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_s64_ref(); });
             add_function("is_u64", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_u64_ref(); });
             add_function("is_i32", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_s32_ref(); });
@@ -1482,7 +1488,7 @@ namespace scfx {
                        (arg0.is_string_ref() && arg0.as_string().empty()) ||
                        (arg0.is_wstring_ref() && arg0.as_wstring().empty());
             });
-
+            check_func_kw_ = true;
         }
 
         runtime(runtime const &) = delete;
@@ -1553,9 +1559,15 @@ namespace scfx {
             }
         }
 
+        bool check_func_kw_{false};
+
         void add_function(std::string const &func_name, std::function<valbox(std::vector<valbox> &)> f) override {
-            if(!is_identifier(func_name)) { throw std::runtime_error{std::string{"invalid identifier: \""} + func_name + "\""}; }
-            if(is_keyword(str_util::from_utf8(func_name))) { throw std::runtime_error{std::string{"name \""} + func_name + "\" is a keyword"}; }
+            if(!is_identifier(func_name)) {
+                throw std::runtime_error{std::string{"invalid identifier: \""} + func_name + "\""};
+            }
+            if(check_func_kw_ && is_keyword(str_util::from_utf8(func_name))) {
+                throw std::runtime_error{std::string{"name \""} + func_name + "\" is a keyword"};
+            }
             if(global_functions_dictionary_.find(func_name) != global_functions_dictionary_.end()) {
                 throw std::runtime_error{
                     std::string{"symbol already exists: \""} + func_name + "\""
@@ -1573,7 +1585,9 @@ namespace scfx {
 
         void add_var(std::string const &var_name, valbox const &v) override {
             if(!is_identifier(var_name)) { throw std::runtime_error{std::string{"invalid identifier: \""} + var_name + "\""}; }
-            if(is_keyword(str_util::from_utf8(var_name))) { throw std::runtime_error{std::string{"name \""} + var_name + "\" is a keyword"}; }
+            if(is_keyword(str_util::from_utf8(var_name))) {
+                throw std::runtime_error{std::string{"name \""} + var_name + "\" is a keyword"};
+            }
             if(global_constants_dictionary_.find(var_name) != global_constants_dictionary_.end()) {
                 throw std::runtime_error{
                     std::string{"symbol already exists: \""} + var_name + "\""
@@ -1591,9 +1605,13 @@ namespace scfx {
 
         void add_method(std::string const &class_name, std::string const &method_name, std::function<valbox(std::vector<valbox> &)> f) override {
             if(!is_identifier(class_name)) { throw std::runtime_error{std::string{"invalid identifier: \""} + class_name + "\""}; }
-            if(is_keyword(str_util::from_utf8(class_name))) { throw std::runtime_error{std::string{"name \""} + class_name + "\" is a keyword"}; }
+            if(is_keyword(str_util::from_utf8(class_name))) {
+                throw std::runtime_error{std::string{"name \""} + class_name + "\" is a keyword"};
+            }
             if(!is_identifier(method_name)) { throw std::runtime_error{std::string{"invalid identifier: \""} + method_name + "\""}; }
-            if(is_keyword(str_util::from_utf8(method_name))) { throw std::runtime_error{std::string{"name \""} + method_name + "\" is a keyword"}; }
+            if(is_keyword(str_util::from_utf8(method_name))) {
+                throw std::runtime_error{std::string{"name \""} + method_name + "\" is a keyword"};
+            }
             if(global_methods_dictionary_[class_name].find(method_name) != global_methods_dictionary_[class_name].end()) {
                 throw std::runtime_error{std::string{"method already exists: \""} + method_name + "\""};
             }
@@ -2183,6 +2201,52 @@ namespace scfx {
         }
 
     private:
+        std::function<std::size_t(valbox const &)> sizeof_func_{
+            [&](valbox const &vb) {
+                valbox const &der{vb.deref()};
+                switch(der.val_or_pointed_type()) {
+                    case valbox::type::BOOL: return static_cast<std::size_t>(sizeof(bool));
+                    case valbox::type::CHAR: return static_cast<std::size_t>(sizeof(char));
+                    case valbox::type::S8: return static_cast<std::size_t>(sizeof(std::int8_t));
+                    case valbox::type::U8: return static_cast<std::size_t>(sizeof(std::uint8_t));
+                    case valbox::type::S16: return static_cast<std::size_t>(sizeof(std::int16_t));
+                    case valbox::type::U16: return static_cast<std::size_t>(sizeof(std::uint16_t));
+                    case valbox::type::WCHAR: return static_cast<std::size_t>(sizeof(wchar_t));
+                    case valbox::type::S32: return static_cast<std::size_t>(sizeof(std::int32_t));
+                    case valbox::type::U32: return static_cast<std::size_t>(sizeof(std::uint32_t));
+                    case valbox::type::S64: return static_cast<std::size_t>(sizeof(std::int64_t));
+                    case valbox::type::U64: return static_cast<std::size_t>(sizeof(std::uint64_t));
+                    case valbox::type::FLOAT: return static_cast<std::size_t>(sizeof(float));
+                    case valbox::type::DOUBLE: return static_cast<std::size_t>(sizeof(double));
+                    case valbox::type::LONG_DOUBLE: return static_cast<std::size_t>(sizeof(long double));
+                    case valbox::type::VEC4: return static_cast<std::size_t>(sizeof(scfx::math::vector4<long double>));
+                    case valbox::type::MAT4: return static_cast<std::size_t>(sizeof(scfx::math::matrix4<long double>));
+                    case valbox::type::POINTER: return static_cast<std::size_t>(sizeof(void *));
+                    case valbox::type::CLASS: return static_cast<std::size_t>(1);
+                    case valbox::type::FUNC: return static_cast<std::size_t>(1);
+                    case valbox::type::ARRAY: {
+                        std::size_t res{};
+                        for(auto &&v: der.as_array()) {
+                            res += sizeof_func_(v);
+                        }
+                        return res;
+                    }
+                    case valbox::type::OBJECT: {
+                        std::size_t res{};
+                        for(auto &&v: der.as_object()) {
+                            res += v.first.size() + sizeof_func_(v.second);
+                        }
+                        return res;
+                    }
+                    case valbox::type::STRING: return static_cast<std::size_t>(der.as_string().size());
+                    case valbox::type::WSTRING: return static_cast<std::size_t>(der.as_wstring().size() * sizeof(std::wstring::value_type));
+                    case valbox::type::UNDEFINED: return static_cast<std::size_t>(1);
+                    default: return static_cast<std::size_t>(1);
+                }
+            }
+        };
+
+    private:
         detail::console con_{};
 
         std::atomic<std::int64_t> failure_{0};
@@ -2284,7 +2348,7 @@ namespace scfx {
         std::list<std::pair<std::shared_ptr<so>, extension_interface *>> loaded_extensions_{};
         static std::size_t constexpr version_major_{1};
         static std::size_t constexpr version_minor_{2};
-        static std::size_t constexpr version_patch_{123};
+        static std::size_t constexpr version_patch_{126};
     };
 
 }

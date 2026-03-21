@@ -2,25 +2,55 @@ global_init() if cycle_nanosleep() == 0 set_cycle_nanosleep(1000000);
 global_init glbl_ini();
 
 
+function undef_test() {
+    println("undef_test()");
+    return 0;
+}
+
 my_drafts() {
-    // undefine = undefined;
+    version_string().println();
+
+    undef_test();
+    f = undef_test;
+    f();
+    undefine(f);
+    try f(); catch(e) e.println(" (caught)");
+    undef_test();
+    f = undef_test;
+    f();
+    return exit();
+
+    this.k = array();
+    this.k[0] = array();
+    this.k[1] = array();
+    this.k[2] = array();
+    this.k[3] = array();
+    this.k[4] = array();
+    this.k[4].resize(100);
+    this.k.typeof().println();
+    this.k.sizeof().println();
+    this.k.println();
+    return exit(0);
+
+    undefine = undefined;
     k = undefine;
     s = "123";
+    println("s = ", s);
     k(s);
-    s.println();
+    println("s = ", s);
     k(k);
-    k.println();
+    println("k = ", k);
     s = "123";
     try k(s); catch(e) e.println(" (caught)");
-    s.println();
+    println("s = ", s);
     undefine(undefine);
     undefine(s);
-    s.println();
+    println("s = ", s);
     return exit();
 
     s = string();
     tot_num = 1024 * 2;
-    // s.reserve(tot_num * 17);
+    s.reserve(tot_num * 17);
     b = steady_clock();
     for(i = 0; i < tot_num; ++i) {
         s += "0123456789abcdef";

@@ -153,7 +153,9 @@ namespace scfx {
                str == L"catch" ||
                str == L"throw" ||
                str == L"function" ||
-               str == L"this"
+               str == L"this" ||
+               str == L"sizeof" ||
+               str == L"typeof"
         ;
     }
 
