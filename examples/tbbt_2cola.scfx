@@ -27,12 +27,13 @@ tbbt2cola(sg) {
         return 0;
     }
 
-    // n = ++this.curr;
     n = sg.next();
 
-    outstr = "Target turn number: " + string(n) + "\n";
+    outstr = string();
+    outstr.reserve(4096);
+    outstr += "Target turn number: " + string(n) + "\n";
 
-    //console.println("Target turn number: ", n);
+    console.println("Target turn number: ", n);
 
     a[0].name = "Sheldon"; a[0].num = 1;
     a[1].name = "Leonard"; a[1].num = 1;
@@ -56,7 +57,7 @@ tbbt2cola(sg) {
             a.push_back(t);
         }
     }
-    outstr += "The character to take a drink at step No " + n + " is \"" + a[0].name + "\"\n";
+    outstr += "The character to take a drink at step No " + string(n) + " is \"" + a[0].name + "\"\n";
     outstr += "Current queue state: " + serialize_tbbt_array(a) + "\n";
     outstr += "Current RLE-optimized queue state: " + a.to_string() + "\n";
     outstr += "----------------------------------------------------------------";
