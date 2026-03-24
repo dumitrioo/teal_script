@@ -53,7 +53,8 @@ namespace scfx::str_util {
         return res;
     }
 
-    static std::string utoa(std::uint64_t value, int radix = 10, std::int64_t width = 0, bool upcase = false) {
+    template<typename S_T>
+    S_T utoa(std::uint64_t value, int radix = 10, std::int64_t width = 0, bool upcase = false) {
         static char const *digits[2] = {
             "0123456789abcdefghijklmnopqrstuvwxyz",
             "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
@@ -71,7 +72,7 @@ namespace scfx::str_util {
                 char_stack[char_stack_size++] = digits[upcase ? 1 : 0][k];
             }
         }
-        std::string res{};
+        S_T res{};
         res.reserve(char_stack_size + 1);
         std::int64_t num_prepends{width - char_stack_size};
         if(width > 0 && num_prepends > 0) {
@@ -88,7 +89,8 @@ namespace scfx::str_util {
         return res;
     }
 
-    static std::string itoa(std::int64_t value, int radix = 10, std::int64_t width = 0, bool upcase = false) {
+    template<typename S_T>
+    S_T itoa(std::int64_t value, int radix = 10, std::int64_t width = 0, bool upcase = false) {
         static const char *digits[2] = {
             "0123456789abcdefghijklmnopqrstuvwxyz",
             "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
@@ -107,7 +109,7 @@ namespace scfx::str_util {
                 char_stack[char_stack_size++] = digits[upcase ? 1 : 0][k];
             }
         }
-        std::string res{};
+        S_T res{};
         std::int64_t num_prepends{width - char_stack_size - (sign ? 1 : 0)};
         if(width > 0 && num_prepends > 0) {
             res.reserve(num_prepends + char_stack_size + 1);
@@ -730,6 +732,12 @@ namespace scfx::str_util {
         return 0;
     }
 
+    std::string ucs_to_utf8(std::uint64_t c) {
+        std::array<char, 32> buff{};
+        int num{ucs_to_utf8(c, &buff[0])};
+        return std::string{buff.begin(), buff.begin() + num};
+    }
+
     int ucs_to_utf8_maxlen(std::uint64_t c, void *ut8, std::int64_t max_len) {
         std::uint8_t *utf8{(std::uint8_t *)ut8};
         if(c <= 0x7fULL) {
@@ -1026,7 +1034,7 @@ namespace scfx::str_util {
             if(k == 0) {
                 max_offs_string = "000";
             } else {
-                max_offs_string = scfx::str_util::utoa((k - 1), 16);
+                max_offs_string = scfx::str_util::utoa<std::string>((k - 1), 16);
             }
             std::size_t moss = max_offs_string.size() + 1;
 
@@ -1035,7 +1043,7 @@ namespace scfx::str_util {
                     res << '\n';
                 }
 
-                std::string curr_offs_string = scfx::str_util::utoa(offs, 16);
+                std::string curr_offs_string = scfx::str_util::utoa<std::string>(offs, 16);
                 while(curr_offs_string.size() < moss) {
                     curr_offs_string = std::string("0") + curr_offs_string;
                 }
@@ -1051,7 +1059,7 @@ namespace scfx::str_util {
                         res << " ";
                     }
                     if(offs + i < s) {
-                        std::string curr_hex_byte = scfx::str_util::utoa(bd[offs + i], 16);
+                        std::string curr_hex_byte = scfx::str_util::utoa<std::string>(bd[offs + i], 16);
                         while(curr_hex_byte.size() < 2) {
                             curr_hex_byte = std::string("0") + curr_hex_byte;
                         }

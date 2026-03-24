@@ -292,11 +292,11 @@ namespace scfx {
         }
 
         bool create_if_not_exists() const {
-            return create_if_not_exists_;
+            return create_if_not_exists_ != 0;
         }
 
         bool set_create_if_not_exists(bool val) {
-            bool res{create_if_not_exists_};
+            bool res{create_if_not_exists_ != 0};
             create_if_not_exists_ = val;
             return res;
         }
@@ -348,7 +348,7 @@ namespace scfx {
         std::uint64_t continue_requested_{0};
         std::uint64_t break_requested_{0};
         self_fields_map_t<std::string, valbox> *self_fields_{nullptr};
-        bool create_if_not_exists_{false};
+        std::uint64_t create_if_not_exists_{0};
     };
 
 }

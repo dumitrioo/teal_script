@@ -1,14 +1,66 @@
 global_init() if cycle_nanosleep() == 0 set_cycle_nanosleep(1000000);
 global_init glbl_ini();
 
-
 function undef_test() {
     println("undef_test()");
     return 0;
 }
 
 my_drafts() {
-    version_string().println();
+
+    {
+        v = vec4(1,2,3,4);
+        v.println();
+        a = array();
+        o = object();
+        a.assign(v);
+        a.println();
+        o.assign(v);
+        o.println();
+
+        s = string();
+        s.assign(o);
+        s.println();
+
+        v1 = vec4();
+        v1.assign(o);
+        v1.println();
+    }
+
+    {
+        m = mat4(11,12,13,14, 21,22,23,24, 31,32,33,34, 41,42,43,44);
+        m.println();
+        a = array();
+        o = object();
+        a.assign(m);
+        a.println();
+        o.assign(m);
+        o.println();
+
+        m1 = mat4();
+        m1.assign(o);
+        m1.println();
+    }
+
+    return exit();
+
+    println("string" + array(48,49,50) + 1 + vec4());
+    return exit();
+
+    if(this.ctr % 5 == 0) {
+        this.res = randf() > 0.5;
+    }
+    ++this.ctr;
+    return this.res;
+
+    sdsd = 3 * undefined;
+    sdsd.println();
+    (1 << 33).println();
+
+    k = 3 + undefined;
+    k = undefined - 3;
+    k.println();
+    return exit();
 
     undef_test();
     f = undef_test;

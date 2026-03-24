@@ -166,6 +166,20 @@ namespace scfx::math {
             return *this;
         }
 
+        matrix4 &operator/=(T v) {
+            for(std::size_t i{0}; i < 16; i++) {
+                m_[i] /= v;
+            }
+            return *this;
+        }
+
+        matrix4 &operator+=(matrix4 const &m) {
+            for(std::size_t i{0}; i < 16; i++) {
+                m_[i] += m.m_[i];
+            }
+            return *this;
+        }
+
         void become_zero() { for(auto &&x: m_) { x = 0; } }
 
         T determinant() const { return det(*this); }
@@ -194,6 +208,13 @@ namespace scfx::math {
                 return adjugate() * (1 / dtrm);
             }
             return {};
+        }
+
+        bool is_zero() const {
+            return m_[0] == 0 && m_[1] == 0 && m_[2] == 0 && m_[3] == 0 &&
+                   m_[4] == 0 && m_[5] == 0 && m_[6] == 0 && m_[7] == 0 &&
+                   m_[8] == 0 && m_[9] == 0 && m_[10] == 0 && m_[11] == 0 &&
+                   m_[12] == 0 && m_[13] == 0 && m_[14] == 0 && m_[15] == 0;
         }
 
         matrix4 all_positive() const {

@@ -56,7 +56,7 @@ namespace scfx {
             });
             rt->add_method("file", "to_string", SCFXFUN(args) {
                 return std::string{"class \"file\", instance 0x"} +
-                        scfx::str_util::utoa(reinterpret_cast<std::uintptr_t>(SCFXTHIS(args, std::shared_ptr<scfx_file>).get()), 16) +
+                        scfx::str_util::utoa<std::string>(reinterpret_cast<std::uintptr_t>(SCFXTHIS(args, std::shared_ptr<scfx_file>).get()), 16) +
                         ", status: " + (SCFXTHIS(args, std::shared_ptr<scfx_file>)->is_open() ? "opened" : "closed");
             });
             rt->add_method("file", "ok", SCFXFUN(args) {

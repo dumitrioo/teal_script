@@ -548,7 +548,7 @@ namespace scfx::file_util {
 
     static std::string suffix_file_name_number(std::string const &fn, int num) {
         std::string tfn{fn};
-        std::string sn{scfx::str_util::itoa(static_cast<std::int64_t>(num))};
+        std::string sn{scfx::str_util::itoa<std::string>(static_cast<std::int64_t>(num))};
         auto dot_pos{tfn.find('.')};
         if(dot_pos != std::string::npos) {
             return tfn.substr(0, dot_pos) + "(" + sn + ")" + tfn.substr(dot_pos);

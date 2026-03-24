@@ -66,13 +66,18 @@ namespace scfx {
         sym_expression(std::string const &name): name_{name} {}
 
         bool primary() const override {
-            return false;
+            return primary_.load(std::memory_order_acquire);
         }
 
         void reset_primary() override {
+            primary_ = false;
         }
 
         valbox eval(execution_context *ctx, eval_caller_type, valbox *) override {
+            if(primary()) {
+                std::shared_lock l{primary_val_mtp_};
+                return primary_val_;
+            }
             valbox res{valbox_no_initialize::dont_do_it};
             if(fun_ref()) {
                 res = ctx->find_func(name_);
@@ -86,6 +91,11 @@ namespace scfx {
                 try {
                     execution_context::obj_type objtyp{execution_context::obj_type::unknown};
                     res = ctx->find_val_by_sym_name(name_, line(), col(), objtyp);
+                    if(objtyp == execution_context::obj_type::global_var) {
+                        std::unique_lock l{primary_val_mtp_};
+                        primary_val_ = res;
+                        primary_ = true;
+                    }
                 } catch (runtime_error const &e) {
                     er = e;
                     excepted = true;
@@ -110,7 +120,10 @@ namespace scfx {
         bool is_symbolic() const override { return true; }
 
     private:
+        mutable shared_mutex primary_val_mtp_{};
+        valbox primary_val_{};
         std::string name_{};
+        std::atomic<bool> primary_{false};
     };
 
     class prefix_unop_expression: public expression {
@@ -124,7 +137,7 @@ namespace scfx {
         }
 
         bool primary() const override {
-            return primary_;
+            return primary_.load(std::memory_order_acquire);
         }
 
         void reset_primary() override {
@@ -147,7 +160,6 @@ namespace scfx {
                 /* IDENTIFIER */ nullptr,
                 /* PLUS */
                 [](prefix_unop_expression *this_, execution_context *ctx) -> valbox {
-                    if(this_->primary_) { return this_->primary_val_; }
                     expr_ptr &val{this_->val_};
                     bool old{ctx->set_create_if_not_exists(false)};
                     scfx::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
@@ -331,6 +343,10 @@ namespace scfx {
                 /* FUNCCALL */ nullptr,
                 /* ENDOFFILE */ nullptr,
             };
+            if(primary()) {
+                std::shared_lock l{primary_val_mtp_};
+                return primary_val_;
+            }
             auto fn{ops[static_cast<std::size_t>(opcode_) % ops.size()]};
             if(fn == nullptr) {
                 throw runtime_error{val_->line(), val_->col(), "unsupported operation"};
@@ -498,7 +514,7 @@ namespace scfx {
         token::type binop_type() const override { return opcode_; }
 
         bool primary() const override {
-            return primary_;
+            return primary_.load(std::memory_order_acquire);
         }
 
         void reset_primary() override {
@@ -508,9 +524,6 @@ namespace scfx {
         }
 
         valbox eval(execution_context *ctx, eval_caller_type caller_type, valbox *dotlptr) override {
-            if(primary_) {
-                return primary_val_;
-            }
             static std::array<valbox(*)(binop_expression *, execution_context *, eval_caller_type, valbox *), 69> const ops{
                 /* NONE */ nullptr,
                 /* INT_LITERAL */ nullptr,
@@ -527,57 +540,25 @@ namespace scfx {
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool old{ctx->set_create_if_not_exists(false)};
+                    shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-                    ctx->set_create_if_not_exists(old);
-                    if(l.is_undefined_ref()) {
-                        if(r.is_undefined_ref()) {
-                            res = valbox{valbox_no_initialize::dont_do_it};
-                        } else {
-                            valbox ln{};
-                            ln.become_same_type_as(r);
-                            res = (ln + r);
-                        }
-                    } else {
-                        if(r.is_undefined_ref()) {
-                            valbox rn{};
-                            rn.become_same_type_as(l);
-                            bool excepted{false};
-                            runtime_error er{{}, {}, {}};
-                            try {
-                                res = l + rn;
-                            } catch (runtime_error const &e) {
-                                er = e;
-                                excepted = true;
-                            } catch (std::exception const &e) {
-                                er = runtime_error(this_->line_, this_->col_, e.what());
-                                excepted = true;
-                            } catch (...) {
-                                er = runtime_error(this_->line_, this_->col_, "unknown error");
-                                excepted = true;
-                            }
-                            if(excepted) {
-                                throw er;
-                            }
-                        } else {
-                            bool excepted{false};
-                            runtime_error er{{}, {}, {}};
-                            try {
-                                res = l + r;
-                            } catch (runtime_error const &e) {
-                                er = e;
-                                excepted = true;
-                            } catch (std::exception const &e) {
-                                er = runtime_error(this_->line_, this_->col_, e.what());
-                                excepted = true;
-                            } catch (...) {
-                                er = runtime_error(this_->line_, this_->col_, "unknown error");
-                                excepted = true;
-                            }
-                            if(excepted) {
-                                throw er;
-                            }
-                        }
+                    bool excepted{false};
+                    runtime_error er{{}, {}, {}};
+                    try {
+                        res = l + r;
+                    } catch (runtime_error const &e) {
+                        er = e;
+                        excepted = true;
+                    } catch (std::exception const &e) {
+                        er = runtime_error(this_->line_, this_->col_, e.what());
+                        excepted = true;
+                    } catch (...) {
+                        er = runtime_error(this_->line_, this_->col_, "unknown error");
+                        excepted = true;
+                    }
+                    if(excepted) {
+                        throw er;
                     }
                     return res;
                 },
@@ -585,73 +566,25 @@ namespace scfx {
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool old{ctx->set_create_if_not_exists(false)};
+                    shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-                    ctx->set_create_if_not_exists(old);
-                    if(l.is_undefined_ref()) {
-                        if(r.is_undefined_ref()) {
-                            res = valbox{valbox_no_initialize::dont_do_it};
-                        } else {
-                            valbox ln{valbox_no_initialize::dont_do_it};
-                            ln.become_same_type_as(r);
-                            bool excepted{false};
-                            runtime_error er{{}, {}, {}};
-                            try {
-                                res = ln - r;
-                            } catch (runtime_error const &e) {
-                                er = e;
-                                excepted = true;
-                            } catch (std::exception const &e) {
-                                er = runtime_error(this_->line_, this_->col_, e.what());
-                                excepted = true;
-                            } catch (...) {
-                                er = runtime_error(this_->line_, this_->col_, "unknown error");
-                                excepted = true;
-                            }
-                            if(excepted) {
-                                throw er;
-                            }
-                        }
-                    } else {
-                        if(r.is_undefined_ref()) {
-                            valbox rn{};
-                            rn.become_same_type_as(l);
-                            bool excepted{false};
-                            runtime_error er{{}, {}, {}};
-                            try {
-                                res = l - rn;
-                            } catch (runtime_error const &e) {
-                                er = e;
-                                excepted = true;
-                            } catch (std::exception const &e) {
-                                er = runtime_error(this_->line_, this_->col_, e.what());
-                                excepted = true;
-                            } catch (...) {
-                                er = runtime_error(this_->line_, this_->col_, "unknown error");
-                                excepted = true;
-                            }
-                            if(excepted) {
-                                throw er;
-                            }
-                        } else {
-                            bool excepted{false};
-                            runtime_error er{{}, {}, {}};
-                            try {
-                                res = l - r;
-                            } catch (runtime_error const &e) {
-                                er = e;
-                                excepted = true;
-                            } catch (std::exception const &e) {
-                                er = runtime_error(this_->line_, this_->col_, e.what());
-                                excepted = true;
-                            } catch (...) {
-                                er = runtime_error(this_->line_, this_->col_, "unknown error");
-                                excepted = true;
-                            }
-                            if(excepted) {
-                                throw er;
-                            }
-                        }
+                    bool excepted{false};
+                    runtime_error er{{}, {}, {}};
+                    try {
+                        res = l - r;
+                    } catch (runtime_error const &e) {
+                        er = e;
+                        excepted = true;
+                    } catch (std::exception const &e) {
+                        er = runtime_error(this_->line_, this_->col_, e.what());
+                        excepted = true;
+                    } catch (...) {
+                        er = runtime_error(this_->line_, this_->col_, "unknown error");
+                        excepted = true;
+                    }
+                    if(excepted) {
+                        throw er;
                     }
                     return res;
                 },
@@ -659,73 +592,25 @@ namespace scfx {
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool old{ctx->set_create_if_not_exists(false)};
+                    shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-                    ctx->set_create_if_not_exists(old);
-                    if(l.is_undefined_ref()) {
-                        if(r.is_undefined_ref()) {
-                            res = valbox{valbox_no_initialize::dont_do_it};
-                        } else {
-                            valbox ln{valbox_no_initialize::dont_do_it};
-                            ln.become_same_type_as(r);
-                            bool excepted{false};
-                            runtime_error er{{}, {}, {}};
-                            try {
-                                res = ln * r;
-                            } catch (runtime_error const &e) {
-                                er = e;
-                                excepted = true;
-                            } catch (std::exception const &e) {
-                                er = runtime_error(this_->line_, this_->col_, e.what());
-                                excepted = true;
-                            } catch (...) {
-                                er = runtime_error(this_->line_, this_->col_, "unknown error");
-                                excepted = true;
-                            }
-                            if(excepted) {
-                                throw er;
-                            }
-                        }
-                    } else {
-                        if(r.is_undefined_ref()) {
-                            valbox rn{};
-                            rn.become_same_type_as(l);
-                            bool excepted{false};
-                            runtime_error er{{}, {}, {}};
-                            try {
-                                res = l * rn;
-                            } catch (runtime_error const &e) {
-                                er = e;
-                                excepted = true;
-                            } catch (std::exception const &e) {
-                                er = runtime_error(this_->line_, this_->col_, e.what());
-                                excepted = true;
-                            } catch (...) {
-                                er = runtime_error(this_->line_, this_->col_, "unknown error");
-                                excepted = true;
-                            }
-                            if(excepted) {
-                                throw er;
-                            }
-                        } else {
-                            bool excepted{false};
-                            runtime_error er{{}, {}, {}};
-                            try {
-                                res = l * r;
-                            } catch (runtime_error const &e) {
-                                er = e;
-                                excepted = true;
-                            } catch (std::exception const &e) {
-                                er = runtime_error(this_->line_, this_->col_, e.what());
-                                excepted = true;
-                            } catch (...) {
-                                er = runtime_error(this_->line_, this_->col_, "unknown error");
-                                excepted = true;
-                            }
-                            if(excepted) {
-                                throw er;
-                            }
-                        }
+                    bool excepted{false};
+                    runtime_error er{{}, {}, {}};
+                    try {
+                        res = l * r;
+                    } catch (runtime_error const &e) {
+                        er = e;
+                        excepted = true;
+                    } catch (std::exception const &e) {
+                        er = runtime_error(this_->line_, this_->col_, e.what());
+                        excepted = true;
+                    } catch (...) {
+                        er = runtime_error(this_->line_, this_->col_, "unknown error");
+                        excepted = true;
+                    }
+                    if(excepted) {
+                        throw er;
                     }
                     return res;
                 },
@@ -733,9 +618,9 @@ namespace scfx {
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool old{ctx->set_create_if_not_exists(false)};
+                    shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-                    ctx->set_create_if_not_exists(old);
                     if(l.is_undefined_ref()) {
                         if(r.is_undefined_ref()) {
                             res = valbox{valbox_no_initialize::dont_do_it};
@@ -789,55 +674,25 @@ namespace scfx {
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool old{ctx->set_create_if_not_exists(false)};
+                    shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-                    ctx->set_create_if_not_exists(old);
-                    if(l.is_undefined_ref()) {
-                        if(r.is_undefined_ref()) {
-                            res = valbox{valbox_no_initialize::dont_do_it};
-                        } else {
-                            valbox ln{};
-                            ln.become_same_type_as(r);
-                            bool excepted{false};
-                            runtime_error er{{}, {}, {}};
-                            try {
-                                res = ln % r;
-                            } catch (runtime_error const &e) {
-                                er = e;
-                                excepted = true;
-                            } catch (std::exception const &e) {
-                                er = runtime_error(this_->line_, this_->col_, e.what());
-                                excepted = true;
-                            } catch (...) {
-                                er = runtime_error(this_->line_, this_->col_, "unknown error");
-                                excepted = true;
-                            }
-                            if(excepted) {
-                                throw er;
-                            }
-                        }
-                    } else {
-                        if(r.is_undefined_ref()) {
-                            throw runtime_error{this_->line_, this_->col_, "division by zero"};
-                        } else {
-                            bool excepted{false};
-                            runtime_error er{{}, {}, {}};
-                            try {
-                                res = l % r;
-                            } catch (runtime_error const &e) {
-                                er = e;
-                                excepted = true;
-                            } catch (std::exception const &e) {
-                                er = runtime_error(this_->line_, this_->col_, e.what());
-                                excepted = true;
-                            } catch (...) {
-                                er = runtime_error(this_->line_, this_->col_, "unknown error");
-                                excepted = true;
-                            }
-                            if(excepted) {
-                                throw er;
-                            }
-                        }
+                    bool excepted{false};
+                    runtime_error er{{}, {}, {}};
+                    try {
+                        res = l % r;
+                    } catch (runtime_error const &e) {
+                        er = e;
+                        excepted = true;
+                    } catch (std::exception const &e) {
+                        er = runtime_error(this_->line_, this_->col_, e.what());
+                        excepted = true;
+                    } catch (...) {
+                        er = runtime_error(this_->line_, this_->col_, "unknown error");
+                        excepted = true;
+                    }
+                    if(excepted) {
+                        throw er;
                     }
                     return res;
                 },
@@ -845,9 +700,10 @@ namespace scfx {
                 /* EQUAL */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
+                    shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox res{valbox_no_initialize::dont_do_it};
-                    auto l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-                    auto r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
+                    auto l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr)};
+                    auto r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr)};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
                     try {
@@ -862,7 +718,6 @@ namespace scfx {
                         er = runtime_error(this_->line_, this_->col_, "unknown error");
                         excepted = true;
                     }
-                    ctx->set_create_if_not_exists(old);
                     if(excepted) {
                         throw er;
                     }
@@ -871,13 +726,15 @@ namespace scfx {
                 /* NOT */ nullptr,
                 /* NOTEQUAL */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
-                    bool old{ctx->set_create_if_not_exists(false)};
                     valbox res{valbox_no_initialize::dont_do_it};
+                    bool old{ctx->set_create_if_not_exists(false)};
+                    shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
+                    auto l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr)};
+                    auto r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr)};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
                     try {
-                        res = this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref() !=
-                              this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref();
+                        res = l != r;
                     } catch (runtime_error const &e) {
                         er = e;
                         excepted = true;
@@ -888,7 +745,6 @@ namespace scfx {
                         er = runtime_error(this_->line_, this_->col_, "unknown error");
                         excepted = true;
                     }
-                    ctx->set_create_if_not_exists(old);
                     if(excepted) {
                         throw er;
                     }
@@ -897,12 +753,13 @@ namespace scfx {
                 /* LESSEQUAL */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
+                    shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
                     try {
-                        res = this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref() <=
-                              this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref();
+                        res = this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr) <=
+                              this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr);
                     } catch (runtime_error const &e) {
                         er = e;
                         excepted = true;
@@ -913,7 +770,6 @@ namespace scfx {
                         er = runtime_error(this_->line_, this_->col_, "unknown error");
                         excepted = true;
                     }
-                    ctx->set_create_if_not_exists(old);
                     if(excepted) {
                         throw er;
                     }
@@ -922,6 +778,7 @@ namespace scfx {
                 /* LESS */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
+                    shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
@@ -938,7 +795,6 @@ namespace scfx {
                         er = runtime_error(this_->line_, this_->col_, "unknown error");
                         excepted = true;
                     }
-                    ctx->set_create_if_not_exists(old);
                     if(excepted) {
                         throw er;
                     }
@@ -947,6 +803,7 @@ namespace scfx {
                 /* GREATER */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
+                    shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
@@ -964,7 +821,6 @@ namespace scfx {
                         er = runtime_error(this_->line_, this_->col_, "unknown error");
                         excepted = true;
                     }
-                    ctx->set_create_if_not_exists(old);
                     if(excepted) {
                         throw er;
                     }
@@ -973,6 +829,7 @@ namespace scfx {
                 /* GREATEREQUAL */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
+                    shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
@@ -989,7 +846,6 @@ namespace scfx {
                         er = runtime_error(this_->line_, this_->col_, "unknown error");
                         excepted = true;
                     }
-                    ctx->set_create_if_not_exists(old);
                     if(excepted) {
                         throw er;
                     }
@@ -1003,8 +859,8 @@ namespace scfx {
                         r = r.clone();
                     }
                     bool old{ctx->set_create_if_not_exists(true)};
+                    shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-                    ctx->set_create_if_not_exists(old);
                     this_->lval_->reset_primary();
                     if(l.is_ptr()) {
                         l.assign_preserving_type(r);
@@ -1016,7 +872,10 @@ namespace scfx {
                 /* ADDASSIGN */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
+                    bool old{ctx->set_create_if_not_exists(true)}; //
+                    shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
+                    this_->lval_->reset_primary();
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
                     try {
@@ -1040,8 +899,9 @@ namespace scfx {
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     bool old{ctx->set_create_if_not_exists(true)};
+                    shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-                    ctx->set_create_if_not_exists(old);
+                    this_->lval_->reset_primary();
                     if(!r.is_undefined_ref()) {
                         if(l.is_undefined_ref()) {
                             l.assign(-r);
@@ -1071,8 +931,9 @@ namespace scfx {
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     bool old{ctx->set_create_if_not_exists(true)};
+                    shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-                    ctx->set_create_if_not_exists(old);
+                    this_->lval_->reset_primary();
                     if(r.is_undefined_ref()) {
                         if(!l.is_undefined_ref()) {
                             l.assign_preserving_type(0);
@@ -1106,8 +967,9 @@ namespace scfx {
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     bool old{ctx->set_create_if_not_exists(true)};
+                    shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-                    ctx->set_create_if_not_exists(old);
+                    this_->lval_->reset_primary();
                     if(r.is_undefined_ref()) {
                         throw runtime_error{this_->line_, this_->col_, "division by undefined value"};
                     } else {
@@ -1139,8 +1001,9 @@ namespace scfx {
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     bool old{ctx->set_create_if_not_exists(true)};
+                    shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-                    ctx->set_create_if_not_exists(old);
+                    this_->lval_->reset_primary();
                     if(r.is_undefined_ref()) {
                         throw runtime_error{this_->line_, this_->col_, "division by undefined value"};
                     } else {
@@ -1172,8 +1035,9 @@ namespace scfx {
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     bool old{ctx->set_create_if_not_exists(true)};
+                    shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-                    ctx->set_create_if_not_exists(old);
+                    this_->lval_->reset_primary();
                     if(r.is_undefined_ref()) {
                     } else {
                         if(l.is_undefined_ref()) {
@@ -1205,8 +1069,9 @@ namespace scfx {
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     bool old{ctx->set_create_if_not_exists(true)};
+                    shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-                    ctx->set_create_if_not_exists(old);
+                    this_->lval_->reset_primary();
                     if(r.is_undefined_ref()) {
                     } else {
                         if(l.is_undefined_ref()) {
@@ -1236,8 +1101,9 @@ namespace scfx {
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     bool old{ctx->set_create_if_not_exists(true)};
+                    shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-                    ctx->set_create_if_not_exists(old);
+                    this_->lval_->reset_primary();
                     if(r.is_undefined_ref()) {
                     } else {
                         if(l.is_undefined_ref()) {
@@ -1269,8 +1135,9 @@ namespace scfx {
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     bool old{ctx->set_create_if_not_exists(true)};
+                    shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-                    ctx->set_create_if_not_exists(old);
+                    this_->lval_->reset_primary();
                     if(r.is_undefined_ref()) {
                     } else {
                         if(l.is_undefined_ref()) {
@@ -1300,8 +1167,9 @@ namespace scfx {
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     bool old{ctx->set_create_if_not_exists(true)};
+                    shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-                    ctx->set_create_if_not_exists(old);
+                    this_->lval_->reset_primary();
                     if(r.is_undefined_ref()) {
                     } else {
                         if(l.is_undefined_ref()) {
@@ -1332,6 +1200,7 @@ namespace scfx {
                 /* LSHIFT */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
+                    shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
@@ -1348,7 +1217,6 @@ namespace scfx {
                         er = runtime_error(this_->line_, this_->col_, "unknown error");
                         excepted = true;
                     }
-                    ctx->set_create_if_not_exists(old);
                     if(excepted) {
                         throw er;
                     }
@@ -1357,6 +1225,7 @@ namespace scfx {
                 /* RSHIFT */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
+                    shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
@@ -1373,7 +1242,6 @@ namespace scfx {
                         er = runtime_error(this_->line_, this_->col_, "unknown error");
                         excepted = true;
                     }
-                    ctx->set_create_if_not_exists(old);
                     if(excepted) {
                         throw er;
                     }
@@ -1387,12 +1255,13 @@ namespace scfx {
                 /* XOR */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
+                    shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
                     try {
-                        res = this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref() ^
-                              this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref();
+                        res = this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr) ^
+                              this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr);
                     } catch (runtime_error const &e) {
                         er = e;
                         excepted = true;
@@ -1403,7 +1272,6 @@ namespace scfx {
                         er = runtime_error(this_->line_, this_->col_, "unknown error");
                         excepted = true;
                     }
-                    ctx->set_create_if_not_exists(old);
                     if(excepted) {
                         throw er;
                     }
@@ -1413,6 +1281,7 @@ namespace scfx {
                 /* BITOR */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
+                    shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
@@ -1429,7 +1298,6 @@ namespace scfx {
                         er = runtime_error(this_->line_, this_->col_, "unknown error");
                         excepted = true;
                     }
-                    ctx->set_create_if_not_exists(old);
                     if(excepted) {
                         throw er;
                     }
@@ -1438,15 +1306,16 @@ namespace scfx {
                 /* OR */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
+                    shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox res{valbox_no_initialize::dont_do_it};
                     res = this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref().cast_to_bool() ||
                           this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref().cast_to_bool();
-                    ctx->set_create_if_not_exists(old);
                     return res;
                 },
                 /* BITAND */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
+                    shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
@@ -1463,7 +1332,6 @@ namespace scfx {
                         er = runtime_error(this_->line_, this_->col_, "unknown error");
                         excepted = true;
                     }
-                    ctx->set_create_if_not_exists(old);
                     if(excepted) {
                         throw er;
                     }
@@ -1472,10 +1340,10 @@ namespace scfx {
                 /* AND */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
+                    shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox res{valbox_no_initialize::dont_do_it};
                     res = this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref().cast_to_bool() &&
                           this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref().cast_to_bool();
-                    ctx->set_create_if_not_exists(old);
                     return res;
                 },
                 /* QUESTION */ nullptr,
@@ -1643,6 +1511,10 @@ namespace scfx {
                 /* FUNCCALL */ nullptr,
                 /* ENDOFFILE */ nullptr,
             };
+            if(primary()) {
+                std::shared_lock l{primary_val_mtp_};
+                return primary_val_;
+            }
             auto fn{ops[static_cast<std::size_t>(opcode_) % ops.size()]};
             if(fn == nullptr) {
                 throw runtime_error{line(), col(), "unsupported operation"};

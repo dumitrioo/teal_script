@@ -204,6 +204,10 @@ namespace scfx::math {
             return vector4{*this}.normalize();
         }
 
+        bool is_zero() const {
+            return v_[0] == 0 && v_[1] == 0 && v_[2] == 0 && v_[3] == 0;
+        }
+
         vector4 all_positive() const {
             vector4 res{};
             res.v_[0] = std::abs(v_[0]);

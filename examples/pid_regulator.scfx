@@ -1,36 +1,52 @@
-// 'in' in;
-// target input value emulation (mock values)
-val_with_rand(v) {
+global_init() {
+
+    if(this.initialized == undefined) {
+        console.fixed();
+        this.initialized = true;
+        set_cycle_nanosleep(1000000);
+    }
+}
+first_defined(a, b) return a == undefined ? b : a;
+forward(val) return val;
+difference(a, b) return a - b;
+val_with_rand(v, dev) {
     if(this.prev_t == undefined) {
         this.prev_t = steady_clock();
-        this.delta = (randf() - 0.5) * 100;
+        this.delta = (randf() - 0.5) * dev;
     }
     t = steady_clock();
     dt = t - this.prev_t;
     if(dt > 2) {
-        this.delta = (randf() - 0.5) * 100;
+        this.delta = (randf() - 0.5) * dev;
         this.prev_t = t;
     }
     return v + this.delta;
 }
-val_with_rand in(0.0);
 
-// 'kp' kp;
-// 'ki' ki;
-// 'kd' kd;
-// PID regulator coeffs emulation (mock values)
-forward kp(0.8);
-forward ki(0.4);
-forward kd(0.000001);
+global_init glbl_ini();
 
-// 'km' km;
-// Math regulator coeffs emulation (mock values)
-forward km(500.0);
+// input values (real)
+'in' real_in;
+'kp' real_kp;
+'ki' real_ki;
+'kd' real_kd;
+'km' real_km;
+
+// emulation (mock)
+val_with_rand mock_in(0.0, 100.0);
+forward mock_kp(0.8);
+forward mock_ki(0.4);
+forward mock_kd(0.000001);
+forward mock_km(500.0);
+
+// choose
+first_defined in(real_in, mock_in);
+first_defined kp(real_kp, mock_kp);
+first_defined ki(real_ki, mock_ki);
+first_defined kd(real_kd, mock_kd);
+first_defined km(real_km, mock_km);
 
 //////////////////////////////////////////////////////////////
-
-forward(val) return val;
-difference(a, b) return a - b;
 
 // PID regulator
 pid_regulator(err, kp, ki, kd) {
@@ -78,20 +94,16 @@ pid_regulator pid(diff1, kp, ki, kd) 'pid_out';
 difference diff2(in, mr);
 math_regulator mr(diff2, km) 'pow_out';
 
-allprint(in, e1, pidval, e2, mathval) {
-    console.fixed();
-    println(timestamp().as_iso_8601(), " | target val: ", in,
-        "  ||  err1: ", e1, ", PID val: ", pidval,
-        "  ||  err2: ", e2, ", Math val: ", mathval
-    );
-    sleep(0.05);
-}
-allprint pv(in, diff1, pid, diff2, mr);
 
-global_init() {
-    if(this.initialized == undefined) {
-        this.initialized = true;
-        set_cycle_nanosleep(1000000);
+allprint(in, e1, pidval, e2, mathval) {
+    t = steady_clock();
+    dt = t - this.prev_t;
+    if(dt > 0.1) {
+        this.prev_t = t;
+        console.info("target val: ", in,
+            "  ||  err1: ", e1, ", PID val: ", pidval,
+            "  ||  err2: ", e2, ", Math val: ", mathval
+        );
     }
 }
-global_init glbl_ini();
+allprint pv(in, diff1, pid, diff2, mr);

@@ -924,7 +924,7 @@ namespace scfx {
             if(is_null()) {
                 return std::string{};
             } else if(is_number()) {
-                return str_util::itoa(as_number());
+                return str_util::itoa<std::string>(as_number());
             } else if(is_real()) {
                 return str_util::ftoa(as_longdouble(), std::numeric_limits<long double>::digits10);
             } else if(is_bool()) {
@@ -1629,7 +1629,7 @@ namespace scfx {
             if(t_ == jo_null) {
                 return "null";
             } else if(t_ == jo_int) {
-                return str_util::itoa(as<std::int64_t>());
+                return str_util::itoa<std::string>(as<std::int64_t>());
             } else if(t_ == jo_flt) {
                 return str_util::ftoa(as<long double>(), std::numeric_limits<long double>::digits10);
             } else if(t_ == jo_bool) {
@@ -1676,7 +1676,7 @@ namespace scfx {
             if(t_ == jo_null) {
                 return "null";
             } else if(t_ == jo_int) {
-                return str_util::itoa(as<std::int64_t>());
+                return str_util::itoa<std::string>(as<std::int64_t>());
             } else if(t_ == jo_flt) {
                 return str_util::ftoa(as<long double>(), std::numeric_limits<long double>::digits10);
             } else if(t_ == jo_bool) {
@@ -1726,7 +1726,7 @@ namespace scfx {
             ser << (std::uint8_t)t_;
             if(t_ == jo_null) {
             } else if(t_ == jo_int) {
-                ser << str_util::itoa(as<std::int64_t>());
+                ser << str_util::itoa<std::string>(as<std::int64_t>());
             } else if(t_ == jo_flt) {
                 ser << str_util::ftoa(as<long double>(), std::numeric_limits<long double>::digits10);
             } else if(t_ == jo_bool) {
@@ -1734,14 +1734,14 @@ namespace scfx {
             } else if(t_ == jo_string) {
                 ser << as<std::string>();
             } else if(t_ == jo_object) {
-                ser << str_util::utoa(size());
+                ser << str_util::utoa<std::string>(size());
                 for(auto &&p: as<o_t const &>()) {
                     ser << p.first;
                     p.second.bserialize_actual(ser);
                 }
             } else if(t_ == jo_array) {
                 a_t const &a{as<a_t>()};
-                ser << str_util::utoa(size());
+                ser << str_util::utoa<std::string>(size());
                 std::int64_t max_ind{max_array_index()};
                 for(std::int64_t i{0}; i <= max_ind; ++i) {
                     a.at(i).bserialize_actual(ser);

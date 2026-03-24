@@ -109,7 +109,7 @@ namespace scfx::net {
 
     static std::string ipv4_to_hex(std::string const &addr) {
         in_addr an{scfx::net::pton(addr)};
-        std::string res{scfx::str_util::utoa(scfx::bit_util::swap_on_le<std::uint32_t>{an.s_addr}.val, 16)};
+        std::string res{scfx::str_util::utoa<std::string>(scfx::bit_util::swap_on_le<std::uint32_t>{an.s_addr}.val, 16)};
         while(res.size() < 8) {
             res = std::string{"0"} + res;
         }
@@ -120,7 +120,7 @@ namespace scfx::net {
         std::string res{};
         in6_addr an{scfx::net::pton6(addr)};
         for(int i{0}; i < 16; ++i) {
-            std::string ns{scfx::str_util::utoa(((std::uint8_t const *)&an)[i], 16)};
+            std::string ns{scfx::str_util::utoa<std::string>(((std::uint8_t const *)&an)[i], 16)};
             while(ns.size() < 2) {
                 ns = std::string{"0"} + ns;
             }

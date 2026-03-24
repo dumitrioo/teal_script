@@ -423,9 +423,9 @@ namespace scfx {
             add_function("version_minor", SCFXFUN(/*args*/) { return version_minor_; });
             add_function("version_patch", SCFXFUN(/*args*/) { return version_patch_; });
             add_function("version_string", SCFXFUN(/*args*/) {
-                return str_util::utoa(version_major_) + "." +
-                       str_util::utoa(version_minor_) + "." +
-                       str_util::utoa(version_patch_);
+                return str_util::utoa<std::string>(version_major_) + "." +
+                       str_util::utoa<std::string>(version_minor_) + "." +
+                       str_util::utoa<std::string>(version_patch_);
             });
 
             add_var("EPERM", EPERM);     // 1   Operation not permitted
@@ -1266,15 +1266,15 @@ namespace scfx {
                     if(args.size() > 1) {
                         if(args.size() > 2) {
                             if(args.size() > 3) {
-                                return scfx::str_util::itoa(args[0].cast_to_s64(), args[1].cast_to_s64(), args[2].cast_to_s64(), args[3].cast_to_bool());
+                                return scfx::str_util::itoa<std::string>(args[0].cast_to_s64(), args[1].cast_to_s64(), args[2].cast_to_s64(), args[3].cast_to_bool());
                             } else {
-                                return scfx::str_util::itoa(args[0].cast_to_s64(), args[1].cast_to_s64(), args[2].cast_to_s64());
+                                return scfx::str_util::itoa<std::string>(args[0].cast_to_s64(), args[1].cast_to_s64(), args[2].cast_to_s64());
                             }
                         } else {
-                            return scfx::str_util::itoa(args[0].cast_to_s64(), args[1].cast_to_s64());
+                            return scfx::str_util::itoa<std::string>(args[0].cast_to_s64(), args[1].cast_to_s64());
                         }
                     } else {
-                        return scfx::str_util::itoa(args[0].cast_to_s64());
+                        return scfx::str_util::itoa<std::string>(args[0].cast_to_s64());
                     }
                 }
                 return std::string{};
@@ -1285,15 +1285,15 @@ namespace scfx {
                     if(args.size() > 1) {
                         if(args.size() > 2) {
                             if(args.size() > 3) {
-                                return scfx::str_util::utoa(args[0].cast_to_u64(), args[1].cast_to_s64(), args[2].cast_to_s64(), args[3].cast_to_bool());
+                                return scfx::str_util::utoa<std::string>(args[0].cast_to_u64(), args[1].cast_to_s64(), args[2].cast_to_s64(), args[3].cast_to_bool());
                             } else {
-                                return scfx::str_util::utoa(args[0].cast_to_u64(), args[1].cast_to_s64(), args[2].cast_to_s64());
+                                return scfx::str_util::utoa<std::string>(args[0].cast_to_u64(), args[1].cast_to_s64(), args[2].cast_to_s64());
                             }
                         } else {
-                            return scfx::str_util::utoa(args[0].cast_to_u64(), args[1].cast_to_s64());
+                            return scfx::str_util::utoa<std::string>(args[0].cast_to_u64(), args[1].cast_to_s64());
                         }
                     } else {
-                        return scfx::str_util::utoa(args[0].cast_to_u64());
+                        return scfx::str_util::utoa<std::string>(args[0].cast_to_u64());
                     }
                 }
                 return std::string{};
@@ -1452,6 +1452,12 @@ namespace scfx {
                     throw runtime_error{args[0].cast_to_s64(), args[0].cast_to_s64(), std::string{"assertion failed"}};
                 }
                 return true;
+            });
+
+            add_function("assign", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2);
+                args[0].assign_preserving_type(args[1]);
+                return args[0];
             });
 
 
@@ -2348,7 +2354,7 @@ namespace scfx {
         std::list<std::pair<std::shared_ptr<so>, extension_interface *>> loaded_extensions_{};
         static std::size_t constexpr version_major_{1};
         static std::size_t constexpr version_minor_{2};
-        static std::size_t constexpr version_patch_{126};
+        static std::size_t constexpr version_patch_{130};
     };
 
 }

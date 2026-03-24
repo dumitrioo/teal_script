@@ -171,6 +171,13 @@ namespace scfx {
                 value_{std::move(v)}, type_{t}, pointed_type_{pointed_type}, class_{c}, func_name_{func_name}, user_func_{user_func}
             {
             }
+            void undefine() {
+                type_ = type::UNDEFINED;
+                pointed_type_ = type::UNDEFINED;
+                class_.clear();
+                func_name_.clear();
+                user_func_ = false;
+            }
             value_t value_{nullptr};
             type type_{type::UNDEFINED};
             type pointed_type_{type::UNDEFINED};
@@ -382,6 +389,13 @@ namespace scfx {
             } else {
                 return valbox{valbox_no_initialize::dont_do_it};
             }
+        }
+
+        void undefine() {
+            if(box_) {
+                box_->undefine();
+            }
+            pointed_box_.reset();
         }
 
         type val_type() const { return box_ ? box_->type_ : type::UNDEFINED; }
@@ -954,7 +968,8 @@ namespace scfx {
                     if(t == type::UNDEFINED) {
                         der.become_array();
                         t = type::ARRAY;
-                    } else if(t == type::ARRAY) {
+                    }
+                    if(t == type::ARRAY) {
                         auto &a{as_array()};
                         if(a.size() <= i) { a.resize(i + 1); }
                         return a[i];
@@ -1067,6 +1082,8 @@ namespace scfx {
                 thisref.box_->pointed_type_ = type::UNDEFINED;
                 thisref.box_->class_.clear();
                 thisref.box_->value_ = value_t{nullptr};
+                thisref.box_->func_name_.clear();
+                thisref.box_->user_func_ = false;
                 thisref.pointed_box_.reset();
             }
             return *this;
@@ -1075,21 +1092,16 @@ namespace scfx {
         valbox &become_same_type_as(valbox const &that) {
             valbox const &thatref{that.deref()};
             valbox &thisref{deref()};
-            if(thatref.val_type() == thisref.val_type()) { return *this; }
-            thisref.pointed_box_.reset();
-            if(thatref.val_type() == type::UNDEFINED) {
-                if(!thisref.is_undefined()) {
-                    thisref.box_->type_ = type::UNDEFINED;
-                    thisref.box_->pointed_type_ = type::UNDEFINED;
-                    thisref.box_->class_.clear();
-                    thisref.box_->value_ = value_t{};
-                }
+            auto thatt{thatref.val_or_pointed_type()};
+            auto thist{thisref.val_or_pointed_type()};
+            if(thatt == thist) {
                 return *this;
             }
-            if(thisref.val_type() == type::UNDEFINED) { thisref.become_type(thatref.val_type()); return *this; }
-            if(thisref.box_ && thatref.box_ && thisref.box_->type_ == thatref.box_->type_) { return *this; }
-            if(!thatref.box_) { thisref.box_.reset(); return *this; }
-            switch(thatref.box_->type_) {
+            if(thisref.is_undefined()) {
+                thisref.become_type(thatt);
+                return *this;
+            }
+            switch(thatt) {
                 case type::U64:         thisref.box_->value_ = thisref.cast_to_u64(); break;
                 case type::S64:         thisref.box_->value_ = thisref.cast_to_s64(); break;
                 case type::CHAR:        thisref.box_->value_ = thisref.cast_to_char(); break;
@@ -1106,25 +1118,25 @@ namespace scfx {
                 case type::WCHAR:       thisref.box_->value_ = thisref.cast_to_wchar(); break;
                 case type::STRING:      thisref.box_->value_ = thisref.cast_to_string(); break;
                 case type::WSTRING:     thisref.box_->value_ = thisref.cast_to_wstring(); break;
-                case type::UNDEFINED:
-                    if(thisref.box_) {
-                        thisref.box_->type_ = type::UNDEFINED;
-                        thisref.box_->pointed_type_ = type::UNDEFINED;
-                        thisref.box_->class_.clear();
-                        thisref.box_->value_ = value_t{};
-                    }
-                    break;
+                case type::UNDEFINED:   thisref.undefine(); return *this;
                 case type::ARRAY:       thisref.box_->value_ = thisref.cast_to_array(); break;
                 case type::OBJECT:      thisref.box_->value_ = thisref.cast_to_object(); break;
-                default: return *this;
+                case type::VEC4:        thisref.box_->value_ = vec4_t{}; break;
+                case type::MAT4:        thisref.box_->value_ = mat4_t{}; break;
+                default: throw std::runtime_error{"assigning is needed to become a given type"};;
             }
-            thisref.box_->type_ = thatref.box_->type_;
+            thisref.pointed_box_.reset();
+            thisref.box_->type_ = thatt;
+            thisref.box_->func_name_.clear();
+            thisref.box_->user_func_ = false;
             return *this;
         }
 
         valbox &become_type(type t) {
             valbox &vref{deref()};
-            vref.pointed_box_.reset();
+            if(t == vref.val_or_pointed_type()) {
+                return *this;
+            }
             if(!vref.box_) {
                 switch(t) {
                     case type::U64:         vref.box_ = std::make_shared<box_data>((std::uint64_t)0, type::U64); break;
@@ -1145,11 +1157,11 @@ namespace scfx {
                     case type::WSTRING:     vref.box_ = std::make_shared<box_data>(std::wstring{}, type::WSTRING); break;
                     case type::ARRAY:       vref.box_ = std::make_shared<box_data>(array_t{}, type::ARRAY); break;
                     case type::OBJECT:      vref.box_ = std::make_shared<box_data>(object_t{}, type::OBJECT); break;
-                    default: break;
+                    case type::VEC4:        vref.box_ = std::make_shared<box_data>(vec4_t{}, type::VEC4); break; break;
+                    case type::MAT4:        vref.box_ = std::make_shared<box_data>(mat4_t{}, type::MAT4); break; break;
+                    default: throw std::runtime_error{"assigning is needed to become a given type"};
                 }
-                return *this;
-            }
-            if(vref.box_->type_ == t) {
+                vref.pointed_box_.reset();
                 return *this;
             }
             switch(t) {
@@ -1169,20 +1181,14 @@ namespace scfx {
                 case type::WCHAR:       vref.box_->value_ = cast_to_wchar(); break;
                 case type::STRING:      vref.box_->value_ = cast_to_string(); break;
                 case type::WSTRING:     vref.box_->value_ = cast_to_wstring(); break;
-                case type::UNDEFINED:
-                    if(vref.box_) {
-                        vref.box_->type_ = type::UNDEFINED;
-                        vref.box_->pointed_type_ = type::UNDEFINED;
-                        vref.box_->class_.clear();
-                        vref.box_->value_ = value_t{};
-                    }
-                    break;
+                case type::UNDEFINED:   vref.undefine(); return *this;
                 case type::ARRAY:       vref.box_->value_ = cast_to_array(); break;
                 case type::OBJECT:      vref.box_->value_ = cast_to_object(); break;
-                default: return *this;
+                case type::VEC4:        vref.box_->value_ = vec4_t(); break;
+                case type::MAT4:        vref.box_->value_ = mat4_t(); break;
+                default: throw std::runtime_error{"assigning is needed to become a given type"};
             }
-            vref.box_->pointed_type_ = type::UNDEFINED;
-            vref.box_->class_.clear();
+            vref.pointed_box_.reset();
             vref.box_->type_ = t;
             return *this;
         }
@@ -1190,31 +1196,31 @@ namespace scfx {
         template<typename T>
         T cast_num_to_num() const {
             static std::array<std::function<T(valbox const *)>, 25> const funcs{
-/*BOOL*/        [](valbox const *p) -> T { return p->as_bool(); },
-/*CHAR*/        [](valbox const *p) -> T { return p->as_char(); },
-/*S8*/          [](valbox const *p) -> T { return p->as_s8(); },
-/*U8*/          [](valbox const *p) -> T { return p->as_u8(); },
-/*S16*/         [](valbox const *p) -> T { return p->as_s16(); },
-/*U16*/         [](valbox const *p) -> T { return p->as_u16(); },
-/*WCHAR*/       [](valbox const *p) -> T { return p->as_wchar(); },
-/*S32*/         [](valbox const *p) -> T { return p->as_s32(); },
-/*U32*/         [](valbox const *p) -> T { return p->as_u32(); },
-/*S64*/         [](valbox const *p) -> T { return p->as_s64(); },
-/*U64*/         [](valbox const *p) -> T { return p->as_u64(); },
-/*FLOAT*/       [](valbox const *p) -> T { return p->as_float(); },
-/*DOUBLE*/      [](valbox const *p) -> T { return p->as_double(); },
-/*LONG_DOUBLE*/ [](valbox const *p) -> T { return p->as_long_double(); },
-/*VEC4*/        [](valbox const *p) -> T { return T{}; },
-/*MAT4*/        [](valbox const *p) -> T { return T{}; },
-/*POINTER*/     [](valbox const *p) -> T { return T{}; },
-/*CLASS*/       [](valbox const *p) -> T { return T{}; },
-/*FUNC*/        [](valbox const *p) -> T { return T{}; },
-/*ARRAY*/       [](valbox const *p) -> T { return T{}; },
-/*OBJECT*/      [](valbox const *p) -> T { return T{}; },
-/*STRING*/      [](valbox const *p) -> T { return T{}; },
-/*WSTRING*/     [](valbox const *p) -> T { return T{}; },
-/*UNDEFINED*/   [](valbox const *p) -> T { return T{}; },
-/*VALBOX*/      [](valbox const *p) -> T { return T{}; },
+                [](valbox const *p) -> T { return p->as_bool() ? 1 : 0; },
+                [](valbox const *p) -> T { return p->as_char(); },
+                [](valbox const *p) -> T { return p->as_s8(); },
+                [](valbox const *p) -> T { return p->as_u8(); },
+                [](valbox const *p) -> T { return p->as_s16(); },
+                [](valbox const *p) -> T { return p->as_u16(); },
+                [](valbox const *p) -> T { return p->as_wchar(); },
+                [](valbox const *p) -> T { return p->as_s32(); },
+                [](valbox const *p) -> T { return p->as_u32(); },
+                [](valbox const *p) -> T { return p->as_s64(); },
+                [](valbox const *p) -> T { return p->as_u64(); },
+                [](valbox const *p) -> T { return p->as_float(); },
+                [](valbox const *p) -> T { return p->as_double(); },
+                [](valbox const *p) -> T { return p->as_long_double(); },
+                [](valbox const * ) -> T { return T{}; },
+                [](valbox const * ) -> T { return T{}; },
+                [](valbox const * ) -> T { return T{}; },
+                [](valbox const * ) -> T { return T{}; },
+                [](valbox const * ) -> T { return T{}; },
+                [](valbox const * ) -> T { return T{}; },
+                [](valbox const * ) -> T { return T{}; },
+                [](valbox const * ) -> T { return T{}; },
+                [](valbox const * ) -> T { return T{}; },
+                [](valbox const * ) -> T { return T{}; },
+                [](valbox const * ) -> T { return T{}; },
             };
             return funcs[static_cast<int>(val_or_pointed_type())](this);
         }
@@ -1236,7 +1242,8 @@ namespace scfx {
                 case type::S64: return -as_s64();
                 case type::U64: return -as_u64();
                 case type::VEC4: return -as_vec4();
-                case type::UNDEFINED: return 0LL;
+                case type::MAT4: return -as_mat4();
+                case type::UNDEFINED: return valbox{};
                 default: throw std::runtime_error{"operation not applicable"};
             }
         }
@@ -1405,306 +1412,1161 @@ namespace scfx {
         }
 
         valbox &operator+=(valbox const &other) {
-            valbox &l{deref()};
-            valbox const &r{other.deref()};
-            auto ltype{l.val_or_pointed_type()};
-            auto rtype{r.val_or_pointed_type()};
-            if(ltype == rtype) {
-                switch(ltype) {
-                    case type::BOOL: l.as_bool() = l.as_bool() || r.as_bool(); break;
-                    case type::CHAR: l.as_char() += r.as_char(); break;
-                    case type::S8: l.as_s8() += r.as_s8(); break;
-                    case type::U8: l.as_u8() += r.as_u8(); break;
-                    case type::S16: l.as_s16() += r.as_s16(); break;
-                    case type::U16: l.as_u16() += r.as_u16(); break;
-                    case type::WCHAR: l.as_wchar() += r.as_wchar(); break;
-                    case type::S32: l.as_s32() += r.as_s32(); break;
-                    case type::U32: l.as_u32() += r.as_u32(); break;
-                    case type::S64: l.as_s64() += r.as_s64(); break;
-                    case type::U64: l.as_u64() += r.as_u64(); break;
-                    case type::FLOAT: l.as_float() += r.as_float(); break;
-                    case type::DOUBLE: l.as_double() += r.as_double(); break;
-                    case type::LONG_DOUBLE: l.as_long_double() += r.as_long_double(); break;
-                    case type::VEC4: l.as_vec4() += r.as_vec4(); break;
-                    case type::ARRAY: {
-                            array_t &la{l.as_array()};
-                            for(auto &&el: la) {
-                                la.push_back(el.deref().clone());
+            valbox &thisref{deref()};
+            valbox const &thatref{other.deref()};
+            auto thist{thisref.val_or_pointed_type()};
+            auto thatt{thatref.val_or_pointed_type()};
+            switch(thist) {
+                case type::BOOL:
+                    switch(thatt) {
+                        case type::BOOL: as_bool() += thatref.as_bool(); break;
+                        case type::CHAR: as_bool() += thatref.as_char(); break;
+                        case type::S8: as_bool() += thatref.as_s8(); break;
+                        case type::U8: as_bool() += thatref.as_u8(); break;
+                        case type::S16: as_bool() += thatref.as_s16(); break;
+                        case type::U16: as_bool() += thatref.as_u16(); break;
+                        case type::WCHAR: as_bool() += thatref.as_wchar(); break;
+                        case type::S32: as_bool() += thatref.as_s32(); break;
+                        case type::U32: as_bool() += thatref.as_u32(); break;
+                        case type::S64: as_bool() += thatref.as_s64(); break;
+                        case type::U64: as_bool() += thatref.as_u64(); break;
+                        case type::FLOAT: as_bool() += thatref.as_float(); break;
+                        case type::DOUBLE: as_bool() += thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_bool() += thatref.as_long_double(); break;
+                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
+                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
+                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
+                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
+                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
+                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
+                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
+                        case type::STRING: throw std::runtime_error{"operation not applicable"};
+                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
+                        case type::UNDEFINED: break;
+                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
+                        default: throw std::runtime_error{"operation not applicable"};
+                    }
+                    break;
+                case type::CHAR:
+                    switch(thatt) {
+                        case type::BOOL: as_char() += thatref.as_bool(); break;
+                        case type::CHAR: as_char() += thatref.as_char(); break;
+                        case type::S8: as_char() += thatref.as_s8(); break;
+                        case type::U8: as_char() += thatref.as_u8(); break;
+                        case type::S16: as_char() += thatref.as_s16(); break;
+                        case type::U16: as_char() += thatref.as_u16(); break;
+                        case type::WCHAR: as_char() += thatref.as_wchar(); break;
+                        case type::S32: as_char() += thatref.as_s32(); break;
+                        case type::U32: as_char() += thatref.as_u32(); break;
+                        case type::S64: as_char() += thatref.as_s64(); break;
+                        case type::U64: as_char() += thatref.as_u64(); break;
+                        case type::FLOAT: as_char() += thatref.as_float(); break;
+                        case type::DOUBLE: as_char() += thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_char() += thatref.as_long_double(); break;
+                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
+                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
+                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
+                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
+                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
+                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
+                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
+                        case type::STRING: throw std::runtime_error{"operation not applicable"};
+                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
+                        case type::UNDEFINED: break;
+                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
+                        default: throw std::runtime_error{"operation not applicable"};
+                    }
+                    break;
+                case type::S8:
+                    switch(thatt) {
+                        case type::BOOL: as_s8() += thatref.as_bool(); break;
+                        case type::CHAR: as_s8() += thatref.as_char(); break;
+                        case type::S8: as_s8() += thatref.as_s8(); break;
+                        case type::U8: as_s8() += thatref.as_u8(); break;
+                        case type::S16: as_s8() += thatref.as_s16(); break;
+                        case type::U16: as_s8() += thatref.as_u16(); break;
+                        case type::WCHAR: as_s8() += thatref.as_wchar(); break;
+                        case type::S32: as_s8() += thatref.as_s32(); break;
+                        case type::U32: as_s8() += thatref.as_u32(); break;
+                        case type::S64: as_s8() += thatref.as_s64(); break;
+                        case type::U64: as_s8() += thatref.as_u64(); break;
+                        case type::FLOAT: as_s8() += thatref.as_float(); break;
+                        case type::DOUBLE: as_s8() += thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_s8() += thatref.as_long_double(); break;
+                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
+                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
+                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
+                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
+                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
+                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
+                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
+                        case type::STRING: throw std::runtime_error{"operation not applicable"};
+                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
+                        case type::UNDEFINED: break;
+                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
+                        default: throw std::runtime_error{"operation not applicable"};
+                    }
+                    break;
+                case type::U8:
+                    switch(thatt) {
+                        case type::BOOL: as_u8() += thatref.as_bool(); break;
+                        case type::CHAR: as_u8() += thatref.as_char(); break;
+                        case type::S8: as_u8() += thatref.as_s8(); break;
+                        case type::U8: as_u8() += thatref.as_u8(); break;
+                        case type::S16: as_u8() += thatref.as_s16(); break;
+                        case type::U16: as_u8() += thatref.as_u16(); break;
+                        case type::WCHAR: as_u8() += thatref.as_wchar(); break;
+                        case type::S32: as_u8() += thatref.as_s32(); break;
+                        case type::U32: as_u8() += thatref.as_u32(); break;
+                        case type::S64: as_u8() += thatref.as_s64(); break;
+                        case type::U64: as_u8() += thatref.as_u64(); break;
+                        case type::FLOAT: as_u8() += thatref.as_float(); break;
+                        case type::DOUBLE: as_u8() += thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_u8() += thatref.as_long_double(); break;
+                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
+                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
+                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
+                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
+                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
+                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
+                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
+                        case type::STRING: throw std::runtime_error{"operation not applicable"};
+                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
+                        case type::UNDEFINED: break;
+                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
+                        default: throw std::runtime_error{"operation not applicable"};
+                    }
+                    break;
+                case type::S16:
+                    switch(thatt) {
+                        case type::BOOL: as_s16() += thatref.as_bool(); break;
+                        case type::CHAR: as_s16() += thatref.as_char(); break;
+                        case type::S8: as_s16() += thatref.as_s8(); break;
+                        case type::U8: as_s16() += thatref.as_u8(); break;
+                        case type::S16: as_s16() += thatref.as_s16(); break;
+                        case type::U16: as_s16() += thatref.as_u16(); break;
+                        case type::WCHAR: as_s16() += thatref.as_wchar(); break;
+                        case type::S32: as_s16() += thatref.as_s32(); break;
+                        case type::U32: as_s16() += thatref.as_u32(); break;
+                        case type::S64: as_s16() += thatref.as_s64(); break;
+                        case type::U64: as_s16() += thatref.as_u64(); break;
+                        case type::FLOAT: as_s16() += thatref.as_float(); break;
+                        case type::DOUBLE: as_s16() += thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_s16() += thatref.as_long_double(); break;
+                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
+                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
+                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
+                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
+                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
+                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
+                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
+                        case type::STRING: throw std::runtime_error{"operation not applicable"};
+                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
+                        case type::UNDEFINED: break;
+                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
+                        default: throw std::runtime_error{"operation not applicable"};
+                    }
+                    break;
+                case type::U16:
+                    switch(thatt) {
+                        case type::BOOL: as_u16() += thatref.as_bool(); break;
+                        case type::CHAR: as_u16() += thatref.as_char(); break;
+                        case type::S8: as_u16() += thatref.as_s8(); break;
+                        case type::U8: as_u16() += thatref.as_u8(); break;
+                        case type::S16: as_u16() += thatref.as_s16(); break;
+                        case type::U16: as_u16() += thatref.as_u16(); break;
+                        case type::WCHAR: as_u16() += thatref.as_wchar(); break;
+                        case type::S32: as_u16() += thatref.as_s32(); break;
+                        case type::U32: as_u16() += thatref.as_u32(); break;
+                        case type::S64: as_u16() += thatref.as_s64(); break;
+                        case type::U64: as_u16() += thatref.as_u64(); break;
+                        case type::FLOAT: as_u16() += thatref.as_float(); break;
+                        case type::DOUBLE: as_u16() += thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_u16() += thatref.as_long_double(); break;
+                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
+                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
+                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
+                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
+                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
+                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
+                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
+                        case type::STRING: throw std::runtime_error{"operation not applicable"};
+                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
+                        case type::UNDEFINED: break;
+                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
+                        default: throw std::runtime_error{"operation not applicable"};
+                    }
+                    break;
+                case type::WCHAR:
+                    switch(thatt) {
+                        case type::BOOL: as_wchar() += thatref.as_bool(); break;
+                        case type::CHAR: as_wchar() += thatref.as_char(); break;
+                        case type::S8: as_wchar() += thatref.as_s8(); break;
+                        case type::U8: as_wchar() += thatref.as_u8(); break;
+                        case type::S16: as_wchar() += thatref.as_s16(); break;
+                        case type::U16: as_wchar() += thatref.as_u16(); break;
+                        case type::WCHAR: as_wchar() += thatref.as_wchar(); break;
+                        case type::S32: as_wchar() += thatref.as_s32(); break;
+                        case type::U32: as_wchar() += thatref.as_u32(); break;
+                        case type::S64: as_wchar() += thatref.as_s64(); break;
+                        case type::U64: as_wchar() += thatref.as_u64(); break;
+                        case type::FLOAT: as_wchar() += thatref.as_float(); break;
+                        case type::DOUBLE: as_wchar() += thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_wchar() += thatref.as_long_double(); break;
+                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
+                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
+                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
+                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
+                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
+                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
+                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
+                        case type::STRING: throw std::runtime_error{"operation not applicable"};
+                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
+                        case type::UNDEFINED: break;
+                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
+                        default: throw std::runtime_error{"operation not applicable"};
+                    }
+                    break;
+                case type::S32:
+                    switch(thatt) {
+                        case type::BOOL: as_s32() += thatref.as_bool(); break;
+                        case type::CHAR: as_s32() += thatref.as_char(); break;
+                        case type::S8: as_s32() += thatref.as_s8(); break;
+                        case type::U8: as_s32() += thatref.as_u8(); break;
+                        case type::S16: as_s32() += thatref.as_s16(); break;
+                        case type::U16: as_s32() += thatref.as_u16(); break;
+                        case type::WCHAR: as_s32() += thatref.as_wchar(); break;
+                        case type::S32: as_s32() += thatref.as_s32(); break;
+                        case type::U32: as_s32() += thatref.as_u32(); break;
+                        case type::S64: as_s32() += thatref.as_s64(); break;
+                        case type::U64: as_s32() += thatref.as_u64(); break;
+                        case type::FLOAT: as_s32() += thatref.as_float(); break;
+                        case type::DOUBLE: as_s32() += thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_s32() += thatref.as_long_double(); break;
+                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
+                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
+                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
+                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
+                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
+                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
+                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
+                        case type::STRING: throw std::runtime_error{"operation not applicable"};
+                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
+                        case type::UNDEFINED: break;
+                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
+                        default: throw std::runtime_error{"operation not applicable"};
+                    }
+                    break;
+                case type::U32:
+                    switch(thatt) {
+                        case type::BOOL: as_u32() += thatref.as_bool(); break;
+                        case type::CHAR: as_u32() += thatref.as_char(); break;
+                        case type::S8: as_u32() += thatref.as_s8(); break;
+                        case type::U8: as_u32() += thatref.as_u8(); break;
+                        case type::S16: as_u32() += thatref.as_s16(); break;
+                        case type::U16: as_u32() += thatref.as_u16(); break;
+                        case type::WCHAR: as_u32() += thatref.as_wchar(); break;
+                        case type::S32: as_u32() += thatref.as_s32(); break;
+                        case type::U32: as_u32() += thatref.as_u32(); break;
+                        case type::S64: as_u32() += thatref.as_s64(); break;
+                        case type::U64: as_u32() += thatref.as_u64(); break;
+                        case type::FLOAT: as_u32() += thatref.as_float(); break;
+                        case type::DOUBLE: as_u32() += thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_u32() += thatref.as_long_double(); break;
+                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
+                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
+                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
+                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
+                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
+                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
+                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
+                        case type::STRING: throw std::runtime_error{"operation not applicable"};
+                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
+                        case type::UNDEFINED: break;
+                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
+                        default: throw std::runtime_error{"operation not applicable"};
+                    }
+                    break;
+                case type::S64:
+                    switch(thatt) {
+                        case type::BOOL: as_s64() += thatref.as_bool(); break;
+                        case type::CHAR: as_s64() += thatref.as_char(); break;
+                        case type::S8: as_s64() += thatref.as_s8(); break;
+                        case type::U8: as_s64() += thatref.as_u8(); break;
+                        case type::S16: as_s64() += thatref.as_s16(); break;
+                        case type::U16: as_s64() += thatref.as_u16(); break;
+                        case type::WCHAR: as_s64() += thatref.as_wchar(); break;
+                        case type::S32: as_s64() += thatref.as_s32(); break;
+                        case type::U32: as_s64() += thatref.as_u32(); break;
+                        case type::S64: as_s64() += thatref.as_s64(); break;
+                        case type::U64: as_s64() += thatref.as_u64(); break;
+                        case type::FLOAT: as_s64() += thatref.as_float(); break;
+                        case type::DOUBLE: as_s64() += thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_s64() += thatref.as_long_double(); break;
+                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
+                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
+                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
+                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
+                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
+                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
+                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
+                        case type::STRING: throw std::runtime_error{"operation not applicable"};
+                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
+                        case type::UNDEFINED: break;
+                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
+                        default: throw std::runtime_error{"operation not applicable"};
+                    }
+                    break;
+                case type::U64:
+                    switch(thatt) {
+                        case type::BOOL: as_u64() += thatref.as_bool(); break;
+                        case type::CHAR: as_u64() += thatref.as_char(); break;
+                        case type::S8: as_u64() += thatref.as_s8(); break;
+                        case type::U8: as_u64() += thatref.as_u8(); break;
+                        case type::S16: as_u64() += thatref.as_s16(); break;
+                        case type::U16: as_u64() += thatref.as_u16(); break;
+                        case type::WCHAR: as_u64() += thatref.as_wchar(); break;
+                        case type::S32: as_u64() += thatref.as_s32(); break;
+                        case type::U32: as_u64() += thatref.as_u32(); break;
+                        case type::S64: as_u64() += thatref.as_s64(); break;
+                        case type::U64: as_u64() += thatref.as_u64(); break;
+                        case type::FLOAT: as_u64() += thatref.as_float(); break;
+                        case type::DOUBLE: as_u64() += thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_u64() += thatref.as_long_double(); break;
+                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
+                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
+                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
+                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
+                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
+                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
+                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
+                        case type::STRING: throw std::runtime_error{"operation not applicable"};
+                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
+                        case type::UNDEFINED: break;
+                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
+                        default: throw std::runtime_error{"operation not applicable"};
+                    }
+                    break;
+                case type::FLOAT:
+                    switch(thatt) {
+                        case type::BOOL: as_float() += thatref.as_bool(); break;
+                        case type::CHAR: as_float() += thatref.as_char(); break;
+                        case type::S8: as_float() += thatref.as_s8(); break;
+                        case type::U8: as_float() += thatref.as_u8(); break;
+                        case type::S16: as_float() += thatref.as_s16(); break;
+                        case type::U16: as_float() += thatref.as_u16(); break;
+                        case type::WCHAR: as_float() += thatref.as_wchar(); break;
+                        case type::S32: as_float() += thatref.as_s32(); break;
+                        case type::U32: as_float() += thatref.as_u32(); break;
+                        case type::S64: as_float() += thatref.as_s64(); break;
+                        case type::U64: as_float() += thatref.as_u64(); break;
+                        case type::FLOAT: as_float() += thatref.as_float(); break;
+                        case type::DOUBLE: as_float() += thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_float() += thatref.as_long_double(); break;
+                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
+                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
+                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
+                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
+                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
+                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
+                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
+                        case type::STRING: throw std::runtime_error{"operation not applicable"};
+                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
+                        case type::UNDEFINED: break;
+                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
+                        default: throw std::runtime_error{"operation not applicable"};
+                    }
+                    break;
+                case type::DOUBLE:
+                    switch(thatt) {
+                        case type::BOOL: as_double() += thatref.as_bool(); break;
+                        case type::CHAR: as_double() += thatref.as_char(); break;
+                        case type::S8: as_double() += thatref.as_s8(); break;
+                        case type::U8: as_double() += thatref.as_u8(); break;
+                        case type::S16: as_double() += thatref.as_s16(); break;
+                        case type::U16: as_double() += thatref.as_u16(); break;
+                        case type::WCHAR: as_double() += thatref.as_wchar(); break;
+                        case type::S32: as_double() += thatref.as_s32(); break;
+                        case type::U32: as_double() += thatref.as_u32(); break;
+                        case type::S64: as_double() += thatref.as_s64(); break;
+                        case type::U64: as_double() += thatref.as_u64(); break;
+                        case type::FLOAT: as_double() += thatref.as_float(); break;
+                        case type::DOUBLE: as_double() += thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_double() += thatref.as_long_double(); break;
+                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
+                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
+                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
+                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
+                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
+                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
+                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
+                        case type::STRING: throw std::runtime_error{"operation not applicable"};
+                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
+                        case type::UNDEFINED: break;
+                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
+                        default: throw std::runtime_error{"operation not applicable"};
+                    }
+                    break;
+                case type::LONG_DOUBLE:
+                    switch(thatt) {
+                        case type::BOOL: as_long_double() += thatref.as_bool(); break;
+                        case type::CHAR: as_long_double() += thatref.as_char(); break;
+                        case type::S8: as_long_double() += thatref.as_s8(); break;
+                        case type::U8: as_long_double() += thatref.as_u8(); break;
+                        case type::S16: as_long_double() += thatref.as_s16(); break;
+                        case type::U16: as_long_double() += thatref.as_u16(); break;
+                        case type::WCHAR: as_long_double() += thatref.as_wchar(); break;
+                        case type::S32: as_long_double() += thatref.as_s32(); break;
+                        case type::U32: as_long_double() += thatref.as_u32(); break;
+                        case type::S64: as_long_double() += thatref.as_s64(); break;
+                        case type::U64: as_long_double() += thatref.as_u64(); break;
+                        case type::FLOAT: as_long_double() += thatref.as_float(); break;
+                        case type::DOUBLE: as_long_double() += thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_long_double() += thatref.as_long_double(); break;
+                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
+                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
+                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
+                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
+                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
+                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
+                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
+                        case type::STRING: throw std::runtime_error{"operation not applicable"};
+                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
+                        case type::UNDEFINED: break;
+                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
+                        default: throw std::runtime_error{"operation not applicable"};
+                    }
+                    break;
+                case type::VEC4:
+                    switch(thatt) {
+                        case type::BOOL: as_vec4() += thatref.as_bool(); break;
+                        case type::CHAR: as_vec4() += thatref.as_char(); break;
+                        case type::S8: as_vec4() += thatref.as_s8(); break;
+                        case type::U8: as_vec4() += thatref.as_u8(); break;
+                        case type::S16: as_vec4() += thatref.as_s16(); break;
+                        case type::U16: as_vec4() += thatref.as_u16(); break;
+                        case type::WCHAR: as_vec4() += thatref.as_wchar(); break;
+                        case type::S32: as_vec4() += thatref.as_s32(); break;
+                        case type::U32: as_vec4() += thatref.as_u32(); break;
+                        case type::S64: as_vec4() += thatref.as_s64(); break;
+                        case type::U64: as_vec4() += thatref.as_u64(); break;
+                        case type::FLOAT: as_vec4() += thatref.as_float(); break;
+                        case type::DOUBLE: as_vec4() += thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_vec4() += thatref.as_long_double(); break;
+                        case type::VEC4: as_vec4() += thatref.as_vec4(); break;
+                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
+                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
+                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
+                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
+                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
+                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
+                        case type::STRING: throw std::runtime_error{"operation not applicable"};
+                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
+                        case type::UNDEFINED: break;
+                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
+                        default: throw std::runtime_error{"operation not applicable"};
+                    }
+                    break;
+                case type::MAT4:
+                    switch(thatt) {
+                        case type::BOOL: throw std::runtime_error{"operation not applicable"};
+                        case type::CHAR: throw std::runtime_error{"operation not applicable"};
+                        case type::S8: throw std::runtime_error{"operation not applicable"};
+                        case type::U8: throw std::runtime_error{"operation not applicable"};
+                        case type::S16: throw std::runtime_error{"operation not applicable"};
+                        case type::U16: throw std::runtime_error{"operation not applicable"};
+                        case type::WCHAR: throw std::runtime_error{"operation not applicable"};
+                        case type::S32: throw std::runtime_error{"operation not applicable"};
+                        case type::U32: throw std::runtime_error{"operation not applicable"};
+                        case type::S64: throw std::runtime_error{"operation not applicable"};
+                        case type::U64: throw std::runtime_error{"operation not applicable"};
+                        case type::FLOAT: throw std::runtime_error{"operation not applicable"};
+                        case type::DOUBLE: throw std::runtime_error{"operation not applicable"};
+                        case type::LONG_DOUBLE: throw std::runtime_error{"operation not applicable"};
+                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
+                        case type::MAT4: as_mat4() += thatref.as_mat4(); break;
+                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
+                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
+                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
+                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
+                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
+                        case type::STRING: throw std::runtime_error{"operation not applicable"};
+                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
+                        case type::UNDEFINED: break;
+                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
+                        default: throw std::runtime_error{"operation not applicable"};
+                    }
+                    break;
+                case type::POINTER: throw std::runtime_error{"operation not applicable"};
+                    break;
+                case type::CLASS: throw std::runtime_error{"operation not applicable"};
+                    break;
+                case type::FUNC: throw std::runtime_error{"operation not applicable"};
+                    break;
+                case type::ARRAY:
+                    switch(thatt) {
+                        case type::BOOL:
+                        case type::CHAR:
+                        case type::S8:
+                        case type::U8:
+                        case type::S16:
+                        case type::U16:
+                        case type::WCHAR:
+                        case type::S32:
+                        case type::U32:
+                        case type::S64:
+                        case type::U64:
+                        case type::FLOAT:
+                        case type::DOUBLE:
+                        case type::LONG_DOUBLE:
+                        case type::VEC4:
+                        case type::MAT4:
+                        case type::POINTER:
+                        case type::CLASS:
+                        case type::FUNC:
+                        case type::OBJECT:
+                        case type::STRING:
+                        case type::WSTRING:
+                        case type::UNDEFINED:
+                        case type::VALBOX:
+                            as_array().push_back(thatref.clone());
+                            break;
+                        case type::ARRAY:
+                            for(auto &&v: thatref.as_array()) {
+                                as_array().push_back(v.clone());
                             }
-                        }
-                        break;
-                    case type::OBJECT:
-                        for(auto &&p: r.as_object()) {
-                            if(l.as_object().find(p.first) == l.as_object().end()) {
-                                l[p.first].assign(p.second);
+                            break;
+                        default: throw std::runtime_error{"operation not applicable"};
+                    }
+                    break;
+                case type::OBJECT:
+                    switch(thatt) {
+                        case type::BOOL: throw std::runtime_error{"operation not applicable"};
+                        case type::CHAR: throw std::runtime_error{"operation not applicable"};
+                        case type::S8: throw std::runtime_error{"operation not applicable"};
+                        case type::U8: throw std::runtime_error{"operation not applicable"};
+                        case type::S16: throw std::runtime_error{"operation not applicable"};
+                        case type::U16: throw std::runtime_error{"operation not applicable"};
+                        case type::WCHAR: throw std::runtime_error{"operation not applicable"};
+                        case type::S32: throw std::runtime_error{"operation not applicable"};
+                        case type::U32: throw std::runtime_error{"operation not applicable"};
+                        case type::S64: throw std::runtime_error{"operation not applicable"};
+                        case type::U64: throw std::runtime_error{"operation not applicable"};
+                        case type::FLOAT: throw std::runtime_error{"operation not applicable"};
+                        case type::DOUBLE: throw std::runtime_error{"operation not applicable"};
+                        case type::LONG_DOUBLE: throw std::runtime_error{"operation not applicable"};
+                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
+                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
+                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
+                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
+                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
+                        case type::STRING: throw std::runtime_error{"operation not applicable"};
+                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
+                        case type::UNDEFINED: break;
+                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
+                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
+                        case type::OBJECT: {
+                            for(auto &&p: thatref.as_object()) {
+                                as_object()[p.first] = p.second.clone();
                             }
+                            break;
                         }
-                        break;
-                    case type::STRING: l.as_string() += r.as_string(); break;
-                    case type::WSTRING: l.as_wstring() += r.as_wstring(); break;
-                    case type::UNDEFINED: break;
-                    default: throw std::runtime_error{"operation not applicable"};
-                }
-            } else {
-                switch(ltype) {
-                    case type::BOOL: l.as_bool() = l.as_bool() || r.cast_to_bool(); break;
-                    case type::CHAR: if(r.is_numeric()) { l.as_char() += r.cast_to_s64(); } else { throw std::runtime_error{"operation not applicable"}; } break;
-                    case type::S8: if(r.is_numeric()) { l.as_s8() += r.cast_to_s64(); } else { throw std::runtime_error{"operation not applicable"}; } break;
-                    case type::U8: if(r.is_numeric()) { l.as_u8() += r.cast_to_s64(); } else { throw std::runtime_error{"operation not applicable"}; } break;
-                    case type::S16: if(r.is_numeric()) { l.as_s16() += r.cast_to_s64(); } else { throw std::runtime_error{"operation not applicable"}; } break;
-                    case type::U16: if(r.is_numeric()) { l.as_u16() += r.cast_to_s64(); } else { throw std::runtime_error{"operation not applicable"}; } break;
-                    case type::WCHAR: if(r.is_numeric()) { l.as_wchar() += r.cast_to_s64(); } else { throw std::runtime_error{"operation not applicable"}; } break;
-                    case type::S32: if(r.is_numeric()) { l.as_s32() += r.cast_to_s64(); } else { throw std::runtime_error{"operation not applicable"}; } break;
-                    case type::U32: if(r.is_numeric()) { l.as_u32() += r.cast_to_s64(); } else { throw std::runtime_error{"operation not applicable"}; } break;
-                    case type::S64: if(r.is_numeric()) { l.as_s64() += r.cast_to_s64(); } else { throw std::runtime_error{"operation not applicable"}; } break;
-                    case type::U64: if(r.is_numeric()) { l.as_u64() += r.cast_to_s64(); } else { throw std::runtime_error{"operation not applicable"}; } break;
-                    case type::FLOAT: if(r.is_numeric()) { l.as_float() += r.cast_to_long_double(); } else { throw std::runtime_error{"operation not applicable"}; } break;
-                    case type::DOUBLE: if(r.is_numeric()) { l.as_double() += r.cast_to_long_double(); } else { throw std::runtime_error{"operation not applicable"}; } break;
-                    case type::LONG_DOUBLE: if(r.is_numeric()) { l.as_long_double() += r.cast_to_long_double(); } else { throw std::runtime_error{"operation not applicable"}; } break;
-                    case type::VEC4:
-                        if(r.is_numeric()) {
-                            l.as_vec4() += r.cast_to_long_double();
-                        } else {
-                            switch(rtype) {
-                                case type::VEC4:
-                                    l.as_vec4() += r.as_vec4();
-                                    break;
-                                case type::STRING:
-                                    l.as_vec4() = vec4_from_str<long double>(r.as_string());
-                                    break;
-                                case type::WSTRING:
-                                    l.as_vec4() = vec4_from_str<long double>(r.as_wstring());
-                                    break;
-                                case type::ARRAY:
-                                case type::OBJECT:
-                                    l.as_vec4() = l.as_vec4() + vec4_from_json<long double>(r.to_json());
-                                    break;
-                                default:
-                                    throw std::runtime_error{"operation not applicable"};
-                            }
-                        }
-                        break;
-                    case type::ARRAY:
-                        switch(rtype) {
-                            case type::ARRAY: {
-                                    for(auto &&el: r.as_array()) {
-                                        l.as_array().push_back(el.deref().clone());
-                                    }
-                                }
-                                break;
-                            default: l.as_array().push_back(r);
-                        }
-                        break;
-                    case type::OBJECT:
-                        switch(rtype) {
-                            case type::OBJECT:
-                                for(auto &&p: r.as_object()) {
-                                    if(l.as_object().find(p.first) == l.as_object().end()) {
-                                        l[p.first] = p.second;
-                                    }
-                                }
-                                break;
-                            default: throw std::runtime_error{"operation not applicable"};
-                        }
-                        break;
-                    case type::STRING:
-                        switch(rtype) {
-                            case type::CHAR: l.as_string() += r.as_char(); break;
-                            case type::STRING: l.as_string() += r.as_string(); break;
-                            case type::WSTRING: l.as_string() += r.cast_to_string(); break;
-                            default: l.as_string() += r.cast_to_char(); break;
-                        }
-                        break;
-                    case type::WSTRING:
-                        switch(rtype) {
-                            case type::CHAR: l.as_wstring() += r.cast_to_wchar(); break;
-                            case type::WCHAR: l.as_wstring() += r.as_wchar(); break;
-                            case type::STRING: l.as_wstring() += r.cast_to_wstring(); break;
-                            case type::WSTRING: l.as_wstring() += r.as_wstring(); break;
-                            default: l.as_wstring() += r.cast_to_wchar(); break;
-                        }
-                        break;
-                    case type::UNDEFINED:
-                        l.assign(r);
-                        break;
-                    default: throw std::runtime_error{"operation not applicable"};
-                }
+                        default: throw std::runtime_error{"operation not applicable"};
+                    }
+                    break;
+                case type::STRING:
+                    if(thatt != type::UNDEFINED) {
+                        as_string() += thatref.cast_to_string();
+                    }
+                    break;
+                case type::WSTRING:
+                    if(thatt != type::UNDEFINED) {
+                        as_wstring() += thatref.cast_to_wstring();
+                    }
+                    break;
+                case type::UNDEFINED:
+                    if(thatt != type::UNDEFINED) {
+                        *this = thatref.clone();
+                    }
+                    break;
+                case type::VALBOX:
+                    throw std::runtime_error{"operation not applicable"};
+                default:
+                    throw std::runtime_error{"operation not applicable"};
             }
             return *this;
         }
 
-        friend valbox operator+(valbox const &l, valbox const &r) {
-            valbox res{valbox_no_initialize::dont_do_it};
-            type st{};
-            if(l.val_or_pointed_type() == r.val_or_pointed_type()) {
-                switch(l.val_or_pointed_type()) {
-                    case type::BOOL: res = l.as_bool() || r.as_bool(); break;
-                    case type::CHAR: res = l.as_char() + r.as_char(); break;
-                    case type::S8: res = l.as_s8() + r.as_s8(); break;
-                    case type::U8: res = l.as_u8() + r.as_u8(); break;
-                    case type::S16: res = l.as_s16() + r.as_s16(); break;
-                    case type::U16: res = l.as_u16() + r.as_u16(); break;
-                    case type::WCHAR: res = l.as_wchar() + r.as_wchar(); break;
-                    case type::S32: res = l.as_s32() + r.as_s32(); break;
-                    case type::U32: res = l.as_u32() + r.as_u32(); break;
-                    case type::S64: res = l.as_s64() + r.as_s64(); break;
-                    case type::U64: res = l.as_u64() + r.as_u64(); break;
-                    case type::FLOAT: res = l.as_float() + r.as_float(); break;
-                    case type::DOUBLE: res = l.as_double() + r.as_double(); break;
-                    case type::LONG_DOUBLE: res = l.as_long_double() + r.as_long_double(); break;
-                    case type::VEC4: res = l.as_vec4() + r.as_vec4(); break;
-                    case type::POINTER: res = (void *)((std::uintptr_t)l.as_ptr() + (std::uintptr_t)r.as_ptr()); break;
-                    case type::ARRAY:
-                        res.become_array();
-                        res.as_array().resize(l.as_array().size() + r.as_array().size());
-                        for(auto &&el: l.as_array()) { res.as_array().push_back(el.clone()); }
-                        for(auto &&el: r.as_array()) { res.as_array().push_back(el.clone()); }
-                        break;
-                    case type::OBJECT:
-                        res = l.as_object();
-                        for(auto &&p: r.as_object()) {
-                            if(res.as_object().find(p.first) == res.as_object().end()) {
-                                res[p.first].assign(p.second);
+        friend valbox operator+(valbox const &larg, valbox const &rarg) {
+            valbox const &lr{larg.deref()};
+            valbox const &rr{rarg.deref()};
+            auto lt{lr.val_or_pointed_type()};
+            auto rt{rr.val_or_pointed_type()};
+            switch(lt) {
+                case type::BOOL:
+                    switch(rt) {
+                        case type::BOOL: return (bool)(lr.as_bool() + rr.as_bool());
+                        case type::CHAR: return lr.as_bool() + rr.as_char();
+                        case type::S8: return lr.as_bool() + rr.as_s8();
+                        case type::U8: return lr.as_bool() + rr.as_u8();
+                        case type::S16: return lr.as_bool() + rr.as_s16();
+                        case type::U16: return lr.as_bool() + rr.as_u16();
+                        case type::WCHAR: return lr.as_bool() + rr.as_wchar();
+                        case type::S32: return lr.as_bool() + rr.as_s32();
+                        case type::U32: return lr.as_bool() + rr.as_u32();
+                        case type::S64: return lr.as_bool() + rr.as_s64();
+                        case type::U64: return lr.as_bool() + rr.as_u64();
+                        case type::FLOAT: return lr.as_bool() + rr.as_float();
+                        case type::DOUBLE: return lr.as_bool() + rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_bool() + rr.as_long_double();
+                        case type::VEC4: return lr.as_bool() + rr.as_vec4();
+                        case type::MAT4: return lr.as_bool() + rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: { auto res{rr.clone()}; res.as_array().push_front(lr.as_bool()); return res; }
+                        case type::OBJECT: break;
+                        case type::STRING: return (lr.as_bool() ? std::string{"true"} : std::string{"false"}) + rr.as_string();
+                        case type::WSTRING: return (lr.as_bool() ? std::wstring{L"true"} : std::wstring{L"false"}) + rr.as_wstring();
+                        case type::UNDEFINED: return lr.as_bool();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::CHAR:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_char() + rr.as_bool();
+                        case type::CHAR: return lr.as_char() + rr.as_char();
+                        case type::S8: return lr.as_char() + rr.as_s8();
+                        case type::U8: return lr.as_char() + rr.as_u8();
+                        case type::S16: return lr.as_char() + rr.as_s16();
+                        case type::U16: return lr.as_char() + rr.as_u16();
+                        case type::WCHAR: return lr.as_char() + rr.as_wchar();
+                        case type::S32: return lr.as_char() + rr.as_s32();
+                        case type::U32: return lr.as_char() + rr.as_u32();
+                        case type::S64: return lr.as_char() + rr.as_s64();
+                        case type::U64: return lr.as_char() + rr.as_u64();
+                        case type::FLOAT: return lr.as_char() + rr.as_float();
+                        case type::DOUBLE: return lr.as_char() + rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_char() + rr.as_long_double();
+                        case type::VEC4: return lr.as_char() + rr.as_vec4();
+                        case type::MAT4: return lr.as_char() + rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.as_char()); return res; }
+                        case type::OBJECT: break;
+                        case type::STRING: return std::string{} + lr.as_char() + rr.as_string();
+                        case type::WSTRING: return std::wstring{} + (wchar_t)lr.as_char() + rr.as_wstring();
+                        case type::UNDEFINED: return lr.as_char();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::S8:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_s8() + rr.as_bool();
+                        case type::CHAR: return lr.as_s8() + rr.as_char();
+                        case type::S8: return lr.as_s8() + rr.as_s8();
+                        case type::U8: return lr.as_s8() + rr.as_u8();
+                        case type::S16: return lr.as_s8() + rr.as_s16();
+                        case type::U16: return lr.as_s8() + rr.as_u16();
+                        case type::WCHAR: return lr.as_s8() + rr.as_wchar();
+                        case type::S32: return lr.as_s8() + rr.as_s32();
+                        case type::U32: return lr.as_s8() + rr.as_u32();
+                        case type::S64: return lr.as_s8() + rr.as_s64();
+                        case type::U64: return lr.as_s8() + rr.as_u64();
+                        case type::FLOAT: return lr.as_s8() + rr.as_float();
+                        case type::DOUBLE: return lr.as_s8() + rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_s8() + rr.as_long_double();
+                        case type::VEC4: return lr.as_s8() + rr.as_vec4();
+                        case type::MAT4: return lr.as_s8() + rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.as_s8()); return res; }
+                        case type::OBJECT: break;
+                        case type::STRING: return str_util::itoa<std::string>(lr.as_s8()) + rr.as_string();
+                        case type::WSTRING: return str_util::itoa<std::wstring>(lr.as_s8()) + rr.as_wstring();
+                        case type::UNDEFINED: return lr.as_s8();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::U8:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_u8() + rr.as_bool();
+                        case type::CHAR: return lr.as_u8() + rr.as_char();
+                        case type::S8: return lr.as_u8() + rr.as_s8();
+                        case type::U8: return lr.as_u8() + rr.as_u8();
+                        case type::S16: return lr.as_u8() + rr.as_s16();
+                        case type::U16: return lr.as_u8() + rr.as_u16();
+                        case type::WCHAR: return lr.as_u8() + rr.as_wchar();
+                        case type::S32: return lr.as_u8() + rr.as_s32();
+                        case type::U32: return lr.as_u8() + rr.as_u32();
+                        case type::S64: return lr.as_u8() + rr.as_s64();
+                        case type::U64: return lr.as_u8() + rr.as_u64();
+                        case type::FLOAT: return lr.as_u8() + rr.as_float();
+                        case type::DOUBLE: return lr.as_u8() + rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_u8() + rr.as_long_double();
+                        case type::VEC4: return lr.as_u8() + rr.as_vec4();
+                        case type::MAT4: return lr.as_u8() + rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.as_u8()); return res; }
+                        case type::OBJECT: break;
+                        case type::STRING: return str_util::utoa<std::string>(lr.as_u8()) + rr.as_string();
+                        case type::WSTRING: return str_util::utoa<std::wstring>(lr.as_u8()) + rr.as_wstring();
+                        case type::UNDEFINED: return lr.as_u8();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::S16:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_s16() + rr.as_bool();
+                        case type::CHAR: return lr.as_s16() + rr.as_char();
+                        case type::S8: return lr.as_s16() + rr.as_s8();
+                        case type::U8: return lr.as_s16() + rr.as_u8();
+                        case type::S16: return lr.as_s16() + rr.as_s16();
+                        case type::U16: return lr.as_s16() + rr.as_u16();
+                        case type::WCHAR: return lr.as_s16() + rr.as_wchar();
+                        case type::S32: return lr.as_s16() + rr.as_s32();
+                        case type::U32: return lr.as_s16() + rr.as_u32();
+                        case type::S64: return lr.as_s16() + rr.as_s64();
+                        case type::U64: return lr.as_s16() + rr.as_u64();
+                        case type::FLOAT: return lr.as_s16() + rr.as_float();
+                        case type::DOUBLE: return lr.as_s16() + rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_s16() + rr.as_long_double();
+                        case type::VEC4: return lr.as_s16() + rr.as_vec4();
+                        case type::MAT4: return lr.as_s16() + rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.as_s16()); return res; }
+                        case type::OBJECT: break;
+                        case type::STRING: return str_util::itoa<std::string>(lr.as_s16()) + rr.as_string();
+                        case type::WSTRING: return str_util::itoa<std::wstring>(lr.as_s16()) + rr.as_wstring();
+                        case type::UNDEFINED: return lr.as_s16();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::U16:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_u16() + rr.as_bool();
+                        case type::CHAR: return lr.as_u16() + rr.as_char();
+                        case type::S8: return lr.as_u16() + rr.as_s8();
+                        case type::U8: return lr.as_u16() + rr.as_u8();
+                        case type::S16: return lr.as_u16() + rr.as_s16();
+                        case type::U16: return lr.as_u16() + rr.as_u16();
+                        case type::WCHAR: return lr.as_u16() + rr.as_wchar();
+                        case type::S32: return lr.as_u16() + rr.as_s32();
+                        case type::U32: return lr.as_u16() + rr.as_u32();
+                        case type::S64: return lr.as_u16() + rr.as_s64();
+                        case type::U64: return lr.as_u16() + rr.as_u64();
+                        case type::FLOAT: return lr.as_u16() + rr.as_float();
+                        case type::DOUBLE: return lr.as_u16() + rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_u16() + rr.as_long_double();
+                        case type::VEC4: return lr.as_u16() + rr.as_vec4();
+                        case type::MAT4: return lr.as_u16() + rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.as_u16()); return res; }
+                        case type::OBJECT: break;
+                        case type::STRING: return str_util::utoa<std::string>(lr.as_u16()) + rr.as_string();
+                        case type::WSTRING: return str_util::utoa<std::wstring>(lr.as_u16()) + rr.as_wstring();
+                        case type::UNDEFINED: return lr.as_u16();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::WCHAR:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_wchar() + rr.as_bool();
+                        case type::CHAR: return lr.as_wchar() + rr.as_char();
+                        case type::S8: return lr.as_wchar() + rr.as_s8();
+                        case type::U8: return lr.as_wchar() + rr.as_u8();
+                        case type::S16: return lr.as_wchar() + rr.as_s16();
+                        case type::U16: return lr.as_wchar() + rr.as_u16();
+                        case type::WCHAR: return lr.as_wchar() + rr.as_wchar();
+                        case type::S32: return lr.as_wchar() + rr.as_s32();
+                        case type::U32: return lr.as_wchar() + rr.as_u32();
+                        case type::S64: return lr.as_wchar() + rr.as_s64();
+                        case type::U64: return lr.as_wchar() + rr.as_u64();
+                        case type::FLOAT: return lr.as_wchar() + rr.as_float();
+                        case type::DOUBLE: return lr.as_wchar() + rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_wchar() + rr.as_long_double();
+                        case type::VEC4: return lr.as_wchar() + rr.as_vec4();
+                        case type::MAT4: return lr.as_wchar() + rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.as_char()); return res; }
+                        case type::OBJECT: break;
+                        case type::STRING: return std::string{} + str_util::ucs_to_utf8(lr.as_wchar()) + rr.as_string();
+                        case type::WSTRING: return std::wstring{} + lr.as_wchar() + rr.as_wstring();
+                        case type::UNDEFINED: return lr.as_wchar();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::S32:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_s32() + rr.as_bool();
+                        case type::CHAR: return lr.as_s32() + rr.as_char();
+                        case type::S8: return lr.as_s32() + rr.as_s8();
+                        case type::U8: return lr.as_s32() + rr.as_u8();
+                        case type::S16: return lr.as_s32() + rr.as_s16();
+                        case type::U16: return lr.as_s32() + rr.as_u16();
+                        case type::WCHAR: return lr.as_s32() + rr.as_wchar();
+                        case type::S32: return lr.as_s32() + rr.as_s32();
+                        case type::U32: return lr.as_s32() + rr.as_u32();
+                        case type::S64: return lr.as_s32() + rr.as_s64();
+                        case type::U64: return lr.as_s32() + rr.as_u64();
+                        case type::FLOAT: return lr.as_s32() + rr.as_float();
+                        case type::DOUBLE: return lr.as_s32() + rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_s32() + rr.as_long_double();
+                        case type::VEC4: return lr.as_s32() + rr.as_vec4();
+                        case type::MAT4: return lr.as_s32() + rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.as_s32()); return res; }
+                        case type::OBJECT: break;
+                        case type::STRING: return str_util::itoa<std::string>(lr.as_s32()) + rr.as_string();
+                        case type::WSTRING: return str_util::itoa<std::wstring>(lr.as_s32()) + rr.as_wstring();
+                        case type::UNDEFINED: return lr.as_s32();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::U32:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_u32() + rr.as_bool();
+                        case type::CHAR: return lr.as_u32() + rr.as_char();
+                        case type::S8: return lr.as_u32() + rr.as_s8();
+                        case type::U8: return lr.as_u32() + rr.as_u8();
+                        case type::S16: return lr.as_u32() + rr.as_s16();
+                        case type::U16: return lr.as_u32() + rr.as_u16();
+                        case type::WCHAR: return lr.as_u32() + rr.as_wchar();
+                        case type::S32: return lr.as_u32() + rr.as_s32();
+                        case type::U32: return lr.as_u32() + rr.as_u32();
+                        case type::S64: return lr.as_u32() + rr.as_s64();
+                        case type::U64: return lr.as_u32() + rr.as_u64();
+                        case type::FLOAT: return lr.as_u32() + rr.as_float();
+                        case type::DOUBLE: return lr.as_u32() + rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_u32() + rr.as_long_double();
+                        case type::VEC4: return lr.as_u32() + rr.as_vec4();
+                        case type::MAT4: return lr.as_u32() + rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.as_u32()); return res; }
+                        case type::OBJECT: break;
+                        case type::STRING: return str_util::utoa<std::string>(lr.as_u32()) + rr.as_string();
+                        case type::WSTRING: return str_util::utoa<std::wstring>(lr.as_u32()) + rr.as_wstring();
+                        case type::UNDEFINED: return lr.as_u32();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::S64:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_s64() + rr.as_bool();
+                        case type::CHAR: return lr.as_s64() + rr.as_char();
+                        case type::S8: return lr.as_s64() + rr.as_s8();
+                        case type::U8: return lr.as_s64() + rr.as_u8();
+                        case type::S16: return lr.as_s64() + rr.as_s16();
+                        case type::U16: return lr.as_s64() + rr.as_u16();
+                        case type::WCHAR: return lr.as_s64() + rr.as_wchar();
+                        case type::S32: return lr.as_s64() + rr.as_s32();
+                        case type::U32: return lr.as_s64() + rr.as_u32();
+                        case type::S64: return lr.as_s64() + rr.as_s64();
+                        case type::U64: return lr.as_s64() + rr.as_u64();
+                        case type::FLOAT: return lr.as_s64() + rr.as_float();
+                        case type::DOUBLE: return lr.as_s64() + rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_s64() + rr.as_long_double();
+                        case type::VEC4: return lr.as_s64() + rr.as_vec4();
+                        case type::MAT4: return lr.as_s64() + rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.as_s64()); return res; }
+                        case type::OBJECT: break;
+                        case type::STRING: return str_util::itoa<std::string>(lr.as_s64()) + rr.as_string();
+                        case type::WSTRING: return str_util::itoa<std::wstring>(lr.as_s64()) + rr.as_wstring();
+                        case type::UNDEFINED: return lr.as_s64();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::U64:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_u64() + rr.as_bool();
+                        case type::CHAR: return lr.as_u64() + rr.as_char();
+                        case type::S8: return lr.as_u64() + rr.as_s8();
+                        case type::U8: return lr.as_u64() + rr.as_u8();
+                        case type::S16: return lr.as_u64() + rr.as_s16();
+                        case type::U16: return lr.as_u64() + rr.as_u16();
+                        case type::WCHAR: return lr.as_u64() + rr.as_wchar();
+                        case type::S32: return lr.as_u64() + rr.as_s32();
+                        case type::U32: return lr.as_u64() + rr.as_u32();
+                        case type::S64: return lr.as_u64() + rr.as_s64();
+                        case type::U64: return lr.as_u64() + rr.as_u64();
+                        case type::FLOAT: return lr.as_u64() + rr.as_float();
+                        case type::DOUBLE: return lr.as_u64() + rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_u64() + rr.as_long_double();
+                        case type::VEC4: return lr.as_u64() + rr.as_vec4();
+                        case type::MAT4: return lr.as_u64() + rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.as_u64()); return res; }
+                        case type::OBJECT: break;
+                        case type::STRING: return str_util::utoa<std::string>(lr.as_u64()) + rr.as_string();
+                        case type::WSTRING: return str_util::utoa<std::wstring>(lr.as_u64()) + rr.as_wstring();
+                        case type::UNDEFINED: return lr.as_u64();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::FLOAT:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_float() + rr.as_bool();
+                        case type::CHAR: return lr.as_float() + rr.as_char();
+                        case type::S8: return lr.as_float() + rr.as_s8();
+                        case type::U8: return lr.as_float() + rr.as_u8();
+                        case type::S16: return lr.as_float() + rr.as_s16();
+                        case type::U16: return lr.as_float() + rr.as_u16();
+                        case type::WCHAR: return lr.as_float() + rr.as_wchar();
+                        case type::S32: return lr.as_float() + rr.as_s32();
+                        case type::U32: return lr.as_float() + rr.as_u32();
+                        case type::S64: return lr.as_float() + rr.as_s64();
+                        case type::U64: return lr.as_float() + rr.as_u64();
+                        case type::FLOAT: return lr.as_float() + rr.as_float();
+                        case type::DOUBLE: return lr.as_float() + rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_float() + rr.as_long_double();
+                        case type::VEC4: return lr.as_float() + rr.as_vec4();
+                        case type::MAT4: return lr.as_float() + rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.as_float()); return res; }
+                        case type::OBJECT: break;
+                        case type::STRING: return str_util::ftoa(lr.as_float()) + rr.as_string();
+                        case type::WSTRING: return str_util::from_utf8(str_util::ftoa(lr.as_float())) + rr.as_wstring();
+                        case type::UNDEFINED: return lr.as_float();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::DOUBLE:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_double() + rr.as_bool();
+                        case type::CHAR: return lr.as_double() + rr.as_char();
+                        case type::S8: return lr.as_double() + rr.as_s8();
+                        case type::U8: return lr.as_double() + rr.as_u8();
+                        case type::S16: return lr.as_double() + rr.as_s16();
+                        case type::U16: return lr.as_double() + rr.as_u16();
+                        case type::WCHAR: return lr.as_double() + rr.as_wchar();
+                        case type::S32: return lr.as_double() + rr.as_s32();
+                        case type::U32: return lr.as_double() + rr.as_u32();
+                        case type::S64: return lr.as_double() + rr.as_s64();
+                        case type::U64: return lr.as_double() + rr.as_u64();
+                        case type::FLOAT: return lr.as_double() + rr.as_float();
+                        case type::DOUBLE: return lr.as_double() + rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_double() + rr.as_long_double();
+                        case type::VEC4: return lr.as_double() + rr.as_vec4();
+                        case type::MAT4: return lr.as_double() + rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.as_double()); return res; }
+                        case type::OBJECT: break;
+                        case type::STRING: return str_util::ftoa(lr.as_double()) + rr.as_string();
+                        case type::WSTRING: return str_util::from_utf8(str_util::ftoa(lr.as_double())) + rr.as_wstring();
+                        case type::UNDEFINED: return lr.as_double();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::LONG_DOUBLE:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_long_double() + rr.as_bool();
+                        case type::CHAR: return lr.as_long_double() + rr.as_char();
+                        case type::S8: return lr.as_long_double() + rr.as_s8();
+                        case type::U8: return lr.as_long_double() + rr.as_u8();
+                        case type::S16: return lr.as_long_double() + rr.as_s16();
+                        case type::U16: return lr.as_long_double() + rr.as_u16();
+                        case type::WCHAR: return lr.as_long_double() + rr.as_wchar();
+                        case type::S32: return lr.as_long_double() + rr.as_s32();
+                        case type::U32: return lr.as_long_double() + rr.as_u32();
+                        case type::S64: return lr.as_long_double() + rr.as_s64();
+                        case type::U64: return lr.as_long_double() + rr.as_u64();
+                        case type::FLOAT: return lr.as_long_double() + rr.as_float();
+                        case type::DOUBLE: return lr.as_long_double() + rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_long_double() + rr.as_long_double();
+                        case type::VEC4: return lr.as_long_double() + rr.as_vec4();
+                        case type::MAT4: return lr.as_long_double() + rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.as_long_double()); return res; }
+                        case type::OBJECT: break;
+                        case type::STRING: return str_util::ftoa(lr.as_long_double()) + rr.as_string();
+                        case type::WSTRING: return str_util::from_utf8(str_util::ftoa(lr.as_long_double())) + rr.as_wstring();
+                        case type::UNDEFINED: return lr.as_long_double();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::VEC4:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_vec4() + rr.as_bool();
+                        case type::CHAR: return lr.as_vec4() + rr.as_char();
+                        case type::S8: return lr.as_vec4() + rr.as_s8();
+                        case type::U8: return lr.as_vec4() + rr.as_u8();
+                        case type::S16: return lr.as_vec4() + rr.as_s16();
+                        case type::U16: return lr.as_vec4() + rr.as_u16();
+                        case type::WCHAR: return lr.as_vec4() + rr.as_wchar();
+                        case type::S32: return lr.as_vec4() + rr.as_s32();
+                        case type::U32: return lr.as_vec4() + rr.as_u32();
+                        case type::S64: return lr.as_vec4() + rr.as_s64();
+                        case type::U64: return lr.as_vec4() + rr.as_u64();
+                        case type::FLOAT: return lr.as_vec4() + rr.as_float();
+                        case type::DOUBLE: return lr.as_vec4() + rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_vec4() + rr.as_long_double();
+                        case type::VEC4: return lr.as_vec4() + rr.as_vec4();
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.clone()); return res; }
+                        case type::OBJECT: break;
+                        case type::STRING: return lr.cast_to_string() + rr.as_string();
+                        case type::WSTRING: return lr.cast_to_wstring() + rr.as_wstring();
+                        case type::UNDEFINED: return lr.as_vec4();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::MAT4:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_mat4() + rr.as_bool();
+                        case type::CHAR: return lr.as_mat4() + rr.as_char();
+                        case type::S8: return lr.as_mat4() + rr.as_s8();
+                        case type::U8: return lr.as_mat4() + rr.as_u8();
+                        case type::S16: return lr.as_mat4() + rr.as_s16();
+                        case type::U16: return lr.as_mat4() + rr.as_u16();
+                        case type::WCHAR: return lr.as_mat4() + rr.as_wchar();
+                        case type::S32: return lr.as_mat4() + rr.as_s32();
+                        case type::U32: return lr.as_mat4() + rr.as_u32();
+                        case type::S64: return lr.as_mat4() + rr.as_s64();
+                        case type::U64: return lr.as_mat4() + rr.as_u64();
+                        case type::FLOAT: return lr.as_mat4() + rr.as_float();
+                        case type::DOUBLE: return lr.as_mat4() + rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_mat4() + rr.as_long_double();
+                        case type::VEC4: break;
+                        case type::MAT4: return lr.as_mat4() + rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.clone()); return res; }
+                        case type::OBJECT: break;
+                        case type::STRING: return lr.cast_to_string() + rr.as_string();
+                        case type::WSTRING: return lr.cast_to_wstring() + rr.as_wstring();
+                        case type::UNDEFINED: return lr.as_mat4();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::POINTER:
+                    break;
+                case type::CLASS:
+                    break;
+                case type::FUNC:
+                    break;
+                case type::ARRAY:
+                    switch(rt) {
+                        case type::BOOL:
+                        case type::CHAR:
+                        case type::S8:
+                        case type::U8:
+                        case type::S16:
+                        case type::U16:
+                        case type::WCHAR:
+                        case type::S32:
+                        case type::U32:
+                        case type::S64:
+                        case type::U64:
+                        case type::FLOAT:
+                        case type::DOUBLE:
+                        case type::LONG_DOUBLE:
+                        case type::VEC4:
+                        case type::MAT4:
+                        case type::POINTER:
+                        case type::CLASS:
+                        case type::FUNC:
+                        case type::OBJECT:
+                        case type::STRING:
+                        case type::WSTRING:
+                        case type::UNDEFINED:
+                        case type::VALBOX: { auto res{lr.clone()}; res.as_array().push_back(rr.clone()); return res; }
+                        case type::ARRAY: { auto res{lr.clone()}; for(auto &&v: rr.as_array()) { res.as_array().push_back(v.clone()); } return res; }
+                        default: break;
+                    }
+                    break;
+                case type::OBJECT:
+                    switch(rt) {
+                        case type::BOOL: break;
+                        case type::CHAR: break;
+                        case type::S8: break;
+                        case type::U8: break;
+                        case type::S16: break;
+                        case type::U16: break;
+                        case type::WCHAR: break;
+                        case type::S32: break;
+                        case type::U32: break;
+                        case type::S64: break;
+                        case type::U64: break;
+                        case type::FLOAT: break;
+                        case type::DOUBLE: break;
+                        case type::LONG_DOUBLE: break;
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: break;
+                        case type::VALBOX: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: {
+                            auto res{lr.clone()};
+                            for(auto &&p: rr.as_object()) {
+                                res.as_object()[p.first] = p.second.clone();
                             }
-                        }
-                        break;
-                    case type::STRING: res = l.as_string() + r.as_string(); break;
-                    case type::WSTRING: res = l.as_wstring() + r.as_wstring(); break;
-                    case type::UNDEFINED: break;
-                    default: throw std::runtime_error{"operation not applicable"};
-                }
-                return res;
-            } else if(stronger_numeric_type(l.val_or_pointed_type(), r.val_or_pointed_type(), st)) {
-                if(st == l.val_or_pointed_type()) {
-                    res.become_same_type_as(l);
-                } else {
-                    res.become_same_type_as(r);
-                }
-                switch(st) {
-                    case type::CHAR: res = l.cast_num_to_num<char>() + r.cast_num_to_num<char>(); break;
-                    case type::WCHAR: res = l.cast_num_to_num<wchar_t>() + r.cast_num_to_num<wchar_t>(); break;
-                    case type::U8: res = l.cast_num_to_num<std::uint8_t>() + r.cast_num_to_num<std::uint8_t>(); break;
-                    case type::S8: res = l.cast_num_to_num<std::int8_t>() + r.cast_num_to_num<std::int8_t>(); break;
-                    case type::U16: res = l.cast_num_to_num<std::uint16_t>() + r.cast_num_to_num<std::uint16_t>(); break;
-                    case type::S16: res = l.cast_num_to_num<std::int16_t>() + r.cast_num_to_num<std::int16_t>(); break;
-                    case type::U32: res = l.cast_num_to_num<std::uint32_t>() + r.cast_num_to_num<std::uint32_t>(); break;
-                    case type::S32: res = l.cast_num_to_num<std::int32_t>() + r.cast_num_to_num<std::int32_t>(); break;
-                    case type::U64: res = l.cast_num_to_num<std::uint64_t>() + r.cast_num_to_num<std::uint64_t>(); break;
-                    case type::S64: res = l.cast_num_to_num<std::int64_t>() + r.cast_num_to_num<std::int64_t>(); break;
-                    case type::FLOAT: res = l.cast_num_to_num<float>() + r.cast_num_to_num<float>(); break;
-                    case type::DOUBLE: res = l.cast_num_to_num<double>() + r.cast_num_to_num<double>(); break;
-                    case type::LONG_DOUBLE: res = l.cast_num_to_num<long double>() + r.cast_num_to_num<long double>(); break;
-                    case type::POINTER: res = (void *)(l.cast_num_to_num<std::uintptr_t>() + r.cast_num_to_num<std::uintptr_t>()); break;
-                    default: throw std::runtime_error{"operation not applicable"};
-                }
-                return res;
-            } else {
-                if(l.is_vec4_ref() || r.is_vec4_ref()) {
-                    if(l.is_vec4_ref()) {
-                        vec4_t rv{};
-                        if(r.is_string_ref() || r.is_wstring_ref()) {
-                            if(r.is_string_ref()) {
-                                rv = vec4_from_str<long double>(r.as_string());
-                            } else {
-                                rv = vec4_from_str<long double>(r.as_wstring());
-                            }
-                            res = l.as_vec4() + rv;
-                            return res;
-                        } else if(r.is_array_ref() || r.is_object_ref()) {
-                            rv = vec4_from_json<long double>(r.to_json());
-                            res = l.as_vec4() + rv;
-                            return res;
-                        } else if(r.is_any_fp_number()) {
-                            rv = vec4_t(r.cast_to_long_double());
-                            res = l.as_vec4() + rv;
-                            return res;
-                        } else if(r.is_any_int_number()) {
-                            rv = vec4_t(r.cast_num_to_num<long double>());
-                            res = l.as_vec4() + rv;
                             return res;
                         }
-                    } else {
-                        vec4_t lv{};
-                        if(l.is_string_ref() || l.is_wstring_ref()) {
-                            if(l.is_string_ref()) {
-                                lv = vec4_from_str<long double>(l.as_string());
-                            } else {
-                                lv = vec4_from_str<long double>(l.as_wstring());
-                            }
-                            res = r.as_vec4() + lv;
-                            return res;
-                        } else if(l.is_array_ref() || l.is_object_ref()) {
-                            lv = vec4_from_json<long double>(l.to_json());
-                            res = r.as_vec4() + lv;
-                            return res;
-                        } else if(r.is_any_fp_number()) {
-                            lv = vec4_t(r.cast_to_long_double());
-                            res = r.as_vec4() + lv;
-                            return res;
-                        } else if(r.is_any_int_number()) {
-                            lv = vec4_t(r.cast_num_to_num<long double>());
-                            res = r.as_vec4() + lv;
-                            return res;
-                        }
+                        default: break;
                     }
-                } else if(l.is_array_ref()) {
-                    res.become_array();
-                    res.box_->value_ = l.as_array();
-                    if(r.is_string_ref() || r.is_wstring_ref()) {
-                        auto rarr{r.cast_to_array()};
-                        for(auto &&v: rarr) { res.as_array().push_back(v.clone()); }
-                    } else if(r.is_array_ref()) {
-                        std::string &resstr{res.as_string()};
-                        for(auto &&itm: r.as_array()) {
-                            resstr.push_back(itm.deref().cast_to_char());
-                        }
-                    } else {
-                        res.as_array().push_back(r);
-                    }
-                    return res;
-                } else if(l.is_string_ref()) {
-                    if(r.is_string_ref()) {
-                        res = l.as_string() + r.as_string();
-                    } else if(r.is_any_int_number()) {
-                        res = l.as_string() + r.cast_to_char();
-                    } else if(r.is_array_ref()) {
-                        res = l;
-                        std::string &resstr{res.as_string()};
-                        for(auto &&itm: r.as_array()) {
-                            resstr.push_back(itm.deref().cast_to_char());
-                        }
-                    }
-                    return res;
-                } else if(r.is_string_ref()) {
-                    if(l.is_any_int_number()) {
-                        std::string s{};
-                        s += l.cast_to_char();
-                        s += r.as_string();
-                        res = std::move(s);
-                    }
-                    return res;
-                } else if(l.is_wstring_ref()) {
-                    if(r.is_wstring_ref()) {
-                        res = l.as_wstring() + r.as_wstring();
-                    } else if(r.is_any_int_number()) {
-                        res = l.as_wstring() + r.cast_to_wchar();
-                    } else if(r.is_array_ref()) {
-                        res = l;
-                        std::wstring &resstr{res.as_wstring()};
-                        for(auto &&itm: r.as_array()) {
-                            resstr.push_back(itm.cast_to_wchar());
-                        }
-                    }
-                    return res;
-                } else if(r.is_wstring_ref()) {
-                    if(l.is_any_int_number()) {
-                        std::wstring ws{};
-                        ws += l.cast_to_wchar();
-                        ws += r.as_wstring();
-                        res = std::move(ws);
-                    }
-                    return res;
-                }
+                    break;
+                case type::STRING:
+                    return lr.as_string() + rr.cast_to_string();
+                    break;
+                case type::WSTRING:
+                    return lr.as_wstring() + rr.cast_to_wstring();
+                    break;
+                case type::UNDEFINED:
+                    return rr.clone();
+                case type::VALBOX:
+                    break;
+                default:
+                    break;
             }
             throw std::runtime_error{"operation not applicable"};
         }
@@ -1714,7 +2576,7 @@ namespace scfx {
             valbox const &rder(r.deref());
             type lt{lder.val_or_pointed_type()};
             type rt{rder.val_or_pointed_type()};
-            if(lder.box_.get() == rder.box_.get()) {
+            if(lder.box_.get() == rder.box_.get() || (lt == rt && lt == type::UNDEFINED)) {
                 return true;
             }
             if(lt == rt) {
@@ -1736,7 +2598,8 @@ namespace scfx {
                     case type::STRING: return lder.as_string() == rder.as_string();
                     case type::WSTRING: return lder.as_wstring() == rder.as_wstring();
                     case type::POINTER: return lder.as_ptr() == rder.as_ptr();
-                    case type::UNDEFINED: return true;
+                    case type::VEC4: return lder.as_vec4() == rder.as_vec4();
+                    case type::MAT4: return lder.as_mat4() == rder.as_mat4();
                     default: break;
                 }
             } else {
@@ -1826,7 +2689,7 @@ namespace scfx {
                 } else {
                     type st{stronger_type(lt, rt)};
                     switch(st) {
-                        case type::BOOL: return lr.cast_to_bool() <= rr.cast_to_bool(); break;
+                        case type::BOOL: return lr.cast_to_bool() <= rr.cast_to_bool();
                         case type::STRING: return lr.cast_to_string() <= rr.cast_to_string();
                         case type::WCHAR: return lr.cast_to_wchar() <= rr.cast_to_wchar();
                         case type::WSTRING: return lr.cast_to_wstring() <= rr.cast_to_wstring();
@@ -1861,7 +2724,6 @@ namespace scfx {
                     case type::WCHAR: return lr.as_wchar() < rr.as_wchar();
                     case type::STRING: return lr.as_string() < rr.as_string();
                     case type::WSTRING: return lr.as_wstring() < rr.as_wstring();
-                    case type::POINTER: return lr.cast_num_to_num<std::uintptr_t>() < rr.cast_num_to_num<std::uintptr_t>();
                     case type::UNDEFINED: return false;
                     default: break;
                 }
@@ -1884,7 +2746,6 @@ namespace scfx {
                         case type::FLOAT: return lr.cast_num_to_num<float>() < rr.cast_num_to_num<float>(); break;
                         case type::DOUBLE: return lr.cast_num_to_num<double>() < rr.cast_num_to_num<double>(); break;
                         case type::LONG_DOUBLE: return lr.cast_num_to_num<long double>() < rr.cast_num_to_num<long double>(); break;
-                        case type::POINTER: return lr.cast_num_to_num<std::uintptr_t>() <= rr.cast_num_to_num<std::uintptr_t>();
                         default: break;
                     }
                 } else {
@@ -1935,383 +2796,2125 @@ namespace scfx {
             return !(lr == rr);
         }
 
-        friend valbox operator-(valbox const &l, valbox const &r) {
-            valbox res{valbox_no_initialize::dont_do_it};
-            type st;
-            auto lr{l.deref()};
-            auto rr{r.deref()};
-            type lt{lr.val_or_pointed_type()};
-            type rt{rr.val_or_pointed_type()};
-            if(lt == type::UNDEFINED || rt == type::UNDEFINED) {
-                return res;
-            }
-            bool applicable{stronger_numeric_type(lt, rt, st)};
-            if(applicable) {
-                if(st == lt) {
-                    res.become_same_type_as(lr);
-                } else {
-                    res.become_same_type_as(rr);
-                }
-                switch(st) {
-                    case type::CHAR: res.assign_preserving_type(lr.cast_num_to_num<char>() - rr.cast_num_to_num<char>()); break;
-                    case type::U8: res.assign_preserving_type(lr.cast_num_to_num<std::uint8_t>() - rr.cast_num_to_num<std::uint8_t>()); break;
-                    case type::S8: res.assign_preserving_type(lr.cast_num_to_num<std::int8_t>() - rr.cast_num_to_num<std::int8_t>()); break;
-                    case type::U16: res.assign_preserving_type(lr.cast_num_to_num<std::uint16_t>() - rr.cast_num_to_num<std::uint16_t>()); break;
-                    case type::S16: res.assign_preserving_type(lr.cast_num_to_num<std::int16_t>() - rr.cast_num_to_num<std::int16_t>()); break;
-                    case type::U32: res.assign_preserving_type(lr.cast_num_to_num<std::uint32_t>() - rr.cast_num_to_num<std::uint32_t>()); break;
-                    case type::S32: res.assign_preserving_type(lr.cast_num_to_num<std::int32_t>() - rr.cast_num_to_num<std::int32_t>()); break;
-                    case type::U64: res.assign_preserving_type(lr.cast_num_to_num<std::uint64_t>() - rr.cast_num_to_num<std::uint64_t>()); break;
-                    case type::S64: res.assign_preserving_type(lr.cast_num_to_num<std::int64_t>() - rr.cast_num_to_num<std::int64_t>()); break;
-                    case type::FLOAT: res.assign_preserving_type(lr.cast_num_to_num<float>() - rr.cast_num_to_num<float>()); break;
-                    case type::DOUBLE: res.assign_preserving_type(lr.cast_num_to_num<double>() - rr.cast_num_to_num<double>()); break;
-                    case type::LONG_DOUBLE: res.assign_preserving_type(lr.cast_num_to_num<long double>() - rr.cast_num_to_num<long double>()); break;
-                    case type::POINTER: res.assign_preserving_type(lr.cast_num_to_num<std::uintptr_t>() - rr.cast_num_to_num<std::uintptr_t>()); break;
-                    default: throw std::runtime_error{"operation not applicable"};
-                }
-                return res;
-            }
-            throw std::runtime_error{"operation not applicable"};
-        }
-
-        friend valbox operator*(valbox const &l, valbox const &r) {
-            valbox res{valbox_no_initialize::dont_do_it};
-            type st;
-            auto lr{l.deref()};
-            auto rr{r.deref()};
-            auto lt{lr.val_type()};
-            auto rt{rr.val_type()};
-            if(lt == type::UNDEFINED || rt == type::UNDEFINED) {
-                return res;
-            }
-            bool applicable{stronger_numeric_type(lr.val_or_pointed_type(), rr.val_or_pointed_type(), st)};
-            if(applicable) {
-                if(st == lr.val_or_pointed_type()) {
-                    res.become_type(lr.val_or_pointed_type());
-                } else {
-                    res.become_type(rr.val_or_pointed_type());
-                }
-                switch(st) {
-                    case type::CHAR: res.assign_preserving_type(lr.cast_num_to_num<char>() * rr.cast_num_to_num<char>()); break;
-                    case type::U8: res.assign_preserving_type(lr.cast_num_to_num<std::uint8_t>() * rr.cast_num_to_num<std::uint8_t>()); break;
-                    case type::S8: res.assign_preserving_type(lr.cast_num_to_num<std::int8_t>() * rr.cast_num_to_num<std::int8_t>()); break;
-                    case type::U16: res.assign_preserving_type(lr.cast_num_to_num<std::uint16_t>() * rr.cast_num_to_num<std::uint16_t>()); break;
-                    case type::S16: res.assign_preserving_type(lr.cast_num_to_num<std::int16_t>() * rr.cast_num_to_num<std::int16_t>()); break;
-                    case type::U32: res.assign_preserving_type(lr.cast_num_to_num<std::uint32_t>() * rr.cast_num_to_num<std::uint32_t>()); break;
-                    case type::S32: res.assign_preserving_type(lr.cast_num_to_num<std::int32_t>() * rr.cast_num_to_num<std::int32_t>()); break;
-                    case type::U64: res.assign_preserving_type(lr.cast_num_to_num<std::uint64_t>() * rr.cast_num_to_num<std::uint64_t>()); break;
-                    case type::S64: res.assign_preserving_type(lr.cast_num_to_num<std::int64_t>() * rr.cast_num_to_num<std::int64_t>()); break;
-                    case type::FLOAT: res.assign_preserving_type(lr.cast_num_to_num<float>() * rr.cast_num_to_num<float>()); break;
-                    case type::DOUBLE: res.assign_preserving_type(lr.cast_num_to_num<double>() * rr.cast_num_to_num<double>()); break;
-                    case type::LONG_DOUBLE: res.assign_preserving_type(lr.cast_num_to_num<long double>() * rr.cast_num_to_num<long double>()); break;
-                    case type::POINTER: res.assign_preserving_type(lr.cast_num_to_num<std::uintptr_t>() * rr.cast_num_to_num<std::uintptr_t>()); break;
-                    default: throw std::runtime_error{"operation not applicable"};
-                }
-                return res;
-            } else {
-                if(lr.val_or_pointed_type() == type::VEC4) {
-                    if(rr.is_any_fp_number() || rr.is_any_int_number()) {
-                        return lr.as_vec4() * rr.cast_num_to_num<long double>();
-                    } else if(rr.val_or_pointed_type() == type::MAT4) {
-                        return lr.as_vec4() * rr.as_mat4();
-                    }
-                } else if(lr.val_or_pointed_type() == type::MAT4) {
-                    if(rr.is_any_fp_number() || rr.is_any_int_number()) {
-                        return lr.as_mat4() * rr.cast_num_to_num<long double>();
-                    } else if(rr.val_or_pointed_type() == type::MAT4) {
-                        return lr.as_mat4() * rr.as_mat4();
-                    } else if(rr.val_or_pointed_type() == type::VEC4) {
-                        return lr.as_mat4() * rr.as_vec4();
-                    }
-                } else if(rr.val_or_pointed_type() == type::VEC4) {
-                    if(lr.is_any_fp_number() || lr.is_any_int_number()) {
-                        return lr.cast_num_to_num<long double>() * rr.as_vec4();
-                    }
-                } else if(rr.val_or_pointed_type() == type::MAT4) {
-                    if(lr.is_any_fp_number() || lr.is_any_int_number()) {
-                        return lr.cast_num_to_num<long double>() * rr.as_mat4();
-                    }
-                } else if(lr.val_or_pointed_type() == type::STRING && rr.is_numeric()) {
-                    if(rr.is_any_int_number()) {
-                        std::string res{};
-                        for(uint64_t i{0}; i < rr.cast_to_u64(); ++i) {
-                            res += lr.as_string();
-                        }
-                        return res;
-                    } else if(rr.is_any_fp_number()) {
-                        std::string res{};
-                        long double rest{rr.cast_to_long_double() - rr.cast_to_u64()};
-                        std::string tail{lr.as_string().substr(0, lr.as_string().size() * rest)};
-                        for(uint64_t i{0}; i < rr.cast_to_u64(); ++i) {
-                            res += lr.as_string();
-                        }
-                        res += tail;
-                        return res;
-                    }
-                } else if(lr.val_or_pointed_type() == type::WSTRING && rr.is_numeric()) {
-                    if(rr.is_any_int_number()) {
-                        std::wstring res{};
-                        for(uint64_t i{0}; i < rr.cast_to_u64(); ++i) {
-                            res += lr.as_wstring();
-                        }
-                        return res;
-                    } else if(rr.is_any_fp_number()) {
-                        std::wstring res{};
-                        long double rest{rr.cast_to_long_double() - rr.cast_to_u64()};
-                        std::wstring tail{lr.as_wstring().substr(0, lr.as_wstring().size() * rest)};
-                        for(uint64_t i{0}; i < rr.cast_to_u64(); ++i) {
-                            res += lr.as_wstring();
-                        }
-                        res += tail;
-                        return res;
-                    }
-                } else if(rr.val_or_pointed_type() == type::STRING && lr.is_numeric()) {
-                    if(lr.is_any_int_number()) {
-                        std::string res{};
-                        for(uint64_t i{0}; i < lr.cast_to_u64(); ++i) {
-                            res += rr.as_string();
-                        }
-                        return res;
-                    } else if(lr.is_any_fp_number()) {
-                        std::string res{};
-                        long double rest{lr.cast_to_long_double() - lr.cast_to_u64()};
-                        std::string tail{rr.as_string().substr(0, rr.as_string().size() * rest)};
-                        for(uint64_t i{0}; i < lr.cast_to_u64(); ++i) {
-                            res += rr.as_string();
-                        }
-                        res += tail;
-                        return res;
-                    }
-                } else if(rr.val_or_pointed_type() == type::WSTRING && lr.is_numeric()) {
-                    if(lr.is_any_int_number()) {
-                        std::wstring res{};
-                        for(uint64_t i{0}; i < lr.cast_to_u64(); ++i) {
-                            res += rr.as_wstring();
-                        }
-                        return res;
-                    } else if(lr.is_any_fp_number()) {
-                        std::wstring res{};
-                        long double rest{lr.cast_to_long_double() - lr.cast_to_u64()};
-                        std::wstring tail{rr.as_wstring().substr(0, rr.as_wstring().size() * rest)};
-                        for(uint64_t i{0}; i < lr.cast_to_u64(); ++i) {
-                            res += rr.as_wstring();
-                        }
-                        res += tail;
-                        return res;
-                    }
-                }
-            }
-            throw std::runtime_error{"operation not applicable"};
-        }
-
-        friend valbox operator/(valbox const &l, valbox const &r) {
-            valbox res{valbox_no_initialize::dont_do_it};
-            type st;
-            auto lr{l.deref()};
-            auto rr{r.deref()};
-            type lt{lr.val_type()};
-            type rt{rr.val_type()};
-            if(lt == type::UNDEFINED || rt == type::UNDEFINED) {
-                return res;
-            }
-            bool applicable{stronger_numeric_type(lt, rt, st)};
-            if(applicable) {
-                if(st == lt) {
-                    res.become_same_type_as(lr);
-                } else {
-                    res.become_same_type_as(rr);
-                }
-                switch(st) {
-                    case type::CHAR: {
-                            auto dvzr{rr.cast_num_to_num<char>()};
-                            if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; }
-                            res.assign_preserving_type(lr.cast_num_to_num<char>() / dvzr);
-                        }
-                        break;
-                    case type::U8: {
-                            auto dvzr{rr.cast_num_to_num<std::uint8_t>()};
-                            if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; }
-                            res.assign_preserving_type(lr.cast_num_to_num<std::uint8_t>() / dvzr);
-                        }
-                        break;
-                    case type::S8: {
-                            auto dvzr{rr.cast_num_to_num<std::int8_t>()};
-                            if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; }
-                            res.assign_preserving_type(lr.cast_num_to_num<std::int8_t>() / dvzr);
-                        }
-                        break;
-                    case type::U16: {
-                            auto dvzr{rr.cast_num_to_num<std::uint16_t>()};
-                            if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; }
-                            res.assign_preserving_type(lr.cast_num_to_num<std::uint16_t>() / dvzr);
-                        }
-                        break;
-                    case type::S16: {
-                            auto dvzr{rr.cast_num_to_num<std::int16_t>()};
-                            if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; }
-                            res.assign_preserving_type(lr.cast_num_to_num<std::int16_t>() / dvzr);
-                        }
-                        break;
-                    case type::U32: {
-                            auto dvzr{rr.cast_num_to_num<std::uint32_t>()};
-                            if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; }
-                            res.assign_preserving_type(lr.cast_num_to_num<std::uint32_t>() / dvzr);
-                        }
-                        break;
-                    case type::S32: {
-                            auto dvzr{rr.cast_num_to_num<std::int32_t>()};
-                            if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; }
-                            res.assign_preserving_type(lr.cast_num_to_num<std::int32_t>() / dvzr);
-                        }
-                        break;
-                    case type::U64: {
-                            auto dvzr{rr.cast_num_to_num<std::uint64_t>()};
-                            if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; }
-                            res.assign_preserving_type(lr.cast_num_to_num<std::uint64_t>() / dvzr);
-                        }
-                        break;
-                    case type::S64: {
-                            auto dvzr{rr.cast_num_to_num<std::int64_t>()};
-                            if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; }
-                            res.assign_preserving_type(lr.cast_num_to_num<std::int64_t>() / dvzr);
-                        }
-                        break;
-                    case type::FLOAT:
-                        res.assign_preserving_type(lr.cast_num_to_num<float>() / rr.cast_num_to_num<float>());
-                        break;
-                    case type::DOUBLE:
-                        res.assign_preserving_type(lr.cast_num_to_num<double>() / rr.cast_num_to_num<double>());
-                        break;
-                    case type::LONG_DOUBLE:
-                        res.assign_preserving_type(lr.cast_num_to_num<long double>() / rr.cast_num_to_num<long double>());
-                        break;
-                    case type::POINTER: {
-                            auto dvzr{rr.cast_num_to_num<std::uintptr_t>()};
-                            if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; }
-                            res.assign_preserving_type(lr.cast_num_to_num<std::uintptr_t>() / dvzr);
-                        }
-                        break;
-                    default:
-                        throw std::runtime_error{"operation not applicable"};
-                }
-                return res;
-            }
-            throw std::runtime_error{"operation not applicable"};
-        }
-
-        friend valbox operator%(valbox const &l, valbox const &r) {
-            valbox res{valbox_no_initialize::dont_do_it};
-            type st{type::UNDEFINED};
-            auto lr{l.deref()};
-            auto rr{r.deref()};
-            auto lt{lr.val_type()};
-            auto rt{rr.val_type()};
-            if(lt == type::UNDEFINED || rt == type::UNDEFINED) {
-                return res;
-            }
-            bool applicable{stronger_numeric_type(lr.val_or_pointed_type(), rr.val_or_pointed_type(), st)};
-            if(applicable) {
-                if(lr.is_any_fp_number() || rr.is_any_fp_number()) {
-                    res.become_type(st);
-                    switch(st) {
-                        case type::FLOAT: res.assign_preserving_type(std::fmod(lr.cast_num_to_num<float>(), rr.cast_num_to_num<float>())); break;
-                        case type::DOUBLE: res.assign_preserving_type(std::fmod(lr.cast_num_to_num<double>(), rr.cast_num_to_num<double>())); break;
-                        case type::LONG_DOUBLE: res.assign_preserving_type(std::fmod(lr.cast_num_to_num<long double>(), rr.cast_num_to_num<long double>())); break;
+        friend valbox operator-(valbox const &lr, valbox const &rr) {
+            auto lt{lr.val_or_pointed_type()};
+            auto rt{rr.val_or_pointed_type()};
+            switch(lt) {
+                case type::BOOL:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_bool() - rr.as_bool();
+                        case type::CHAR: return lr.as_bool() - rr.as_char();
+                        case type::S8: return lr.as_bool() - rr.as_s8();
+                        case type::U8: return lr.as_bool() - rr.as_u8();
+                        case type::S16: return lr.as_bool() - rr.as_s16();
+                        case type::U16: return lr.as_bool() - rr.as_u16();
+                        case type::WCHAR: return lr.as_bool() - rr.as_wchar();
+                        case type::S32: return lr.as_bool() - rr.as_s32();
+                        case type::U32: return lr.as_bool() - rr.as_u32();
+                        case type::S64: return lr.as_bool() - rr.as_s64();
+                        case type::U64: return lr.as_bool() - rr.as_u64();
+                        case type::FLOAT: return lr.as_bool() - rr.as_float();
+                        case type::DOUBLE: return lr.as_bool() - rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_bool() - rr.as_long_double();
+                        case type::VEC4: return lr.as_bool() - rr.as_vec4();
+                        case type::MAT4: return lr.as_bool() - rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return lr.as_bool();
+                        case type::VALBOX: break;
                         default: break;
                     }
-                } else {
-                    res.become_same_type_as(lr);
-                    switch(lr.val_or_pointed_type()) {
-                    case type::CHAR: {
-                            auto dvzr{rr.cast_num_to_num<char>()};
-                            if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; }
-                            res.assign_preserving_type(lr.cast_num_to_num<char>() % dvzr);
-                        }
-                        break;
-                    case type::U8: {
-                            auto dvzr{rr.cast_num_to_num<std::uint8_t>()};
-                            if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; }
-                            res.assign_preserving_type(lr.cast_num_to_num<std::uint8_t>() % dvzr);
-                        }
-                        break;
-                    case type::S8: {
-                            auto dvzr{rr.cast_num_to_num<std::int8_t>()};
-                            if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; }
-                            res.assign_preserving_type(lr.cast_num_to_num<std::int8_t>() % dvzr);
-                        }
-                        break;
-                    case type::U16: {
-                            auto dvzr{rr.cast_num_to_num<std::uint16_t>()};
-                            if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; }
-                            res.assign_preserving_type(lr.cast_num_to_num<std::uint16_t>() % dvzr);
-                        }
-                        break;
-                    case type::S16: {
-                            auto dvzr{rr.cast_num_to_num<std::int16_t>()};
-                            if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; }
-                            res.assign_preserving_type(lr.cast_num_to_num<std::int16_t>() % dvzr);
-                        }
-                        break;
-                    case type::U32: {
-                            auto dvzr{rr.cast_num_to_num<std::uint32_t>()};
-                            if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; }
-                            res.assign_preserving_type(lr.cast_num_to_num<std::uint32_t>() % dvzr);
-                        }
-                        break;
-                    case type::S32: {
-                            auto dvzr{rr.cast_num_to_num<std::int32_t>()};
-                            if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; }
-                            res.assign_preserving_type(lr.cast_num_to_num<std::int32_t>() % dvzr);
-                        }
-                        break;
-                    case type::U64: {
-                            auto dvzr{rr.cast_num_to_num<std::uint64_t>()};
-                            if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; }
-                            res.assign_preserving_type(lr.cast_num_to_num<std::uint64_t>() % dvzr);
-                        }
-                        break;
-                    case type::S64: {
-                            auto dvzr{rr.cast_num_to_num<std::int64_t>()};
-                            if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; }
-                            res.assign_preserving_type(lr.cast_num_to_num<std::int64_t>() % dvzr);
-                        }
-                        break;
-                    default: throw std::runtime_error{"operation not applicable"};
+                    break;
+                case type::CHAR:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_char() - rr.as_bool();
+                        case type::CHAR: return lr.as_char() - rr.as_char();
+                        case type::S8: return lr.as_char() - rr.as_s8();
+                        case type::U8: return lr.as_char() - rr.as_u8();
+                        case type::S16: return lr.as_char() - rr.as_s16();
+                        case type::U16: return lr.as_char() - rr.as_u16();
+                        case type::WCHAR: return lr.as_char() - rr.as_wchar();
+                        case type::S32: return lr.as_char() - rr.as_s32();
+                        case type::U32: return lr.as_char() - rr.as_u32();
+                        case type::S64: return lr.as_char() - rr.as_s64();
+                        case type::U64: return lr.as_char() - rr.as_u64();
+                        case type::FLOAT: return lr.as_char() - rr.as_float();
+                        case type::DOUBLE: return lr.as_char() - rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_char() - rr.as_long_double();
+                        case type::VEC4: return lr.as_char() - rr.as_vec4();
+                        case type::MAT4: return lr.as_char() - rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return lr.as_char();
+                        case type::VALBOX: break;
+                        default: break;
                     }
-                }
-                return res;
+                    break;
+                case type::S8:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_s8() - rr.as_bool();
+                        case type::CHAR: return lr.as_s8() - rr.as_char();
+                        case type::S8: return lr.as_s8() - rr.as_s8();
+                        case type::U8: return lr.as_s8() - rr.as_u8();
+                        case type::S16: return lr.as_s8() - rr.as_s16();
+                        case type::U16: return lr.as_s8() - rr.as_u16();
+                        case type::WCHAR: return lr.as_s8() - rr.as_wchar();
+                        case type::S32: return lr.as_s8() - rr.as_s32();
+                        case type::U32: return lr.as_s8() - rr.as_u32();
+                        case type::S64: return lr.as_s8() - rr.as_s64();
+                        case type::U64: return lr.as_s8() - rr.as_u64();
+                        case type::FLOAT: return lr.as_s8() - rr.as_float();
+                        case type::DOUBLE: return lr.as_s8() - rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_s8() - rr.as_long_double();
+                        case type::VEC4: return lr.as_s8() - rr.as_vec4();
+                        case type::MAT4: return lr.as_s8() - rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return lr.as_s8();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::U8:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_u8() - rr.as_bool();
+                        case type::CHAR: return lr.as_u8() - rr.as_char();
+                        case type::S8: return lr.as_u8() - rr.as_s8();
+                        case type::U8: return lr.as_u8() - rr.as_u8();
+                        case type::S16: return lr.as_u8() - rr.as_s16();
+                        case type::U16: return lr.as_u8() - rr.as_u16();
+                        case type::WCHAR: return lr.as_u8() - rr.as_wchar();
+                        case type::S32: return lr.as_u8() - rr.as_s32();
+                        case type::U32: return lr.as_u8() - rr.as_u32();
+                        case type::S64: return lr.as_u8() - rr.as_s64();
+                        case type::U64: return lr.as_u8() - rr.as_u64();
+                        case type::FLOAT: return lr.as_u8() - rr.as_float();
+                        case type::DOUBLE: return lr.as_u8() - rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_u8() - rr.as_long_double();
+                        case type::VEC4: return lr.as_u8() - rr.as_vec4();
+                        case type::MAT4: return lr.as_u8() - rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return lr.as_u8();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::S16:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_s16() - rr.as_bool();
+                        case type::CHAR: return lr.as_s16() - rr.as_char();
+                        case type::S8: return lr.as_s16() - rr.as_s8();
+                        case type::U8: return lr.as_s16() - rr.as_u8();
+                        case type::S16: return lr.as_s16() - rr.as_s16();
+                        case type::U16: return lr.as_s16() - rr.as_u16();
+                        case type::WCHAR: return lr.as_s16() - rr.as_wchar();
+                        case type::S32: return lr.as_s16() - rr.as_s32();
+                        case type::U32: return lr.as_s16() - rr.as_u32();
+                        case type::S64: return lr.as_s16() - rr.as_s64();
+                        case type::U64: return lr.as_s16() - rr.as_u64();
+                        case type::FLOAT: return lr.as_s16() - rr.as_float();
+                        case type::DOUBLE: return lr.as_s16() - rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_s16() - rr.as_long_double();
+                        case type::VEC4: return lr.as_s16() - rr.as_vec4();
+                        case type::MAT4: return lr.as_s16() - rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return lr.as_s16();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::U16:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_u16() - rr.as_bool();
+                        case type::CHAR: return lr.as_u16() - rr.as_char();
+                        case type::S8: return lr.as_u16() - rr.as_s8();
+                        case type::U8: return lr.as_u16() - rr.as_u8();
+                        case type::S16: return lr.as_u16() - rr.as_s16();
+                        case type::U16: return lr.as_u16() - rr.as_u16();
+                        case type::WCHAR: return lr.as_u16() - rr.as_wchar();
+                        case type::S32: return lr.as_u16() - rr.as_s32();
+                        case type::U32: return lr.as_u16() - rr.as_u32();
+                        case type::S64: return lr.as_u16() - rr.as_s64();
+                        case type::U64: return lr.as_u16() - rr.as_u64();
+                        case type::FLOAT: return lr.as_u16() - rr.as_float();
+                        case type::DOUBLE: return lr.as_u16() - rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_u16() - rr.as_long_double();
+                        case type::VEC4: return lr.as_u16() - rr.as_vec4();
+                        case type::MAT4: return lr.as_u16() - rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return lr.as_u16();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::WCHAR:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_wchar() - rr.as_bool();
+                        case type::CHAR: return lr.as_wchar() - rr.as_char();
+                        case type::S8: return lr.as_wchar() - rr.as_s8();
+                        case type::U8: return lr.as_wchar() - rr.as_u8();
+                        case type::S16: return lr.as_wchar() - rr.as_s16();
+                        case type::U16: return lr.as_wchar() - rr.as_u16();
+                        case type::WCHAR: return lr.as_wchar() - rr.as_wchar();
+                        case type::S32: return lr.as_wchar() - rr.as_s32();
+                        case type::U32: return lr.as_wchar() - rr.as_u32();
+                        case type::S64: return lr.as_wchar() - rr.as_s64();
+                        case type::U64: return lr.as_wchar() - rr.as_u64();
+                        case type::FLOAT: return lr.as_wchar() - rr.as_float();
+                        case type::DOUBLE: return lr.as_wchar() - rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_wchar() - rr.as_long_double();
+                        case type::VEC4: return lr.as_wchar() - rr.as_vec4();
+                        case type::MAT4: return lr.as_wchar() - rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return lr.as_wchar();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::S32:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_s32() - rr.as_bool();
+                        case type::CHAR: return lr.as_s32() - rr.as_char();
+                        case type::S8: return lr.as_s32() - rr.as_s8();
+                        case type::U8: return lr.as_s32() - rr.as_u8();
+                        case type::S16: return lr.as_s32() - rr.as_s16();
+                        case type::U16: return lr.as_s32() - rr.as_u16();
+                        case type::WCHAR: return lr.as_s32() - rr.as_wchar();
+                        case type::S32: return lr.as_s32() - rr.as_s32();
+                        case type::U32: return lr.as_s32() - rr.as_u32();
+                        case type::S64: return lr.as_s32() - rr.as_s64();
+                        case type::U64: return lr.as_s32() - rr.as_u64();
+                        case type::FLOAT: return lr.as_s32() - rr.as_float();
+                        case type::DOUBLE: return lr.as_s32() - rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_s32() - rr.as_long_double();
+                        case type::VEC4: return lr.as_s32() - rr.as_vec4();
+                        case type::MAT4: return lr.as_s32() - rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return lr.as_s32();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::U32:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_u32() - rr.as_bool();
+                        case type::CHAR: return lr.as_u32() - rr.as_char();
+                        case type::S8: return lr.as_u32() - rr.as_s8();
+                        case type::U8: return lr.as_u32() - rr.as_u8();
+                        case type::S16: return lr.as_u32() - rr.as_s16();
+                        case type::U16: return lr.as_u32() - rr.as_u16();
+                        case type::WCHAR: return lr.as_u32() - rr.as_wchar();
+                        case type::S32: return lr.as_u32() - rr.as_s32();
+                        case type::U32: return lr.as_u32() - rr.as_u32();
+                        case type::S64: return lr.as_u32() - rr.as_s64();
+                        case type::U64: return lr.as_u32() - rr.as_u64();
+                        case type::FLOAT: return lr.as_u32() - rr.as_float();
+                        case type::DOUBLE: return lr.as_u32() - rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_u32() - rr.as_long_double();
+                        case type::VEC4: return lr.as_u32() - rr.as_vec4();
+                        case type::MAT4: return lr.as_u32() - rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return lr.as_u32();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::S64:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_s64() - rr.as_bool();
+                        case type::CHAR: return lr.as_s64() - rr.as_char();
+                        case type::S8: return lr.as_s64() - rr.as_s8();
+                        case type::U8: return lr.as_s64() - rr.as_u8();
+                        case type::S16: return lr.as_s64() - rr.as_s16();
+                        case type::U16: return lr.as_s64() - rr.as_u16();
+                        case type::WCHAR: return lr.as_s64() - rr.as_wchar();
+                        case type::S32: return lr.as_s64() - rr.as_s32();
+                        case type::U32: return lr.as_s64() - rr.as_u32();
+                        case type::S64: return lr.as_s64() - rr.as_s64();
+                        case type::U64: return lr.as_s64() - rr.as_u64();
+                        case type::FLOAT: return lr.as_s64() - rr.as_float();
+                        case type::DOUBLE: return lr.as_s64() - rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_s64() - rr.as_long_double();
+                        case type::VEC4: return lr.as_s64() - rr.as_vec4();
+                        case type::MAT4: return lr.as_s64() - rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return lr.as_s64();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::U64:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_u64() - rr.as_bool();
+                        case type::CHAR: return lr.as_u64() - rr.as_char();
+                        case type::S8: return lr.as_u64() - rr.as_s8();
+                        case type::U8: return lr.as_u64() - rr.as_u8();
+                        case type::S16: return lr.as_u64() - rr.as_s16();
+                        case type::U16: return lr.as_u64() - rr.as_u16();
+                        case type::WCHAR: return lr.as_u64() - rr.as_wchar();
+                        case type::S32: return lr.as_u64() - rr.as_s32();
+                        case type::U32: return lr.as_u64() - rr.as_u32();
+                        case type::S64: return lr.as_u64() - rr.as_s64();
+                        case type::U64: return lr.as_u64() - rr.as_u64();
+                        case type::FLOAT: return lr.as_u64() - rr.as_float();
+                        case type::DOUBLE: return lr.as_u64() - rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_u64() - rr.as_long_double();
+                        case type::VEC4: return lr.as_u64() - rr.as_vec4();
+                        case type::MAT4: return lr.as_u64() - rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return lr.as_u64();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::FLOAT:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_float() - rr.as_bool();
+                        case type::CHAR: return lr.as_float() - rr.as_char();
+                        case type::S8: return lr.as_float() - rr.as_s8();
+                        case type::U8: return lr.as_float() - rr.as_u8();
+                        case type::S16: return lr.as_float() - rr.as_s16();
+                        case type::U16: return lr.as_float() - rr.as_u16();
+                        case type::WCHAR: return lr.as_float() - rr.as_wchar();
+                        case type::S32: return lr.as_float() - rr.as_s32();
+                        case type::U32: return lr.as_float() - rr.as_u32();
+                        case type::S64: return lr.as_float() - rr.as_s64();
+                        case type::U64: return lr.as_float() - rr.as_u64();
+                        case type::FLOAT: return lr.as_float() - rr.as_float();
+                        case type::DOUBLE: return lr.as_float() - rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_float() - rr.as_long_double();
+                        case type::VEC4: return lr.as_float() - rr.as_vec4();
+                        case type::MAT4: return lr.as_float() - rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return lr.as_float();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::DOUBLE:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_double() - rr.as_bool();
+                        case type::CHAR: return lr.as_double() - rr.as_char();
+                        case type::S8: return lr.as_double() - rr.as_s8();
+                        case type::U8: return lr.as_double() - rr.as_u8();
+                        case type::S16: return lr.as_double() - rr.as_s16();
+                        case type::U16: return lr.as_double() - rr.as_u16();
+                        case type::WCHAR: return lr.as_double() - rr.as_wchar();
+                        case type::S32: return lr.as_double() - rr.as_s32();
+                        case type::U32: return lr.as_double() - rr.as_u32();
+                        case type::S64: return lr.as_double() - rr.as_s64();
+                        case type::U64: return lr.as_double() - rr.as_u64();
+                        case type::FLOAT: return lr.as_double() - rr.as_float();
+                        case type::DOUBLE: return lr.as_double() - rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_double() - rr.as_long_double();
+                        case type::VEC4: return lr.as_double() - rr.as_vec4();
+                        case type::MAT4: return lr.as_double() - rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return lr.as_double();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::LONG_DOUBLE:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_long_double() - rr.as_bool();
+                        case type::CHAR: return lr.as_long_double() - rr.as_char();
+                        case type::S8: return lr.as_long_double() - rr.as_s8();
+                        case type::U8: return lr.as_long_double() - rr.as_u8();
+                        case type::S16: return lr.as_long_double() - rr.as_s16();
+                        case type::U16: return lr.as_long_double() - rr.as_u16();
+                        case type::WCHAR: return lr.as_long_double() - rr.as_wchar();
+                        case type::S32: return lr.as_long_double() - rr.as_s32();
+                        case type::U32: return lr.as_long_double() - rr.as_u32();
+                        case type::S64: return lr.as_long_double() - rr.as_s64();
+                        case type::U64: return lr.as_long_double() - rr.as_u64();
+                        case type::FLOAT: return lr.as_long_double() - rr.as_float();
+                        case type::DOUBLE: return lr.as_long_double() - rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_long_double() - rr.as_long_double();
+                        case type::VEC4: return lr.as_long_double() - rr.as_vec4();
+                        case type::MAT4: return lr.as_long_double() - rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return lr.as_long_double();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::VEC4:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_vec4() - rr.as_bool();
+                        case type::CHAR: return lr.as_vec4() - rr.as_char();
+                        case type::S8: return lr.as_vec4() - rr.as_s8();
+                        case type::U8: return lr.as_vec4() - rr.as_u8();
+                        case type::S16: return lr.as_vec4() - rr.as_s16();
+                        case type::U16: return lr.as_vec4() - rr.as_u16();
+                        case type::WCHAR: return lr.as_vec4() - rr.as_wchar();
+                        case type::S32: return lr.as_vec4() - rr.as_s32();
+                        case type::U32: return lr.as_vec4() - rr.as_u32();
+                        case type::S64: return lr.as_vec4() - rr.as_s64();
+                        case type::U64: return lr.as_vec4() - rr.as_u64();
+                        case type::FLOAT: return lr.as_vec4() - rr.as_float();
+                        case type::DOUBLE: return lr.as_vec4() - rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_vec4() - rr.as_long_double();
+                        case type::VEC4: return lr.as_vec4() - rr.as_vec4();
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return lr.as_vec4();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::MAT4:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_mat4() - rr.as_bool();
+                        case type::CHAR: return lr.as_mat4() - rr.as_char();
+                        case type::S8: return lr.as_mat4() - rr.as_s8();
+                        case type::U8: return lr.as_mat4() - rr.as_u8();
+                        case type::S16: return lr.as_mat4() - rr.as_s16();
+                        case type::U16: return lr.as_mat4() - rr.as_u16();
+                        case type::WCHAR: return lr.as_mat4() - rr.as_wchar();
+                        case type::S32: return lr.as_mat4() - rr.as_s32();
+                        case type::U32: return lr.as_mat4() - rr.as_u32();
+                        case type::S64: return lr.as_mat4() - rr.as_s64();
+                        case type::U64: return lr.as_mat4() - rr.as_u64();
+                        case type::FLOAT: return lr.as_mat4() - rr.as_float();
+                        case type::DOUBLE: return lr.as_mat4() - rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_mat4() - rr.as_long_double();
+                        case type::VEC4: break;
+                        case type::MAT4: return lr.as_mat4() - rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return lr.as_mat4();
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::POINTER:
+                    break;
+                case type::CLASS:
+                    break;
+                case type::FUNC:
+                    break;
+                case type::ARRAY:
+                    break;
+                case type::OBJECT:
+                    break;
+                case type::STRING:
+                    break;
+                case type::WSTRING:
+                    break;
+                case type::UNDEFINED:
+                    switch(rt) {
+                        case type::BOOL: return -rr.as_bool();
+                        case type::CHAR: return -rr.as_char();
+                        case type::S8: return -rr.as_s8();
+                        case type::U8: return -rr.as_u8();
+                        case type::S16: return -rr.as_s16();
+                        case type::U16: return -rr.as_u16();
+                        case type::WCHAR: return -rr.as_wchar();
+                        case type::S32: return -rr.as_s32();
+                        case type::U32: return -rr.as_u32();
+                        case type::S64: return -rr.as_s64();
+                        case type::U64: return -rr.as_u64();
+                        case type::FLOAT: return -rr.as_float();
+                        case type::DOUBLE: return -rr.as_double();
+                        case type::LONG_DOUBLE: return -rr.as_long_double();
+                        case type::VEC4: return -rr.as_vec4();
+                        case type::MAT4: return -rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::VALBOX:
+                    break;
+                default:
+                    break;
+            }
+            throw std::runtime_error{"operation not applicable"};
+        }
+
+        friend valbox operator*(valbox const &lr, valbox const &rr) {
+            auto lt{lr.val_or_pointed_type()};
+            auto rt{rr.val_or_pointed_type()};
+            switch(lt) {
+                case type::BOOL:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_bool() * rr.as_bool();
+                        case type::CHAR: return lr.as_bool() * rr.as_char();
+                        case type::S8: return lr.as_bool() * rr.as_s8();
+                        case type::U8: return lr.as_bool() * rr.as_u8();
+                        case type::S16: return lr.as_bool() * rr.as_s16();
+                        case type::U16: return lr.as_bool() * rr.as_u16();
+                        case type::WCHAR: return lr.as_bool() * rr.as_wchar();
+                        case type::S32: return lr.as_bool() * rr.as_s32();
+                        case type::U32: return lr.as_bool() * rr.as_u32();
+                        case type::S64: return lr.as_bool() * rr.as_s64();
+                        case type::U64: return lr.as_bool() * rr.as_u64();
+                        case type::FLOAT: return lr.as_bool() * rr.as_float();
+                        case type::DOUBLE: return lr.as_bool() * rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_bool() * rr.as_long_double();
+                        case type::VEC4: return lr.as_bool() * rr.as_vec4();
+                        case type::MAT4: return lr.as_bool() * rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return false;
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::CHAR:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_char() * rr.as_bool();
+                        case type::CHAR: return lr.as_char() * rr.as_char();
+                        case type::S8: return lr.as_char() * rr.as_s8();
+                        case type::U8: return lr.as_char() * rr.as_u8();
+                        case type::S16: return lr.as_char() * rr.as_s16();
+                        case type::U16: return lr.as_char() * rr.as_u16();
+                        case type::WCHAR: return lr.as_char() * rr.as_wchar();
+                        case type::S32: return lr.as_char() * rr.as_s32();
+                        case type::U32: return lr.as_char() * rr.as_u32();
+                        case type::S64: return lr.as_char() * rr.as_s64();
+                        case type::U64: return lr.as_char() * rr.as_u64();
+                        case type::FLOAT: return lr.as_char() * rr.as_float();
+                        case type::DOUBLE: return lr.as_char() * rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_char() * rr.as_long_double();
+                        case type::VEC4: return lr.as_char() * rr.as_vec4();
+                        case type::MAT4: return lr.as_char() * rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return char{0};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::S8:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_s8() * rr.as_bool();
+                        case type::CHAR: return lr.as_s8() * rr.as_char();
+                        case type::S8: return lr.as_s8() * rr.as_s8();
+                        case type::U8: return lr.as_s8() * rr.as_u8();
+                        case type::S16: return lr.as_s8() * rr.as_s16();
+                        case type::U16: return lr.as_s8() * rr.as_u16();
+                        case type::WCHAR: return lr.as_s8() * rr.as_wchar();
+                        case type::S32: return lr.as_s8() * rr.as_s32();
+                        case type::U32: return lr.as_s8() * rr.as_u32();
+                        case type::S64: return lr.as_s8() * rr.as_s64();
+                        case type::U64: return lr.as_s8() * rr.as_u64();
+                        case type::FLOAT: return lr.as_s8() * rr.as_float();
+                        case type::DOUBLE: return lr.as_s8() * rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_s8() * rr.as_long_double();
+                        case type::VEC4: return lr.as_s8() * rr.as_vec4();
+                        case type::MAT4: return lr.as_s8() * rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return std::int8_t{0};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::U8:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_u8() * rr.as_bool();
+                        case type::CHAR: return lr.as_u8() * rr.as_char();
+                        case type::S8: return lr.as_u8() * rr.as_s8();
+                        case type::U8: return lr.as_u8() * rr.as_u8();
+                        case type::S16: return lr.as_u8() * rr.as_s16();
+                        case type::U16: return lr.as_u8() * rr.as_u16();
+                        case type::WCHAR: return lr.as_u8() * rr.as_wchar();
+                        case type::S32: return lr.as_u8() * rr.as_s32();
+                        case type::U32: return lr.as_u8() * rr.as_u32();
+                        case type::S64: return lr.as_u8() * rr.as_s64();
+                        case type::U64: return lr.as_u8() * rr.as_u64();
+                        case type::FLOAT: return lr.as_u8() * rr.as_float();
+                        case type::DOUBLE: return lr.as_u8() * rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_u8() * rr.as_long_double();
+                        case type::VEC4: return lr.as_u8() * rr.as_vec4();
+                        case type::MAT4: return lr.as_u8() * rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return std::uint8_t{0};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::S16:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_s16() * rr.as_bool();
+                        case type::CHAR: return lr.as_s16() * rr.as_char();
+                        case type::S8: return lr.as_s16() * rr.as_s8();
+                        case type::U8: return lr.as_s16() * rr.as_u8();
+                        case type::S16: return lr.as_s16() * rr.as_s16();
+                        case type::U16: return lr.as_s16() * rr.as_u16();
+                        case type::WCHAR: return lr.as_s16() * rr.as_wchar();
+                        case type::S32: return lr.as_s16() * rr.as_s32();
+                        case type::U32: return lr.as_s16() * rr.as_u32();
+                        case type::S64: return lr.as_s16() * rr.as_s64();
+                        case type::U64: return lr.as_s16() * rr.as_u64();
+                        case type::FLOAT: return lr.as_s16() * rr.as_float();
+                        case type::DOUBLE: return lr.as_s16() * rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_s16() * rr.as_long_double();
+                        case type::VEC4: return lr.as_s16() * rr.as_vec4();
+                        case type::MAT4: return lr.as_s16() * rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return std::int16_t{0};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::U16:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_u16() * rr.as_bool();
+                        case type::CHAR: return lr.as_u16() * rr.as_char();
+                        case type::S8: return lr.as_u16() * rr.as_s8();
+                        case type::U8: return lr.as_u16() * rr.as_u8();
+                        case type::S16: return lr.as_u16() * rr.as_s16();
+                        case type::U16: return lr.as_u16() * rr.as_u16();
+                        case type::WCHAR: return lr.as_u16() * rr.as_wchar();
+                        case type::S32: return lr.as_u16() * rr.as_s32();
+                        case type::U32: return lr.as_u16() * rr.as_u32();
+                        case type::S64: return lr.as_u16() * rr.as_s64();
+                        case type::U64: return lr.as_u16() * rr.as_u64();
+                        case type::FLOAT: return lr.as_u16() * rr.as_float();
+                        case type::DOUBLE: return lr.as_u16() * rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_u16() * rr.as_long_double();
+                        case type::VEC4: return lr.as_u16() * rr.as_vec4();
+                        case type::MAT4: return lr.as_u16() * rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return std::uint16_t{0};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::WCHAR:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_wchar() * rr.as_bool();
+                        case type::CHAR: return lr.as_wchar() * rr.as_char();
+                        case type::S8: return lr.as_wchar() * rr.as_s8();
+                        case type::U8: return lr.as_wchar() * rr.as_u8();
+                        case type::S16: return lr.as_wchar() * rr.as_s16();
+                        case type::U16: return lr.as_wchar() * rr.as_u16();
+                        case type::WCHAR: return lr.as_wchar() * rr.as_wchar();
+                        case type::S32: return lr.as_wchar() * rr.as_s32();
+                        case type::U32: return lr.as_wchar() * rr.as_u32();
+                        case type::S64: return lr.as_wchar() * rr.as_s64();
+                        case type::U64: return lr.as_wchar() * rr.as_u64();
+                        case type::FLOAT: return lr.as_wchar() * rr.as_float();
+                        case type::DOUBLE: return lr.as_wchar() * rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_wchar() * rr.as_long_double();
+                        case type::VEC4: return lr.as_wchar() * rr.as_vec4();
+                        case type::MAT4: return lr.as_wchar() * rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return char{0};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::S32:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_s32() * rr.as_bool();
+                        case type::CHAR: return lr.as_s32() * rr.as_char();
+                        case type::S8: return lr.as_s32() * rr.as_s8();
+                        case type::U8: return lr.as_s32() * rr.as_u8();
+                        case type::S16: return lr.as_s32() * rr.as_s16();
+                        case type::U16: return lr.as_s32() * rr.as_u16();
+                        case type::WCHAR: return lr.as_s32() * rr.as_wchar();
+                        case type::S32: return lr.as_s32() * rr.as_s32();
+                        case type::U32: return lr.as_s32() * rr.as_u32();
+                        case type::S64: return lr.as_s32() * rr.as_s64();
+                        case type::U64: return lr.as_s32() * rr.as_u64();
+                        case type::FLOAT: return lr.as_s32() * rr.as_float();
+                        case type::DOUBLE: return lr.as_s32() * rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_s32() * rr.as_long_double();
+                        case type::VEC4: return lr.as_s32() * rr.as_vec4();
+                        case type::MAT4: return lr.as_s32() * rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return std::int32_t{0};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::U32:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_u32() * rr.as_bool();
+                        case type::CHAR: return lr.as_u32() * rr.as_char();
+                        case type::S8: return lr.as_u32() * rr.as_s8();
+                        case type::U8: return lr.as_u32() * rr.as_u8();
+                        case type::S16: return lr.as_u32() * rr.as_s16();
+                        case type::U16: return lr.as_u32() * rr.as_u16();
+                        case type::WCHAR: return lr.as_u32() * rr.as_wchar();
+                        case type::S32: return lr.as_u32() * rr.as_s32();
+                        case type::U32: return lr.as_u32() * rr.as_u32();
+                        case type::S64: return lr.as_u32() * rr.as_s64();
+                        case type::U64: return lr.as_u32() * rr.as_u64();
+                        case type::FLOAT: return lr.as_u32() * rr.as_float();
+                        case type::DOUBLE: return lr.as_u32() * rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_u32() * rr.as_long_double();
+                        case type::VEC4: return lr.as_u32() * rr.as_vec4();
+                        case type::MAT4: return lr.as_u32() * rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return std::uint32_t{0};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::S64:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_s64() * rr.as_bool();
+                        case type::CHAR: return lr.as_s64() * rr.as_char();
+                        case type::S8: return lr.as_s64() * rr.as_s8();
+                        case type::U8: return lr.as_s64() * rr.as_u8();
+                        case type::S16: return lr.as_s64() * rr.as_s16();
+                        case type::U16: return lr.as_s64() * rr.as_u16();
+                        case type::WCHAR: return lr.as_s64() * rr.as_wchar();
+                        case type::S32: return lr.as_s64() * rr.as_s32();
+                        case type::U32: return lr.as_s64() * rr.as_u32();
+                        case type::S64: return lr.as_s64() * rr.as_s64();
+                        case type::U64: return lr.as_s64() * rr.as_u64();
+                        case type::FLOAT: return lr.as_s64() * rr.as_float();
+                        case type::DOUBLE: return lr.as_s64() * rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_s64() * rr.as_long_double();
+                        case type::VEC4: return lr.as_s64() * rr.as_vec4();
+                        case type::MAT4: return lr.as_s64() * rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return std::int64_t{0};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::U64:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_u64() * rr.as_bool();
+                        case type::CHAR: return lr.as_u64() * rr.as_char();
+                        case type::S8: return lr.as_u64() * rr.as_s8();
+                        case type::U8: return lr.as_u64() * rr.as_u8();
+                        case type::S16: return lr.as_u64() * rr.as_s16();
+                        case type::U16: return lr.as_u64() * rr.as_u16();
+                        case type::WCHAR: return lr.as_u64() * rr.as_wchar();
+                        case type::S32: return lr.as_u64() * rr.as_s32();
+                        case type::U32: return lr.as_u64() * rr.as_u32();
+                        case type::S64: return lr.as_u64() * rr.as_s64();
+                        case type::U64: return lr.as_u64() * rr.as_u64();
+                        case type::FLOAT: return lr.as_u64() * rr.as_float();
+                        case type::DOUBLE: return lr.as_u64() * rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_u64() * rr.as_long_double();
+                        case type::VEC4: return lr.as_u64() * rr.as_vec4();
+                        case type::MAT4: return lr.as_u64() * rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return std::uint64_t{0};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::FLOAT:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_float() * rr.as_bool();
+                        case type::CHAR: return lr.as_float() * rr.as_char();
+                        case type::S8: return lr.as_float() * rr.as_s8();
+                        case type::U8: return lr.as_float() * rr.as_u8();
+                        case type::S16: return lr.as_float() * rr.as_s16();
+                        case type::U16: return lr.as_float() * rr.as_u16();
+                        case type::WCHAR: return lr.as_float() * rr.as_wchar();
+                        case type::S32: return lr.as_float() * rr.as_s32();
+                        case type::U32: return lr.as_float() * rr.as_u32();
+                        case type::S64: return lr.as_float() * rr.as_s64();
+                        case type::U64: return lr.as_float() * rr.as_u64();
+                        case type::FLOAT: return lr.as_float() * rr.as_float();
+                        case type::DOUBLE: return lr.as_float() * rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_float() * rr.as_long_double();
+                        case type::VEC4: return lr.as_float() * rr.as_vec4();
+                        case type::MAT4: return lr.as_float() * rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return float{0};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::DOUBLE:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_double() * rr.as_bool();
+                        case type::CHAR: return lr.as_double() * rr.as_char();
+                        case type::S8: return lr.as_double() * rr.as_s8();
+                        case type::U8: return lr.as_double() * rr.as_u8();
+                        case type::S16: return lr.as_double() * rr.as_s16();
+                        case type::U16: return lr.as_double() * rr.as_u16();
+                        case type::WCHAR: return lr.as_double() * rr.as_wchar();
+                        case type::S32: return lr.as_double() * rr.as_s32();
+                        case type::U32: return lr.as_double() * rr.as_u32();
+                        case type::S64: return lr.as_double() * rr.as_s64();
+                        case type::U64: return lr.as_double() * rr.as_u64();
+                        case type::FLOAT: return lr.as_double() * rr.as_float();
+                        case type::DOUBLE: return lr.as_double() * rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_double() * rr.as_long_double();
+                        case type::VEC4: return lr.as_double() * rr.as_vec4();
+                        case type::MAT4: return lr.as_double() * rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return double{0};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::LONG_DOUBLE:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_long_double() * rr.as_bool();
+                        case type::CHAR: return lr.as_long_double() * rr.as_char();
+                        case type::S8: return lr.as_long_double() * rr.as_s8();
+                        case type::U8: return lr.as_long_double() * rr.as_u8();
+                        case type::S16: return lr.as_long_double() * rr.as_s16();
+                        case type::U16: return lr.as_long_double() * rr.as_u16();
+                        case type::WCHAR: return lr.as_long_double() * rr.as_wchar();
+                        case type::S32: return lr.as_long_double() * rr.as_s32();
+                        case type::U32: return lr.as_long_double() * rr.as_u32();
+                        case type::S64: return lr.as_long_double() * rr.as_s64();
+                        case type::U64: return lr.as_long_double() * rr.as_u64();
+                        case type::FLOAT: return lr.as_long_double() * rr.as_float();
+                        case type::DOUBLE: return lr.as_long_double() * rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_long_double() * rr.as_long_double();
+                        case type::VEC4: return lr.as_long_double() * rr.as_vec4();
+                        case type::MAT4: return lr.as_long_double() * rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return static_cast<long double>(0);
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::VEC4:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_vec4() * rr.as_bool();
+                        case type::CHAR: return lr.as_vec4() * rr.as_char();
+                        case type::S8: return lr.as_vec4() * rr.as_s8();
+                        case type::U8: return lr.as_vec4() * rr.as_u8();
+                        case type::S16: return lr.as_vec4() * rr.as_s16();
+                        case type::U16: return lr.as_vec4() * rr.as_u16();
+                        case type::WCHAR: return lr.as_vec4() * rr.as_wchar();
+                        case type::S32: return lr.as_vec4() * rr.as_s32();
+                        case type::U32: return lr.as_vec4() * rr.as_u32();
+                        case type::S64: return lr.as_vec4() * rr.as_s64();
+                        case type::U64: return lr.as_vec4() * rr.as_u64();
+                        case type::FLOAT: return lr.as_vec4() * rr.as_float();
+                        case type::DOUBLE: return lr.as_vec4() * rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_vec4() * rr.as_long_double();
+                        case type::VEC4: return lr.as_vec4() * rr.as_vec4();
+                        case type::MAT4: return lr.as_vec4() * rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return vec4_t{};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::MAT4:
+                    switch(rt) {
+                        case type::BOOL: return lr.as_mat4() * rr.as_bool();
+                        case type::CHAR: return lr.as_mat4() * rr.as_char();
+                        case type::S8: return lr.as_mat4() * rr.as_s8();
+                        case type::U8: return lr.as_mat4() * rr.as_u8();
+                        case type::S16: return lr.as_mat4() * rr.as_s16();
+                        case type::U16: return lr.as_mat4() * rr.as_u16();
+                        case type::WCHAR: return lr.as_mat4() * rr.as_wchar();
+                        case type::S32: return lr.as_mat4() * rr.as_s32();
+                        case type::U32: return lr.as_mat4() * rr.as_u32();
+                        case type::S64: return lr.as_mat4() * rr.as_s64();
+                        case type::U64: return lr.as_mat4() * rr.as_u64();
+                        case type::FLOAT: return lr.as_mat4() * rr.as_float();
+                        case type::DOUBLE: return lr.as_mat4() * rr.as_double();
+                        case type::LONG_DOUBLE: return lr.as_mat4() * rr.as_long_double();
+                        case type::VEC4: return lr.as_mat4() * rr.as_vec4();
+                        case type::MAT4: return lr.as_mat4() * rr.as_mat4();
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return mat4_t{0};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::POINTER:
+                    break;
+                case type::CLASS:
+                    break;
+                case type::FUNC:
+                    break;
+                case type::ARRAY:
+                    break;
+                case type::OBJECT:
+                    break;
+                case type::STRING:
+                    break;
+                case type::WSTRING:
+                    break;
+                case type::UNDEFINED:
+                    switch(rt) {
+                        case type::BOOL: return false;
+                        case type::CHAR: return char{0};
+                        case type::S8: return std::int8_t{0};
+                        case type::U8: return std::uint8_t{0};
+                        case type::S16: return std::int16_t{0};
+                        case type::U16: return std::uint16_t{0};
+                        case type::WCHAR: return wchar_t{0};
+                        case type::S32: return std::int32_t{0};
+                        case type::U32: return std::uint32_t{0};
+                        case type::S64: return std::int64_t{0};
+                        case type::U64: return std::uint64_t{0};
+                        case type::FLOAT: return float{0};
+                        case type::DOUBLE: return double{0};
+                        case type::LONG_DOUBLE: return static_cast<long double>(0);
+                        case type::VEC4: return vec4_t{};
+                        case type::MAT4: return mat4_t{};
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::VALBOX:
+                    break;
+                default:
+                    break;
+            }
+            throw std::runtime_error{"operation not applicable"};
+        }
+
+        friend valbox operator/(valbox const &lr, valbox const &rr) {
+            auto lt{lr.val_or_pointed_type()};
+            auto rt{rr.val_or_pointed_type()};
+            switch(lt) {
+                case type::BOOL:
+                    switch(rt) {
+                        case type::BOOL: { auto dvzr{rr.as_bool()}; if(!dvzr) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_bool() / dvzr; }
+                        case type::CHAR: { auto dvzr{rr.as_char()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_bool() / dvzr; }
+                        case type::S8: { auto dvzr{rr.as_s8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_bool() / dvzr; }
+                        case type::U8: { auto dvzr{rr.as_u8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_bool() / dvzr; }
+                        case type::S16: { auto dvzr{rr.as_s16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_bool() / dvzr; }
+                        case type::U16: { auto dvzr{rr.as_u16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_bool() / dvzr; }
+                        case type::WCHAR: { auto dvzr{rr.as_wchar()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_bool() / dvzr; }
+                        case type::S32: { auto dvzr{rr.as_s32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_bool() / dvzr; }
+                        case type::U32: { auto dvzr{rr.as_u32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_bool() / dvzr; }
+                        case type::S64: { auto dvzr{rr.as_s64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_bool() / dvzr; }
+                        case type::U64: { auto dvzr{rr.as_u64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_bool() / dvzr; }
+                        case type::FLOAT: { auto dvzr{rr.as_float()}; return lr.as_bool() / dvzr; }
+                        case type::DOUBLE: { auto dvzr{rr.as_double()}; return lr.as_bool() / dvzr; }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return lr.as_bool() / dvzr; }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::CHAR:
+                    switch(rt) {
+                        case type::BOOL: { auto dvzr{rr.as_bool()}; if(!dvzr) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_char() / dvzr; }
+                        case type::CHAR: { auto dvzr{rr.as_char()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_char() / dvzr; }
+                        case type::S8: { auto dvzr{rr.as_s8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_char() / dvzr; }
+                        case type::U8: { auto dvzr{rr.as_u8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_char() / dvzr; }
+                        case type::S16: { auto dvzr{rr.as_s16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_char() / dvzr; }
+                        case type::U16: { auto dvzr{rr.as_u16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_char() / dvzr; }
+                        case type::WCHAR: { auto dvzr{rr.as_wchar()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_char() / dvzr; }
+                        case type::S32: { auto dvzr{rr.as_s32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_char() / dvzr; }
+                        case type::U32: { auto dvzr{rr.as_u32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_char() / dvzr; }
+                        case type::S64: { auto dvzr{rr.as_s64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_char() / dvzr; }
+                        case type::U64: { auto dvzr{rr.as_u64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_char() / dvzr; }
+                        case type::FLOAT: { auto dvzr{rr.as_float()}; return lr.as_char() / dvzr; }
+                        case type::DOUBLE: { auto dvzr{rr.as_double()}; return lr.as_char() / dvzr; }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return lr.as_char() / dvzr; }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::S8:
+                    switch(rt) {
+                        case type::BOOL: { auto dvzr{rr.as_bool()}; if(!dvzr) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s8() / dvzr; }
+                        case type::CHAR: { auto dvzr{rr.as_char()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s8() / dvzr; }
+                        case type::S8: { auto dvzr{rr.as_s8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s8() / dvzr; }
+                        case type::U8: { auto dvzr{rr.as_u8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s8() / dvzr; }
+                        case type::S16: { auto dvzr{rr.as_s16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s8() / dvzr; }
+                        case type::U16: { auto dvzr{rr.as_u16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s8() / dvzr; }
+                        case type::WCHAR: { auto dvzr{rr.as_wchar()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s8() / dvzr; }
+                        case type::S32: { auto dvzr{rr.as_s32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s8() / dvzr; }
+                        case type::U32: { auto dvzr{rr.as_u32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s8() / dvzr; }
+                        case type::S64: { auto dvzr{rr.as_s64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s8() / dvzr; }
+                        case type::U64: { auto dvzr{rr.as_u64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s8() / dvzr; }
+                        case type::FLOAT: { auto dvzr{rr.as_float()}; return lr.as_s8() / dvzr; }
+                        case type::DOUBLE: { auto dvzr{rr.as_double()}; return lr.as_s8() / dvzr; }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return lr.as_s8() / dvzr; }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::U8:
+                    switch(rt) {
+                        case type::BOOL: { auto dvzr{rr.as_bool()}; if(!dvzr) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u8() / dvzr; }
+                        case type::CHAR: { auto dvzr{rr.as_char()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u8() / dvzr; }
+                        case type::S8: { auto dvzr{rr.as_s8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u8() / dvzr; }
+                        case type::U8: { auto dvzr{rr.as_u8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u8() / dvzr; }
+                        case type::S16: { auto dvzr{rr.as_s16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u8() / dvzr; }
+                        case type::U16: { auto dvzr{rr.as_u16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u8() / dvzr; }
+                        case type::WCHAR: { auto dvzr{rr.as_wchar()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u8() / dvzr; }
+                        case type::S32: { auto dvzr{rr.as_s32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u8() / dvzr; }
+                        case type::U32: { auto dvzr{rr.as_u32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u8() / dvzr; }
+                        case type::S64: { auto dvzr{rr.as_s64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u8() / dvzr; }
+                        case type::U64: { auto dvzr{rr.as_u64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u8() / dvzr; }
+                        case type::FLOAT: { auto dvzr{rr.as_float()}; return lr.as_u8() / dvzr; }
+                        case type::DOUBLE: { auto dvzr{rr.as_double()}; return lr.as_u8() / dvzr; }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return lr.as_u8() / dvzr; }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::S16:
+                    switch(rt) {
+                        case type::BOOL: { auto dvzr{rr.as_bool()}; if(!dvzr) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s16() / dvzr; }
+                        case type::CHAR: { auto dvzr{rr.as_char()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s16() / dvzr; }
+                        case type::S8: { auto dvzr{rr.as_s8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s16() / dvzr; }
+                        case type::U8: { auto dvzr{rr.as_u8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s16() / dvzr; }
+                        case type::S16: { auto dvzr{rr.as_s16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s16() / dvzr; }
+                        case type::U16: { auto dvzr{rr.as_u16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s16() / dvzr; }
+                        case type::WCHAR: { auto dvzr{rr.as_wchar()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s16() / dvzr; }
+                        case type::S32: { auto dvzr{rr.as_s32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s16() / dvzr; }
+                        case type::U32: { auto dvzr{rr.as_u32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s16() / dvzr; }
+                        case type::S64: { auto dvzr{rr.as_s64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s16() / dvzr; }
+                        case type::U64: { auto dvzr{rr.as_u64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s16() / dvzr; }
+                        case type::FLOAT: { auto dvzr{rr.as_float()}; return lr.as_s16() / dvzr; }
+                        case type::DOUBLE: { auto dvzr{rr.as_double()}; return lr.as_s16() / dvzr; }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return lr.as_s16() / dvzr; }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::U16:
+                    switch(rt) {
+                        case type::BOOL: { auto dvzr{rr.as_bool()}; if(!dvzr) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u16() / dvzr; }
+                        case type::CHAR: { auto dvzr{rr.as_char()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u16() / dvzr; }
+                        case type::S8: { auto dvzr{rr.as_s8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u16() / dvzr; }
+                        case type::U8: { auto dvzr{rr.as_u8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u16() / dvzr; }
+                        case type::S16: { auto dvzr{rr.as_s16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u16() / dvzr; }
+                        case type::U16: { auto dvzr{rr.as_u16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u16() / dvzr; }
+                        case type::WCHAR: { auto dvzr{rr.as_wchar()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u16() / dvzr; }
+                        case type::S32: { auto dvzr{rr.as_s32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u16() / dvzr; }
+                        case type::U32: { auto dvzr{rr.as_u32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u16() / dvzr; }
+                        case type::S64: { auto dvzr{rr.as_s64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u16() / dvzr; }
+                        case type::U64: { auto dvzr{rr.as_u64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u16() / dvzr; }
+                        case type::FLOAT: { auto dvzr{rr.as_float()}; return lr.as_u16() / dvzr; }
+                        case type::DOUBLE: { auto dvzr{rr.as_double()}; return lr.as_u16() / dvzr; }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return lr.as_u16() / dvzr; }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::WCHAR:
+                    switch(rt) {
+                        case type::BOOL: { auto dvzr{rr.as_bool()}; if(!dvzr) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_wchar() / dvzr; }
+                        case type::CHAR: { auto dvzr{rr.as_char()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_wchar() / dvzr; }
+                        case type::S8: { auto dvzr{rr.as_s8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_wchar() / dvzr; }
+                        case type::U8: { auto dvzr{rr.as_u8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_wchar() / dvzr; }
+                        case type::S16: { auto dvzr{rr.as_s16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_wchar() / dvzr; }
+                        case type::U16: { auto dvzr{rr.as_u16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_wchar() / dvzr; }
+                        case type::WCHAR: { auto dvzr{rr.as_wchar()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_wchar() / dvzr; }
+                        case type::S32: { auto dvzr{rr.as_s32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_wchar() / dvzr; }
+                        case type::U32: { auto dvzr{rr.as_u32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_wchar() / dvzr; }
+                        case type::S64: { auto dvzr{rr.as_s64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_wchar() / dvzr; }
+                        case type::U64: { auto dvzr{rr.as_u64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_wchar() / dvzr; }
+                        case type::FLOAT: { auto dvzr{rr.as_float()}; return lr.as_wchar() / dvzr; }
+                        case type::DOUBLE: { auto dvzr{rr.as_double()}; return lr.as_wchar() / dvzr; }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return lr.as_wchar() / dvzr; }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::S32:
+                    switch(rt) {
+                        case type::BOOL: { auto dvzr{rr.as_bool()}; if(!dvzr) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s32() / dvzr; }
+                        case type::CHAR: { auto dvzr{rr.as_char()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s32() / dvzr; }
+                        case type::S8: { auto dvzr{rr.as_s8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s32() / dvzr; }
+                        case type::U8: { auto dvzr{rr.as_u8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s32() / dvzr; }
+                        case type::S16: { auto dvzr{rr.as_s16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s32() / dvzr; }
+                        case type::U16: { auto dvzr{rr.as_u16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s32() / dvzr; }
+                        case type::WCHAR: { auto dvzr{rr.as_wchar()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s32() / dvzr; }
+                        case type::S32: { auto dvzr{rr.as_s32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s32() / dvzr; }
+                        case type::U32: { auto dvzr{rr.as_u32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s32() / dvzr; }
+                        case type::S64: { auto dvzr{rr.as_s64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s32() / dvzr; }
+                        case type::U64: { auto dvzr{rr.as_u64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s32() / dvzr; }
+                        case type::FLOAT: { auto dvzr{rr.as_float()}; return lr.as_s32() / dvzr; }
+                        case type::DOUBLE: { auto dvzr{rr.as_double()}; return lr.as_s32() / dvzr; }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return lr.as_s32() / dvzr; }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::U32:
+                    switch(rt) {
+                        case type::BOOL: { auto dvzr{rr.as_bool()}; if(!dvzr) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u32() / dvzr; }
+                        case type::CHAR: { auto dvzr{rr.as_char()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u32() / dvzr; }
+                        case type::S8: { auto dvzr{rr.as_s8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u32() / dvzr; }
+                        case type::U8: { auto dvzr{rr.as_u8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u32() / dvzr; }
+                        case type::S16: { auto dvzr{rr.as_s16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u32() / dvzr; }
+                        case type::U16: { auto dvzr{rr.as_u16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u32() / dvzr; }
+                        case type::WCHAR: { auto dvzr{rr.as_wchar()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u32() / dvzr; }
+                        case type::S32: { auto dvzr{rr.as_s32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u32() / dvzr; }
+                        case type::U32: { auto dvzr{rr.as_u32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u32() / dvzr; }
+                        case type::S64: { auto dvzr{rr.as_s64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u32() / dvzr; }
+                        case type::U64: { auto dvzr{rr.as_u64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u32() / dvzr; }
+                        case type::FLOAT: { auto dvzr{rr.as_float()}; return lr.as_u32() / dvzr; }
+                        case type::DOUBLE: { auto dvzr{rr.as_double()}; return lr.as_u32() / dvzr; }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return lr.as_u32() / dvzr; }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::S64:
+                    switch(rt) {
+                        case type::BOOL: { auto dvzr{rr.as_bool()}; if(!dvzr) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s64() / dvzr; }
+                        case type::CHAR: { auto dvzr{rr.as_char()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s64() / dvzr; }
+                        case type::S8: { auto dvzr{rr.as_s8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s64() / dvzr; }
+                        case type::U8: { auto dvzr{rr.as_u8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s64() / dvzr; }
+                        case type::S16: { auto dvzr{rr.as_s16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s64() / dvzr; }
+                        case type::U16: { auto dvzr{rr.as_u16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s64() / dvzr; }
+                        case type::WCHAR: { auto dvzr{rr.as_wchar()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s64() / dvzr; }
+                        case type::S32: { auto dvzr{rr.as_s32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s64() / dvzr; }
+                        case type::U32: { auto dvzr{rr.as_u32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s64() / dvzr; }
+                        case type::S64: { auto dvzr{rr.as_s64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s64() / dvzr; }
+                        case type::U64: { auto dvzr{rr.as_u64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s64() / dvzr; }
+                        case type::FLOAT: { auto dvzr{rr.as_float()}; return lr.as_s64() / dvzr; }
+                        case type::DOUBLE: { auto dvzr{rr.as_double()}; return lr.as_s64() / dvzr; }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return lr.as_s64() / dvzr; }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::U64:
+                    switch(rt) {
+                        case type::BOOL: { auto dvzr{rr.as_bool()}; if(!dvzr) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u64() / dvzr; }
+                        case type::CHAR: { auto dvzr{rr.as_char()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u64() / dvzr; }
+                        case type::S8: { auto dvzr{rr.as_s8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u64() / dvzr; }
+                        case type::U8: { auto dvzr{rr.as_u8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u64() / dvzr; }
+                        case type::S16: { auto dvzr{rr.as_s16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u64() / dvzr; }
+                        case type::U16: { auto dvzr{rr.as_u16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u64() / dvzr; }
+                        case type::WCHAR: { auto dvzr{rr.as_wchar()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u64() / dvzr; }
+                        case type::S32: { auto dvzr{rr.as_s32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u64() / dvzr; }
+                        case type::U32: { auto dvzr{rr.as_u32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u64() / dvzr; }
+                        case type::S64: { auto dvzr{rr.as_s64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u64() / dvzr; }
+                        case type::U64: { auto dvzr{rr.as_u64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u64() / dvzr; }
+                        case type::FLOAT: { auto dvzr{rr.as_float()}; return lr.as_u64() / dvzr; }
+                        case type::DOUBLE: { auto dvzr{rr.as_double()}; return lr.as_u64() / dvzr; }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return lr.as_u64() / dvzr; }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::FLOAT:
+                    switch(rt) {
+                        case type::BOOL: { auto dvzr{rr.as_bool()}; if(!dvzr) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_float() / dvzr; }
+                        case type::CHAR: { auto dvzr{rr.as_char()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_float() / dvzr; }
+                        case type::S8: { auto dvzr{rr.as_s8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_float() / dvzr; }
+                        case type::U8: { auto dvzr{rr.as_u8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_float() / dvzr; }
+                        case type::S16: { auto dvzr{rr.as_s16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_float() / dvzr; }
+                        case type::U16: { auto dvzr{rr.as_u16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_float() / dvzr; }
+                        case type::WCHAR: { auto dvzr{rr.as_wchar()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_float() / dvzr; }
+                        case type::S32: { auto dvzr{rr.as_s32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_float() / dvzr; }
+                        case type::U32: { auto dvzr{rr.as_u32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_float() / dvzr; }
+                        case type::S64: { auto dvzr{rr.as_s64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_float() / dvzr; }
+                        case type::U64: { auto dvzr{rr.as_u64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_float() / dvzr; }
+                        case type::FLOAT: { auto dvzr{rr.as_float()}; return lr.as_float() / dvzr; }
+                        case type::DOUBLE: { auto dvzr{rr.as_double()}; return lr.as_float() / dvzr; }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return lr.as_float() / dvzr; }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::DOUBLE:
+                    switch(rt) {
+                        case type::BOOL: { auto dvzr{rr.as_bool()}; if(!dvzr) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_double() / dvzr; }
+                        case type::CHAR: { auto dvzr{rr.as_char()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_double() / dvzr; }
+                        case type::S8: { auto dvzr{rr.as_s8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_double() / dvzr; }
+                        case type::U8: { auto dvzr{rr.as_u8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_double() / dvzr; }
+                        case type::S16: { auto dvzr{rr.as_s16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_double() / dvzr; }
+                        case type::U16: { auto dvzr{rr.as_u16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_double() / dvzr; }
+                        case type::WCHAR: { auto dvzr{rr.as_wchar()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_double() / dvzr; }
+                        case type::S32: { auto dvzr{rr.as_s32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_double() / dvzr; }
+                        case type::U32: { auto dvzr{rr.as_u32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_double() / dvzr; }
+                        case type::S64: { auto dvzr{rr.as_s64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_double() / dvzr; }
+                        case type::U64: { auto dvzr{rr.as_u64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_double() / dvzr; }
+                        case type::FLOAT: { auto dvzr{rr.as_float()}; return lr.as_double() / dvzr; }
+                        case type::DOUBLE: { auto dvzr{rr.as_double()}; return lr.as_double() / dvzr; }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return lr.as_double() / dvzr; }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::LONG_DOUBLE:
+                    switch(rt) {
+                        case type::BOOL: { auto dvzr{rr.as_bool()}; if(!dvzr) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_long_double() / dvzr; }
+                        case type::CHAR: { auto dvzr{rr.as_char()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_long_double() / dvzr; }
+                        case type::S8: { auto dvzr{rr.as_s8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_long_double() / dvzr; }
+                        case type::U8: { auto dvzr{rr.as_u8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_long_double() / dvzr; }
+                        case type::S16: { auto dvzr{rr.as_s16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_long_double() / dvzr; }
+                        case type::U16: { auto dvzr{rr.as_u16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_long_double() / dvzr; }
+                        case type::WCHAR: { auto dvzr{rr.as_wchar()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_long_double() / dvzr; }
+                        case type::S32: { auto dvzr{rr.as_s32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_long_double() / dvzr; }
+                        case type::U32: { auto dvzr{rr.as_u32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_long_double() / dvzr; }
+                        case type::S64: { auto dvzr{rr.as_s64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_long_double() / dvzr; }
+                        case type::U64: { auto dvzr{rr.as_u64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_long_double() / dvzr; }
+                        case type::FLOAT: { auto dvzr{rr.as_float()}; return lr.as_long_double() / dvzr; }
+                        case type::DOUBLE: { auto dvzr{rr.as_double()}; return lr.as_long_double() / dvzr; }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return lr.as_long_double() / dvzr; }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::VEC4:
+                    switch(rt) {
+                        case type::BOOL: { auto dvzr{rr.as_bool()}; if(!dvzr) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_vec4() / dvzr; }
+                        case type::CHAR: { auto dvzr{rr.as_char()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_vec4() / dvzr; }
+                        case type::S8: { auto dvzr{rr.as_s8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_vec4() / dvzr; }
+                        case type::U8: { auto dvzr{rr.as_u8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_vec4() / dvzr; }
+                        case type::S16: { auto dvzr{rr.as_s16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_vec4() / dvzr; }
+                        case type::U16: { auto dvzr{rr.as_u16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_vec4() / dvzr; }
+                        case type::WCHAR: { auto dvzr{rr.as_wchar()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_vec4() / dvzr; }
+                        case type::S32: { auto dvzr{rr.as_s32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_vec4() / dvzr; }
+                        case type::U32: { auto dvzr{rr.as_u32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_vec4() / dvzr; }
+                        case type::S64: { auto dvzr{rr.as_s64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_vec4() / dvzr; }
+                        case type::U64: { auto dvzr{rr.as_u64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_vec4() / dvzr; }
+                        case type::FLOAT: { auto dvzr{rr.as_float()}; return lr.as_vec4() / dvzr; }
+                        case type::DOUBLE: { auto dvzr{rr.as_double()}; return lr.as_vec4() / dvzr; }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return lr.as_vec4() / dvzr; }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::MAT4:
+                    switch(rt) {
+                        case type::BOOL: { auto dvzr{rr.as_bool()}; if(!dvzr) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_mat4() / dvzr; }
+                        case type::CHAR: { auto dvzr{rr.as_char()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_mat4() / dvzr; }
+                        case type::S8: { auto dvzr{rr.as_s8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_mat4() / dvzr; }
+                        case type::U8: { auto dvzr{rr.as_u8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_mat4() / dvzr; }
+                        case type::S16: { auto dvzr{rr.as_s16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_mat4() / dvzr; }
+                        case type::U16: { auto dvzr{rr.as_u16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_mat4() / dvzr; }
+                        case type::WCHAR: { auto dvzr{rr.as_wchar()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_mat4() / dvzr; }
+                        case type::S32: { auto dvzr{rr.as_s32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_mat4() / dvzr; }
+                        case type::U32: { auto dvzr{rr.as_u32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_mat4() / dvzr; }
+                        case type::S64: { auto dvzr{rr.as_s64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_mat4() / dvzr; }
+                        case type::U64: { auto dvzr{rr.as_u64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_mat4() / dvzr; }
+                        case type::FLOAT: { auto dvzr{rr.as_float()}; return lr.as_mat4() / dvzr; }
+                        case type::DOUBLE: { auto dvzr{rr.as_double()}; return lr.as_mat4() / dvzr; }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return lr.as_mat4() / dvzr; }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::POINTER:
+                    break;
+                case type::CLASS:
+                    break;
+                case type::FUNC:
+                    break;
+                case type::ARRAY:
+                    break;
+                case type::OBJECT:
+                    break;
+                case type::STRING:
+                    break;
+                case type::WSTRING:
+                    break;
+                case type::UNDEFINED:
+                    return valbox{valbox_no_initialize::dont_do_it};
+                    break;
+                case type::VALBOX:
+                    break;
+                default:
+                    break;
+            }
+            throw std::runtime_error{"operation not applicable"};
+        }
+
+        friend valbox operator%(valbox const &lr, valbox const &rr) {
+            auto lt{lr.val_or_pointed_type()};
+            auto rt{rr.val_or_pointed_type()};
+            switch(lt) {
+                case type::BOOL:
+                    switch(rt) {
+                        case type::BOOL: { auto dvzr{rr.as_bool()}; if(!dvzr) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_bool() % dvzr; }
+                        case type::CHAR: { auto dvzr{rr.as_char()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_bool() % dvzr; }
+                        case type::S8: { auto dvzr{rr.as_s8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_bool() % dvzr; }
+                        case type::U8: { auto dvzr{rr.as_u8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_bool() % dvzr; }
+                        case type::S16: { auto dvzr{rr.as_s16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_bool() % dvzr; }
+                        case type::U16: { auto dvzr{rr.as_u16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_bool() % dvzr; }
+                        case type::WCHAR: { auto dvzr{rr.as_wchar()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_bool() % dvzr; }
+                        case type::S32: { auto dvzr{rr.as_s32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_bool() % dvzr; }
+                        case type::U32: { auto dvzr{rr.as_u32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_bool() % dvzr; }
+                        case type::S64: { auto dvzr{rr.as_s64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_bool() % dvzr; }
+                        case type::U64: { auto dvzr{rr.as_u64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_bool() % dvzr; }
+                        case type::FLOAT: { auto dvzr{rr.as_float()}; return std::fmod(lr.as_bool(), dvzr); }
+                        case type::DOUBLE: { auto dvzr{rr.as_double()}; return std::fmod(lr.as_bool(), dvzr); }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return std::fmod(lr.as_bool(), dvzr); }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::CHAR:
+                    switch(rt) {
+                        case type::BOOL: { auto dvzr{rr.as_bool()}; if(!dvzr) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_char() % dvzr; }
+                        case type::CHAR: { auto dvzr{rr.as_char()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_char() % dvzr; }
+                        case type::S8: { auto dvzr{rr.as_s8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_char() % dvzr; }
+                        case type::U8: { auto dvzr{rr.as_u8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_char() % dvzr; }
+                        case type::S16: { auto dvzr{rr.as_s16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_char() % dvzr; }
+                        case type::U16: { auto dvzr{rr.as_u16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_char() % dvzr; }
+                        case type::WCHAR: { auto dvzr{rr.as_wchar()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_char() % dvzr; }
+                        case type::S32: { auto dvzr{rr.as_s32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_char() % dvzr; }
+                        case type::U32: { auto dvzr{rr.as_u32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_char() % dvzr; }
+                        case type::S64: { auto dvzr{rr.as_s64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_char() % dvzr; }
+                        case type::U64: { auto dvzr{rr.as_u64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_char() % dvzr; }
+                        case type::FLOAT: { auto dvzr{rr.as_float()}; return std::fmod(lr.as_char(), dvzr); }
+                        case type::DOUBLE: { auto dvzr{rr.as_double()}; return std::fmod(lr.as_char(), dvzr); }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return std::fmod(lr.as_char(), dvzr); }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::S8:
+                    switch(rt) {
+                        case type::BOOL: { auto dvzr{rr.as_bool()}; if(!dvzr) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s8() % dvzr; }
+                        case type::CHAR: { auto dvzr{rr.as_char()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s8() % dvzr; }
+                        case type::S8: { auto dvzr{rr.as_s8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s8() % dvzr; }
+                        case type::U8: { auto dvzr{rr.as_u8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s8() % dvzr; }
+                        case type::S16: { auto dvzr{rr.as_s16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s8() % dvzr; }
+                        case type::U16: { auto dvzr{rr.as_u16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s8() % dvzr; }
+                        case type::WCHAR: { auto dvzr{rr.as_wchar()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s8() % dvzr; }
+                        case type::S32: { auto dvzr{rr.as_s32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s8() % dvzr; }
+                        case type::U32: { auto dvzr{rr.as_u32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s8() % dvzr; }
+                        case type::S64: { auto dvzr{rr.as_s64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s8() % dvzr; }
+                        case type::U64: { auto dvzr{rr.as_u64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s8() % dvzr; }
+                        case type::FLOAT: { auto dvzr{rr.as_float()}; return std::fmod(lr.as_s8(), dvzr); }
+                        case type::DOUBLE: { auto dvzr{rr.as_double()}; return std::fmod(lr.as_s8(), dvzr); }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return std::fmod(lr.as_s8(), dvzr); }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::U8:
+                    switch(rt) {
+                        case type::BOOL: { auto dvzr{rr.as_bool()}; if(!dvzr) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u8() % dvzr; }
+                        case type::CHAR: { auto dvzr{rr.as_char()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u8() % dvzr; }
+                        case type::S8: { auto dvzr{rr.as_s8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u8() % dvzr; }
+                        case type::U8: { auto dvzr{rr.as_u8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u8() % dvzr; }
+                        case type::S16: { auto dvzr{rr.as_s16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u8() % dvzr; }
+                        case type::U16: { auto dvzr{rr.as_u16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u8() % dvzr; }
+                        case type::WCHAR: { auto dvzr{rr.as_wchar()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u8() % dvzr; }
+                        case type::S32: { auto dvzr{rr.as_s32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u8() % dvzr; }
+                        case type::U32: { auto dvzr{rr.as_u32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u8() % dvzr; }
+                        case type::S64: { auto dvzr{rr.as_s64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u8() % dvzr; }
+                        case type::U64: { auto dvzr{rr.as_u64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u8() % dvzr; }
+                        case type::FLOAT: { auto dvzr{rr.as_float()}; return std::fmod(lr.as_u8(), dvzr); }
+                        case type::DOUBLE: { auto dvzr{rr.as_double()}; return std::fmod(lr.as_u8(), dvzr); }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return std::fmod(lr.as_u8(), dvzr); }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::S16:
+                    switch(rt) {
+                        case type::BOOL: { auto dvzr{rr.as_bool()}; if(!dvzr) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s16() % dvzr; }
+                        case type::CHAR: { auto dvzr{rr.as_char()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s16() % dvzr; }
+                        case type::S8: { auto dvzr{rr.as_s8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s16() % dvzr; }
+                        case type::U8: { auto dvzr{rr.as_u8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s16() % dvzr; }
+                        case type::S16: { auto dvzr{rr.as_s16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s16() % dvzr; }
+                        case type::U16: { auto dvzr{rr.as_u16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s16() % dvzr; }
+                        case type::WCHAR: { auto dvzr{rr.as_wchar()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s16() % dvzr; }
+                        case type::S32: { auto dvzr{rr.as_s32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s16() % dvzr; }
+                        case type::U32: { auto dvzr{rr.as_u32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s16() % dvzr; }
+                        case type::S64: { auto dvzr{rr.as_s64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s16() % dvzr; }
+                        case type::U64: { auto dvzr{rr.as_u64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s16() % dvzr; }
+                        case type::FLOAT: { auto dvzr{rr.as_float()}; return std::fmod(lr.as_s16(), dvzr); }
+                        case type::DOUBLE: { auto dvzr{rr.as_double()}; return std::fmod(lr.as_s16(), dvzr); }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return std::fmod(lr.as_s16(), dvzr); }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::U16:
+                    switch(rt) {
+                        case type::BOOL: { auto dvzr{rr.as_bool()}; if(!dvzr) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u16() % dvzr; }
+                        case type::CHAR: { auto dvzr{rr.as_char()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u16() % dvzr; }
+                        case type::S8: { auto dvzr{rr.as_s8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u16() % dvzr; }
+                        case type::U8: { auto dvzr{rr.as_u8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u16() % dvzr; }
+                        case type::S16: { auto dvzr{rr.as_s16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u16() % dvzr; }
+                        case type::U16: { auto dvzr{rr.as_u16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u16() % dvzr; }
+                        case type::WCHAR: { auto dvzr{rr.as_wchar()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u16() % dvzr; }
+                        case type::S32: { auto dvzr{rr.as_s32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u16() % dvzr; }
+                        case type::U32: { auto dvzr{rr.as_u32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u16() % dvzr; }
+                        case type::S64: { auto dvzr{rr.as_s64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u16() % dvzr; }
+                        case type::U64: { auto dvzr{rr.as_u64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u16() % dvzr; }
+                        case type::FLOAT: { auto dvzr{rr.as_float()}; return std::fmod(lr.as_u16(), dvzr); }
+                        case type::DOUBLE: { auto dvzr{rr.as_double()}; return std::fmod(lr.as_u16(), dvzr); }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return std::fmod(lr.as_u16(), dvzr); }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::WCHAR:
+                    switch(rt) {
+                        case type::BOOL: { auto dvzr{rr.as_bool()}; if(!dvzr) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_wchar() % dvzr; }
+                        case type::CHAR: { auto dvzr{rr.as_char()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_wchar() % dvzr; }
+                        case type::S8: { auto dvzr{rr.as_s8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_wchar() % dvzr; }
+                        case type::U8: { auto dvzr{rr.as_u8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_wchar() % dvzr; }
+                        case type::S16: { auto dvzr{rr.as_s16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_wchar() % dvzr; }
+                        case type::U16: { auto dvzr{rr.as_u16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_wchar() % dvzr; }
+                        case type::WCHAR: { auto dvzr{rr.as_wchar()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_wchar() % dvzr; }
+                        case type::S32: { auto dvzr{rr.as_s32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_wchar() % dvzr; }
+                        case type::U32: { auto dvzr{rr.as_u32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_wchar() % dvzr; }
+                        case type::S64: { auto dvzr{rr.as_s64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_wchar() % dvzr; }
+                        case type::U64: { auto dvzr{rr.as_u64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_wchar() % dvzr; }
+                        case type::FLOAT: { auto dvzr{rr.as_float()}; return std::fmod(lr.as_wchar(), dvzr); }
+                        case type::DOUBLE: { auto dvzr{rr.as_double()}; return std::fmod(lr.as_wchar(), dvzr); }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return std::fmod(lr.as_wchar(), dvzr); }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::S32:
+                    switch(rt) {
+                        case type::BOOL: { auto dvzr{rr.as_bool()}; if(!dvzr) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s32() % dvzr; }
+                        case type::CHAR: { auto dvzr{rr.as_char()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s32() % dvzr; }
+                        case type::S8: { auto dvzr{rr.as_s8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s32() % dvzr; }
+                        case type::U8: { auto dvzr{rr.as_u8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s32() % dvzr; }
+                        case type::S16: { auto dvzr{rr.as_s16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s32() % dvzr; }
+                        case type::U16: { auto dvzr{rr.as_u16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s32() % dvzr; }
+                        case type::WCHAR: { auto dvzr{rr.as_wchar()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s32() % dvzr; }
+                        case type::S32: { auto dvzr{rr.as_s32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s32() % dvzr; }
+                        case type::U32: { auto dvzr{rr.as_u32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s32() % dvzr; }
+                        case type::S64: { auto dvzr{rr.as_s64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s32() % dvzr; }
+                        case type::U64: { auto dvzr{rr.as_u64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s32() % dvzr; }
+                        case type::FLOAT: { auto dvzr{rr.as_float()}; return std::fmod(lr.as_s32(), dvzr); }
+                        case type::DOUBLE: { auto dvzr{rr.as_double()}; return std::fmod(lr.as_s32(), dvzr); }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return std::fmod(lr.as_s32(), dvzr); }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::U32:
+                    switch(rt) {
+                        case type::BOOL: { auto dvzr{rr.as_bool()}; if(!dvzr) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u32() % dvzr; }
+                        case type::CHAR: { auto dvzr{rr.as_char()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u32() % dvzr; }
+                        case type::S8: { auto dvzr{rr.as_s8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u32() % dvzr; }
+                        case type::U8: { auto dvzr{rr.as_u8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u32() % dvzr; }
+                        case type::S16: { auto dvzr{rr.as_s16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u32() % dvzr; }
+                        case type::U16: { auto dvzr{rr.as_u16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u32() % dvzr; }
+                        case type::WCHAR: { auto dvzr{rr.as_wchar()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u32() % dvzr; }
+                        case type::S32: { auto dvzr{rr.as_s32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u32() % dvzr; }
+                        case type::U32: { auto dvzr{rr.as_u32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u32() % dvzr; }
+                        case type::S64: { auto dvzr{rr.as_s64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u32() % dvzr; }
+                        case type::U64: { auto dvzr{rr.as_u64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u32() % dvzr; }
+                        case type::FLOAT: { auto dvzr{rr.as_float()}; return std::fmod(lr.as_u32(), dvzr); }
+                        case type::DOUBLE: { auto dvzr{rr.as_double()}; return std::fmod(lr.as_u32(), dvzr); }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return std::fmod(lr.as_u32(), dvzr); }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::S64:
+                    switch(rt) {
+                        case type::BOOL: { auto dvzr{rr.as_bool()}; if(!dvzr) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s64() % dvzr; }
+                        case type::CHAR: { auto dvzr{rr.as_char()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s64() % dvzr; }
+                        case type::S8: { auto dvzr{rr.as_s8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s64() % dvzr; }
+                        case type::U8: { auto dvzr{rr.as_u8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s64() % dvzr; }
+                        case type::S16: { auto dvzr{rr.as_s16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s64() % dvzr; }
+                        case type::U16: { auto dvzr{rr.as_u16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s64() % dvzr; }
+                        case type::WCHAR: { auto dvzr{rr.as_wchar()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s64() % dvzr; }
+                        case type::S32: { auto dvzr{rr.as_s32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s64() % dvzr; }
+                        case type::U32: { auto dvzr{rr.as_u32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s64() % dvzr; }
+                        case type::S64: {
+                            auto dvzr{rr.as_s64()};
+                            if(dvzr == 0) {
+                                throw std::runtime_error{"integer divizion by zero"};
+                            }
+                            return lr.as_s64() % dvzr;
+                        }
+                        case type::U64: { auto dvzr{rr.as_u64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_s64() % dvzr; }
+                        case type::FLOAT: { auto dvzr{rr.as_float()}; return std::fmod(lr.as_s64(), dvzr); }
+                        case type::DOUBLE: { auto dvzr{rr.as_double()}; return std::fmod(lr.as_s64(), dvzr); }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return std::fmod(lr.as_s64(), dvzr); }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::U64:
+                    switch(rt) {
+                        case type::BOOL: { auto dvzr{rr.as_bool()}; if(!dvzr) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u64() % dvzr; }
+                        case type::CHAR: { auto dvzr{rr.as_char()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u64() % dvzr; }
+                        case type::S8: { auto dvzr{rr.as_s8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u64() % dvzr; }
+                        case type::U8: { auto dvzr{rr.as_u8()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u64() % dvzr; }
+                        case type::S16: { auto dvzr{rr.as_s16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u64() % dvzr; }
+                        case type::U16: { auto dvzr{rr.as_u16()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u64() % dvzr; }
+                        case type::WCHAR: { auto dvzr{rr.as_wchar()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u64() % dvzr; }
+                        case type::S32: { auto dvzr{rr.as_s32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u64() % dvzr; }
+                        case type::U32: { auto dvzr{rr.as_u32()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u64() % dvzr; }
+                        case type::S64: { auto dvzr{rr.as_s64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u64() % dvzr; }
+                        case type::U64: { auto dvzr{rr.as_u64()}; if(dvzr == 0) { throw std::runtime_error{"integer divizion by zero"}; } return lr.as_u64() % dvzr; }
+                        case type::FLOAT: { auto dvzr{rr.as_float()}; return std::fmod(lr.as_u64(), dvzr); }
+                        case type::DOUBLE: { auto dvzr{rr.as_double()}; return std::fmod(lr.as_u64(), dvzr); }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return std::fmod(lr.as_u64(), dvzr); }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::FLOAT:
+                    switch(rt) {
+                        case type::BOOL:        { auto dvzr{rr.as_bool()};        return std::fmod(lr.as_float(), dvzr); }
+                        case type::CHAR:        { auto dvzr{rr.as_char()};        return std::fmod(lr.as_float(), dvzr); }
+                        case type::S8:          { auto dvzr{rr.as_s8()};          return std::fmod(lr.as_float(), dvzr); }
+                        case type::U8:          { auto dvzr{rr.as_u8()};          return std::fmod(lr.as_float(), dvzr); }
+                        case type::S16:         { auto dvzr{rr.as_s16()};         return std::fmod(lr.as_float(), dvzr); }
+                        case type::U16:         { auto dvzr{rr.as_u16()};         return std::fmod(lr.as_float(), dvzr); }
+                        case type::WCHAR:       { auto dvzr{rr.as_wchar()};       return std::fmod(lr.as_float(), dvzr); }
+                        case type::S32:         { auto dvzr{rr.as_s32()};         return std::fmod(lr.as_float(), dvzr); }
+                        case type::U32:         { auto dvzr{rr.as_u32()};         return std::fmod(lr.as_float(), dvzr); }
+                        case type::S64:         { auto dvzr{rr.as_s64()};         return std::fmod(lr.as_float(), dvzr); }
+                        case type::U64:         { auto dvzr{rr.as_u64()};         return std::fmod(lr.as_float(), dvzr); }
+                        case type::FLOAT:       { auto dvzr{rr.as_float()};       return std::fmod(lr.as_float(), dvzr); }
+                        case type::DOUBLE:      { auto dvzr{rr.as_double()};      return std::fmod(lr.as_float(), dvzr); }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return std::fmod(lr.as_float(), dvzr); }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::DOUBLE:
+                    switch(rt) {
+                        case type::BOOL:        { auto dvzr{rr.as_bool()};        return std::fmod(lr.as_double(), dvzr); }
+                        case type::CHAR:        { auto dvzr{rr.as_char()};        return std::fmod(lr.as_double(), dvzr); }
+                        case type::S8:          { auto dvzr{rr.as_s8()};          return std::fmod(lr.as_double(), dvzr); }
+                        case type::U8:          { auto dvzr{rr.as_u8()};          return std::fmod(lr.as_double(), dvzr); }
+                        case type::S16:         { auto dvzr{rr.as_s16()};         return std::fmod(lr.as_double(), dvzr); }
+                        case type::U16:         { auto dvzr{rr.as_u16()};         return std::fmod(lr.as_double(), dvzr); }
+                        case type::WCHAR:       { auto dvzr{rr.as_wchar()};       return std::fmod(lr.as_double(), dvzr); }
+                        case type::S32:         { auto dvzr{rr.as_s32()};         return std::fmod(lr.as_double(), dvzr); }
+                        case type::U32:         { auto dvzr{rr.as_u32()};         return std::fmod(lr.as_double(), dvzr); }
+                        case type::S64:         { auto dvzr{rr.as_s64()};         return std::fmod(lr.as_double(), dvzr); }
+                        case type::U64:         { auto dvzr{rr.as_u64()};         return std::fmod(lr.as_double(), dvzr); }
+                        case type::FLOAT:       { auto dvzr{rr.as_float()};       return std::fmod(lr.as_double(), dvzr); }
+                        case type::DOUBLE:      { auto dvzr{rr.as_double()};      return std::fmod(lr.as_double(), dvzr); }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return std::fmod(lr.as_double(), dvzr); }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::LONG_DOUBLE:
+                    switch(rt) {
+                        case type::BOOL:        { auto dvzr{rr.as_bool()};        return std::fmod(lr.as_double(), dvzr); }
+                        case type::CHAR:        { auto dvzr{rr.as_char()};        return std::fmod(lr.as_double(), dvzr); }
+                        case type::S8:          { auto dvzr{rr.as_s8()};          return std::fmod(lr.as_double(), dvzr); }
+                        case type::U8:          { auto dvzr{rr.as_u8()};          return std::fmod(lr.as_double(), dvzr); }
+                        case type::S16:         { auto dvzr{rr.as_s16()};         return std::fmod(lr.as_double(), dvzr); }
+                        case type::U16:         { auto dvzr{rr.as_u16()};         return std::fmod(lr.as_double(), dvzr); }
+                        case type::WCHAR:       { auto dvzr{rr.as_wchar()};       return std::fmod(lr.as_double(), dvzr); }
+                        case type::S32:         { auto dvzr{rr.as_s32()};         return std::fmod(lr.as_double(), dvzr); }
+                        case type::U32:         { auto dvzr{rr.as_u32()};         return std::fmod(lr.as_double(), dvzr); }
+                        case type::S64:         { auto dvzr{rr.as_s64()};         return std::fmod(lr.as_double(), dvzr); }
+                        case type::U64:         { auto dvzr{rr.as_u64()};         return std::fmod(lr.as_double(), dvzr); }
+                        case type::FLOAT:       { auto dvzr{rr.as_float()};       return std::fmod(lr.as_double(), dvzr); }
+                        case type::DOUBLE:      { auto dvzr{rr.as_double()};      return std::fmod(lr.as_double(), dvzr); }
+                        case type::LONG_DOUBLE: { auto dvzr{rr.as_long_double()}; return std::fmod(lr.as_double(), dvzr); }
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::VEC4:
+                    switch(rt) {
+                        case type::BOOL: break;
+                        case type::CHAR: break;
+                        case type::S8: break;
+                        case type::U8: break;
+                        case type::S16: break;
+                        case type::U16: break;
+                        case type::WCHAR: break;
+                        case type::S32: break;
+                        case type::U32: break;
+                        case type::S64: break;
+                        case type::U64: break;
+                        case type::FLOAT: break;
+                        case type::DOUBLE: break;
+                        case type::LONG_DOUBLE: break;
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: break;
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::MAT4:
+                    switch(rt) {
+                        case type::BOOL: break;
+                        case type::CHAR: break;
+                        case type::S8: break;
+                        case type::U8: break;
+                        case type::S16: break;
+                        case type::U16: break;
+                        case type::WCHAR: break;
+                        case type::S32: break;
+                        case type::U32: break;
+                        case type::S64: break;
+                        case type::U64: break;
+                        case type::FLOAT: break;
+                        case type::DOUBLE: break;
+                        case type::LONG_DOUBLE: break;
+                        case type::VEC4: break;
+                        case type::MAT4: break;
+                        case type::POINTER: break;
+                        case type::CLASS: break;
+                        case type::FUNC: break;
+                        case type::ARRAY: break;
+                        case type::OBJECT: break;
+                        case type::STRING: break;
+                        case type::WSTRING: break;
+                        case type::UNDEFINED: break;
+                        case type::VALBOX: break;
+                        default: break;
+                    }
+                    break;
+                case type::POINTER:
+                    break;
+                case type::CLASS:
+                    break;
+                case type::FUNC:
+                    break;
+                case type::ARRAY:
+                    break;
+                case type::OBJECT:
+                    break;
+                case type::STRING:
+                    break;
+                case type::WSTRING:
+                    break;
+                case type::UNDEFINED:
+                    return valbox{valbox_no_initialize::dont_do_it};
+                    break;
+                case type::VALBOX:
+                    break;
+                default:
+                    break;
             }
             throw std::runtime_error{"operation not applicable"};
         }
 
         friend valbox operator<<(valbox const &l, valbox const &r) {
             valbox res{valbox_no_initialize::dont_do_it};
-            type st;
-            auto lr{l.deref()};
-            auto rr{r.deref()};
+            valbox const &lr{l.deref()};
+            valbox const &rr{r.deref()};
             type lt{lr.val_or_pointed_type()};
             type rt{rr.val_or_pointed_type()};
             if(lt == type::UNDEFINED || rt == type::UNDEFINED) {
                 return res;
             }
-            bool applicable{stronger_numeric_type(lt, rt, st)};
-            if(applicable) {
-                if(st == lt) {
-                    res.become_same_type_as(lr);
-                } else {
-                    res.become_same_type_as(rr);
-                }
-                switch(st) {
-                    case type::CHAR: res.assign_preserving_type(lr.cast_num_to_num<char>() << rr.cast_num_to_num<int>()); break;
-                    case type::WCHAR: res.assign_preserving_type(lr.cast_num_to_num<wchar_t>() << rr.cast_num_to_num<int>()); break;
-                    case type::U8: res.assign_preserving_type(lr.cast_num_to_num<std::uint8_t>() << rr.cast_num_to_num<int>()); break;
-                    case type::S8: res.assign_preserving_type(lr.cast_num_to_num<std::int8_t>() << rr.cast_num_to_num<int>()); break;
-                    case type::U16: res.assign_preserving_type(lr.cast_num_to_num<std::uint16_t>() << rr.cast_num_to_num<int>()); break;
-                    case type::S16: res.assign_preserving_type(lr.cast_num_to_num<std::int16_t>() << rr.cast_num_to_num<int>()); break;
-                    case type::U32: res.assign_preserving_type(lr.cast_num_to_num<std::uint32_t>() << rr.cast_num_to_num<int>()); break;
-                    case type::S32: res.assign_preserving_type(lr.cast_num_to_num<std::int32_t>() << rr.cast_num_to_num<int>()); break;
-                    case type::U64: res.assign_preserving_type(lr.cast_num_to_num<std::uint64_t>() << rr.cast_num_to_num<int>()); break;
-                    case type::S64: res.assign_preserving_type(lr.cast_num_to_num<std::int64_t>() << rr.cast_num_to_num<int>()); break;
-                    case type::POINTER: res.assign_preserving_type(lr.cast_num_to_num<std::uintptr_t>() << rr.cast_num_to_num<std::uintptr_t>()); break;
+            if(lr.is_numeric() && rr.is_numeric()) {
+                res.become_same_type_as(lr);
+                switch(lt) {
+                    case type::BOOL: res.assign_preserving_type(lr.as_bool() && !rr.cast_to_bool()); break;
+                    case type::CHAR: res.assign_preserving_type(lr.as_char() << rr.cast_to_u64()); break;
+                    case type::WCHAR: res.assign_preserving_type(lr.as_wchar() << rr.cast_to_u64()); break;
+                    case type::U8: res.assign_preserving_type(lr.as_u8() << rr.cast_to_u64()); break;
+                    case type::S8: res.assign_preserving_type(lr.as_s8() << rr.cast_to_u64()); break;
+                    case type::U16: res.assign_preserving_type(lr.as_u16() << rr.cast_to_u64()); break;
+                    case type::S16: res.assign_preserving_type(lr.as_s16() << rr.cast_to_u64()); break;
+                    case type::U32: res.assign_preserving_type(lr.as_u32() << rr.cast_to_u64()); break;
+                    case type::S32: res.assign_preserving_type(lr.as_s32() << rr.cast_to_u64()); break;
+                    case type::U64: res.assign_preserving_type(lr.as_u64() << rr.cast_to_u64()); break;
+                    case type::S64: res.assign_preserving_type(lr.as_s64() << rr.cast_to_u64()); break;
                     default: throw std::runtime_error{"operation not applicable"};
                 }
                 return res;
@@ -2321,33 +4924,27 @@ namespace scfx {
 
         friend valbox operator>>(valbox const &l, valbox const &r) {
             valbox res{valbox_no_initialize::dont_do_it};
-            type st;
-            auto lr{l.deref()};
-            auto rr{r.deref()};
+            valbox const &lr{l.deref()};
+            valbox const &rr{r.deref()};
             type lt{lr.val_or_pointed_type()};
             type rt{rr.val_or_pointed_type()};
             if(lt == type::UNDEFINED || rt == type::UNDEFINED) {
                 return res;
             }
-            bool applicable{stronger_numeric_type(lt, rt, st)};
-            if(applicable) {
-                if(st == lt) {
-                    res.become_same_type_as(lr);
-                } else {
-                    res.become_same_type_as(rr);
-                }
-                switch(st) {
-                    case type::CHAR: res.assign_preserving_type(lr.cast_num_to_num<char>() >> rr.cast_num_to_num<int>()); break;
-                    case type::WCHAR: res.assign_preserving_type(lr.cast_num_to_num<wchar_t>() >> rr.cast_num_to_num<int>()); break;
-                    case type::U8:   res.assign_preserving_type(lr.cast_num_to_num<std::uint8_t>() >> rr.cast_num_to_num<int>()); break;
-                    case type::S8:   res.assign_preserving_type(lr.cast_num_to_num<std::int8_t>() >> rr.cast_num_to_num<int>()); break;
-                    case type::U16:  res.assign_preserving_type(lr.cast_num_to_num<std::uint16_t>() >> rr.cast_num_to_num<int>()); break;
-                    case type::S16:  res.assign_preserving_type(lr.cast_num_to_num<std::int16_t>() >> rr.cast_num_to_num<int>()); break;
-                    case type::U32:  res.assign_preserving_type(lr.cast_num_to_num<std::uint32_t>() >> rr.cast_num_to_num<int>()); break;
-                    case type::S32:  res.assign_preserving_type(lr.cast_num_to_num<std::int32_t>() >> rr.cast_num_to_num<int>()); break;
-                    case type::U64:  res.assign_preserving_type(lr.cast_num_to_num<std::uint64_t>() >> rr.cast_num_to_num<int>()); break;
-                    case type::S64:  res.assign_preserving_type(lr.cast_num_to_num<std::int64_t>() >> rr.cast_num_to_num<int>()); break;
-                    case type::POINTER: res.assign_preserving_type(lr.cast_num_to_num<std::uintptr_t>() >> rr.cast_num_to_num<std::uintptr_t>()); break;
+            if(lr.is_numeric() && rr.is_numeric()) {
+                res.become_same_type_as(lr);
+                switch(lt) {
+                    case type::BOOL: res.assign_preserving_type(lr.as_bool() && !rr.cast_to_bool()); break;
+                    case type::CHAR: res.assign_preserving_type(lr.as_char() >> rr.cast_to_u64()); break;
+                    case type::WCHAR: res.assign_preserving_type(lr.as_wchar() >> rr.cast_to_u64()); break;
+                    case type::U8: res.assign_preserving_type(lr.as_u8() >> rr.cast_to_u64()); break;
+                    case type::S8: res.assign_preserving_type(lr.as_s8() >> rr.cast_to_u64()); break;
+                    case type::U16: res.assign_preserving_type(lr.as_u16() >> rr.cast_to_u64()); break;
+                    case type::S16: res.assign_preserving_type(lr.as_s16() >> rr.cast_to_u64()); break;
+                    case type::U32: res.assign_preserving_type(lr.as_u32() >> rr.cast_to_u64()); break;
+                    case type::S32: res.assign_preserving_type(lr.as_s32() >> rr.cast_to_u64()); break;
+                    case type::U64: res.assign_preserving_type(lr.as_u64() >> rr.cast_to_u64()); break;
+                    case type::S64: res.assign_preserving_type(lr.as_s64() >> rr.cast_to_u64()); break;
                     default: throw std::runtime_error{"operation not applicable"};
                 }
                 return res;
@@ -2383,7 +4980,6 @@ namespace scfx {
                     case type::U64:  res.assign_preserving_type(lr.cast_num_to_num<std::uint64_t>() & rr.cast_num_to_num<std::uint64_t>()); break;
                     case type::S64:  res.assign_preserving_type(lr.cast_num_to_num<std::int64_t>() & rr.cast_num_to_num<std::int64_t>()); break;
                     case type::BOOL:  res.assign_preserving_type(lr.cast_num_to_num<std::int64_t>() & rr.cast_num_to_num<std::int64_t>()); break;
-                    case type::POINTER: res.assign_preserving_type(lr.cast_num_to_num<std::uintptr_t>() & rr.cast_num_to_num<std::uintptr_t>()); break;
                     default: throw std::runtime_error{"operation not applicable"};
                 }
                 return res;
@@ -2419,7 +5015,6 @@ namespace scfx {
                     case type::U64:  res.assign_preserving_type(lr.cast_num_to_num<std::uint64_t>() | rr.cast_num_to_num<std::uint64_t>()); break;
                     case type::S64:  res.assign_preserving_type(lr.cast_num_to_num<std::int64_t>() | rr.cast_num_to_num<std::int64_t>()); break;
                     case type::BOOL:  res.assign_preserving_type(lr.cast_num_to_num<std::int64_t>() | rr.cast_num_to_num<std::int64_t>()); break;
-                    case type::POINTER: res.assign_preserving_type(lr.cast_num_to_num<std::uintptr_t>() | rr.cast_num_to_num<std::uintptr_t>()); break;
                     default: throw std::runtime_error{"operation not applicable"};
                 }
                 return res;
@@ -2455,7 +5050,6 @@ namespace scfx {
                     case type::U64:  res.assign_preserving_type(lr.cast_num_to_num<std::uint64_t>() ^ rr.cast_num_to_num<std::uint64_t>()); break;
                     case type::S64:  res.assign_preserving_type(lr.cast_num_to_num<std::int64_t>() ^ rr.cast_num_to_num<std::int64_t>()); break;
                     case type::BOOL:  res.assign_preserving_type(lr.cast_num_to_num<std::int64_t>() ^ rr.cast_num_to_num<std::int64_t>()); break;
-                    case type::POINTER: res.assign_preserving_type(lr.cast_num_to_num<std::uintptr_t>() ^ rr.cast_num_to_num<std::uintptr_t>()); break;
                     default: throw std::runtime_error{"operation not applicable"};
                 }
                 return res;
@@ -2464,228 +5058,748 @@ namespace scfx {
         }
 
         valbox &assign_preserving_type(valbox const &that) {
-            valbox const &that_ref{that.deref()};
-            valbox &this_ref{deref()};
-            this_ref.pointed_box_.reset();
-            if(this_ref.is_ptr()) {
-                switch(this_ref.pointed_type()) {
-                    case type::CHAR: this_ref.deref_ptr<char>() = that_ref.cast_to_char(); break;
-                    case type::U8: this_ref.deref_ptr<std::uint8_t>() = that_ref.cast_to_u8(); break;
-                    case type::S8: this_ref.deref_ptr<std::int8_t>() = that_ref.cast_to_s8(); break;
-                    case type::U16: this_ref.deref_ptr<std::uint16_t>() = that_ref.cast_to_u16(); break;
-                    case type::S16: this_ref.deref_ptr<std::int16_t>() = that_ref.cast_to_s16(); break;
-                    case type::U32: this_ref.deref_ptr<std::uint32_t>() = that_ref.cast_to_u32(); break;
-                    case type::S32: this_ref.deref_ptr<std::int32_t>() = that_ref.cast_to_s32(); break;
-                    case type::U64: this_ref.deref_ptr<std::uint64_t>() = that_ref.cast_to_u64(); break;
-                    case type::S64: this_ref.deref_ptr<std::int64_t>() = that_ref.cast_to_s64(); break;
-                    case type::FLOAT: this_ref.deref_ptr<float>() = that_ref.cast_to_float(); break;
-                    case type::DOUBLE: this_ref.deref_ptr<double>() = that_ref.cast_to_double(); break;
-                    case type::LONG_DOUBLE: this_ref.deref_ptr<long double>() = that_ref.cast_to_long_double(); break;
-                    case type::BOOL: this_ref.deref_ptr<bool>() = that_ref.cast_to_bool(); break;
-                    case type::WCHAR: this_ref.deref_ptr<wchar_t>() = that_ref.cast_to_wchar(); break;
-                    case type::STRING:
-                        if(that_ref.is_array_ref()) {
-                            std::string &thisstr{this_ref.deref_ptr<std::string>()};
-                            thisstr.clear();
-                            for(auto &&itm: that_ref.as_array()) {
-                                thisstr.push_back(itm.cast_to_char());
+            valbox &thisref{deref()};
+            valbox const &thatref{that.deref()};
+            auto thist{thisref.val_or_pointed_type()};
+            auto thatt{thatref.val_or_pointed_type()};
+            switch(thist) {
+                case type::BOOL:
+                    switch(thatt) {
+                        case type::BOOL: as_bool() = thatref.as_bool(); break;
+                        case type::CHAR: as_bool() = thatref.as_char(); break;
+                        case type::S8: as_bool() = thatref.as_s8(); break;
+                        case type::U8: as_bool() = thatref.as_u8(); break;
+                        case type::S16: as_bool() = thatref.as_s16(); break;
+                        case type::U16: as_bool() = thatref.as_u16(); break;
+                        case type::WCHAR: as_bool() = thatref.as_wchar(); break;
+                        case type::S32: as_bool() = thatref.as_s32(); break;
+                        case type::U32: as_bool() = thatref.as_u32(); break;
+                        case type::S64: as_bool() = thatref.as_s64(); break;
+                        case type::U64: as_bool() = thatref.as_u64(); break;
+                        case type::FLOAT: as_bool() = thatref.as_float(); break;
+                        case type::DOUBLE: as_bool() = thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_bool() = thatref.as_long_double(); break;
+                        case type::VEC4: as_bool() = !thatref.as_vec4().is_zero(); break;
+                        case type::MAT4: as_bool() = !thatref.as_mat4().is_zero(); break;
+                        case type::POINTER: as_bool() = thatref.as_ptr() != nullptr; break;
+                        case type::CLASS: throw std::runtime_error{"inappropriate value"};
+                        case type::FUNC: throw std::runtime_error{"inappropriate value"};
+                        case type::ARRAY: as_bool() = !thatref.as_array().empty(); break;
+                        case type::OBJECT: as_bool() = !thatref.as_object().empty(); break;
+                        case type::STRING: as_bool() = !thatref.as_string().empty(); break;
+                        case type::WSTRING: as_bool() = !thatref.as_wstring().empty(); break;
+                        case type::UNDEFINED: as_bool() = false; break;
+                        case type::VALBOX: throw std::runtime_error{"inappropriate value"};
+                        default: throw std::runtime_error{"inappropriate value"};
+                    }
+                    break;
+                case type::CHAR:
+                    switch(thatt) {
+                        case type::BOOL: as_char() = thatref.as_bool(); break;
+                        case type::CHAR: as_char() = thatref.as_char(); break;
+                        case type::S8: as_char() = thatref.as_s8(); break;
+                        case type::U8: as_char() = thatref.as_u8(); break;
+                        case type::S16: as_char() = thatref.as_s16(); break;
+                        case type::U16: as_char() = thatref.as_u16(); break;
+                        case type::WCHAR: as_char() = thatref.as_wchar(); break;
+                        case type::S32: as_char() = thatref.as_s32(); break;
+                        case type::U32: as_char() = thatref.as_u32(); break;
+                        case type::S64: as_char() = thatref.as_s64(); break;
+                        case type::U64: as_char() = thatref.as_u64(); break;
+                        case type::FLOAT: as_char() = thatref.as_float(); break;
+                        case type::DOUBLE: as_char() = thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_char() = thatref.as_long_double(); break;
+                        case type::VEC4: as_char() = thatref.as_vec4().x(); break;
+                        case type::MAT4: as_char() = thatref.as_mat4().at(0, 0); break;
+                        case type::POINTER: as_char() = static_cast<char>(reinterpret_cast<uintptr_t>(thatref.as_ptr())); break;
+                        case type::CLASS: throw std::runtime_error{"inappropriate value"};
+                        case type::FUNC: throw std::runtime_error{"inappropriate value"};
+                        case type::ARRAY: as_char() = thatref.as_array().empty() ? 0 : thatref.as_array()[0].cast_to_char(); break;
+                        case type::OBJECT: as_char() = thatref.as_object().empty() ? 0 : thatref.as_object().begin()->second.cast_to_char(); break;
+                        case type::STRING: as_char() = thatref.as_string().empty() ? 0 : thatref.as_string().at(0); break;
+                        case type::WSTRING: as_char() = thatref.as_wstring().empty() ? 0 : thatref.as_wstring().at(0); break;
+                        case type::UNDEFINED: as_char() = 0; break;
+                        case type::VALBOX: as_char() = static_cast<char>(type::VALBOX); break;
+                        default: throw std::runtime_error{"inappropriate value"};
+                    }
+                    break;
+                case type::S8:
+                    switch(thatt) {
+                        case type::BOOL: as_s8() = thatref.as_bool(); break;
+                        case type::CHAR: as_s8() = thatref.as_char(); break;
+                        case type::S8: as_s8() = thatref.as_s8(); break;
+                        case type::U8: as_s8() = thatref.as_u8(); break;
+                        case type::S16: as_s8() = thatref.as_s16(); break;
+                        case type::U16: as_s8() = thatref.as_u16(); break;
+                        case type::WCHAR: as_s8() = thatref.as_wchar(); break;
+                        case type::S32: as_s8() = thatref.as_s32(); break;
+                        case type::U32: as_s8() = thatref.as_u32(); break;
+                        case type::S64: as_s8() = thatref.as_s64(); break;
+                        case type::U64: as_s8() = thatref.as_u64(); break;
+                        case type::FLOAT: as_s8() = thatref.as_float(); break;
+                        case type::DOUBLE: as_s8() = thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_s8() = thatref.as_long_double(); break;
+                        case type::VEC4: as_s8() = thatref.as_vec4().x(); break;
+                        case type::MAT4: as_s8() = thatref.as_mat4().at(0, 0); break;
+                        case type::POINTER: as_s8() = static_cast<int8_t>(reinterpret_cast<uintptr_t>(thatref.as_ptr())); break;
+                        case type::CLASS: throw std::runtime_error{"inappropriate value"};
+                        case type::FUNC: throw std::runtime_error{"inappropriate value"};
+                        case type::ARRAY: as_s8() = thatref.as_array().empty() ? 0 : thatref.as_array()[0].cast_to_s8(); break;
+                        case type::OBJECT: as_s8() = thatref.as_object().empty() ? 0 : thatref.as_object().begin()->second.cast_to_s8(); break;
+                        case type::STRING: as_s8() = thatref.as_string().empty() ? 0 : thatref.as_string().at(0); break;
+                        case type::WSTRING: as_s8() = thatref.as_wstring().empty() ? 0 : thatref.as_wstring().at(0); break;
+                        case type::UNDEFINED: as_s8() = 0; break;
+                        case type::VALBOX: throw std::runtime_error{"inappropriate value"};
+                        default: throw std::runtime_error{"inappropriate value"};
+                    }
+                    break;
+                case type::U8:
+                    switch(thatt) {
+                        case type::BOOL: as_u8() = thatref.as_bool(); break;
+                        case type::CHAR: as_u8() = thatref.as_char(); break;
+                        case type::S8: as_u8() = thatref.as_s8(); break;
+                        case type::U8: as_u8() = thatref.as_u8(); break;
+                        case type::S16: as_u8() = thatref.as_s16(); break;
+                        case type::U16: as_u8() = thatref.as_u16(); break;
+                        case type::WCHAR: as_u8() = thatref.as_wchar(); break;
+                        case type::S32: as_u8() = thatref.as_s32(); break;
+                        case type::U32: as_u8() = thatref.as_u32(); break;
+                        case type::S64: as_u8() = thatref.as_s64(); break;
+                        case type::U64: as_u8() = thatref.as_u64(); break;
+                        case type::FLOAT: as_u8() = thatref.as_float(); break;
+                        case type::DOUBLE: as_u8() = thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_u8() = thatref.as_long_double(); break;
+                        case type::VEC4: as_u8() = thatref.as_vec4().x(); break;
+                        case type::MAT4: as_u8() = thatref.as_mat4().at(0, 0); break;
+                        case type::POINTER: as_u8() = static_cast<uint8_t>(reinterpret_cast<uintptr_t>(thatref.as_ptr())); break;
+                        case type::CLASS: throw std::runtime_error{"inappropriate value"};
+                        case type::FUNC: throw std::runtime_error{"inappropriate value"};
+                        case type::ARRAY: as_u8() = thatref.as_array().empty() ? 0 : thatref.as_array()[0].cast_to_u8(); break;
+                        case type::OBJECT: as_u8() = thatref.as_object().empty() ? 0 : thatref.as_object().begin()->second.cast_to_u8(); break;
+                        case type::STRING: as_u8() = thatref.as_string().empty() ? 0 : thatref.as_string().at(0); break;
+                        case type::WSTRING: as_u8() = thatref.as_wstring().empty() ? 0 : thatref.as_wstring().at(0); break;
+                        case type::UNDEFINED: as_u8() = 0; break;
+                        case type::VALBOX: throw std::runtime_error{"inappropriate value"};
+                        default: throw std::runtime_error{"inappropriate value"};
+                    }
+                    break;
+                case type::S16:
+                    switch(thatt) {
+                        case type::BOOL: as_s16() = thatref.as_bool(); break;
+                        case type::CHAR: as_s16() = thatref.as_char(); break;
+                        case type::S8: as_s16() = thatref.as_s8(); break;
+                        case type::U8: as_s16() = thatref.as_u8(); break;
+                        case type::S16: as_s16() = thatref.as_s16(); break;
+                        case type::U16: as_s16() = thatref.as_u16(); break;
+                        case type::WCHAR: as_s16() = thatref.as_wchar(); break;
+                        case type::S32: as_s16() = thatref.as_s32(); break;
+                        case type::U32: as_s16() = thatref.as_u32(); break;
+                        case type::S64: as_s16() = thatref.as_s64(); break;
+                        case type::U64: as_s16() = thatref.as_u64(); break;
+                        case type::FLOAT: as_s16() = thatref.as_float(); break;
+                        case type::DOUBLE: as_s16() = thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_s16() = thatref.as_long_double(); break;
+                        case type::VEC4: as_s16() = thatref.as_vec4().x(); break;
+                        case type::MAT4: as_s16() = thatref.as_mat4().at(0, 0); break;
+                        case type::POINTER: as_s16() = static_cast<int16_t>(reinterpret_cast<uintptr_t>(thatref.as_ptr())); break;
+                        case type::CLASS: as_s16() = static_cast<int16_t>(type::CLASS); break;
+                        case type::FUNC: as_s16() = static_cast<int16_t>(type::FUNC); break;
+                        case type::ARRAY: as_s16() = thatref.as_array().empty() ? 0 : thatref.as_array()[0].cast_to_s16(); break;
+                        case type::OBJECT: as_s16() = thatref.as_object().empty() ? 0 : thatref.as_object().begin()->second.cast_to_s16(); break;
+                        case type::STRING: as_s16() = thatref.as_string().empty() ? 0 : thatref.as_string().at(0); break;
+                        case type::WSTRING: as_s16() = thatref.as_wstring().empty() ? 0 : thatref.as_wstring().at(0); break;
+                        case type::UNDEFINED: as_s16() = 0; break;
+                        case type::VALBOX: as_s16() = static_cast<int16_t>(type::VALBOX); break;
+                        default: break;
+                    }
+                    break;
+                case type::U16:
+                    switch(thatt) {
+                        case type::BOOL: as_u16() = thatref.as_bool(); break;
+                        case type::CHAR: as_u16() = thatref.as_char(); break;
+                        case type::S8: as_u16() = thatref.as_s8(); break;
+                        case type::U8: as_u16() = thatref.as_u8(); break;
+                        case type::S16: as_u16() = thatref.as_s16(); break;
+                        case type::U16: as_u16() = thatref.as_u16(); break;
+                        case type::WCHAR: as_u16() = thatref.as_wchar(); break;
+                        case type::S32: as_u16() = thatref.as_s32(); break;
+                        case type::U32: as_u16() = thatref.as_u32(); break;
+                        case type::S64: as_u16() = thatref.as_s64(); break;
+                        case type::U64: as_u16() = thatref.as_u64(); break;
+                        case type::FLOAT: as_u16() = thatref.as_float(); break;
+                        case type::DOUBLE: as_u16() = thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_u16() = thatref.as_long_double(); break;
+                        case type::VEC4: as_u16() = thatref.as_vec4().x(); break;
+                        case type::MAT4: as_u16() = thatref.as_mat4().at(0, 0); break;
+                        case type::POINTER: as_u16() = static_cast<uint16_t>(reinterpret_cast<uintptr_t>(thatref.as_ptr())); break;
+                        case type::CLASS: as_u16() = static_cast<uint16_t>(type::CLASS); break;
+                        case type::FUNC: as_u16() = static_cast<uint16_t>(type::FUNC); break;
+                        case type::ARRAY: as_u16() = thatref.as_array().empty() ? 0 : thatref.as_array()[0].cast_to_u16(); break;
+                        case type::OBJECT: as_u16() = thatref.as_object().empty() ? 0 : thatref.as_object().begin()->second.cast_to_u16(); break;
+                        case type::STRING: as_u16() = thatref.as_string().empty() ? 0 : thatref.as_string().at(0); break;
+                        case type::WSTRING: as_u16() = thatref.as_wstring().empty() ? 0 : thatref.as_wstring().at(0); break;
+                        case type::UNDEFINED: as_u16() = 0; break;
+                        case type::VALBOX: as_u16() = static_cast<uint16_t>(type::VALBOX); break;
+                        default: break;
+                    }
+                    break;
+                case type::WCHAR:
+                    switch(thatt) {
+                        case type::BOOL:        as_wchar() = thatref.as_bool(); break;
+                        case type::CHAR:        as_wchar() = thatref.as_char(); break;
+                        case type::S8:          as_wchar() = thatref.as_s8(); break;
+                        case type::U8:          as_wchar() = thatref.as_u8(); break;
+                        case type::S16:         as_wchar() = thatref.as_s16(); break;
+                        case type::U16:         as_wchar() = thatref.as_u16(); break;
+                        case type::WCHAR:       as_wchar() = thatref.as_wchar(); break;
+                        case type::S32:         as_wchar() = thatref.as_s32(); break;
+                        case type::U32:         as_wchar() = thatref.as_u32(); break;
+                        case type::S64:         as_wchar() = thatref.as_s64(); break;
+                        case type::U64:         as_wchar() = thatref.as_u64(); break;
+                        case type::FLOAT:       as_wchar() = thatref.as_float(); break;
+                        case type::DOUBLE:      as_wchar() = thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_wchar() = thatref.as_long_double(); break;
+                        case type::VEC4:        as_wchar() = thatref.as_vec4().x(); break;
+                        case type::MAT4:        as_wchar() = thatref.as_mat4().at(0, 0); break;
+                        case type::POINTER:     as_wchar() = static_cast<wchar_t>(reinterpret_cast<uintptr_t>(thatref.as_ptr())); break;
+                        case type::CLASS:       as_wchar() = static_cast<wchar_t>(type::CLASS); break;
+                        case type::FUNC:        as_wchar() = static_cast<wchar_t>(type::FUNC); break;
+                        case type::ARRAY:       as_wchar() = thatref.as_array().empty() ? 0 : thatref.as_array()[0].cast_to_wchar(); break;
+                        case type::OBJECT:      as_wchar() = thatref.as_object().empty() ? 0 : thatref.as_object().begin()->second.cast_to_wchar(); break;
+                        case type::STRING:      as_wchar() = thatref.as_string().empty() ? 0 : thatref.as_string().at(0); break;
+                        case type::WSTRING:     as_wchar() = thatref.as_wstring().empty() ? 0 : thatref.as_wstring().at(0); break;
+                        case type::UNDEFINED:   as_wchar() = 0; break;
+                        case type::VALBOX:      as_wchar() = static_cast<wchar_t>(type::VALBOX); break;
+                        default: break;
+                    }
+                    break;
+                case type::S32:
+                    switch(thatt) {
+                        case type::BOOL:        as_s32() = thatref.as_bool(); break;
+                        case type::CHAR:        as_s32() = thatref.as_char(); break;
+                        case type::S8:          as_s32() = thatref.as_s8(); break;
+                        case type::U8:          as_s32() = thatref.as_u8(); break;
+                        case type::S16:         as_s32() = thatref.as_s16(); break;
+                        case type::U16:         as_s32() = thatref.as_u16(); break;
+                        case type::WCHAR:       as_s32() = thatref.as_wchar(); break;
+                        case type::S32:         as_s32() = thatref.as_s32(); break;
+                        case type::U32:         as_s32() = thatref.as_u32(); break;
+                        case type::S64:         as_s32() = thatref.as_s64(); break;
+                        case type::U64:         as_s32() = thatref.as_u64(); break;
+                        case type::FLOAT:       as_s32() = thatref.as_float(); break;
+                        case type::DOUBLE:      as_s32() = thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_s32() = thatref.as_long_double(); break;
+                        case type::VEC4:        as_s32() = thatref.as_vec4().x(); break;
+                        case type::MAT4:        as_s32() = thatref.as_mat4().at(0, 0); break;
+                        case type::POINTER:     as_s32() = static_cast<int32_t>(reinterpret_cast<uintptr_t>(thatref.as_ptr())); break;
+                        case type::CLASS:       as_s32() = static_cast<int32_t>(type::CLASS); break;
+                        case type::FUNC:        as_s32() = static_cast<int32_t>(type::FUNC); break;
+                        case type::ARRAY:       as_s32() = thatref.as_array().empty() ? 0 : thatref.as_array()[0].cast_to_s32(); break;
+                        case type::OBJECT:      as_s32() = thatref.as_object().empty() ? 0 : thatref.as_object().begin()->second.cast_to_s32(); break;
+                        case type::STRING:      as_s32() = thatref.as_string().empty() ? 0 : thatref.as_string().at(0); break;
+                        case type::WSTRING:     as_s32() = thatref.as_wstring().empty() ? 0 : thatref.as_wstring().at(0); break;
+                        case type::UNDEFINED:   as_s32() = 0; break;
+                        case type::VALBOX:      as_s32() = static_cast<int32_t>(type::VALBOX); break;
+                        default: break;
+                    }
+                    break;
+                case type::U32:
+                    switch(thatt) {
+                        case type::BOOL:        as_u32() = thatref.as_bool(); break;
+                        case type::CHAR:        as_u32() = thatref.as_char(); break;
+                        case type::S8:          as_u32() = thatref.as_s8(); break;
+                        case type::U8:          as_u32() = thatref.as_u8(); break;
+                        case type::S16:         as_u32() = thatref.as_s16(); break;
+                        case type::U16:         as_u32() = thatref.as_u16(); break;
+                        case type::WCHAR:       as_u32() = thatref.as_wchar(); break;
+                        case type::S32:         as_u32() = thatref.as_s32(); break;
+                        case type::U32:         as_u32() = thatref.as_u32(); break;
+                        case type::S64:         as_u32() = thatref.as_s64(); break;
+                        case type::U64:         as_u32() = thatref.as_u64(); break;
+                        case type::FLOAT:       as_u32() = thatref.as_float(); break;
+                        case type::DOUBLE:      as_u32() = thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_u32() = thatref.as_long_double(); break;
+                        case type::VEC4:        as_u32() = thatref.as_vec4().x(); break;
+                        case type::MAT4:        as_u32() = thatref.as_mat4().at(0, 0); break;
+                        case type::POINTER:     as_u32() = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(thatref.as_ptr())); break;
+                        case type::CLASS:       as_u32() = static_cast<uint32_t>(type::CLASS); break;
+                        case type::FUNC:        as_u32() = static_cast<uint32_t>(type::FUNC); break;
+                        case type::ARRAY:       as_u32() = thatref.as_array().empty() ? 0 : thatref.as_array()[0].cast_to_u32(); break;
+                        case type::OBJECT:      as_u32() = thatref.as_object().empty() ? 0 : thatref.as_object().begin()->second.cast_to_u32(); break;
+                        case type::STRING:      as_u32() = thatref.as_string().empty() ? 0 : thatref.as_string().at(0); break;
+                        case type::WSTRING:     as_u32() = thatref.as_wstring().empty() ? 0 : thatref.as_wstring().at(0); break;
+                        case type::UNDEFINED:   as_u32() = 0; break;
+                        case type::VALBOX:      as_u32() = static_cast<uint32_t>(type::VALBOX); break;
+                        default: break;
+                    }
+                    break;
+                case type::S64:
+                    switch(thatt) {
+                        case type::BOOL:        as_s64() = thatref.as_bool(); break;
+                        case type::CHAR:        as_s64() = thatref.as_char(); break;
+                        case type::S8:          as_s64() = thatref.as_s8(); break;
+                        case type::U8:          as_s64() = thatref.as_u8(); break;
+                        case type::S16:         as_s64() = thatref.as_s16(); break;
+                        case type::U16:         as_s64() = thatref.as_u16(); break;
+                        case type::WCHAR:       as_s64() = thatref.as_wchar(); break;
+                        case type::S32:         as_s64() = thatref.as_s32(); break;
+                        case type::U32:         as_s64() = thatref.as_u32(); break;
+                        case type::S64:         as_s64() = thatref.as_s64(); break;
+                        case type::U64:         as_s64() = thatref.as_u64(); break;
+                        case type::FLOAT:       as_s64() = thatref.as_float(); break;
+                        case type::DOUBLE:      as_s64() = thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_s64() = thatref.as_long_double(); break;
+                        case type::VEC4:        as_s64() = thatref.as_vec4().x(); break;
+                        case type::MAT4:        as_s64() = thatref.as_mat4().at(0, 0); break;
+                        case type::POINTER:     as_s64() = static_cast<int64_t>(reinterpret_cast<uintptr_t>(thatref.as_ptr())); break;
+                        case type::CLASS:       as_s64() = static_cast<int64_t>(type::CLASS); break;
+                        case type::FUNC:        as_s64() = static_cast<int64_t>(type::FUNC); break;
+                        case type::ARRAY:       as_s64() = thatref.as_array().empty() ? 0 : thatref.as_array()[0].cast_to_s64(); break;
+                        case type::OBJECT:      as_s64() = thatref.as_object().empty() ? 0 : thatref.as_object().begin()->second.cast_to_s64(); break;
+                        case type::STRING:      as_s64() = thatref.as_string().empty() ? 0 : thatref.as_string().at(0); break;
+                        case type::WSTRING:     as_s64() = thatref.as_wstring().empty() ? 0 : thatref.as_wstring().at(0); break;
+                        case type::UNDEFINED:   as_s64() = 0; break;
+                        case type::VALBOX:      as_s64() = static_cast<int64_t>(type::VALBOX); break;
+                        default: break;
+                    }
+                    break;
+                case type::U64:
+                    switch(thatt) {
+                        case type::BOOL:        as_u64() = thatref.as_bool(); break;
+                        case type::CHAR:        as_u64() = thatref.as_char(); break;
+                        case type::S8:          as_u64() = thatref.as_s8(); break;
+                        case type::U8:          as_u64() = thatref.as_u8(); break;
+                        case type::S16:         as_u64() = thatref.as_s16(); break;
+                        case type::U16:         as_u64() = thatref.as_u16(); break;
+                        case type::WCHAR:       as_u64() = thatref.as_wchar(); break;
+                        case type::S32:         as_u64() = thatref.as_s32(); break;
+                        case type::U32:         as_u64() = thatref.as_u32(); break;
+                        case type::S64:         as_u64() = thatref.as_s64(); break;
+                        case type::U64:         as_u64() = thatref.as_u64(); break;
+                        case type::FLOAT:       as_u64() = thatref.as_float(); break;
+                        case type::DOUBLE:      as_u64() = thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_u64() = thatref.as_long_double(); break;
+                        case type::VEC4:        as_u64() = thatref.as_vec4().x(); break;
+                        case type::MAT4:        as_u64() = thatref.as_mat4().at(0, 0); break;
+                        case type::POINTER:     as_u64() = reinterpret_cast<uintptr_t>(thatref.as_ptr()); break;
+                        case type::CLASS:       as_u64() = static_cast<uint64_t>(type::CLASS); break;
+                        case type::FUNC:        as_u64() = static_cast<uint64_t>(type::FUNC); break;
+                        case type::ARRAY:       as_u64() = thatref.as_array().empty() ? 0 : thatref.as_array()[0].cast_to_u64(); break;
+                        case type::OBJECT:      as_u64() = thatref.as_object().empty() ? 0 : thatref.as_object().begin()->second.cast_to_u64(); break;
+                        case type::STRING:      as_u64() = thatref.as_string().empty() ? 0 : thatref.as_string().at(0); break;
+                        case type::WSTRING:     as_u64() = thatref.as_wstring().empty() ? 0 : thatref.as_wstring().at(0); break;
+                        case type::UNDEFINED:   as_u64() = 0; break;
+                        case type::VALBOX:      as_u64() = static_cast<uint64_t>(type::VALBOX); break;
+                        default: break;
+                    }
+                    break;
+                case type::FLOAT:
+                    switch(thatt) {
+                        case type::BOOL:        as_float() = thatref.as_bool(); break;
+                        case type::CHAR:        as_float() = thatref.as_char(); break;
+                        case type::S8:          as_float() = thatref.as_s8(); break;
+                        case type::U8:          as_float() = thatref.as_u8(); break;
+                        case type::S16:         as_float() = thatref.as_s16(); break;
+                        case type::U16:         as_float() = thatref.as_u16(); break;
+                        case type::WCHAR:       as_float() = thatref.as_wchar(); break;
+                        case type::S32:         as_float() = thatref.as_s32(); break;
+                        case type::U32:         as_float() = thatref.as_u32(); break;
+                        case type::S64:         as_float() = thatref.as_s64(); break;
+                        case type::U64:         as_float() = thatref.as_u64(); break;
+                        case type::FLOAT:       as_float() = thatref.as_float(); break;
+                        case type::DOUBLE:      as_float() = thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_float() = thatref.as_long_double(); break;
+                        case type::VEC4:        as_float() = thatref.as_vec4().x(); break;
+                        case type::MAT4:        as_float() = thatref.as_mat4().at(0, 0); break;
+                        case type::POINTER:     as_float() = reinterpret_cast<uintptr_t>(thatref.as_ptr()); break;
+                        case type::CLASS:       as_float() = static_cast<float>(type::CLASS); break;
+                        case type::FUNC:        as_float() = static_cast<float>(type::FUNC); break;
+                        case type::ARRAY:       as_float() = thatref.as_array().empty() ? 0 : thatref.as_array()[0].cast_to_float(); break;
+                        case type::OBJECT:      as_float() = thatref.as_object().empty() ? 0 : thatref.as_object().begin()->second.cast_to_float(); break;
+                        case type::STRING:      as_float() = thatref.as_string().empty() ? 0 : thatref.as_string().at(0); break;
+                        case type::WSTRING:     as_float() = thatref.as_wstring().empty() ? 0 : thatref.as_wstring().at(0); break;
+                        case type::UNDEFINED:   as_float() = 0; break;
+                        case type::VALBOX:      as_float() = static_cast<float>(type::VALBOX); break;
+                        default: break;
+                    }
+                    break;
+                case type::DOUBLE:
+                    switch(thatt) {
+                        case type::BOOL:        as_double() = thatref.as_bool(); break;
+                        case type::CHAR:        as_double() = thatref.as_char(); break;
+                        case type::S8:          as_double() = thatref.as_s8(); break;
+                        case type::U8:          as_double() = thatref.as_u8(); break;
+                        case type::S16:         as_double() = thatref.as_s16(); break;
+                        case type::U16:         as_double() = thatref.as_u16(); break;
+                        case type::WCHAR:       as_double() = thatref.as_wchar(); break;
+                        case type::S32:         as_double() = thatref.as_s32(); break;
+                        case type::U32:         as_double() = thatref.as_u32(); break;
+                        case type::S64:         as_double() = thatref.as_s64(); break;
+                        case type::U64:         as_double() = thatref.as_u64(); break;
+                        case type::FLOAT:       as_double() = thatref.as_float(); break;
+                        case type::DOUBLE:      as_double() = thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_double() = thatref.as_long_double(); break;
+                        case type::VEC4:        as_double() = thatref.as_vec4().x(); break;
+                        case type::MAT4:        as_double() = thatref.as_mat4().at(0, 0); break;
+                        case type::POINTER:     as_double() = reinterpret_cast<uintptr_t>(thatref.as_ptr()); break;
+                        case type::CLASS:       as_double() = static_cast<double>(type::CLASS); break;
+                        case type::FUNC:        as_double() = static_cast<double>(type::FUNC); break;
+                        case type::ARRAY:       as_double() = thatref.as_array().empty() ? 0 : thatref.as_array()[0].cast_to_double(); break;
+                        case type::OBJECT:      as_double() = thatref.as_object().empty() ? 0 : thatref.as_object().begin()->second.cast_to_double(); break;
+                        case type::STRING:      as_double() = thatref.as_string().empty() ? 0 : thatref.as_string().at(0); break;
+                        case type::WSTRING:     as_double() = thatref.as_wstring().empty() ? 0 : thatref.as_wstring().at(0); break;
+                        case type::UNDEFINED:   as_double() = 0; break;
+                        case type::VALBOX:      as_double() = static_cast<double>(type::VALBOX); break;
+                        default: break;
+                    }
+                    break;
+                case type::LONG_DOUBLE:
+                    switch(thatt) {
+                        case type::BOOL:        as_long_double() = thatref.as_bool(); break;
+                        case type::CHAR:        as_long_double() = thatref.as_char(); break;
+                        case type::S8:          as_long_double() = thatref.as_s8(); break;
+                        case type::U8:          as_long_double() = thatref.as_u8(); break;
+                        case type::S16:         as_long_double() = thatref.as_s16(); break;
+                        case type::U16:         as_long_double() = thatref.as_u16(); break;
+                        case type::WCHAR:       as_long_double() = thatref.as_wchar(); break;
+                        case type::S32:         as_long_double() = thatref.as_s32(); break;
+                        case type::U32:         as_long_double() = thatref.as_u32(); break;
+                        case type::S64:         as_long_double() = thatref.as_s64(); break;
+                        case type::U64:         as_long_double() = thatref.as_u64(); break;
+                        case type::FLOAT:       as_long_double() = thatref.as_float(); break;
+                        case type::DOUBLE:      as_long_double() = thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_long_double() = thatref.as_long_double(); break;
+                        case type::VEC4:        as_long_double() = thatref.as_vec4().x(); break;
+                        case type::MAT4:        as_long_double() = thatref.as_mat4().at(0, 0); break;
+                        case type::POINTER:     as_long_double() = reinterpret_cast<uintptr_t>(thatref.as_ptr()); break;
+                        case type::CLASS:       as_long_double() = static_cast<long double>(type::CLASS); break;
+                        case type::FUNC:        as_long_double() = static_cast<long double>(type::FUNC); break;
+                        case type::ARRAY:       as_long_double() = thatref.as_array().empty() ? 0 : thatref.as_array()[0].cast_to_long_double(); break;
+                        case type::OBJECT:      as_long_double() = thatref.as_object().empty() ? 0 : thatref.as_object().begin()->second.cast_to_long_double(); break;
+                        case type::STRING:      as_long_double() = thatref.as_string().empty() ? 0 : thatref.as_string().at(0); break;
+                        case type::WSTRING:     as_long_double() = thatref.as_wstring().empty() ? 0 : thatref.as_wstring().at(0); break;
+                        case type::UNDEFINED:   as_long_double() = 0; break;
+                        case type::VALBOX:      as_long_double() = static_cast<long double>(type::VALBOX); break;
+                        default: break;
+                    }
+                    break;
+                case type::VEC4:
+                    switch(thatt) {
+                        case type::BOOL:        as_vec4() = thatref.as_bool(); break;
+                        case type::CHAR:        as_vec4() = thatref.as_char(); break;
+                        case type::S8:          as_vec4() = thatref.as_s8(); break;
+                        case type::U8:          as_vec4() = thatref.as_u8(); break;
+                        case type::S16:         as_vec4() = thatref.as_s16(); break;
+                        case type::U16:         as_vec4() = thatref.as_u16(); break;
+                        case type::WCHAR:       as_vec4() = thatref.as_wchar(); break;
+                        case type::S32:         as_vec4() = thatref.as_s32(); break;
+                        case type::U32:         as_vec4() = thatref.as_u32(); break;
+                        case type::S64:         as_vec4() = thatref.as_s64(); break;
+                        case type::U64:         as_vec4() = thatref.as_u64(); break;
+                        case type::FLOAT:       as_vec4() = thatref.as_float(); break;
+                        case type::DOUBLE:      as_vec4() = thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_vec4() = thatref.as_long_double(); break;
+                        case type::VEC4:        as_vec4() = thatref.as_vec4().x(); break;
+                        case type::MAT4:        as_vec4() = thatref.as_mat4().at(0, 0); break;
+                        case type::POINTER:     as_vec4() = reinterpret_cast<uintptr_t>(thatref.as_ptr()); break;
+                        case type::CLASS:       as_vec4() = static_cast<long double>(type::CLASS); break;
+                        case type::FUNC:        as_vec4() = static_cast<long double>(type::FUNC); break;
+                        case type::ARRAY:
+                            if(thatref.as_array().size() == 4) {
+                                thisref.as_vec4().x() = thatref.as_array().at(0).cast_to_long_double();
+                                thisref.as_vec4().y() = thatref.as_array().at(1).cast_to_long_double();
+                                thisref.as_vec4().z() = thatref.as_array().at(2).cast_to_long_double();
+                                thisref.as_vec4().w() = thatref.as_array().at(3).cast_to_long_double();
                             }
-                        } else if(that_ref.is_string_ref()) {
-                            this_ref.deref_ptr<std::string>() = that_ref.as_string();
-                        } else if(that_ref.is_wstring_ref()) {
-                            this_ref.deref_ptr<std::string>() = scfx::str_util::to_utf8(that_ref.as_wstring());
-                        } else if(that_ref.is_char_ref()) {
-                            std::string &thisstr{this_ref.deref_ptr<std::string>()};
-                            thisstr.resize(1);
-                            thisstr[0] = that_ref.as_char();
-                        } else if(that_ref.is_wchar_ref()) {
-                            std::string &thisstr{this_ref.deref_ptr<std::string>()};
-                            std::string that_wstr{};
-                            that_wstr.resize(1);
-                            that_wstr[0] = that_ref.as_wchar();
-                            thisstr = scfx::str_util::to_utf8(that_wstr);
-                        } else if(that_ref.is_any_signed_int_number()) {
-                            std::string &thisstr{this_ref.deref_ptr<std::string>()};
-                            thisstr = scfx::str_util::itoa(that_ref.cast_to_s64());
-                        } else if(that_ref.is_any_unsigned_int_number()) {
-                            std::string &thisstr{this_ref.deref_ptr<std::string>()};
-                            thisstr = scfx::str_util::utoa(that_ref.cast_to_u64());
-                        } else if(that_ref.is_any_fp_number()) {
-                            std::string &thisstr{this_ref.deref_ptr<std::string>()};
-                            thisstr = scfx::str_util::ftoa(that_ref.cast_to_long_double());
-                        }
-                        break;
-                    case type::WSTRING:
-                        if(that_ref.is_array_ref()) {
-                            std::wstring &thiswstr{this_ref.deref_ptr<std::wstring>()};
-                            thiswstr.clear();
-                            for(auto &&itm: that_ref.as_array()) {
-                                thiswstr.push_back(itm.cast_to_wchar());
+                            break;
+                        case type::OBJECT:
+                            thisref.as_vec4().x() = thatref.as_object().at("x").cast_to_long_double();
+                            thisref.as_vec4().y() = thatref.as_object().at("y").cast_to_long_double();
+                            thisref.as_vec4().z() = thatref.as_object().at("z").cast_to_long_double();
+                            thisref.as_vec4().w() = thatref.as_object().at("w").cast_to_long_double();
+                            break;
+                        case type::STRING:      as_vec4() = thatref.as_string().empty() ? 0 : thatref.as_string().at(0); break;
+                        case type::WSTRING:     as_vec4() = thatref.as_wstring().empty() ? 0 : thatref.as_wstring().at(0); break;
+                        case type::UNDEFINED:   as_vec4() = vec4_t{}; break;
+                        case type::VALBOX:      as_vec4() = static_cast<long double>(type::VALBOX); break;
+                        default: break;
+                    }
+                    break;
+                case type::MAT4:
+                    switch(thatt) {
+                        case type::BOOL:        as_mat4() = thatref.as_bool(); break;
+                        case type::CHAR:        as_mat4() = thatref.as_char(); break;
+                        case type::S8:          as_mat4() = thatref.as_s8(); break;
+                        case type::U8:          as_mat4() = thatref.as_u8(); break;
+                        case type::S16:         as_mat4() = thatref.as_s16(); break;
+                        case type::U16:         as_mat4() = thatref.as_u16(); break;
+                        case type::WCHAR:       as_mat4() = thatref.as_wchar(); break;
+                        case type::S32:         as_mat4() = thatref.as_s32(); break;
+                        case type::U32:         as_mat4() = thatref.as_u32(); break;
+                        case type::S64:         as_mat4() = thatref.as_s64(); break;
+                        case type::U64:         as_mat4() = thatref.as_u64(); break;
+                        case type::FLOAT:       as_mat4() = thatref.as_float(); break;
+                        case type::DOUBLE:      as_mat4() = thatref.as_double(); break;
+                        case type::LONG_DOUBLE: as_mat4() = thatref.as_long_double(); break;
+                        case type::VEC4:        as_mat4() = thatref.as_vec4().x(); break;
+                        case type::MAT4:        as_mat4() = thatref.as_mat4().at(0, 0); break;
+                        case type::POINTER:     as_mat4() = reinterpret_cast<uintptr_t>(thatref.as_ptr()); break;
+                        case type::CLASS:       as_mat4() = static_cast<long double>(type::CLASS); break;
+                        case type::FUNC:        as_mat4() = static_cast<long double>(type::FUNC); break;
+                        case type::ARRAY:
+                            if(thatref.as_array().size() == 16) {
+                                for(int i{}; i < 16; ++i) {
+                                    thisref.as_mat4().at_flat_index(i) = thatref.as_array().at(i).cast_to_long_double();
+                                }
                             }
-                        } else if(that_ref.is_string_ref()) {
-                            std::wstring &thiswstr{this_ref.deref_ptr<std::wstring>()};
-                            thiswstr = scfx::str_util::from_utf8(that_ref.as_string());
-                        } else if(that_ref.is_wstring_ref()) {
-                            this_ref.deref_ptr<std::wstring>() = that_ref.as_wstring();
-                        } else if(that_ref.is_char_ref()) {
-                            std::wstring &thisstr{this_ref.deref_ptr<std::wstring>()};
-                            thisstr.resize(1);
-                            thisstr[0] = that_ref.as_char();
-                        } else if(that_ref.is_wchar_ref()) {
-                            std::wstring &thisstr{this_ref.deref_ptr<std::wstring>()};
-                            thisstr.resize(1);
-                            thisstr[0] = that_ref.as_wchar();
-                        } else if(that_ref.is_any_signed_int_number()) {
-                            std::wstring &thisstr{this_ref.deref_ptr<std::wstring>()};
-                            thisstr = scfx::str_util::from_utf8(scfx::str_util::itoa(that_ref.cast_to_s64()));
-                        } else if(that_ref.is_any_unsigned_int_number()) {
-                            std::wstring &thisstr{this_ref.deref_ptr<std::wstring>()};
-                            thisstr = scfx::str_util::from_utf8(scfx::str_util::utoa(that_ref.cast_to_u64()));
-                        } else if(that_ref.is_any_fp_number()) {
-                            std::wstring &thisstr{this_ref.deref_ptr<std::wstring>()};
-                            thisstr = scfx::str_util::from_utf8(scfx::str_util::ftoa(that_ref.cast_to_long_double()));
-                        }
-                        break;
-                    case type::ARRAY:
-                        if(that_ref.is_array_ref()) {
-                            this_ref.deref_ptr<array_t>() = that_ref.as_array();
-                        } else if(that_ref.is_string_ref()) {
-                            array_t &thisarr{this_ref.deref_ptr<array_t>()};
-                            thisarr.clear();
-                            for(auto &&c: that_ref.as_string()) {
-                                thisarr.push_back(c);
+                            break;
+                        case type::OBJECT: {
+                                for(int i{}; i < 16; ++i) {
+                                    thisref.as_mat4().at_flat_index(i) = thatref.as_object().at("mat4").as_array().at(i).cast_to_long_double();
+                                }
                             }
-                        } else if(that_ref.is_wstring_ref()) {
-                            array_t &thisarr{this_ref.deref_ptr<array_t>()};
-                            thisarr.clear();
-                            for(auto &&c: that_ref.as_wstring()) {
-                                thisarr.push_back(c);
+                            break;
+                        case type::STRING:      as_mat4() = thatref.as_string().empty() ? 0 : thatref.as_string().at(0); break;
+                        case type::WSTRING:     as_mat4() = thatref.as_wstring().empty() ? 0 : thatref.as_wstring().at(0); break;
+                        case type::UNDEFINED:   as_mat4() = mat4_t{}; break;
+                        case type::VALBOX:      as_mat4() = static_cast<long double>(type::VALBOX); break;
+                        default: break;
+                    }
+                    break;
+                case type::POINTER: throw std::runtime_error{"inappropriate value"};
+                    break;
+                case type::CLASS:
+                    switch(thatt) {
+                        case type::BOOL:        throw std::runtime_error{"inappropriate value"};
+                        case type::CHAR:        throw std::runtime_error{"inappropriate value"};
+                        case type::S8:          throw std::runtime_error{"inappropriate value"};
+                        case type::U8:          throw std::runtime_error{"inappropriate value"};
+                        case type::S16:         throw std::runtime_error{"inappropriate value"};
+                        case type::U16:         throw std::runtime_error{"inappropriate value"};
+                        case type::WCHAR:       throw std::runtime_error{"inappropriate value"};
+                        case type::S32:         throw std::runtime_error{"inappropriate value"};
+                        case type::U32:         throw std::runtime_error{"inappropriate value"};
+                        case type::S64:         throw std::runtime_error{"inappropriate value"};
+                        case type::U64:         throw std::runtime_error{"inappropriate value"};
+                        case type::FLOAT:       throw std::runtime_error{"inappropriate value"};
+                        case type::DOUBLE:      throw std::runtime_error{"inappropriate value"};
+                        case type::LONG_DOUBLE: throw std::runtime_error{"inappropriate value"};
+                        case type::VEC4:        throw std::runtime_error{"inappropriate value"};
+                        case type::MAT4:        throw std::runtime_error{"inappropriate value"};
+                        case type::POINTER:     throw std::runtime_error{"inappropriate value"};
+                        case type::CLASS:
+                            if(thisref.box_->class_ == thatref.box_->class_) {
+                                thisref.box_->value_ = thatref.box_->value_;
                             }
-                        }
-                        break;
-                    case type::OBJECT:
-                        if(that_ref.is_object_ref()) {
-                            this_ref.deref_ptr<object_t>() = that_ref.as_object();
-                        }
-                        break;
-                    default:
-                        throw std::runtime_error{"operation not applicable"};
-                }
-            } else {
-                switch(val_or_pointed_type()) {
-                    case type::CHAR: this_ref.as_char() = that_ref.cast_to_char(); break;
-                    case type::U8: this_ref.as_u8() = that_ref.cast_to_u8(); break;
-                    case type::S8: this_ref.as_s8() = that_ref.cast_to_s8(); break;
-                    case type::U16: this_ref.as_u16() = that_ref.cast_to_u16(); break;
-                    case type::S16: this_ref.as_s16() = that_ref.cast_to_s16(); break;
-                    case type::U32: this_ref.as_u32() = that_ref.cast_to_u32(); break;
-                    case type::S32: this_ref.as_s32() = that_ref.cast_to_s32(); break;
-                    case type::U64: this_ref.as_u64() = that_ref.cast_to_u64(); break;
-                    case type::S64: this_ref.as_s64() = that_ref.cast_to_s64(); break;
-                    case type::FLOAT: this_ref.as_float() = that_ref.cast_to_float(); break;
-                    case type::DOUBLE: this_ref.as_double() = that_ref.cast_to_double(); break;
-                    case type::LONG_DOUBLE: this_ref.as_long_double() = that_ref.cast_to_long_double(); break;
-                    case type::BOOL: this_ref.as_bool() = that_ref.cast_to_bool(); break;
-                    case type::WCHAR: this_ref.as_wchar() = that_ref.cast_to_wchar(); break;
-                    case type::STRING:
-                        if(that_ref.is_array_ref()) {
-                            std::string &thisstr{this_ref.as_string()};
-                            thisstr.clear();
-                            for(auto &&itm: that_ref.as_array()) {
-                                thisstr.push_back(itm.cast_to_char());
+                            break;
+                        case type::FUNC:        throw std::runtime_error{"inappropriate value"};
+                        case type::ARRAY:       throw std::runtime_error{"inappropriate value"};
+                        case type::OBJECT:      throw std::runtime_error{"inappropriate value"};
+                        case type::STRING:      throw std::runtime_error{"inappropriate value"};
+                        case type::WSTRING:     throw std::runtime_error{"inappropriate value"};
+                        case type::UNDEFINED:   throw std::runtime_error{"inappropriate value"};
+                        case type::VALBOX:      throw std::runtime_error{"inappropriate value"};
+                        default: break;
+                    }
+                    break;
+                case type::FUNC: throw std::runtime_error{"inappropriate value"};
+                case type::ARRAY:
+                    switch(thatt) {
+                        case type::BOOL:
+                        case type::CHAR:
+                        case type::S8:
+                        case type::U8:
+                        case type::S16:
+                        case type::U16:
+                        case type::WCHAR:
+                        case type::S32:
+                        case type::U32:
+                        case type::S64:
+                        case type::U64:
+                        case type::FLOAT:
+                        case type::DOUBLE:
+                        case type::LONG_DOUBLE:
+                        case type::POINTER:
+                        case type::CLASS:
+                        case type::FUNC:
+                        case type::VALBOX:
+                        case type::OBJECT:
+                            thisref.as_array().clear();
+                            thisref.as_array().push_back(thatref.clone());
+                            break;
+                        case type::VEC4: {
+                                array_t &thisarr{thisref.as_array()};
+                                thisarr.clear();
+                                thisarr.push_back(thatref.as_vec4().x());
+                                thisarr.push_back(thatref.as_vec4().y());
+                                thisarr.push_back(thatref.as_vec4().z());
+                                thisarr.push_back(thatref.as_vec4().w());
                             }
-                        } else if(that_ref.is_string_ref()) {
-                            this_ref.as_string() = that_ref.as_string();
-                        } else if(that_ref.is_wstring_ref()) {
-                            this_ref.as_string() = scfx::str_util::to_utf8(that_ref.as_wstring());
-                        } else if(that_ref.is_char_ref()) {
-                            std::string &thisstr{this_ref.as_string()};
-                            thisstr.resize(1);
-                            thisstr[0] = that_ref.as_char();
-                        } else if(that_ref.is_wchar_ref()) {
-                            std::string &thisstr{as_string()};
-                            std::string that_wstr{};
-                            that_wstr.resize(1);
-                            that_wstr[0] = that_ref.as_wchar();
-                            thisstr = scfx::str_util::to_utf8(that_wstr);
-                        } else if(that_ref.is_any_signed_int_number()) {
-                            std::string &thisstr{this_ref.as_string()};
-                            thisstr = scfx::str_util::itoa(that_ref.cast_to_s64());
-                        } else if(that_ref.is_any_unsigned_int_number()) {
-                            std::string &thisstr{this_ref.as_string()};
-                            thisstr = scfx::str_util::utoa(that_ref.cast_to_u64());
-                        } else if(that_ref.is_any_fp_number()) {
-                            std::string &thisstr{this_ref.as_string()};
-                            thisstr = scfx::str_util::ftoa(that_ref.cast_to_long_double());
-                        }
-                        break;
-                    case type::WSTRING:
-                        if(that_ref.is_array_ref()) {
-                            std::wstring &thiswstr{this_ref.as_wstring()};
-                            thiswstr.clear();
-                            for(auto &&itm: that_ref.as_array()) {
-                                thiswstr.push_back(itm.cast_to_wchar());
+                            break;
+                        case type::MAT4:  {
+                                array_t &thisarr{thisref.as_array()};
+                                thisarr.clear();
+                                for(int i{}; i < 16; ++i) {
+                                    thisarr.push_back(thatref.as_mat4().at_flat_index(i));
+                                }
                             }
-                        } else if(that_ref.is_string_ref()) {
-                            std::wstring &thiswstr{this_ref.as_wstring()};
-                            thiswstr = scfx::str_util::from_utf8(that_ref.as_string());
-                        } else if(that_ref.is_wstring_ref()) {
-                            this_ref.box_->value_ = that_ref.box_->value_;
-                        } else if(that_ref.is_char_ref()) {
-                            std::wstring &thisstr{this_ref.as_wstring()};
-                            thisstr.resize(1);
-                            thisstr[0] = that_ref.as_char();
-                        } else if(that_ref.is_wchar_ref()) {
-                            std::wstring &thisstr{this_ref.as_wstring()};
-                            thisstr.resize(1);
-                            thisstr[0] = that_ref.as_wchar();
-                        } else if(that_ref.is_any_signed_int_number()) {
-                            std::wstring &thisstr{this_ref.as_wstring()};
-                            thisstr = scfx::str_util::from_utf8(scfx::str_util::itoa(that_ref.cast_to_s64()));
-                        } else if(that_ref.is_any_unsigned_int_number()) {
-                            std::wstring &thisstr{this_ref.as_wstring()};
-                            thisstr = scfx::str_util::from_utf8(scfx::str_util::utoa(that_ref.cast_to_u64()));
-                        } else if(that_ref.is_any_fp_number()) {
-                            std::wstring &thisstr{this_ref.as_wstring()};
-                            thisstr = scfx::str_util::from_utf8(scfx::str_util::ftoa(that_ref.cast_to_long_double()));
-                        }
-                        break;
-                    case type::CLASS: if(that_ref.is_class_ref()) {
-                            this_ref.box_->value_ = that_ref.box_->value_;
-                            this_ref.box_->class_ = that_ref.box_->class_;
-                        }
-                        break;
-                    case type::FUNC: if(that_ref.is_func_ref()) {
-                            this_ref.box_->value_ = that_ref.box_->value_;
-                        } break;
-                    case type::ARRAY:
-                        if(that_ref.is_array_ref()) {
-                            this_ref.box_->value_ = that_ref.box_->value_;
-                        } else if(that_ref.is_string_ref()) {
-                            array_t &thisarr{this_ref.as_array()};
-                            thisarr.clear();
-                            for(auto &&c: that_ref.as_string()) {
-                                thisarr.push_back(c);
+                            break;
+                        case type::ARRAY:
+                            thisref.box_->value_ = thatref.box_->value_;
+                            break;
+                        case type::STRING: {
+                                array_t &thisarr{thisref.as_array()};
+                                thisarr.clear();
+                                for(auto &&c: thatref.as_string()) {
+                                    thisarr.push_back(c);
+                                }
                             }
-                        } else if(that_ref.is_wstring_ref()) {
-                            array_t &thisarr{this_ref.as_array()};
-                            thisarr.clear();
-                            for(auto &&c: that_ref.as_wstring()) {
-                                thisarr.push_back(c);
+                            break;
+                        case type::WSTRING: {
+                                array_t &thisarr{thisref.as_array()};
+                                thisarr.clear();
+                                for(auto &&c: thatref.as_wstring()) {
+                                    thisarr.push_back(c);
+                                }
                             }
+                            break;
+                        case type::UNDEFINED: thisref.as_array().clear(); break;
+                        default: throw std::runtime_error{"inappropriate value"};
+                    }
+                    break;
+                case type::OBJECT:
+                    switch(thatt) {
+                        case type::BOOL: throw std::runtime_error{"inappropriate value"};
+                        case type::CHAR: throw std::runtime_error{"inappropriate value"};
+                        case type::S8: throw std::runtime_error{"inappropriate value"};
+                        case type::U8: throw std::runtime_error{"inappropriate value"};
+                        case type::S16: throw std::runtime_error{"inappropriate value"};
+                        case type::U16: throw std::runtime_error{"inappropriate value"};
+                        case type::WCHAR: throw std::runtime_error{"inappropriate value"};
+                        case type::S32: throw std::runtime_error{"inappropriate value"};
+                        case type::U32: throw std::runtime_error{"inappropriate value"};
+                        case type::S64: throw std::runtime_error{"inappropriate value"};
+                        case type::U64: throw std::runtime_error{"inappropriate value"};
+                        case type::FLOAT: throw std::runtime_error{"inappropriate value"};
+                        case type::DOUBLE: throw std::runtime_error{"inappropriate value"};
+                        case type::LONG_DOUBLE: throw std::runtime_error{"inappropriate value"};
+                        case type::VEC4:
+                            thisref.as_object().clear();
+                            thisref.as_object()["x"] = thatref.as_vec4().x();
+                            thisref.as_object()["y"] = thatref.as_vec4().y();
+                            thisref.as_object()["z"] = thatref.as_vec4().z();
+                            thisref.as_object()["w"] = thatref.as_vec4().w();
+                            break;
+                        case type::MAT4:
+                            thisref.as_object().clear();
+                            for(int i{}; i < 16; ++i) {
+                                thisref["mat4"][i].assign(thatref.as_mat4().at_flat_index(i));
+                            }
+                            break;
+                        case type::POINTER: throw std::runtime_error{"inappropriate value"};
+                        case type::CLASS: throw std::runtime_error{"inappropriate value"};
+                        case type::FUNC: throw std::runtime_error{"inappropriate value"};
+                        case type::STRING:
+                            thisref.from_json(scfx::json::deserialize(thatref.as_string()));
+                            break;
+                        case type::WSTRING:
+                            thisref.from_json(scfx::json::deserialize(thatref.as_wstring()));
+                            break;
+                        case type::UNDEFINED: thisref.as_object().clear(); break;
+                        case type::VALBOX: throw std::runtime_error{"inappropriate value"};
+                        case type::ARRAY: throw std::runtime_error{"inappropriate value"};
+                        case type::OBJECT: {
+                            for(auto &&p: thatref.as_object()) {
+                                thisref.as_object()[p.first] = p.second.clone();
+                            }
+                            break;
                         }
-                        break;
-                    case type::OBJECT:
-                        if(that_ref.is_object_ref()) {
-                            this_ref.as_object() = that_ref.as_object();
-                        }
-                        break;
-                    case type::UNDEFINED:
-                        this_ref.assign(that_ref);
-                        break;
-                    default:
-                        break;
-                }
+                        default: throw std::runtime_error{"inappropriate value"};
+                    }
+                    break;
+                case type::STRING:
+                    switch(thatt) {
+                        case type::BOOL: thisref.as_string() = thatref.as_bool() ? "true" : "false"; break;
+                        case type::CHAR: thisref.as_string().resize(1); thisref.as_string()[0] = thatref.as_char(); break;
+                        case type::S8: thisref.as_string() = str_util::itoa<std::string>(thatref.as_s8()); break;
+                        case type::U8: throw std::runtime_error{"inappropriate value"};
+                        case type::S16: thisref.as_string() = str_util::itoa<std::string>(thatref.as_s16()); break;
+                        case type::U16: throw std::runtime_error{"inappropriate value"};
+                        case type::WCHAR: throw std::runtime_error{"inappropriate value"};
+                        case type::S32: thisref.as_string() = str_util::itoa<std::string>(thatref.as_s32()); break;
+                        case type::U32: throw std::runtime_error{"inappropriate value"};
+                        case type::S64: thisref.as_string() = str_util::itoa<std::string>(thatref.as_s32()); break;
+                        case type::U64: throw std::runtime_error{"inappropriate value"};
+                        case type::FLOAT: thisref.as_string() = str_util::ftoa(thatref.as_float()); break;
+                        case type::DOUBLE: thisref.as_string() = str_util::ftoa(thatref.as_double()); break;
+                        case type::LONG_DOUBLE: thisref.as_string() = str_util::ftoa(thatref.as_long_double()); break;
+                        case type::VEC4: thisref.as_string() = thatref.cast_to_string(); break;
+                        case type::MAT4: thisref.as_string() = thatref.cast_to_string(); break;
+                        case type::POINTER: thisref.as_string() = thatref.cast_to_string(); break;
+                        case type::CLASS: thisref.as_string() = thatref.cast_to_string(); break;
+                        case type::FUNC: thisref.as_string() = thatref.cast_to_string(); break;
+                        case type::STRING: thisref.as_string() = thatref.as_string(); break;
+                        case type::WSTRING: thisref.as_string() = thatref.cast_to_string(); break;
+                        case type::UNDEFINED: thisref.as_string().clear(); break;
+                        case type::VALBOX: thisref.as_string() = thatref.cast_to_string(); break;
+                        case type::ARRAY: {
+                                std::string &thisstr{thisref.as_string()};
+                                thisstr.clear();
+                                for(auto &&itm: thatref.as_array()) {
+                                    thisstr.push_back(itm.cast_to_char());
+                                }
+                            }
+                            break;
+                        case type::OBJECT: thisref.as_string() = thatref.cast_to_string(); break;
+                        default: throw std::runtime_error{"inappropriate value"};
+                    }
+                    break;
+                case type::WSTRING:
+                    switch(thatt) {
+                        case type::BOOL: thisref.as_wstring() = thatref.as_bool() ? L"true" : L"false"; break;
+                        case type::CHAR: thisref.as_wstring().resize(1); thisref.as_string()[0] = thatref.as_char(); break;
+                        case type::S8: thisref.as_wstring() = str_util::itoa<std::wstring>(thatref.as_s8()); break;
+                        case type::U8: throw std::runtime_error{"inappropriate value"};
+                        case type::S16: thisref.as_wstring() = str_util::itoa<std::wstring>(thatref.as_s16()); break;
+                        case type::U16: throw std::runtime_error{"inappropriate value"};
+                        case type::WCHAR: throw std::runtime_error{"inappropriate value"};
+                        case type::S32: thisref.as_wstring() = str_util::itoa<std::wstring>(thatref.as_s32()); break;
+                        case type::U32: throw std::runtime_error{"inappropriate value"};
+                        case type::S64: thisref.as_wstring() = str_util::itoa<std::wstring>(thatref.as_s32()); break;
+                        case type::U64: throw std::runtime_error{"inappropriate value"};
+                        case type::FLOAT: thisref.as_wstring() = str_util::from_utf8(str_util::ftoa(thatref.as_float())); break;
+                        case type::DOUBLE: thisref.as_wstring() = str_util::from_utf8(str_util::ftoa(thatref.as_double())); break;
+                        case type::LONG_DOUBLE: thisref.as_wstring() = str_util::from_utf8(str_util::ftoa(thatref.as_long_double())); break;
+                        case type::VEC4: thisref.as_wstring() = thatref.cast_to_wstring(); break;
+                        case type::MAT4: thisref.as_wstring() = thatref.cast_to_wstring(); break;
+                        case type::POINTER: thisref.as_wstring() = thatref.cast_to_wstring(); break;
+                        case type::CLASS: thisref.as_wstring() = thatref.cast_to_wstring(); break;
+                        case type::FUNC: thisref.as_wstring() = thatref.cast_to_wstring(); break;
+                        case type::STRING: thisref.as_wstring() = thatref.cast_to_wstring(); break;
+                        case type::WSTRING: thisref.as_wstring() = thatref.as_wstring(); break;
+                        case type::UNDEFINED: thisref.as_wstring().clear(); break;
+                        case type::VALBOX: thisref.as_wstring() = thatref.cast_to_wstring(); break;
+                        case type::ARRAY: {
+                                std::wstring &thisstr{thisref.as_wstring()};
+                                thisstr.clear();
+                                for(auto &&itm: thatref.as_array()) {
+                                    thisstr.push_back(itm.cast_to_wchar());
+                                }
+                            }
+                            break;
+                        case type::OBJECT: thisref.as_wstring() = thatref.cast_to_wstring(); break;
+                        default: throw std::runtime_error{"inappropriate value"};
+                    }
+                    break;
+                case type::UNDEFINED:
+                    if(thatt != type::UNDEFINED) {
+                        *this = thatref.clone();
+                    }
+                    break;
+                case type::VALBOX:
+                    throw std::runtime_error{"inappropriate value"};
+                default:
+                    throw std::runtime_error{"inappropriate value"};
             }
             return *this;
         }
@@ -2733,15 +5847,7 @@ namespace scfx {
             if(ref.box_.get() == that_ref.box_.get()) {
                 return *this;
             }
-            if(!ref.box_) {
-                ref.box_ = std::make_shared<box_data>();
-            }
-            ref.box_->value_ = std::move(that_ref.box_->value_);
-            ref.box_->type_ = std::move(that_ref.box_->type_);
-            ref.box_->pointed_type_ = std::move(that_ref.box_->pointed_type_);
-            ref.box_->class_ = std::move(that_ref.box_->class_);
-            ref.box_->func_name_ = std::move(that_ref.box_->func_name_);
-            ref.box_->user_func_ = std::move(that_ref.box_->user_func_);
+            ref.box_ = std::move(that_ref.box_);
             ref.pointed_box_ = std::move(that_ref.pointed_box_);
             return *this;
         }
@@ -2760,11 +5866,10 @@ namespace scfx {
                 case type::FLOAT:         return as_float();
                 case type::DOUBLE:        return as_double();
                 case type::LONG_DOUBLE:   return as_long_double();
-                case type::BOOL:          return as_bool();
+                case type::BOOL:          return as_bool() ? 1 : 0;
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        try { return str_util::atoui(as_string()); } catch (...) { return as_string().empty() ? 0 : as_string()[0]; }
                 case type::WSTRING:       try { return str_util::atoui(cast_to_string()); } catch (...) { return as_wstring().empty() ? 0 : as_wstring()[0]; }
-                case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
             return 0;
@@ -2784,13 +5889,10 @@ namespace scfx {
                 case type::FLOAT:         return as_float();
                 case type::DOUBLE:        return as_double();
                 case type::LONG_DOUBLE:   return as_long_double();
-                case type::BOOL:          return as_bool();
+                case type::BOOL:          return as_bool() ? 1 : 0;
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        try { return str_util::atoui(as_string()); } catch (...) {} break;
                 case type::WSTRING:       try { return str_util::atoui(cast_to_string()); } catch (...) {} break;
-                case type::CLASS:         return 0;
-                case type::POINTER:       return (uintptr_t)deref().as_ptr();
-                case type::UNDEFINED:     return 0;
                 default: break;
             }
             return 0;
@@ -2810,13 +5912,10 @@ namespace scfx {
                 case type::FLOAT:         return as_float();
                 case type::DOUBLE:        return as_double();
                 case type::LONG_DOUBLE:   return as_long_double();
-                case type::BOOL:          return as_bool();
+                case type::BOOL:          return as_bool() ? 1 : 0;
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        try { return str_util::atoi(as_string()); } catch (...) {} break;
                 case type::WSTRING:       try { return str_util::atoi(cast_to_string()); } catch (...) {} break;
-                case type::CLASS:         return 0;
-                case type::POINTER:       return (uintptr_t)deref().as_ptr();
-                case type::UNDEFINED:     return 0;
                 default: break;
             }
             return 0;
@@ -2836,13 +5935,10 @@ namespace scfx {
                 case type::FLOAT:         return as_float();
                 case type::DOUBLE:        return as_double();
                 case type::LONG_DOUBLE:   return as_long_double();
-                case type::BOOL:          return as_bool();
+                case type::BOOL:          return as_bool() ? 1 : 0;
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        try { return str_util::atoui(as_string()); } catch (...) {} break;
                 case type::WSTRING:       try { return str_util::atoui(cast_to_string()); } catch (...) {} break;
-                case type::CLASS:         return 0;
-                case type::POINTER:       return (uintptr_t)deref().as_ptr();
-                case type::UNDEFINED:     return 0;
                 default: break;
             }
             return 0;
@@ -2862,13 +5958,10 @@ namespace scfx {
                 case type::FLOAT:         return as_float();
                 case type::DOUBLE:        return as_double();
                 case type::LONG_DOUBLE:   return as_long_double();
-                case type::BOOL:          return as_bool();
+                case type::BOOL:          return as_bool() ? 1 : 0;
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        try { return str_util::atoi(as_string()); } catch (...) {} break;
                 case type::WSTRING:       try { return str_util::atoi(cast_to_string()); } catch (...) {} break;
-                case type::CLASS:         return 0;
-                case type::POINTER:       return (uintptr_t)deref().as_ptr();
-                case type::UNDEFINED:     return 0;
                 default: break;
             }
             return 0;
@@ -2888,13 +5981,10 @@ namespace scfx {
                 case type::FLOAT:         return as_float();
                 case type::DOUBLE:        return as_double();
                 case type::LONG_DOUBLE:   return as_long_double();
-                case type::BOOL:          return as_bool();
+                case type::BOOL:          return as_bool() ? 1 : 0;
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        try { return str_util::atoui(as_string()); } catch (...) {} break;
                 case type::WSTRING:       try { return str_util::atoui(cast_to_string()); } catch (...) {} break;
-                case type::CLASS:         return 0;
-                case type::POINTER:       return (uintptr_t)deref().as_ptr();
-                case type::UNDEFINED:     return 0;
                 default: break;
             }
             return 0;
@@ -2914,13 +6004,10 @@ namespace scfx {
                 case type::FLOAT:         return as_float();
                 case type::DOUBLE:        return as_double();
                 case type::LONG_DOUBLE:   return as_long_double();
-                case type::BOOL:          return as_bool();
+                case type::BOOL:          return as_bool() ? 1 : 0;
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        try { return str_util::atoi(as_string()); } catch (...) {} break;
                 case type::WSTRING:       try { return str_util::atoi(cast_to_string()); } catch (...) {} break;
-                case type::CLASS:         return 0;
-                case type::POINTER:       return (uintptr_t)deref().as_ptr();
-                case type::UNDEFINED:     return 0;
                 default: break;
             }
             return 0;
@@ -2940,13 +6027,10 @@ namespace scfx {
                 case type::FLOAT:         return as_float();
                 case type::DOUBLE:        return as_double();
                 case type::LONG_DOUBLE:   return as_long_double();
-                case type::BOOL:          return as_bool();
+                case type::BOOL:          return as_bool() ? 1 : 0;
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        try { return str_util::atoi(as_string()); } catch (...) {} break;
                 case type::WSTRING:       try { return str_util::atoi(cast_to_string()); } catch (...) {} break;
-                case type::CLASS:         return 0;
-                case type::POINTER:       return (uintptr_t)deref().as_ptr();
-                case type::UNDEFINED:     return 0;
                 default: break;
             }
             return 0;
@@ -2966,11 +6050,10 @@ namespace scfx {
                 case type::FLOAT:         return as_float();
                 case type::DOUBLE:        return as_double();
                 case type::LONG_DOUBLE:   return as_long_double();
-                case type::BOOL:          return as_bool();
+                case type::BOOL:          return as_bool() ? 1 : 0;
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        try { return str_util::atoui(as_string()); } catch (...) {} break;
                 case type::WSTRING:       try { return str_util::atoui(cast_to_string()); } catch (...) {} break;
-                case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
             return 0;
@@ -2990,11 +6073,10 @@ namespace scfx {
                 case type::FLOAT:         return as_float();
                 case type::DOUBLE:        return as_double();
                 case type::LONG_DOUBLE:   return as_long_double();
-                case type::BOOL:          return as_bool();
+                case type::BOOL:          return as_bool() ? 1 : 0;
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        try { return str_util::atoi(as_string()); } catch (...) {} break;
                 case type::WSTRING:       try { return str_util::atoi(cast_to_string()); } catch (...) {} break;
-                case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
             return 0;
@@ -3014,11 +6096,10 @@ namespace scfx {
                 case type::FLOAT:         return as_float();
                 case type::DOUBLE:        return as_double();
                 case type::LONG_DOUBLE:   return as_long_double();
-                case type::BOOL:          return as_bool();
+                case type::BOOL:          return as_bool() ? 1 : 0;
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        try { return str_util::atoui(as_string()); } catch (...) {} break;
                 case type::WSTRING:       try { return str_util::atoui(cast_to_string()); } catch (...) {} break;
-                case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
             return 0;
@@ -3038,11 +6119,10 @@ namespace scfx {
                 case type::FLOAT:         return as_float();
                 case type::DOUBLE:        return as_double();
                 case type::LONG_DOUBLE:   return as_long_double();
-                case type::BOOL:          return as_bool();
+                case type::BOOL:          return as_bool() ? 1 : 0;
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        try { return str_util::atof(as_string()); } catch (...) {} break;
                 case type::WSTRING:       try { return str_util::atof(cast_to_string()); } catch (...) {} break;
-                case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
             return 0;
@@ -3062,11 +6142,10 @@ namespace scfx {
                 case type::FLOAT:         return as_float();
                 case type::DOUBLE:        return as_double();
                 case type::LONG_DOUBLE:   return as_long_double();
-                case type::BOOL:          return as_bool();
+                case type::BOOL:          return as_bool() ? 1 : 0;
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        try { return str_util::atof(as_string()); } catch (...) {} break;
                 case type::WSTRING:       try { return str_util::atof(cast_to_string()); } catch (...) {} break;
-                case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
             return 0;
@@ -3086,11 +6165,10 @@ namespace scfx {
                 case type::FLOAT:         return as_float();
                 case type::DOUBLE:        return as_double();
                 case type::LONG_DOUBLE:   return as_long_double();
-                case type::BOOL:          return as_bool();
+                case type::BOOL:          return as_bool() ? 1 : 0;
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        try { return str_util::atof(as_string()); } catch (...) {} break;
                 case type::WSTRING:       try { return str_util::atof(cast_to_string()); } catch (...) { } break;
-                case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
             return 0;
@@ -3134,8 +6212,6 @@ namespace scfx {
                     }
                 case type::OBJECT:        return !as_object().empty();
                 case type::ARRAY:         return !as_array().empty();
-                case type::CLASS:         return true;
-                case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
             return false;
@@ -3155,11 +6231,10 @@ namespace scfx {
                 case type::FLOAT:         return as_float();
                 case type::DOUBLE:        return as_double();
                 case type::LONG_DOUBLE:   return as_long_double();
-                case type::BOOL:          return as_bool();
+                case type::BOOL:          return as_bool() ? 1 : 0;
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        return as_string().empty() ? 0 : as_string()[0];
                 case type::WSTRING:       return as_wstring().empty() ? 0 : as_wstring()[0];
-                case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
             return 0;
@@ -3191,9 +6266,6 @@ namespace scfx {
                     }
                     return res;
                 }
-                case type::CLASS:         { std::stringstream ss{}; ss << deref().box_->class_; return ss.str(); }
-                case type::POINTER:       { return scfx::str_util::utoa((uintptr_t)deref().as_ptr(), 16, sizeof(void *) * 8); }
-                case type::UNDEFINED:     return "<undefined>";
                 default: break;
             }
             return {};
@@ -3225,9 +6297,6 @@ namespace scfx {
                     }
                     return res;
                 }
-                case type::CLASS:         { std::wstringstream ss{}; ss <<  scfx::str_util::from_utf8(deref().box_->class_); return ss.str(); }
-                case type::POINTER:       return scfx::str_util::from_utf8(scfx::str_util::utoa((uintptr_t)deref().as_ptr(), 16, sizeof(void *) * 8));
-                case type::UNDEFINED:     return L"<undefined>";
                 default: break;
             }
             return {};
@@ -3472,6 +6541,152 @@ namespace scfx {
             return box_.use_count();
         }
 
+        std::string dump() const {
+            std::stringstream os{};
+            switch(val_or_pointed_type()) {
+                case type::CHAR: os << as_char(); break;
+                case type::U8: os << as_u8(); break;
+                case type::S8: os << as_s8(); break;
+                case type::U16: os << as_u16(); break;
+                case type::S16: os << as_s16(); break;
+                case type::U32: os << as_u32(); break;
+                case type::S32: os << as_s32(); break;
+                case type::U64: os << as_u64(); break;
+                case type::S64: os << as_s64(); break;
+                case type::FLOAT: os << as_float(); break;
+                case type::DOUBLE: os << as_double(); break;
+                case type::LONG_DOUBLE: os << as_long_double(); break;
+                case type::BOOL: os << (as_bool() ? "true" : "false"); break;
+                case type::WCHAR: { std::wstring ws{}; ws += as_wchar(); os << scfx::str_util::to_utf8(ws); } break;
+                case type::STRING: os << as_string(); break;
+                case type::WSTRING: os << scfx::str_util::to_utf8(as_wstring()); break;
+                case type::CLASS: os << "<" << deref().class_name() << ">"; break;
+                case type::POINTER: os << deref().dump(); break;
+                case type::UNDEFINED: os << "<undefined>"; break;
+                case type::FUNC: os << "<function>"; break;
+                case type::ARRAY: {
+                        auto const &a{as_array()};
+                        os << "[";
+                        std::string sep{};
+                        for(auto &&v: a) {
+                            os << sep << v.dump(); sep = ",";
+                        }
+                        os << "]";
+                    }
+                    break;
+                case type::VEC4: {
+                        std::stringstream ss{};
+                        ss << "vec4{";
+                        std::string sep{};
+                        for(std::size_t i{0}; i < 4; ++i) {
+                            ss << sep << std::fixed << as_vec4()[i];
+                            if(sep.empty()) {
+                                sep = ",";
+                            }
+                        }
+                        ss << "}";
+                        os << ss.str();
+                    }
+                    break;
+                case type::MAT4: {
+                        std::stringstream ss{};
+                        ss << "mat4{";
+                        std::string sep1{};
+                        for(std::size_t r{0}; r < 4; ++r) {
+                            ss << sep1 << "{";
+                            std::string sep2{};
+                            for(std::size_t c{0}; c < 4; ++c) {
+                                ss << sep2 << std::fixed << as_mat4().at(r, c);
+                                sep2 = ", ";
+                            }
+                            ss << "}";
+                            if(sep1.empty()) {
+                                sep1 = ",";
+                            }
+                        }
+                        ss << "}";
+                        os << ss.str();
+                    }
+                    break;
+                case type::OBJECT: os << to_json().serialize5(); break;
+                default: os << "<corrupted>"; break;
+            }
+            return os.str();
+        }
+
+        std::wstring wdump() const {
+            std::wstringstream os{};
+            switch(val_or_pointed_type()) {
+                case type::CHAR: os << cast_to_wchar(); break;
+                case type::U8: os << as_u8(); break;
+                case type::S8: os << as_s8(); break;
+                case type::U16: os << as_u16(); break;
+                case type::S16: os << as_s16(); break;
+                case type::U32: os << as_u32(); break;
+                case type::S32: os << as_s32(); break;
+                case type::U64: os << as_u64(); break;
+                case type::S64: os << as_s64(); break;
+                case type::FLOAT: os << as_float(); break;
+                case type::DOUBLE: os << as_double(); break;
+                case type::LONG_DOUBLE: os << as_long_double(); break;
+                case type::BOOL: os << (as_bool() ? L"true" : L"false"); break;
+                case type::WCHAR: os << as_wchar(); break;
+                case type::STRING: os << cast_to_wstring(); break;
+                case type::WSTRING: os << as_wstring(); break;
+                case type::CLASS: os << L"<" << str_util::from_utf8(deref().class_name()) << L">"; break;
+                case type::POINTER: os << deref().wdump(); break;
+                case type::UNDEFINED: os << L"<undefined>"; break;
+                case type::FUNC: os << L"<function>"; break;
+                case type::ARRAY: {
+                    auto const &a{as_array()};
+                    os << L"[";
+                    std::wstring sep{};
+                    for(auto &&v: a) {
+                        os << sep << v.wdump(); sep = L",";
+                    }
+                    os << L"]";
+                }
+                break;
+                case valbox::type::VEC4: {
+                    std::wstringstream ss{};
+                    ss << L"vec4{";
+                    std::wstring sep{};
+                    for(std::size_t i{0}; i < 4; ++i) {
+                        ss << sep << std::fixed << as_vec4()[i];
+                        if(sep.empty()) {
+                            sep = L",";
+                        }
+                    }
+                    ss << L"}";
+                    os << ss.str();
+                }
+                break;
+                case valbox::type::MAT4: {
+                    std::wstringstream ss{};
+                    ss << L"mat4{";
+                    std::wstring sep1{};
+                    for(std::size_t r{0}; r < 4; ++r) {
+                        ss << sep1 << L"{";
+                        std::wstring sep2{};
+                        for(std::size_t c{0}; c < 4; ++c) {
+                            ss << sep2 << std::fixed << as_mat4().at(r, c);
+                            sep2 = L", ";
+                        }
+                        ss << L"}";
+                        if(sep1.empty()) {
+                            sep1 = L",";
+                        }
+                    }
+                    ss << L"}";
+                    os << ss.str();
+                }
+                break;
+                case valbox::type::OBJECT: os << str_util::from_utf8(to_json().serialize5()); break;
+                default: os << L"<corrupted>"; break;
+            }
+            return os.str();
+        }
+
     private:
         valbox(std::shared_ptr<box_data> &&b): box_{std::move(b)} {}
 
@@ -3480,146 +6695,12 @@ namespace scfx {
     };
 
     static std::ostream &operator<<(std::ostream &os, valbox const &v) {
-        switch(v.val_or_pointed_type()) {
-            case valbox::type::CHAR: os << v.as_char(); break;
-            case valbox::type::U8: os << v.as_u8(); break;
-            case valbox::type::S8: os << v.as_s8(); break;
-            case valbox::type::U16: os << v.as_u16(); break;
-            case valbox::type::S16: os << v.as_s16(); break;
-            case valbox::type::U32: os << v.as_u32(); break;
-            case valbox::type::S32: os << v.as_s32(); break;
-            case valbox::type::U64: os << v.as_u64(); break;
-            case valbox::type::S64: os << v.as_s64(); break;
-            case valbox::type::FLOAT: os << v.as_float(); break;
-            case valbox::type::DOUBLE: os << v.as_double(); break;
-            case valbox::type::LONG_DOUBLE: os << v.as_long_double(); break;
-            case valbox::type::BOOL: os << (v.as_bool() ? "true" : "false"); break;
-            case valbox::type::WCHAR: { std::wstring ws{}; ws += v.as_wchar(); os << scfx::str_util::to_utf8(ws); } break;
-            case valbox::type::STRING: os << v.as_string(); break;
-            case valbox::type::WSTRING: os << scfx::str_util::to_utf8(v.as_wstring()); break;
-            case valbox::type::CLASS: os << "<" << v.deref().class_name() << ">"; break;
-            case valbox::type::POINTER: os << v.deref(); break;
-            case valbox::type::UNDEFINED: os << "<undefined>"; break;
-            case valbox::type::FUNC: os << "<function>"; break;
-            case valbox::type::ARRAY: {
-                    auto const &a{v.as_array()};
-                    os << "[";
-                    std::string sep{};
-                    for(auto &&v: a) {
-                        os << sep << v; sep = ",";
-                    }
-                    os << "]";
-                }
-                break;
-            case valbox::type::VEC4: {
-                    std::stringstream ss{};
-                    ss << "vec4{";
-                    std::string sep{};
-                    for(std::size_t i{0}; i < 4; ++i) {
-                        ss << sep << std::fixed << v.as_vec4()[i];
-                        if(sep.empty()) {
-                            sep = ",";
-                        }
-                    }
-                    ss << "}";
-                    os << ss.str();
-                }
-                break;
-            case valbox::type::MAT4: {
-                    std::stringstream ss{};
-                    ss << "mat4{";
-                    std::string sep1{};
-                    for(std::size_t r{0}; r < 4; ++r) {
-                        ss << sep1 << "{";
-                        std::string sep2{};
-                        for(std::size_t c{0}; c < 4; ++c) {
-                            ss << sep2 << std::fixed << v.as_mat4().at(r, c);
-                            sep2 = ", ";
-                        }
-                        ss << "}";
-                        if(sep1.empty()) {
-                            sep1 = ",";
-                        }
-                    }
-                    ss << "}";
-                    os << ss.str();
-                }
-                break;
-            case valbox::type::OBJECT: os << v.to_json().serialize5(); break;
-            default: os << "<corrupted>"; break;
-        }
+        os << v.dump();
         return os;
     }
 
     static std::wostream &operator<<(std::wostream &os, valbox const &v) {
-        switch(v.val_or_pointed_type()) {
-            case valbox::type::CHAR: os << v.cast_to_wchar(); break;
-            case valbox::type::U8: os << v.as_u8(); break;
-            case valbox::type::S8: os << v.as_s8(); break;
-            case valbox::type::U16: os << v.as_u16(); break;
-            case valbox::type::S16: os << v.as_s16(); break;
-            case valbox::type::U32: os << v.as_u32(); break;
-            case valbox::type::S32: os << v.as_s32(); break;
-            case valbox::type::U64: os << v.as_u64(); break;
-            case valbox::type::S64: os << v.as_s64(); break;
-            case valbox::type::FLOAT: os << v.as_float(); break;
-            case valbox::type::DOUBLE: os << v.as_double(); break;
-            case valbox::type::LONG_DOUBLE: os << v.as_long_double(); break;
-            case valbox::type::BOOL: os << (v.as_bool() ? L"true" : L"false"); break;
-            case valbox::type::WCHAR: os << v.as_wchar(); break;
-            case valbox::type::STRING: os << v.cast_to_wstring(); break;
-            case valbox::type::WSTRING: os << v.as_wstring(); break;
-            case valbox::type::CLASS: os << L"<" << v.deref().class_name() << L">"; break;
-            case valbox::type::POINTER: os << v.deref(); break;
-            case valbox::type::UNDEFINED: os << L"<undefined>"; break;
-            case valbox::type::FUNC: os << L"<function>"; break;
-            case valbox::type::ARRAY: {
-                auto const &a{v.as_array()};
-                os << L"[";
-                std::wstring sep{};
-                for(auto &&v: a) {
-                    os << sep << v; sep = L",";
-                }
-                os << L"]";
-            }
-            break;
-            case valbox::type::VEC4: {
-                std::wstringstream ss{};
-                ss << L"vec4{";
-                std::wstring sep{};
-                for(std::size_t i{0}; i < 4; ++i) {
-                    ss << sep << std::fixed << v.as_vec4()[i];
-                    if(sep.empty()) {
-                        sep = L",";
-                    }
-                }
-                ss << L"}";
-                os << ss.str();
-            }
-            break;
-            case valbox::type::MAT4: {
-                std::wstringstream ss{};
-                ss << L"mat4{";
-                std::wstring sep1{};
-                for(std::size_t r{0}; r < 4; ++r) {
-                    ss << sep1 << L"{";
-                    std::wstring sep2{};
-                    for(std::size_t c{0}; c < 4; ++c) {
-                        ss << sep2 << std::fixed << v.as_mat4().at(r, c);
-                        sep2 = L", ";
-                    }
-                    ss << L"}";
-                    if(sep1.empty()) {
-                        sep1 = L",";
-                    }
-                }
-                ss << L"}";
-                os << ss.str();
-            }
-            break;
-            case valbox::type::OBJECT: os << v.to_json().serialize5(); break;
-            default: os << L"<corrupted>"; break;
-        }
+        os << v.wdump();
         return os;
     }
 
