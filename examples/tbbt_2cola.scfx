@@ -7,7 +7,7 @@
 
 function serialize_tbbt_array(a) {
     res = "";
-    res.reserve(4096);
+    res.reserve(1024 * 16);
     as = a.size();
     res += "[" + a[0].name;
     j = 1;
