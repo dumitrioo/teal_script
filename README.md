@@ -10,6 +10,14 @@ The advantage of C++ is that it can solve almost any development task. And this 
 
 The Data-flow Graph paradigm (discrete time, clocked synchronous, modular, data-centric) is a declarative pure functional paradigm. Unlike imperative programming languages, program in this language does not have a single entry point. Instead, programmer writes logic by defining a set of compute elements (cells, nodes) connected to each other into a computation network accordingly to a logical schema that is a solution of the certain problem, in order to perform necessary computations resolving that problem. All the compute elements are executed independently (simultaneously in case of multi-threaded execution mode), and every time the compute element is done, it is executed (with updated input parameters coming from other elements outputs) again and again and again and so on, until the system stops working.
 
+## Implementation
+
+The library is implemented as an execution tree interpreter, without dependencies on third-party software for source code translation (lexical analyze, parsing, code generation), and therefore has an extremely small memory footprint. Moreover, since the source code is converted not into machine code but into an execution tree, the library is not tied to any hardware architecture, being portable.
+
+SCAFlux language breaks the functional purity of DFG paradigm being partialy statelful in favor of convenience while resolving many tasks. Every compute node (cell, element) is an instance of the "template" - a data transforming object that looks like a function but is an "object" type and is able to keep state between calls in form of instance's variables available through "this" keyword.
+
+The system can operate in a synchronous single threaded mode and in asynchronous multi threaded mode utilizing all the processor cores of the system on which it is running. In terms of performance, a program in the embedded language is similar to a program in Python; however, given the ability to work in multi-threaded mode, the overall resulting performance can be significantly higher.
+
 ## Application
 
 One of the problems classes, that can be easily solved by this scripting language, is the complex real-time control of multitude actuators/indicators/displays/etc. within a logical circuit, based on the analysis of incoming signals from multitude input devices. However, the language's capabilities also allow it to solve problems that are typically solved by the Turing-complete languages, as its type system, language constructs, and set of operations make this scripting language Turing-complete. The language's extensibility from host code also enhances its ability to solve the diverse tasks assigned to scripting engines.
@@ -19,14 +27,6 @@ Possible application for this engine may include:
  * Logical interconnecting between separately attached hardware/virtual devices.
  * Programmatic functionality extension for simpler components (adding intelligence into simple systems).
  * Parallel analysis of somehow dependant input data from many sources (logical information consolidation).
-
-## Implementation
-
-The library is implemented as an execution tree interpreter, without dependencies on third-party software for source code translation (lexical analyze, parsing, code generation), and therefore has an extremely small memory footprint. Moreover, since the source code is converted not into machine code but into an execution tree, the library is not tied to any hardware architecture, being portable.
-
-SCAFlux language breaks the functional purity of DFG paradigm being partialy statelful in favor of convenience while resolving many tasks. Every compute node (cell, element) is an instance of the "template" - a data transforming object that looks like a function but is an "object" type and is able to keep state between calls in form of instance's variables available through "this" keyword.
-
-The system can operate in a synchronous single threaded mode and in asynchronous multi threaded mode utilizing all the processor cores of the system on which it is running. In terms of performance, a program in the embedded language is similar to a program in Python; however, given the ability to work in multi-threaded mode, the overall resulting performance can be significantly higher.
 
 ## Usage
 
