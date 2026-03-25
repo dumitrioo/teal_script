@@ -45,7 +45,7 @@ add_definitions(-DSCFX_USE_EMHASH8_MAP)
 ###############################################################################
 
 ###############################################################################
-add_definitions(-DSTR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS)
+#add_definitions(-DSTR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS)
 ###############################################################################
 
 add_subdirectory(examples/interpreter)

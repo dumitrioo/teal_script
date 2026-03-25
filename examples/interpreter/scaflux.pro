@@ -39,7 +39,7 @@ DEFINES += SCFX_USE_EMHASH8_MAP
 ###############################################################################
 
 ###############################################################################
-DEFINES += STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
+#DEFINES += STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
 ###############################################################################
 
 INCLUDEPATH += ../../src
