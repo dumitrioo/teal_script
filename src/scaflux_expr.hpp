@@ -189,7 +189,6 @@ namespace scfx {
                 },
                 /* MINUS */
                 [](prefix_unop_expression *this_, execution_context *ctx) -> valbox {
-                    if(this_->primary_) { return this_->primary_val_; }
                     expr_ptr &val{this_->val_};
                     bool old{ctx->set_create_if_not_exists(false)};
                     scfx::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
@@ -224,7 +223,6 @@ namespace scfx {
                 /* EQUAL */ nullptr,
                 /* NOT */
                 [](prefix_unop_expression *this_, execution_context *ctx) -> valbox {
-                    if(this_->primary_) { return this_->primary_val_; }
                     expr_ptr &val{this_->val_};
                     bool old{ctx->set_create_if_not_exists(false)};
                     scfx::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
@@ -295,7 +293,6 @@ namespace scfx {
                 /* QUESTIONQUESTION */ nullptr,
                 /* BITNOT */
                 [](prefix_unop_expression *this_, execution_context *ctx) -> valbox {
-                    if(this_->primary_) { return this_->primary_val_; }
                     expr_ptr &val{this_->val_};
                     bool old{ctx->set_create_if_not_exists(false)};
                     scfx::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
