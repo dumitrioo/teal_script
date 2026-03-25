@@ -2,6 +2,7 @@
 
 #include "commondefs.hpp"
 #include "emhash/hash_table8.hpp"
+#include "emhash/hash_set8.hpp"
 #include "fsm_tokenizer.hpp"
 #include "serialization.hpp"
 #include "str_util.hpp"
@@ -112,7 +113,7 @@ namespace scfx {
             auto c0{v[0]};
             if(!(c0 == '_' || c0 == '$' || scfx::str_util::fltr<std::wstring>::isalpha(c0))) { return false; }
             for(auto &&c: v) { if(!(c == '_' || c == '$' || scfx::str_util::fltr<std::wstring>::isalnum(c))) { return false; } }
-            static std::unordered_set<std::wstring> const rsvd{
+            static emhash8::HashSet<std::wstring> const rsvd{
                 L"false",      L"true",     L"null",
                 L"break",      L"do",       L"instanceof", L"typeof",
                 L"case",       L"else",     L"new",        L"var",
