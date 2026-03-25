@@ -25,7 +25,6 @@ private:
     int v_{};
 };
 
-
 int main(int argc, char **argv) {
     std::vector<std::string> args{argv, argv + argc};
     std::setlocale(LC_ALL, "en_US.UTF-8");
