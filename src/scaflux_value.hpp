@@ -2572,8 +2572,8 @@ namespace scfx {
         }
 
         friend bool operator==(valbox const &l, valbox const &r) {
-            valbox const &lr(l.deref());
-            valbox const &rr(r.deref());
+            auto lr{l.deref()};
+            auto rr{r.deref()};
             type lt{lr.val_or_pointed_type()};
             type rt{rr.val_or_pointed_type()};
             if(lr.box_.get() == rr.box_.get() || (lt == rt && lt == type::UNDEFINED)) {
@@ -2581,54 +2581,82 @@ namespace scfx {
             }
             if(lt == rt) {
                 switch(lt) {
+                    case type::S64: return lr.as_s64() == rr.as_s64();
+                    case type::U64: return lr.as_u64() == rr.as_u64();
                     case type::CHAR: return lr.as_char() == rr.as_char();
-                    case type::WCHAR: return lr.as_wchar() == rr.as_wchar();
                     case type::U8: return lr.as_u8() == rr.as_u8();
                     case type::S8: return lr.as_s8() == rr.as_s8();
                     case type::U16: return lr.as_u16() == rr.as_u16();
                     case type::S16: return lr.as_s16() == rr.as_s16();
                     case type::U32: return lr.as_u32() == rr.as_u32();
                     case type::S32: return lr.as_s32() == rr.as_s32();
-                    case type::U64: return lr.as_u64() == rr.as_u64();
-                    case type::S64: return lr.as_s64() == rr.as_s64();
                     case type::FLOAT: return lr.as_float() == rr.as_float();
                     case type::DOUBLE: return lr.as_double() == rr.as_double();
                     case type::LONG_DOUBLE: return lr.as_long_double() == rr.as_long_double();
                     case type::BOOL: return lr.as_bool() == rr.as_bool();
+                    case type::WCHAR: return lr.as_wchar() == rr.as_wchar();
                     case type::STRING: return lr.as_string() == rr.as_string();
                     case type::WSTRING: return lr.as_wstring() == rr.as_wstring();
-                    case type::POINTER: return lr.as_ptr() == rr.as_ptr();
+                    case type::UNDEFINED: return true;
                     case type::VEC4: return lr.as_vec4() == rr.as_vec4();
                     case type::MAT4: return lr.as_mat4() == rr.as_mat4();
+                    case type::POINTER: return lr.as_ptr() == rr.as_ptr();
+                    case type::CLASS: break;
+                    case type::FUNC: break;
+                    case type::ARRAY: return lr.as_array() == rr.as_array();
+                    case type::OBJECT: return lr.as_object() == rr.as_object();
+                    case type::VALBOX: break;
                     default: break;
                 }
             } else {
+                if(lt == type::UNDEFINED || rt == type::UNDEFINED) {
+                    return false;
+                }
                 if(is_numeric_type(lt) && is_numeric_type(rt)) {
-                    switch(lt) {
-                        case type::BOOL: return (lr.as_bool() ? 1 : 0) == (rr.cast_to_bool() ? 1 : 0);
-                        case type::CHAR: return lr.as_char() == rr.cast_num_to_num<char>();
-                        case type::WCHAR: return lr.as_wchar() == rr.cast_num_to_num<wchar_t>();
-                        case type::U8: return lr.as_u8() == rr.cast_num_to_num<std::uint8_t>();
-                        case type::S8: return lr.as_s8() == rr.cast_num_to_num<std::int8_t>();
-                        case type::U16: return lr.as_u16() == rr.cast_num_to_num<std::uint16_t>();
-                        case type::S16: return lr.as_s16() == rr.cast_num_to_num<std::int16_t>();
-                        case type::U32: return lr.as_u32() == rr.cast_num_to_num<std::uint32_t>();
-                        case type::S32: return lr.as_s32() == rr.cast_num_to_num<std::int32_t>();
-                        case type::U64: return lr.as_u64() == rr.cast_num_to_num<std::uint64_t>();
-                        case type::S64: return lr.as_s64() == rr.cast_num_to_num<std::int64_t>();
-                        case type::FLOAT: return lr.as_float() == rr.cast_num_to_num<float>();
-                        case type::DOUBLE: return lr.as_double() == rr.cast_num_to_num<double>();
-                        case type::LONG_DOUBLE: return lr.as_long_double() == rr.cast_num_to_num<long double>();
-                        default: break;
+                    if(static_cast<int>(lt) > static_cast<int>(rt)) {
+                        switch(lt) {
+                            case type::CHAR: return lr.as_char() == rr.cast_num_to_num<char>();
+                            case type::WCHAR: return lr.as_wchar() == rr.cast_num_to_num<wchar_t>();
+                            case type::U8: return lr.as_u8() == rr.cast_num_to_num<std::uint8_t>();
+                            case type::S8: return lr.as_s8() == rr.cast_num_to_num<std::int8_t>();
+                            case type::U16: return lr.as_u16() == rr.cast_num_to_num<std::uint16_t>();
+                            case type::S16: return lr.as_s16() == rr.cast_num_to_num<std::int16_t>();
+                            case type::U32: return lr.as_u32() == rr.cast_num_to_num<std::uint32_t>();
+                            case type::S32: return lr.as_s32() == rr.cast_num_to_num<std::int32_t>();
+                            case type::U64: return lr.as_u64() == rr.cast_num_to_num<std::uint64_t>();
+                            case type::S64: return lr.as_s64() == rr.cast_num_to_num<std::int64_t>();
+                            case type::FLOAT: return lr.as_float() == rr.cast_num_to_num<float>();
+                            case type::DOUBLE: return lr.as_double() == rr.cast_num_to_num<double>();
+                            case type::LONG_DOUBLE: return lr.as_long_double() == rr.cast_num_to_num<long double>();
+                            default: break;
+                        }
+                    } else {
+                        switch(rt) {
+                            case type::CHAR: return lr.cast_num_to_num<char>() == rr.as_char();
+                            case type::WCHAR: return lr.cast_num_to_num<wchar_t>() == rr.as_wchar();
+                            case type::U8: return lr.cast_num_to_num<std::uint8_t>() == rr.as_u8();
+                            case type::S8: return lr.cast_num_to_num<std::int8_t>() == rr.as_s8();
+                            case type::U16: return lr.cast_num_to_num<std::uint16_t>() == rr.as_u16();
+                            case type::S16: return lr.cast_num_to_num<std::int16_t>() == rr.as_s16();
+                            case type::U32: return lr.cast_num_to_num<std::uint32_t>() == rr.as_u32();
+                            case type::S32: return lr.cast_num_to_num<std::int32_t>() == rr.as_s32();
+                            case type::U64: return lr.cast_num_to_num<std::uint64_t>() == rr.as_u64();
+                            case type::S64: return lr.cast_num_to_num<std::int64_t>() == rr.as_s64();
+                            case type::FLOAT: return lr.cast_num_to_num<float>() == rr.as_float();
+                            case type::DOUBLE: return lr.cast_num_to_num<double>() == rr.as_double();
+                            case type::LONG_DOUBLE: return lr.cast_num_to_num<long double>() == rr.as_long_double();
+                            default: break;
+                        }
                     }
                 } else {
-                    type st{stronger_type(lt, rt)};
-                    switch(st) {
-                        case type::STRING: return lr.cast_to_string() == rr.cast_to_string();
-                        case type::WCHAR: return lr.cast_to_wchar() == rr.cast_to_wchar();
-                        case type::WSTRING: return lr.cast_to_wstring() == rr.cast_to_wstring();
-                        case type::UNDEFINED: return false;
-                        default: break;
+                    if(lt == type::STRING) {
+                        return lr.as_string() == rr.cast_to_string();
+                    } else if(lt == type::WSTRING) {
+                        return lr.as_wstring() == rr.cast_to_wstring();
+                    } else if(rt == type::STRING) {
+                        return lr.cast_to_string() == rr.as_string();
+                    } else if(rt == type::WSTRING) {
+                        return lr.cast_to_wstring() == rr.as_wstring();
                     }
                 }
             }
@@ -2642,6 +2670,8 @@ namespace scfx {
             type rt{rr.val_or_pointed_type()};
             if(lt == rt) {
                 switch(lt) {
+                    case type::S64: return lr.as_s64() <= rr.as_s64();
+                    case type::U64: return lr.as_u64() <= rr.as_u64();
                     case type::CHAR: return lr.as_char() <= rr.as_char();
                     case type::U8: return lr.as_u8() <= rr.as_u8();
                     case type::S8: return lr.as_s8() <= rr.as_s8();
@@ -2649,8 +2679,6 @@ namespace scfx {
                     case type::S16: return lr.as_s16() <= rr.as_s16();
                     case type::U32: return lr.as_u32() <= rr.as_u32();
                     case type::S32: return lr.as_s32() <= rr.as_s32();
-                    case type::U64: return lr.as_u64() <= rr.as_u64();
-                    case type::S64: return lr.as_s64() <= rr.as_s64();
                     case type::FLOAT: return lr.as_float() <= rr.as_float();
                     case type::DOUBLE: return lr.as_double() <= rr.as_double();
                     case type::LONG_DOUBLE: return lr.as_long_double() <= rr.as_long_double();
@@ -2658,37 +2686,60 @@ namespace scfx {
                     case type::WCHAR: return lr.as_wchar() <= rr.as_wchar();
                     case type::STRING: return lr.as_string() <= rr.as_string();
                     case type::WSTRING: return lr.as_wstring() <= rr.as_wstring();
-                    case type::POINTER: return (std::uintptr_t)lr.as_ptr() <= (std::uintptr_t)rr.as_ptr();
                     case type::UNDEFINED: return true;
                     default: break;
                 }
             } else {
+                if(lt == type::UNDEFINED) {
+                    return true;
+                } else if(rt == type::UNDEFINED) {
+                    return false;
+                }
                 if(is_numeric_type(lt) && is_numeric_type(rt)) {
-                    switch(lt) {
-                        case type::BOOL: return (lr.as_bool() ? 1 : 0) <= (rr.cast_to_bool() ? 1 : 0);
-                        case type::CHAR: return lr.as_char() <= rr.cast_num_to_num<char>();
-                        case type::WCHAR: return lr.as_wchar() <= rr.cast_num_to_num<wchar_t>();
-                        case type::U8: return lr.as_u8() <= rr.cast_num_to_num<std::uint8_t>();
-                        case type::S8: return lr.as_s8() <= rr.cast_num_to_num<std::int8_t>();
-                        case type::U16: return lr.as_u16() <= rr.cast_num_to_num<std::uint16_t>();
-                        case type::S16: return lr.as_s16() <= rr.cast_num_to_num<std::int16_t>();
-                        case type::U32: return lr.as_u32() <= rr.cast_num_to_num<std::uint32_t>();
-                        case type::S32: return lr.as_s32() <= rr.cast_num_to_num<std::int32_t>();
-                        case type::U64: return lr.as_u64() <= rr.cast_num_to_num<std::uint64_t>();
-                        case type::S64: return lr.as_s64() <= rr.cast_num_to_num<std::int64_t>();
-                        case type::FLOAT: return lr.as_float() <= rr.cast_num_to_num<float>();
-                        case type::DOUBLE: return lr.as_double() <= rr.cast_num_to_num<double>();
-                        case type::LONG_DOUBLE: return lr.as_long_double() <= rr.cast_num_to_num<long double>();
-                        default: break;
+                    if(static_cast<int>(lt) > static_cast<int>(rt)) {
+                        switch(lt) {
+                            case type::CHAR: return lr.as_char() <= rr.cast_num_to_num<char>();
+                            case type::WCHAR: return lr.as_wchar() <= rr.cast_num_to_num<wchar_t>();
+                            case type::U8: return lr.as_u8() <= rr.cast_num_to_num<std::uint8_t>();
+                            case type::S8: return lr.as_s8() <= rr.cast_num_to_num<std::int8_t>();
+                            case type::U16: return lr.as_u16() <= rr.cast_num_to_num<std::uint16_t>();
+                            case type::S16: return lr.as_s16() <= rr.cast_num_to_num<std::int16_t>();
+                            case type::U32: return lr.as_u32() <= rr.cast_num_to_num<std::uint32_t>();
+                            case type::S32: return lr.as_s32() <= rr.cast_num_to_num<std::int32_t>();
+                            case type::U64: return lr.as_u64() <= rr.cast_num_to_num<std::uint64_t>();
+                            case type::S64: return lr.as_s64() <= rr.cast_num_to_num<std::int64_t>();
+                            case type::FLOAT: return lr.as_float() <= rr.cast_num_to_num<float>();
+                            case type::DOUBLE: return lr.as_double() <= rr.cast_num_to_num<double>();
+                            case type::LONG_DOUBLE: return lr.as_long_double() <= rr.cast_num_to_num<long double>();
+                            default: break;
+                        }
+                    } else {
+                        switch(rt) {
+                            case type::CHAR: return lr.cast_num_to_num<char>() <= rr.as_char();
+                            case type::WCHAR: return lr.cast_num_to_num<wchar_t>() <= rr.as_wchar();
+                            case type::U8: return lr.cast_num_to_num<std::uint8_t>() <= rr.as_u8();
+                            case type::S8: return lr.cast_num_to_num<std::int8_t>() <= rr.as_s8();
+                            case type::U16: return lr.cast_num_to_num<std::uint16_t>() <= rr.as_u16();
+                            case type::S16: return lr.cast_num_to_num<std::int16_t>() <= rr.as_s16();
+                            case type::U32: return lr.cast_num_to_num<std::uint32_t>() <= rr.as_u32();
+                            case type::S32: return lr.cast_num_to_num<std::int32_t>() <= rr.as_s32();
+                            case type::U64: return lr.cast_num_to_num<std::uint64_t>() <= rr.as_u64();
+                            case type::S64: return lr.cast_num_to_num<std::int64_t>() <= rr.as_s64();
+                            case type::FLOAT: return lr.cast_num_to_num<float>() <= rr.as_float();
+                            case type::DOUBLE: return lr.cast_num_to_num<double>() <= rr.as_double();
+                            case type::LONG_DOUBLE: return lr.cast_num_to_num<long double>() <= rr.as_long_double();
+                            default: break;
+                        }
                     }
                 } else {
-                    type st{stronger_type(lt, rt)};
-                    switch(st) {
-                        case type::STRING: return lr.cast_to_string() <= rr.cast_to_string();
-                        case type::WCHAR: return lr.cast_to_wchar() <= rr.cast_to_wchar();
-                        case type::WSTRING: return lr.cast_to_wstring() <= rr.cast_to_wstring();
-                        case type::UNDEFINED: return false;
-                        default: break;
+                    if(lt == type::STRING) {
+                        return lr.as_string() <= rr.cast_to_string();
+                    } else if(lt == type::WSTRING) {
+                        return lr.as_wstring() <= rr.cast_to_wstring();
+                    } else if(rt == type::STRING) {
+                        return lr.cast_to_string() <= rr.as_string();
+                    } else if(rt == type::WSTRING) {
+                        return lr.cast_to_wstring() <= rr.as_wstring();
                     }
                 }
             }
@@ -2722,32 +2773,56 @@ namespace scfx {
                     default: break;
                 }
             } else {
+                if(lt == type::UNDEFINED) {
+                    return true;
+                } else if(rt == type::UNDEFINED) {
+                    return false;
+                }
                 if(is_numeric_type(lt) && is_numeric_type(rt)) {
-                    switch(lt) {
-                        case type::BOOL: return (lr.as_bool() ? 1 : 0) < (rr.cast_to_bool() ? 1 : 0);
-                        case type::CHAR: return lr.as_char() < rr.cast_num_to_num<char>();
-                        case type::WCHAR: return lr.as_wchar() < rr.cast_num_to_num<wchar_t>();
-                        case type::U8: return lr.as_u8() < rr.cast_num_to_num<std::uint8_t>();
-                        case type::S8: return lr.as_s8() < rr.cast_num_to_num<std::int8_t>();
-                        case type::U16: return lr.as_u16() < rr.cast_num_to_num<std::uint16_t>();
-                        case type::S16: return lr.as_s16() < rr.cast_num_to_num<std::int16_t>();
-                        case type::U32: return lr.as_u32() < rr.cast_num_to_num<std::uint32_t>();
-                        case type::S32: return lr.as_s32() < rr.cast_num_to_num<std::int32_t>();
-                        case type::U64: return lr.as_u64() < rr.cast_num_to_num<std::uint64_t>();
-                        case type::S64: return lr.as_s64() < rr.cast_num_to_num<std::int64_t>();
-                        case type::FLOAT: return lr.as_float() < rr.cast_num_to_num<float>();
-                        case type::DOUBLE: return lr.as_double() < rr.cast_num_to_num<double>();
-                        case type::LONG_DOUBLE: return lr.as_long_double() < rr.cast_num_to_num<long double>();
-                        default: break;
+                    if(static_cast<int>(lt) > static_cast<int>(rt)) {
+                        switch(lt) {
+                            case type::CHAR: return lr.as_char() < rr.cast_num_to_num<char>();
+                            case type::WCHAR: return lr.as_wchar() < rr.cast_num_to_num<wchar_t>();
+                            case type::U8: return lr.as_u8() < rr.cast_num_to_num<std::uint8_t>();
+                            case type::S8: return lr.as_s8() < rr.cast_num_to_num<std::int8_t>();
+                            case type::U16: return lr.as_u16() < rr.cast_num_to_num<std::uint16_t>();
+                            case type::S16: return lr.as_s16() < rr.cast_num_to_num<std::int16_t>();
+                            case type::U32: return lr.as_u32() < rr.cast_num_to_num<std::uint32_t>();
+                            case type::S32: return lr.as_s32() < rr.cast_num_to_num<std::int32_t>();
+                            case type::U64: return lr.as_u64() < rr.cast_num_to_num<std::uint64_t>();
+                            case type::S64: return lr.as_s64() < rr.cast_num_to_num<std::int64_t>();
+                            case type::FLOAT: return lr.as_float() < rr.cast_num_to_num<float>();
+                            case type::DOUBLE: return lr.as_double() < rr.cast_num_to_num<double>();
+                            case type::LONG_DOUBLE: return lr.as_long_double() < rr.cast_num_to_num<long double>();
+                            default: break;
+                        }
+                    } else {
+                        switch(rt) {
+                            case type::CHAR: return lr.cast_num_to_num<char>() < rr.as_char();
+                            case type::WCHAR: return lr.cast_num_to_num<wchar_t>() < rr.as_wchar();
+                            case type::U8: return lr.cast_num_to_num<std::uint8_t>() < rr.as_u8();
+                            case type::S8: return lr.cast_num_to_num<std::int8_t>() < rr.as_s8();
+                            case type::U16: return lr.cast_num_to_num<std::uint16_t>() < rr.as_u16();
+                            case type::S16: return lr.cast_num_to_num<std::int16_t>() < rr.as_s16();
+                            case type::U32: return lr.cast_num_to_num<std::uint32_t>() < rr.as_u32();
+                            case type::S32: return lr.cast_num_to_num<std::int32_t>() < rr.as_s32();
+                            case type::U64: return lr.cast_num_to_num<std::uint64_t>() < rr.as_u64();
+                            case type::S64: return lr.cast_num_to_num<std::int64_t>() < rr.as_s64();
+                            case type::FLOAT: return lr.cast_num_to_num<float>() < rr.as_float();
+                            case type::DOUBLE: return lr.cast_num_to_num<double>() < rr.as_double();
+                            case type::LONG_DOUBLE: return lr.cast_num_to_num<long double>() < rr.as_long_double();
+                            default: break;
+                        }
                     }
                 } else {
-                    type st{stronger_type(lt, rt)};
-                    switch(st) {
-                        case type::STRING: return lr.cast_to_string() < rr.cast_to_string();
-                        case type::WCHAR: return lr.cast_to_wchar() < rr.cast_to_wchar();
-                        case type::WSTRING: return lr.cast_to_wstring() < rr.cast_to_wstring();
-                        case type::UNDEFINED: return false;
-                        default: break;
+                    if(lt == type::STRING) {
+                        return lr.as_string() < rr.cast_to_string();
+                    } else if(lt == type::WSTRING) {
+                        return lr.as_wstring() < rr.cast_to_wstring();
+                    } else if(rt == type::STRING) {
+                        return lr.cast_to_string() < rr.as_string();
+                    } else if(rt == type::WSTRING) {
+                        return lr.cast_to_wstring() < rr.as_wstring();
                     }
                 }
             }
@@ -2774,6 +2849,220 @@ namespace scfx {
                 return true;
             }
             return !(lr < rr);
+        }
+
+        friend int operator<=>(valbox const &l, valbox const &r) {
+            auto lr{l.deref()};
+            auto rr{r.deref()};
+            type lt{lr.val_or_pointed_type()};
+            type rt{rr.val_or_pointed_type()};
+            if(lt == rt) {
+                switch(lt) {
+                    case type::S64: {
+                        auto ar{lr.as_s64() <=> rr.as_s64()};
+                        return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                    }
+                    case type::U64: {
+                        auto ar{lr.as_u64() <=> rr.as_u64()};
+                        return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                    }
+                    case type::CHAR: {
+                        auto ar{lr.as_char() <=> rr.as_char()};
+                        return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                    }
+                    case type::U8: {
+                        auto ar{lr.as_u8() <=> rr.as_u8()};
+                        return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                    }
+                    case type::S8: {
+                        auto ar{lr.as_s8() <=> rr.as_s8()};
+                        return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                    }
+                    case type::U16: {
+                        auto ar{lr.as_u16() <=> rr.as_u16()};
+                        return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                    }
+                    case type::S16: {
+                        auto ar{lr.as_s16() <=> rr.as_s16()};
+                        return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                    }
+                    case type::U32: {
+                        auto ar{lr.as_u32() <=> rr.as_u32()};
+                        return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                    }
+                    case type::S32: {
+                        auto ar{lr.as_s32() <=> rr.as_s32()};
+                        return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                    }
+                    case type::FLOAT: {
+                        auto ar{lr.as_float() <=> rr.as_float()};
+                        return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                    }
+                    case type::DOUBLE: {
+                        auto ar{lr.as_double() <=> rr.as_double()};
+                        return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                    }
+                    case type::LONG_DOUBLE: {
+                        auto ar{lr.as_long_double() <=> rr.as_long_double()};
+                        return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                    }
+                    case type::BOOL: {
+                        auto ar{lr.as_bool() <=> rr.as_bool()};
+                        return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                    }
+                    case type::WCHAR: {
+                        auto ar{lr.as_wchar() <=> rr.as_wchar()};
+                        return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                    }
+                    case type::STRING: {
+                        auto ar{lr.as_string() <=> rr.as_string()};
+                        return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                    }
+                    case type::WSTRING: {
+                        auto ar{lr.as_wstring() <=> rr.as_wstring()};
+                        return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                    }
+                    case type::UNDEFINED:
+                        return 0;
+                    default: break;
+                }
+            } else {
+                if(lt == type::UNDEFINED) {
+                    return -1;
+                } else if(rt == type::UNDEFINED) {
+                    return 1;
+                }
+                if(is_numeric_type(lt) && is_numeric_type(rt)) {
+                    if(static_cast<int>(lt) > static_cast<int>(rt)) {
+                        switch(lt) {
+                            case type::CHAR: {
+                                auto ar{lr.as_char() <=> rr.cast_num_to_num<char>()};
+                                return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                            }
+                            case type::WCHAR: {
+                                auto ar{lr.as_wchar() <=> rr.cast_num_to_num<wchar_t>()};
+                                return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                            }
+                            case type::U8: {
+                                auto ar{lr.as_u8() <=> rr.cast_num_to_num<std::uint8_t>()};
+                                return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                            }
+                            case type::S8: {
+                                auto ar{lr.as_s8() <=> rr.cast_num_to_num<std::int8_t>()};
+                                return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                            }
+                            case type::U16: {
+                                auto ar{lr.as_u16() <=> rr.cast_num_to_num<std::uint16_t>()};
+                                return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                            }
+                            case type::S16: {
+                                auto ar{lr.as_s16() <=> rr.cast_num_to_num<std::int16_t>()};
+                                return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                            }
+                            case type::U32: {
+                                auto ar{lr.as_u32() <=> rr.cast_num_to_num<std::uint32_t>()};
+                                return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                            }
+                            case type::S32: {
+                                auto ar{lr.as_s32() <=> rr.cast_num_to_num<std::int32_t>()};
+                                return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                            }
+                            case type::U64: {
+                                auto ar{lr.as_u64() <=> rr.cast_num_to_num<std::uint64_t>()};
+                                return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                            }
+                            case type::S64: {
+                                auto ar{lr.as_s64() <=> rr.cast_num_to_num<std::int64_t>()};
+                                return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                            }
+                            case type::FLOAT: {
+                                auto ar{lr.as_float() <=> rr.cast_num_to_num<float>()};
+                                return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                            }
+                            case type::DOUBLE: {
+                                auto ar{lr.as_double() <=> rr.cast_num_to_num<double>()};
+                                return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                            }
+                            case type::LONG_DOUBLE: {
+                                auto ar{lr.as_long_double() <=> rr.cast_num_to_num<long double>()};
+                                return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                            }
+                            default: break;
+                        }
+                    } else {
+                        switch(rt) {
+                            case type::CHAR: {
+                                auto ar{lr.cast_num_to_num<char>() <=> rr.as_char()};
+                                return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                            }
+                            case type::WCHAR: {
+                                auto ar{lr.cast_num_to_num<wchar_t>() <=> rr.as_wchar()};
+                                return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                            }
+                            case type::U8: {
+                                auto ar{lr.cast_num_to_num<std::uint8_t>() <=> rr.as_u8()};
+                                return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                            }
+                            case type::S8: {
+                                auto ar{lr.cast_num_to_num<std::int8_t>() <=> rr.as_s8()};
+                                return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                            }
+                            case type::U16: {
+                                auto ar{lr.cast_num_to_num<std::uint16_t>() <=> rr.as_u16()};
+                                return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                            }
+                            case type::S16: {
+                                auto ar{lr.cast_num_to_num<std::int16_t>() <=> rr.as_s16()};
+                                return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                            }
+                            case type::U32: {
+                                auto ar{lr.cast_num_to_num<std::uint32_t>() <=> rr.as_u32()};
+                                return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                            }
+                            case type::S32: {
+                                auto ar{lr.cast_num_to_num<std::int32_t>() <=> rr.as_s32()};
+                                return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                            }
+                            case type::U64: {
+                                auto ar{lr.cast_num_to_num<std::uint64_t>() <=> rr.as_u64()};
+                                return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                            }
+                            case type::S64: {
+                                auto ar{lr.cast_num_to_num<std::int64_t>() <=> rr.as_s64()};
+                                return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                            }
+                            case type::FLOAT: {
+                                auto ar{lr.cast_num_to_num<float>() <=> rr.as_float()};
+                                return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                            }
+                            case type::DOUBLE: {
+                                auto ar{lr.cast_num_to_num<double>() <=> rr.as_double()};
+                                return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                            }
+                            case type::LONG_DOUBLE: {
+                                auto ar{lr.cast_num_to_num<long double>() <=> rr.as_long_double()};
+                                return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                            }
+                            default: break;
+                        }
+                    }
+                } else {
+                    if(lt == type::STRING) {
+                        auto ar{lr.as_string() <=> rr.cast_to_string()};
+                        return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                    } else if(lt == type::WSTRING) {
+                        auto ar{lr.as_wstring() <=> rr.cast_to_wstring()};
+                        return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                    } else if(rt == type::STRING) {
+                        auto ar{lr.cast_to_string() <=> rr.as_string()};
+                        return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                    } else if(rt == type::WSTRING) {
+                        auto ar{lr.cast_to_wstring() <=> rr.as_wstring()};
+                        return std::strong_ordering::less == ar ? -1 : (std::strong_ordering::greater == ar ? 1 : 0);
+                    }
+                }
+            }
+            throw std::runtime_error{"operation not applicable"};
         }
 
         friend bool operator!=(valbox const &l, valbox const &r) {

@@ -149,6 +149,7 @@ namespace scfx {
             } else if(state_ == "||") { barbar(c);
             } else if(state_ == "^") { circ(c);
             } else if(state_ == "<") { lt(c);
+            } else if(state_ == "<=") { leq(c);
             } else if(state_ == "<<") { lshift(c);
             } else if(state_ == ">") { gt(c);
             } else if(state_ == ">>") { rshift(c);
@@ -587,12 +588,21 @@ namespace scfx {
         void lt(std::int64_t c) {
             if(c == '=') {
                 buff_ += c;
-                report_token(token::type::LESSEQUAL);
+                state_ = "<=";
             } else if(c == '<') {
                 buff_ += c;
                 state_ = "<<";
             } else {
                 report_token(token::type::LESS, c);
+            }
+        }
+
+        void leq(std::int64_t c) {
+            if(c == '>') {
+                buff_ += c;
+                report_token(token::type::SPACESHIP);
+            } else {
+                report_token(token::type::LESSEQUAL, c);
             }
         }
 

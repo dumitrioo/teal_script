@@ -8,6 +8,10 @@ function undef_test() {
 
 my_drafts() {
 
+    println(1 <=> 2);
+
+    return exit();
+
     {
         v = vec4(1,2,3,4);
         v.println();

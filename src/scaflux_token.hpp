@@ -35,6 +35,7 @@ namespace scfx {
             LESS,                        // <
             GREATER,                     // >
             GREATEREQUAL,                // >=
+            SPACESHIP,                   // <=>
             ASSIGN,                      // =
             ADDASSIGN,                   // +=
             SUBASSIGN,                   // -=
@@ -77,7 +78,7 @@ namespace scfx {
             COMMA,                       // ,
             DOT,                         // .
             FUNCCALL,
-            ENDOFFILE
+            ENDOFFILE,
         };
 
         static inline map_t<type, std::string> const type_names {
@@ -105,6 +106,7 @@ namespace scfx {
             {type::LESS, "LESS"},
             {type::GREATER, "GREATER"},
             {type::GREATEREQUAL, "GREATEREQUAL"},
+            {type::SPACESHIP, "SPACESHIP"},
             {type::ASSIGN, "ASSIGN"},
             {type::ADDASSIGN, "ADDASSIGN"},
             {type::SUBASSIGN, "SUBASSIGN"},

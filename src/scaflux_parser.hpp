@@ -991,7 +991,26 @@ namespace scfx {
         }
 
         scfx::json get_prio_8() {
-            return get_prio_7();
+            scfx::json res{get_prio_7()};
+            while(true) {
+                token const &tk{get_token(0)};
+                if(tk.type_is(token::type::SPACESHIP)) {
+                    scfx::json over_res{};
+                    over_res["loc"]["line"] = get_token(0).line();
+                    over_res["loc"]["col"] = get_token(0).col();
+                    over_res["type"] = "expression";
+                    over_res["subtype"] = "binop";
+                    over_res["content"]["operation"] = tk.tktype_str();
+                    over_res["content"]["oper_enum"] = static_cast<int>(tk.tktype());
+                    over_res["content"]["left"] = std::move(res);
+                    res = std::move(over_res);
+                    increment_pos();
+                    res["content"]["right"] = get_prio_7();
+                } else {
+                    break;
+                }
+            }
+            return res;
         }
 
         scfx::json get_prio_7() {
