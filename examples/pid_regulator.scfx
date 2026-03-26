@@ -12,11 +12,11 @@ global_init glbl_ini();
 'km' real_km;
 
 // input emulation with random and constants (mocking)
-val_with_rand mock_in(0.0, /*100.0*/1000.0);
+val_with_rand mock_in(0.0, 1000.0);
 forward mock_kp(0.8);
 forward mock_ki(0.4);
 forward mock_kd(0.000001);
-forward mock_km(/*500.0*/100.0);
+forward mock_km(200.0);
 
 // choose and return first one defined
 first_defined in(real_in, mock_in);
@@ -59,7 +59,7 @@ pid_regulator(err, kp, ki, kd) {
     }
 }
 
-// Efficient alternative for PID regulator...
+// Alternative regulator...
 math_regulator(err, km) {
     if(this.output == undefined) {
         this.output = 0.0;
