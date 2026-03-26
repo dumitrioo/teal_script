@@ -428,6 +428,11 @@ namespace scfx {
                        str_util::utoa<std::string>(version_patch_);
             });
 
+            // ordering
+            add_var("less", -1);
+            add_var("equal", 0);
+            add_var("greater", 1);
+
             add_var("EPERM", EPERM);     // 1   Operation not permitted
             add_var("ENOENT", ENOENT);   // 2   No such file or directory
             add_var("ESRCH", ESRCH);     // 3   No such process
@@ -2372,7 +2377,7 @@ namespace scfx {
         std::list<std::pair<std::shared_ptr<so>, extension_interface *>> loaded_extensions_{};
         static std::size_t constexpr version_major_{1};
         static std::size_t constexpr version_minor_{3};
-        static std::size_t constexpr version_patch_{1};
+        static std::size_t constexpr version_patch_{2};
     };
 
 }

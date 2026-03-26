@@ -8,7 +8,7 @@ function undef_test() {
 
 my_drafts() {
 
-    println(1 <=> 2);
+    println(1 <=> 2 == less);
 
     return exit();
 
