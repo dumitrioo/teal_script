@@ -6978,12 +6978,146 @@ namespace scfx {
     };
 
     static std::ostream &operator<<(std::ostream &os, valbox const &v) {
-        os << v.dump();
+        switch(v.val_or_pointed_type()) {
+            case valbox::type::CHAR: os << v.as_char(); break;
+            case valbox::type::U8: os << v.as_u8(); break;
+            case valbox::type::S8: os << v.as_s8(); break;
+            case valbox::type::U16: os << v.as_u16(); break;
+            case valbox::type::S16: os << v.as_s16(); break;
+            case valbox::type::U32: os << v.as_u32(); break;
+            case valbox::type::S32: os << v.as_s32(); break;
+            case valbox::type::U64: os << v.as_u64(); break;
+            case valbox::type::S64: os << v.as_s64(); break;
+            case valbox::type::FLOAT: os << v.as_float(); break;
+            case valbox::type::DOUBLE: os << v.as_double(); break;
+            case valbox::type::LONG_DOUBLE: os << v.as_long_double(); break;
+            case valbox::type::BOOL: os << (v.as_bool() ? "true" : "false"); break;
+            case valbox::type::WCHAR: { std::wstring ws{}; ws += v.as_wchar(); os << scfx::str_util::to_utf8(ws); } break;
+            case valbox::type::STRING: os << v.as_string(); break;
+            case valbox::type::WSTRING: os << scfx::str_util::to_utf8(v.as_wstring()); break;
+            case valbox::type::CLASS: os << "<" << v.deref().class_name() << ">"; break;
+            case valbox::type::POINTER: os << v.deref(); break;
+            case valbox::type::UNDEFINED: os << "<undefined>"; break;
+            case valbox::type::FUNC: os << "<function>"; break;
+            case valbox::type::ARRAY: {
+                    auto const &a{v.as_array()};
+                    os << "[";
+                    std::string sep{};
+                    for(auto &&v: a) {
+                        os << sep << v; sep = ",";
+                    }
+                    os << "]";
+                }
+                break;
+            case valbox::type::VEC4: {
+                    std::stringstream ss{};
+                    ss << "vec4{";
+                    std::string sep{};
+                    for(std::size_t i{0}; i < 4; ++i) {
+                        ss << sep << std::fixed << v.as_vec4()[i];
+                        if(sep.empty()) {
+                            sep = ",";
+                        }
+                    }
+                    ss << "}";
+                    os << ss.str();
+                }
+                break;
+            case valbox::type::MAT4: {
+                    std::stringstream ss{};
+                    ss << "mat4{";
+                    std::string sep1{};
+                    for(std::size_t r{0}; r < 4; ++r) {
+                        ss << sep1 << "{";
+                        std::string sep2{};
+                        for(std::size_t c{0}; c < 4; ++c) {
+                            ss << sep2 << std::fixed << v.as_mat4().at(r, c);
+                            sep2 = ", ";
+                        }
+                        ss << "}";
+                        if(sep1.empty()) {
+                            sep1 = ",";
+                        }
+                    }
+                    ss << "}";
+                    os << ss.str();
+                }
+                break;
+            case valbox::type::OBJECT: os << v.to_json().serialize5(); break;
+            default: os << "<corrupted>"; break;
+        }
         return os;
     }
 
     static std::wostream &operator<<(std::wostream &os, valbox const &v) {
-        os << v.wdump();
+        switch(v.val_or_pointed_type()) {
+            case valbox::type::CHAR: os << v.cast_to_wchar(); break;
+            case valbox::type::U8: os << v.as_u8(); break;
+            case valbox::type::S8: os << v.as_s8(); break;
+            case valbox::type::U16: os << v.as_u16(); break;
+            case valbox::type::S16: os << v.as_s16(); break;
+            case valbox::type::U32: os << v.as_u32(); break;
+            case valbox::type::S32: os << v.as_s32(); break;
+            case valbox::type::U64: os << v.as_u64(); break;
+            case valbox::type::S64: os << v.as_s64(); break;
+            case valbox::type::FLOAT: os << v.as_float(); break;
+            case valbox::type::DOUBLE: os << v.as_double(); break;
+            case valbox::type::LONG_DOUBLE: os << v.as_long_double(); break;
+            case valbox::type::BOOL: os << (v.as_bool() ? L"true" : L"false"); break;
+            case valbox::type::WCHAR: os << v.as_wchar(); break;
+            case valbox::type::STRING: os << v.cast_to_wstring(); break;
+            case valbox::type::WSTRING: os << v.as_wstring(); break;
+            case valbox::type::CLASS: os << L"<" << str_util::from_utf8(v.deref().class_name()) << L">"; break;
+            case valbox::type::POINTER: os << v.deref(); break;
+            case valbox::type::UNDEFINED: os << L"<undefined>"; break;
+            case valbox::type::FUNC: os << L"<function>"; break;
+            case valbox::type::ARRAY: {
+                auto const &a{v.as_array()};
+                os << L"[";
+                std::wstring sep{};
+                for(auto &&v: a) {
+                    os << sep << v; sep = L",";
+                }
+                os << L"]";
+            }
+            break;
+            case valbox::type::VEC4: {
+                std::wstringstream ss{};
+                ss << L"vec4{";
+                std::wstring sep{};
+                for(std::size_t i{0}; i < 4; ++i) {
+                    ss << sep << std::fixed << v.as_vec4()[i];
+                    if(sep.empty()) {
+                        sep = L",";
+                    }
+                }
+                ss << L"}";
+                os << ss.str();
+            }
+            break;
+            case valbox::type::MAT4: {
+                std::wstringstream ss{};
+                ss << L"mat4{";
+                std::wstring sep1{};
+                for(std::size_t r{0}; r < 4; ++r) {
+                    ss << sep1 << L"{";
+                    std::wstring sep2{};
+                    for(std::size_t c{0}; c < 4; ++c) {
+                        ss << sep2 << std::fixed << v.as_mat4().at(r, c);
+                        sep2 = L", ";
+                    }
+                    ss << L"}";
+                    if(sep1.empty()) {
+                        sep1 = L",";
+                    }
+                }
+                ss << L"}";
+                os << ss.str();
+            }
+            break;
+            case valbox::type::OBJECT: os << str_util::from_utf8(v.to_json().serialize5()); break;
+            default: os << L"<corrupted>"; break;
+        }
         return os;
     }
 

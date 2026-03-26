@@ -1435,6 +1435,15 @@ namespace scfx {
             add_function("cycle_nanosleep", SCFXFUN() {
                 return sleep_between_cycles_nanoseconds();
             });
+            add_function("set_inactive_nanosleep", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1);
+                uint64_t time_to_sleep{args[0].cast_to_u64()};
+                set_sleep_inactive_thread_nanoseconds(time_to_sleep);
+                return time_to_sleep;
+            });
+            add_function("inactive_nanosleep", SCFXFUN() {
+                return sleep_inactive_thread_nanoseconds();
+            });
             add_function("exit", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2);
                 if(programmatic_termination_enabled_ != 0) {
@@ -1844,6 +1853,14 @@ namespace scfx {
             sleep_between_cycles_nanoseconds_ = val;
         }
 
+        std::uint64_t sleep_inactive_thread_nanoseconds() const noexcept {
+            return sleep_inactive_thread_nanoseconds_;
+        }
+
+        void set_sleep_inactive_thread_nanoseconds(std::uint64_t val) noexcept {
+            sleep_inactive_thread_nanoseconds_ = val;
+        }
+
         void stop_mt() {
             std::unique_lock l{threads_mtp_};
             if(!is_current_thread_mode_multi()) {
@@ -2015,7 +2032,7 @@ namespace scfx {
                                 }
                             }
                             if(!have_locked) {
-                                std::this_thread::sleep_for(std::chrono::microseconds(100));
+                                std::this_thread::sleep_for(std::chrono::nanoseconds(sleep_inactive_thread_nanoseconds_));
                             }
                             if(sleep_between_cycles_nanoseconds_ > 0) {
                                 std::this_thread::sleep_for(std::chrono::nanoseconds(sleep_between_cycles_nanoseconds_));
@@ -2269,6 +2286,7 @@ namespace scfx {
         bool is_current_thread_mode_single() const { return thread_mode_ == thread_mode::single; }
         bool is_current_thread_mode_multi() const { return thread_mode_ == thread_mode::multi; }
         std::uint64_t sleep_between_cycles_nanoseconds_{0};
+        std::uint64_t sleep_inactive_thread_nanoseconds_{100'000ULL};
 
         execution_context exctx_{};
         shared_mutex threads_mtp_{};
@@ -2354,7 +2372,7 @@ namespace scfx {
         std::list<std::pair<std::shared_ptr<so>, extension_interface *>> loaded_extensions_{};
         static std::size_t constexpr version_major_{1};
         static std::size_t constexpr version_minor_{3};
-        static std::size_t constexpr version_patch_{0};
+        static std::size_t constexpr version_patch_{1};
     };
 
 }
