@@ -12,11 +12,11 @@ global_init glbl_ini();
 'km' real_km;
 
 // input emulation with random and constants (mocking)
-val_with_rand mock_in(0.0, 1000.0);
+val_with_rand mock_in(0.0, 1000.0, 5);
 forward mock_kp(0.8);
 forward mock_ki(0.4);
 forward mock_kd(0.000001);
-forward mock_km(200.0);
+forward mock_km(500.0);
 
 // choose and return first one defined
 first_defined in(real_in, mock_in);
@@ -69,9 +69,9 @@ math_regulator(err, km) {
     dt = t - this.prev_t;
     if(dt > 0.0) {
         this.prev_t = t;
-        delta = km * dt * (sign(err) * pow(abs(err), 3) + 0.005 * sin(err * 16.0));
+        delta = km * dt * (pow(err * 0.02, 3) - pow(err * 0.0199999, 3) + 100000.0 * sin(err * .000001));
         if(abs(delta) > abs(err)) {
-            delta = 20.0 * dt * err;
+            delta = 0.333 * err;
         }
         this.output += delta;
         return this.output;
@@ -99,15 +99,15 @@ difference(a, b) {
     return a - b;
 }
 
-val_with_rand(v, dev) {
+val_with_rand(v, dev, expire_time) {
     if(this.prev_t == undefined) {
         this.prev_t = steady_clock();
-        this.delta = (randf() - 0.5) * dev;
+        this.delta = (randf() - 0.5) * 2.0 * dev;
     }
     t = steady_clock();
     dt = t - this.prev_t;
-    if(dt > 2) {
-        this.delta = (randf() - 0.5) * dev;
+    if(dt > expire_time) {
+        this.delta = (randf() - 0.5) * 2.0 * dev;
         this.prev_t = t;
     }
     return v + this.delta;
