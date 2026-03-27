@@ -725,9 +725,10 @@ namespace scfx {
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
+                    valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr)};
+                    valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr)};
                     try {
-                        res = this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr) <=
-                              this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr);
+                        res = l <= r;
                     } catch (runtime_error const &e) {
                         er = e;
                         excepted = true;

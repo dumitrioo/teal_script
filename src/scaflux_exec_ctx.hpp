@@ -178,6 +178,12 @@ namespace scfx {
                     stb = stack_barrier();
                 }
             }
+            if(create_if_not_exists()) {
+                valbox res{};
+                stack_[stack_ptr_].put(name, res);
+                objtyp = obj_type::stack_var;
+                return res;
+            }
             dict_map_t<std::string, valbox>::iterator gvd_it{rt_ptr_->global_constants_dictionary()->find(name)};
             if(gvd_it != rt_ptr_->global_constants_dictionary()->end()) {
                 objtyp = obj_type::global_var;
@@ -191,12 +197,6 @@ namespace scfx {
             if((rt_ptr_->user_functions_search())(name)) {
                 objtyp = obj_type::user_fun;
                 return valbox{rt_ptr_->user_function_selector(), name, true};
-            }
-            if(create_if_not_exists()) {
-                valbox res{};
-                stack_[stack_ptr_].put(name, res);
-                objtyp = obj_type::stack_var;
-                return res;
             }
             throw scfx_identifier_not_found{l, c,
                 std::string{"identifier \""} + name + "\" not found"

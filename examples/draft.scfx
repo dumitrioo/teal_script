@@ -1,4 +1,4 @@
-global_init() if cycle_nanosleep() == 0 set_cycle_nanosleep(1000000);
+global_init() if !cycle_nanosleep() set_cycle_nanosleep(1'000'000);
 global_init glbl_ini();
 
 function undef_test() {
@@ -6,7 +6,22 @@ function undef_test() {
     return 0;
 }
 
+function sinus(x) {
+    return sin(x);
+}
+
+function integral(func, beg, end, dx) {
+    s = 0.0;
+    for(x = beg; x <= end; x += dx) {
+        s += func(x) * dx;
+    }
+    return s;
+}
+
 my_drafts() {
+
+    println(integral(sinus, 0.0, 3.141592653589793238462, 0.001));
+    return exit();
 
     println(1 <=> 2 == less);
 
