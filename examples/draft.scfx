@@ -172,7 +172,7 @@ my_drafts() {
     /////////////////////////////////////////////////////////////////////
 
     s = string();
-    tot_num = 1024 * 2;
+    tot_num = 100;
     s.reserve(tot_num * 17);
     b = steady_clock();
     for(i = 0; i < tot_num; ++i) {
