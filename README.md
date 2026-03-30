@@ -4,7 +4,7 @@ SCAFlux is a dynamically typed, embedded, extensible from the host code scriptin
 
 ## Why?
 
-The advantage of C++ is that it can solve almost any development task. And this is also its problem. C++ programmers typically use it for absolutely everything in their work, ignoring the fact that object-oriented and imperative approaches are unsuitable for certain tasks. There is a class of tasks that are much easier to solve using specialized tools. One such tool and a description of the tasks it can solve are presented here...
+The advantage of C++ is that it can solve many of the development tasks. And this is also its problem. C++ programmers typically use it for absolutely everything in their work, ignoring the fact that object-oriented and imperative approaches are unsuitable for certain tasks. There is a class of tasks that are much easier to solve using specialized tools. One such tool and a description of the tasks it can solve are presented here...
 
 ## The Data-flow Graph Paradigm
 
