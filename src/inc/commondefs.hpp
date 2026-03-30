@@ -129,6 +129,7 @@
     #include <netinet/ip6.h>
     #include <sys/mman.h>
     #include <dlfcn.h>
+    #include <sys/resource.h>
 #define _POSIX1_SOURCE 2
     #include <unistd.h>
     #include <semaphore.h>
@@ -169,6 +170,7 @@
     #include <netinet/ip6.h>
     #include <sys/mman.h>
     #include <dlfcn.h>
+    #include <sys/resource.h>
 #define _POSIX1_SOURCE 2
     #include <unistd.h>
     #include <semaphore.h>

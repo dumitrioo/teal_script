@@ -2,29 +2,29 @@ zmq_cli() {
     if(this.ctx == undefined) {
         this.ctx = zmq_ctx_new();
         if(!this.ctx) {
-            console.println(zmq_errstr());
+            console.print(zmq_errstr());
             return exit(1);
         }
         this.skt = this.ctx.zmq_socket(ZMQ_PAIR);
         if(!this.skt) {
-            console.println(zmq_errstr());
+            console.print(zmq_errstr());
             return exit(2);
         }
         if(this.skt.zmq_connect("tcp://localhost:5555") < 0) {
-            console.println(zmq_errstr());
+            console.print(zmq_errstr());
             return exit(3);
         }
     }
-    console.println("sending hello: ");
+    console.print("sending hello: ");
     sent = this.skt.zmq_send("hello");
-    console.println(sent);
-    console.println("receiving :");
+    console.print(sent);
+    console.print("receiving :");
     rcvd = this.skt.zmq_recv(100, ZMQ_DONTWAIT);
-    console.println(rcvd);
+    console.print(rcvd);
     if(rcvd.size() == 0) {
-        console.println(zmq_errstr());
+        console.print(zmq_errstr());
     }
-    console.println();
+    console.print();
     return 0;
 }
 
@@ -35,23 +35,23 @@ zmq_sub() {
     if(this.ctx == undefined) {
         this.ctx = zmq_ctx_new();
         if(!this.ctx) {
-            console.println(zmq_errstr());
+            console.print(zmq_errstr());
             return exit(1);
         }
         this.skt = this.ctx.zmq_socket(ZMQ_SUB);
         if(!this.skt) {
-            console.println(zmq_errstr()); return exit(2);
+            console.print(zmq_errstr()); return exit(2);
         }
         if(this.skt.zmq_connect("tcp://localhost:5556") < 0) {
-            console.println(zmq_errstr()); return exit(3);
+            console.print(zmq_errstr()); return exit(3);
         }
         if(this.skt.zmq_setsockopt(ZMQ_SUBSCRIBE, "msg1") < 0)  {
-            console.println(zmq_errstr()); return exit(4);
+            console.print(zmq_errstr()); return exit(4);
         }
     }
     while(true) {
         rcvd = this.skt.zmq_recv(1024);
-        console.println(rcvd);
+        console.print(rcvd);
     }
     return 0;
 }

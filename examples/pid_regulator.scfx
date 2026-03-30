@@ -81,9 +81,10 @@ math_regulator(err, km) {
 global_init() {
     if(this.initialized == undefined) {
         console.fixed();
+        console.setprecision(4);
         this.initialized = true;
-        set_cycle_nanosleep(1'000'000);
-        set_inactive_nanosleep(1'000'000);
+        set_cycle_nanosleep(500'000);
+        set_inactive_nanosleep(500'000);
     }
 }
 
@@ -118,9 +119,9 @@ logprint(in, e1, pidval, e2, mathval) {
     dt = t - this.prev_t;
     if(dt > 0.1) {
         this.prev_t = t;
-        console.info("target val: ", in,
-            "  ||  err1: ", e1, ", PID val: ", pidval,
-            "  ||  err2: ", e2, ", Math val: ", mathval
+        console.info("target: ", in,
+            " | err1: ", e1, ", PID val: ", pidval,
+            " | err2: ", e2, ", Math val: ", mathval
         );
     }
 }

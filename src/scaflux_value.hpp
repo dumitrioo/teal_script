@@ -502,303 +502,299 @@ namespace scfx {
 
         bool is_string_ref() const { return val_or_pointed_type() == type::STRING; }
         std::string &as_string() {
-            if(!box_) { throw std::runtime_error{"not a string"}; }
             valbox &dr{deref()};
-            return dr.pointed_type() == type::STRING ? dr.deref_ptr<std::string>() :
-                   std::get<std::string>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::STRING || dr.box_->pointed_type_ == type::STRING))
+                throw std::runtime_error{"not a string"};
+            return dr.box_->pointed_type_ == type::STRING ? dr.deref_ptr<std::string>() : std::get<std::string>(dr.box_->value_);
         }
         std::string const &as_string() const {
-            if(!box_) { throw std::runtime_error{"not a string"}; }
             valbox const &dr{deref()};
-            return dr.pointed_type() == type::STRING ? dr.deref_ptr<std::string>() :
-                   std::get<std::string>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::STRING || dr.box_->pointed_type_ == type::STRING))
+                throw std::runtime_error{"not a string"};
+            return dr.box_->pointed_type_ == type::STRING ? dr.deref_ptr<std::string>() : std::get<std::string>(dr.box_->value_);
         }
 
         bool is_wstring_ref() const { return val_or_pointed_type() == type::WSTRING; }
         std::wstring &as_wstring() {
-            if(!box_) { throw std::runtime_error{"not a wstring"}; }
             valbox &dr{deref()};
-            return dr.pointed_type() == type::WSTRING ? dr.deref_ptr<std::wstring>() :
-                   std::get<std::wstring>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::WSTRING || dr.box_->pointed_type_ == type::WSTRING))
+                throw std::runtime_error{"not a wide string"};
+            return dr.box_->pointed_type_ == type::WSTRING ? dr.deref_ptr<std::wstring>() : std::get<std::wstring>(dr.box_->value_);
         }
         std::wstring const &as_wstring() const {
-            if(!box_) { throw std::runtime_error{"not a wstring"}; }
             valbox const &dr{deref()};
-            return dr.pointed_type() == type::WSTRING ? dr.deref_ptr<std::wstring>() :
-                   std::get<std::wstring>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::WSTRING || dr.box_->pointed_type_ == type::WSTRING))
+                throw std::runtime_error{"not a wide string"};
+            return dr.box_->pointed_type_ == type::WSTRING ? dr.deref_ptr<std::wstring>() : std::get<std::wstring>(dr.box_->value_);
         }
 
         bool is_long_double_ref() const { return val_or_pointed_type() == type::LONG_DOUBLE; }
         long double &as_long_double() {
-            if(!box_) { throw std::runtime_error{"not a floating point value"}; }
             valbox &dr{deref()};
-            return dr.pointed_type() == type::LONG_DOUBLE ? dr.deref_ptr<long double>() :
-                    std::get<long double>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::LONG_DOUBLE || dr.box_->pointed_type_ == type::LONG_DOUBLE))
+                throw std::runtime_error{"not a long double value"};
+            return dr.box_->pointed_type_ == type::LONG_DOUBLE ? dr.deref_ptr<long double>() : std::get<long double>(dr.box_->value_);
         }
-        long double as_long_double() const {
-            if(!box_) { throw std::runtime_error{"not a floating point value"}; }
+        long double const &as_long_double() const {
             valbox const &dr{deref()};
-            return dr.pointed_type() == type::LONG_DOUBLE ? deref_ptr<long double>() :
-                    std::get<long double>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::LONG_DOUBLE || dr.box_->pointed_type_ == type::LONG_DOUBLE))
+                throw std::runtime_error{"not a long double value"};
+            return dr.box_->pointed_type_ == type::LONG_DOUBLE ? dr.deref_ptr<long double>() : std::get<long double>(dr.box_->value_);
         }
 
         bool is_double_ref() const { return val_or_pointed_type() == type::DOUBLE; }
         double &as_double() {
-            if(!box_) { throw std::runtime_error{"not a floating point value"}; }
             valbox &dr{deref()};
-            return dr.pointed_type() == type::DOUBLE ? dr.deref_ptr<double>() :
-                       std::get<double>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::DOUBLE || dr.box_->pointed_type_ == type::DOUBLE))
+                throw std::runtime_error{"not a double value"};
+            return dr.box_->pointed_type_ == type::DOUBLE ? dr.deref_ptr<double>() : std::get<double>(dr.box_->value_);
         }
         double as_double() const {
-            if(!box_) { throw std::runtime_error{"not a floating point value"}; }
             valbox const &dr{deref()};
-            return dr.pointed_type() == type::DOUBLE ? dr.deref_ptr<double>() :
-                       std::get<double>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::DOUBLE || dr.box_->pointed_type_ == type::DOUBLE))
+                throw std::runtime_error{"not a double value"};
+            return dr.box_->pointed_type_ == type::DOUBLE ? dr.deref_ptr<double>() : std::get<double>(dr.box_->value_);
         }
 
         bool is_float_ref() const { return val_or_pointed_type() == type::FLOAT; }
         float &as_float() {
-            if(!box_) { throw std::runtime_error{"not a floating point value"}; }
             valbox &dr{deref()};
-            return dr.pointed_type() == type::FLOAT ? dr.deref_ptr<float>() :
-                       std::get<float>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::FLOAT || dr.box_->pointed_type_ == type::FLOAT))
+                throw std::runtime_error{"not a floating point value"};
+            return dr.box_->pointed_type_ == type::FLOAT ? dr.deref_ptr<float>() : std::get<float>(dr.box_->value_);
         }
         float as_float() const {
-            if(!box_) { throw std::runtime_error{"not a floating point value"}; }
             valbox const &dr{deref()};
-            return dr.pointed_type() == type::FLOAT ? dr.deref_ptr<float>() :
-                       std::get<float>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::FLOAT || dr.box_->pointed_type_ == type::FLOAT))
+                throw std::runtime_error{"not a floating point value"};
+            return dr.box_->pointed_type_ == type::FLOAT ? dr.deref_ptr<float>() : std::get<float>(dr.box_->value_);
         }
 
         bool is_bool_ref() const { return val_or_pointed_type() == type::BOOL; }
         bool &as_bool() {
-            if(!box_) { throw std::runtime_error{"not a boolean value"}; }
             valbox &dr{deref()};
-            return dr.pointed_type() == type::BOOL ? dr.deref_ptr<bool>() :
-                   std::get<bool>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::BOOL || dr.box_->pointed_type_ == type::BOOL))
+                throw std::runtime_error{"not a boolean value"};
+            return dr.box_->pointed_type_ == type::BOOL ? dr.deref_ptr<bool>() : std::get<bool>(dr.box_->value_);
         }
         bool as_bool() const {
-            if(!box_) { throw std::runtime_error{"not a boolean value"}; }
             valbox const &dr{deref()};
-            return dr.pointed_type() == type::BOOL ? dr.deref_ptr<bool>() :
-                   std::get<bool>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::BOOL || dr.box_->pointed_type_ == type::BOOL))
+                throw std::runtime_error{"not a boolean value"};
+            return dr.box_->pointed_type_ == type::BOOL ? dr.deref_ptr<bool>() : std::get<bool>(dr.box_->value_);
         }
 
         bool is_char_ref() const { return val_or_pointed_type() == type::CHAR; }
         char &as_char() {
-            if(!box_) { throw std::runtime_error{"not a character"}; }
             valbox &dr{deref()};
-            return dr.pointed_type() == type::CHAR ? dr.deref_ptr<char>() :
-                   std::get<char>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::CHAR || dr.box_->pointed_type_ == type::CHAR))
+                throw std::runtime_error{"not a character"};
+            return dr.box_->pointed_type_ == type::CHAR ? dr.deref_ptr<char>() : std::get<char>(dr.box_->value_);
         }
         char as_char() const {
-            if(!box_) { throw std::runtime_error{"not a character"}; }
             valbox const &dr{deref()};
-            return dr.pointed_type() == type::CHAR ? dr.deref_ptr<char>() :
-                   std::get<char>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::CHAR || dr.box_->pointed_type_ == type::CHAR))
+                throw std::runtime_error{"not a character"};
+            return dr.box_->pointed_type_ == type::CHAR ? dr.deref_ptr<char>() : std::get<char>(dr.box_->value_);
         }
 
         bool is_wchar_ref() const { return val_or_pointed_type() == type::WCHAR; }
         wchar_t &as_wchar() {
-            if(!box_) { throw std::runtime_error{"not a character"}; }
             valbox &dr{deref()};
-            return dr.pointed_type() == type::WCHAR ? dr.deref_ptr<wchar_t>() :
-                    std::get<wchar_t>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::WCHAR || dr.box_->pointed_type_ == type::WCHAR))
+                throw std::runtime_error{"not a wide character"};
+            return dr.box_->pointed_type_ == type::WCHAR ? dr.deref_ptr<wchar_t>() : std::get<wchar_t>(dr.box_->value_);
         }
         wchar_t as_wchar() const {
-            if(!box_) { throw std::runtime_error{"not a character"}; }
             valbox const &dr{deref()};
-            return dr.pointed_type() == type::WCHAR ? dr.deref_ptr<wchar_t>() :
-                       std::get<wchar_t>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::WCHAR || dr.box_->pointed_type_ == type::WCHAR))
+                throw std::runtime_error{"not a wide character"};
+            return dr.box_->pointed_type_ == type::WCHAR ? dr.deref_ptr<wchar_t>() : std::get<wchar_t>(dr.box_->value_);
         }
 
         bool is_u8_ref() const { return val_or_pointed_type() == type::U8; }
         std::uint8_t &as_u8() {
-            if(!box_) { throw std::runtime_error{"not an integer"}; }
             valbox &dr{deref()};
-            return dr.pointed_type() == type::U8 ? dr.deref_ptr<std::uint8_t>() :
-                       std::get<std::uint8_t>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::U8 || dr.box_->pointed_type_ == type::U8))
+                throw std::runtime_error{"not a 8-bit unsigned integer"};
+            return dr.box_->pointed_type_ == type::U8 ? dr.deref_ptr<std::uint8_t>() : std::get<std::uint8_t>(dr.box_->value_);
         }
         std::uint8_t as_u8() const {
-            if(!box_) { throw std::runtime_error{"not an integer"}; }
             valbox const &dr{deref()};
-            return dr.pointed_type() == type::U8 ? dr.deref_ptr<std::uint8_t>() :
-                       std::get<std::uint8_t>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::U8 || dr.box_->pointed_type_ == type::U8))
+                throw std::runtime_error{"not a 8-bit unsigned integer"};
+            return dr.box_->pointed_type_ == type::U8 ? dr.deref_ptr<std::uint8_t>() : std::get<std::uint8_t>(dr.box_->value_);
         }
 
         bool is_s8_ref() const { return val_or_pointed_type() == type::S8; }
         std::int8_t &as_s8() {
-            if(!box_) { throw std::runtime_error{"not an integer"}; }
             valbox &dr{deref()};
-            return dr.pointed_type() == type::S8 ? dr.deref_ptr<std::int8_t>() :
-                       std::get<std::int8_t>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::S8 || dr.box_->pointed_type_ == type::S8))
+                throw std::runtime_error{"not a 8-bit signed integer"};
+            return dr.box_->pointed_type_ == type::S8 ? dr.deref_ptr<std::int8_t>() : std::get<std::int8_t>(dr.box_->value_);
         }
         std::int8_t as_s8() const {
-            if(!box_) { throw std::runtime_error{"not an integer"}; }
             valbox const &dr{deref()};
-            return dr.pointed_type() == type::S8 ? dr.deref_ptr<std::int8_t>() :
-                   std::get<std::int8_t>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::S8 || dr.box_->pointed_type_ == type::S8))
+                throw std::runtime_error{"not a 8-bit signed integer"};
+            return dr.box_->pointed_type_ == type::S8 ? dr.deref_ptr<std::int8_t>() : std::get<std::int8_t>(dr.box_->value_);
         }
 
         bool is_u16_ref() const { return val_or_pointed_type() == type::U16; }
         std::uint16_t &as_u16() {
-            if(!box_) { throw std::runtime_error{"not an integer"}; }
             valbox &dr{deref()};
-            return dr.pointed_type() == type::U16 ? dr.deref_ptr<std::uint16_t>() :
-                   std::get<std::uint16_t>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::U16 || dr.box_->pointed_type_ == type::U16))
+                throw std::runtime_error{"not a 16-bit unsigned integer"};
+            return dr.box_->pointed_type_ == type::U16 ? dr.deref_ptr<std::uint16_t>() : std::get<std::uint16_t>(dr.box_->value_);
         }
         std::uint16_t as_u16() const {
-            if(!box_) { throw std::runtime_error{"not an integer"}; }
             valbox const &dr{deref()};
-            return dr.pointed_type() == type::U16 ? dr.deref_ptr<std::uint16_t>() :
-                   std::get<std::uint16_t>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::U16 || dr.box_->pointed_type_ == type::U16))
+                throw std::runtime_error{"not a 16-bit unsigned integer"};
+            return dr.box_->pointed_type_ == type::U16 ? dr.deref_ptr<std::uint16_t>() : std::get<std::uint16_t>(dr.box_->value_);
         }
 
         bool is_s16_ref() const { return val_or_pointed_type() == type::S16; }
         std::int16_t &as_s16() {
-            if(!box_) { throw std::runtime_error{"not an integer"}; }
             valbox &dr{deref()};
-            return dr.pointed_type() == type::S16 ? dr.deref_ptr<std::int16_t>() :
-                   std::get<std::int16_t>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::S16 || dr.box_->pointed_type_ == type::S16))
+                throw std::runtime_error{"not a 16-bit signed integer"};
+            return dr.box_->pointed_type_ == type::S16 ? dr.deref_ptr<std::int16_t>() : std::get<std::int16_t>(dr.box_->value_);
         }
         std::int16_t as_s16() const {
-            if(!box_) { throw std::runtime_error{"not an integer"}; }
             valbox const &dr{deref()};
-            return dr.pointed_type() == type::S16 ? dr.deref_ptr<std::int16_t>() :
-                   std::get<std::int16_t>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::S16 || dr.box_->pointed_type_ == type::S16))
+                throw std::runtime_error{"not a 16-bit signed integer"};
+            return dr.box_->pointed_type_ == type::S16 ? dr.deref_ptr<std::int16_t>() : std::get<std::int16_t>(dr.box_->value_);
         }
 
         bool is_u32_ref() const { return val_or_pointed_type() == type::U32; }
         std::uint32_t &as_u32() {
-            if(!box_) { throw std::runtime_error{"not an integer"}; }
             valbox &dr{deref()};
-            return dr.pointed_type() == type::U32 ? dr.deref_ptr<std::uint32_t>() :
-                   std::get<std::uint32_t>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::U32 || dr.box_->pointed_type_ == type::U32))
+                throw std::runtime_error{"not a 32-bit unsigned integer"};
+            return dr.box_->pointed_type_ == type::U32 ? dr.deref_ptr<std::uint32_t>() : std::get<std::uint32_t>(dr.box_->value_);
         }
         std::uint32_t as_u32() const {
-            if(!box_) { throw std::runtime_error{"not an integer"}; }
             valbox const &dr{deref()};
-            return dr.pointed_type() == type::U32 ? dr.deref_ptr<std::uint32_t>() :
-                   std::get<std::uint32_t>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::U32 || dr.box_->pointed_type_ == type::U32))
+                throw std::runtime_error{"not a 32-bit unsigned integer"};
+            return dr.box_->pointed_type_ == type::U32 ? dr.deref_ptr<std::uint32_t>() : std::get<std::uint32_t>(dr.box_->value_);
         }
 
         bool is_s32_ref() const { return val_or_pointed_type() == type::S32; }
         std::int32_t &as_s32() {
-            if(!box_) { throw std::runtime_error{"not an integer"}; }
             valbox &dr{deref()};
-            return dr.pointed_type() == type::S32 ? dr.deref_ptr<std::int32_t>() :
-                   std::get<std::int32_t>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::S32 || dr.box_->pointed_type_ == type::S32))
+                throw std::runtime_error{"not a 32-bit signed integer"};
+            return dr.box_->pointed_type_ == type::S32 ? dr.deref_ptr<std::int32_t>() : std::get<std::int32_t>(dr.box_->value_);
         }
         std::int32_t as_s32() const {
-            if(!box_) { throw std::runtime_error{"not an integer"}; }
             valbox const &dr{deref()};
-            return dr.pointed_type() == type::S32 ? dr.deref_ptr<std::int32_t>() :
-                   std::get<std::int32_t>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::S32 || dr.box_->pointed_type_ == type::S32))
+                throw std::runtime_error{"not a 32-bit signed integer"};
+            return dr.box_->pointed_type_ == type::S32 ? dr.deref_ptr<std::int32_t>() : std::get<std::int32_t>(dr.box_->value_);
         }
 
         bool is_u64_ref() const { return val_or_pointed_type() == type::U64; }
         std::uint64_t &as_u64() {
-            if(!box_) { throw std::runtime_error{"not an integer"}; }
             valbox &dr{deref()};
-            return dr.pointed_type() == type::U64 ? dr.deref_ptr<std::uint64_t>() :
-                   std::get<std::uint64_t>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::U64 || dr.box_->pointed_type_ == type::U64))
+                throw std::runtime_error{"not a 64-bit unsigned integer"};
+            return dr.box_->pointed_type_ == type::U64 ? dr.deref_ptr<std::uint64_t>() : std::get<std::uint64_t>(dr.box_->value_);
         }
         std::uint64_t as_u64() const {
-            if(!box_) { throw std::runtime_error{"not an integer"}; }
             valbox const &dr{deref()};
-            return dr.pointed_type() == type::U64 ? dr.deref_ptr<std::uint64_t>() :
-                   std::get<std::uint64_t>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::U64 || dr.box_->pointed_type_ == type::U64))
+                throw std::runtime_error{"not a 64-bit unsigned integer"};
+            return dr.box_->pointed_type_ == type::U64 ? dr.deref_ptr<std::uint64_t>() : std::get<std::uint64_t>(dr.box_->value_);
         }
 
         bool is_s64_ref() const { return val_or_pointed_type() == type::S64; }
         std::int64_t &as_s64() {
-            if(!box_) { throw std::runtime_error{"not an integer"}; }
             valbox &dr{deref()};
-            return dr.pointed_type() == type::S64 ? dr.deref_ptr<std::int64_t>() :
-                   std::get<std::int64_t>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::S64 || dr.box_->pointed_type_ == type::S64))
+                throw std::runtime_error{"not a 64-bit signed integer"};
+            return dr.box_->pointed_type_ == type::S64 ? dr.deref_ptr<std::int64_t>() : std::get<std::int64_t>(dr.box_->value_);
         }
         std::int64_t as_s64() const {
-            if(!box_) { throw std::runtime_error{"not an integer"}; }
             valbox const &dr{deref()};
-            return dr.pointed_type() == type::S64 ? dr.deref_ptr<std::int64_t>() :
-                   std::get<std::int64_t>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::S64 || dr.box_->pointed_type_ == type::S64))
+                throw std::runtime_error{"not a 64-bit signed integer"};
+            return dr.box_->pointed_type_ == type::S64 ? dr.deref_ptr<std::int64_t>() : std::get<std::int64_t>(dr.box_->value_);
         }
 
         std::string func_name() const {
-            if(!box_) { throw std::runtime_error{"not a function"}; }
             valbox const &dr{deref()};
-            if(dr.is_func_ref()) {
-                return dr.box_->func_name_;
-            } else {
+            if(!dr.box_ || !dr.is_func_ref()) {
                 throw std::runtime_error{"not a function"};
             }
-            return std::string{};
+            return dr.box_->func_name_;
         }
         bool is_user_func() const {
-            if(!box_) { return false; }
             valbox const &dr{deref()};
-            if(dr.is_func_ref()) {
-                return dr.box_->user_func_;
+            if(!dr.box_ || !dr.is_func_ref()) {
+                return false;
             }
-            return false;
+            return dr.box_->user_func_;
         }
         bool is_func_ref() const { return val_or_pointed_type() == type::FUNC; }
         std::function<valbox(std::vector<valbox> &)> const &as_func() {
-            if(!box_) { throw std::runtime_error{"not a function"}; }
             valbox &dr{deref()};
+            if(!dr.box_) { throw std::runtime_error{"not a function"}; }
             return std::get<std::function<valbox(std::vector<valbox> &)>>(dr.box_->value_);
         }
         std::function<valbox(std::vector<valbox> &)> const &as_func() const {
-            if(!box_) { throw std::runtime_error{"not a function"}; }
             valbox const &dr{deref()};
+            if(!dr.box_) { throw std::runtime_error{"not a function"}; }
             return std::get<std::function<valbox(std::vector<valbox> &)>>(dr.box_->value_);
         }
 
         bool is_vec4_ref() const { return val_or_pointed_type() == type::VEC4; }
         vec4_t &as_vec4() {
-            if(!box_) { throw std::runtime_error{"not a vec4"}; }
             valbox &dr{deref()};
-            return dr.pointed_type() == type::VEC4 ? dr.deref_ptr<vec4_t>() :
-                std::get<vec4_t>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::VEC4 || dr.box_->pointed_type_ == type::VEC4))
+                throw std::runtime_error{"not a vec4"};
+            return dr.box_->pointed_type_ == type::VEC4 ? dr.deref_ptr<vec4_t>() : std::get<vec4_t>(dr.box_->value_);
         }
         vec4_t const &as_vec4() const {
-            if(!box_) { throw std::runtime_error{"not a vec4"}; }
             valbox const &dr{deref()};
-            return dr.pointed_type() == type::VEC4 ? dr.deref_ptr<vec4_t>() :
-                std::get<vec4_t>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::VEC4 || dr.box_->pointed_type_ == type::VEC4))
+                throw std::runtime_error{"not a vec4"};
+            return dr.box_->pointed_type_ == type::VEC4 ? dr.deref_ptr<vec4_t>() : std::get<vec4_t>(dr.box_->value_);
         }
 
         bool is_mat4_ref() const { return val_or_pointed_type() == type::MAT4; }
         mat4_t &as_mat4() {
-            if(!box_) { throw std::runtime_error{"not a mat4"}; }
             valbox &dr{deref()};
-            return dr.pointed_type() == type::MAT4 ? dr.deref_ptr<mat4_t>() :
-                std::get<mat4_t>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::MAT4 || dr.box_->pointed_type_ == type::MAT4))
+                throw std::runtime_error{"not a mat4"};
+            return dr.box_->pointed_type_ == type::MAT4 ? dr.deref_ptr<mat4_t>() : std::get<mat4_t>(dr.box_->value_);
         }
         mat4_t const &as_mat4() const {
-            if(!box_) { throw std::runtime_error{"not a mat4"}; }
             valbox const &dr{deref()};
-            return dr.pointed_type() == type::MAT4 ? dr.deref_ptr<mat4_t>() :
-                std::get<mat4_t>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::MAT4 || dr.box_->pointed_type_ == type::MAT4))
+                throw std::runtime_error{"not a mat4"};
+            return dr.box_->pointed_type_ == type::MAT4 ? dr.deref_ptr<mat4_t>() : std::get<mat4_t>(dr.box_->value_);
         }
 
         bool is_array_ref() const { return val_or_pointed_type() == type::ARRAY; }
         array_t &as_array() {
-            if(!box_) { throw std::runtime_error{"not array"}; }
             valbox &dr{deref()};
-            return dr.pointed_type() == type::ARRAY ? dr.deref_ptr<array_t>() :
-                std::get<array_t>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::ARRAY || dr.box_->pointed_type_ == type::ARRAY))
+                throw std::runtime_error{"not an array"};
+            return dr.box_->pointed_type_ == type::ARRAY ? dr.deref_ptr<array_t>() : std::get<array_t>(dr.box_->value_);
         }
         array_t const &as_array() const {
-            if(!box_) { throw std::runtime_error{"not array"}; }
             valbox const &dr{deref()};
-            return dr.pointed_type() == type::ARRAY ? dr.deref_ptr<array_t>() :
-                std::get<array_t>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::ARRAY || dr.box_->pointed_type_ == type::ARRAY))
+                throw std::runtime_error{"not an array"};
+            return dr.box_->pointed_type_ == type::ARRAY ? dr.deref_ptr<array_t>() : std::get<array_t>(dr.box_->value_);
         }
 
         valbox subarray(std::size_t start = 0, std::size_t n = std::numeric_limits<std::size_t>::max()) const {
             if(!is_array_ref()) {
-                throw std::runtime_error{"not array"};
+                throw std::runtime_error{"not na array"};
             }
             array_t const &a{as_array()};
             valbox res{valbox_no_initialize::dont_do_it};
@@ -816,16 +812,16 @@ namespace scfx {
 
         bool is_object_ref() const { return val_or_pointed_type() == type::OBJECT; }
         object_t &as_object() & {
-            if(!box_) { throw std::runtime_error{"not an object"}; }
             valbox &dr{deref()};
-            return dr.pointed_type() == type::OBJECT ? dr.deref_ptr<object_t>() :
-                std::get<object_t>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::OBJECT || dr.box_->pointed_type_ == type::OBJECT))
+                throw std::runtime_error{"not an object"};
+            return dr.box_->pointed_type_ == type::OBJECT ? dr.deref_ptr<object_t>() : std::get<object_t>(dr.box_->value_);
         }
         object_t const &as_object() const & {
-            if(!box_) { throw std::runtime_error{"not an object"}; }
             valbox const &dr{deref()};
-            return dr.pointed_type() == type::OBJECT ? dr.deref_ptr<object_t>() :
-                std::get<object_t>(dr.box_->value_);
+            if(!dr.box_ || !(dr.box_->type_ == type::OBJECT || dr.box_->pointed_type_ == type::OBJECT))
+                throw std::runtime_error{"not an object"};
+            return dr.box_->pointed_type_ == type::OBJECT ? dr.deref_ptr<object_t>() : std::get<object_t>(dr.box_->value_);
         }
 
         bool is_undefined() const { return !box_ || box_->type_ == type::UNDEFINED; }

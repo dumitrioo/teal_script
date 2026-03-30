@@ -29,7 +29,7 @@ namespace scfx {
             while(!get_token(0).is_eof()) {
                 auto s{get_top_level_statement()};
                 if(!s.is_object()) { break; }
-                res.push_back(s);
+                res.push_back(std::move(s));
             }
             return res;
         }
@@ -285,7 +285,7 @@ namespace scfx {
                 } else {
                     bool closed{false};
                     for(auto sbst{get_statement()}; sbst.is_object(); sbst = get_statement()) {
-                        res["content"].push_back(sbst);
+                        res["content"].push_back(std::move(sbst));
                         check_eof();
                         if(get_token(0).type_is(token::type::RCURLY)) {
                             increment_pos();
@@ -770,55 +770,51 @@ namespace scfx {
 
         scfx::json get_prio_16() {
             scfx::json res{get_prio_15()};
-            while(true) {
-                token const &tk{get_token(0)};
-                if(
-                    tk.type_is(token::type::ASSIGN) ||
-                    tk.type_is(token::type::ADDASSIGN) ||
-                    tk.type_is(token::type::SUBASSIGN) ||
-                    tk.type_is(token::type::MULASSIGN) ||
-                    tk.type_is(token::type::DIVASSIGN) ||
-                    tk.type_is(token::type::MODASSIGN) ||
-                    tk.type_is(token::type::LSHIFTASSIGN) ||
-                    tk.type_is(token::type::RSHIFTASSIGN) ||
-                    tk.type_is(token::type::BITANDASSIGN) ||
-                    tk.type_is(token::type::BITORASSIGN) ||
-                    tk.type_is(token::type::XORASSIGN)
-                ) {
-                    scfx::json over_res{};
-                    over_res["loc"]["line"] = get_token(0).line();
-                    over_res["loc"]["col"] = get_token(0).col();
+            token const &tk{get_token(0)};
+            if(
+                tk.type_is(token::type::ASSIGN) ||
+                tk.type_is(token::type::ADDASSIGN) ||
+                tk.type_is(token::type::SUBASSIGN) ||
+                tk.type_is(token::type::MULASSIGN) ||
+                tk.type_is(token::type::DIVASSIGN) ||
+                tk.type_is(token::type::MODASSIGN) ||
+                tk.type_is(token::type::LSHIFTASSIGN) ||
+                tk.type_is(token::type::RSHIFTASSIGN) ||
+                tk.type_is(token::type::BITANDASSIGN) ||
+                tk.type_is(token::type::BITORASSIGN) ||
+                tk.type_is(token::type::XORASSIGN)
+            ) {
+                scfx::json over_res{};
+                over_res["loc"]["line"] = get_token(0).line();
+                over_res["loc"]["col"] = get_token(0).col();
+                increment_pos();
+                over_res["type"] = "expression";
+                over_res["subtype"] = "binop";
+                over_res["content"]["operation"] = tk.tktype_str();
+                over_res["content"]["oper_enum"] = static_cast<int>(tk.tktype());
+                over_res["content"]["left"] = std::move(res);
+                res = std::move(over_res);
+                res["content"]["right"] = get_prio_16();
+            } else if(tk.type_is(token::type::QUESTION)) {
+                scfx::json over_res{};
+                over_res["loc"]["line"] = get_token(0).line();
+                over_res["loc"]["col"] = get_token(0).col();
+                increment_pos();
+                over_res["type"] = "expression";
+                over_res["subtype"] = "ternop";
+                over_res["content"]["operation"] = tk.tktype_str();
+                over_res["content"]["oper_enum"] = static_cast<int>(tk.tktype());
+                over_res["content"]["condition"] = std::move(res);
+                over_res["content"]["true_expr"] = get_prio_16();
+                token const &must_colon_tk{get_token(0)};
+                if(must_colon_tk.type_is(token::type::COLON)) {
                     increment_pos();
-                    over_res["type"] = "expression";
-                    over_res["subtype"] = "binop";
-                    over_res["content"]["operation"] = tk.tktype_str();
-                    over_res["content"]["oper_enum"] = static_cast<int>(tk.tktype());
-                    over_res["content"]["left"] = std::move(res);
+                    over_res["content"]["false_expr"] = get_prio_16();
                     res = std::move(over_res);
-                    res["content"]["right"] = get_prio_16();
-                } else if(tk.type_is(token::type::QUESTION)) {
-                    scfx::json over_res{};
-                    over_res["loc"]["line"] = get_token(0).line();
-                    over_res["loc"]["col"] = get_token(0).col();
-                    increment_pos();
-                    over_res["type"] = "expression";
-                    over_res["subtype"] = "ternop";
-                    over_res["content"]["operation"] = tk.tktype_str();
-                    over_res["content"]["oper_enum"] = static_cast<int>(tk.tktype());
-                    over_res["content"]["condition"] = std::move(res);
-                    over_res["content"]["true_expr"] = get_prio_16();
-                    token const &must_colon_tk{get_token(0)};
-                    if(must_colon_tk.type_is(token::type::COLON)) {
-                        increment_pos();
-                        over_res["content"]["false_expr"] = get_prio_16();
-                        res = std::move(over_res);
-                    } else {
-                        throw compilation_error{get_token(0).line(), get_token(0).col(),
-                            std::string{"\":\" expected, got \""} + scfx::str_util::to_utf8(get_token(0).lexem()) + "\""
-                        };
-                    }
                 } else {
-                    break;
+                    throw compilation_error{get_token(0).line(), get_token(0).col(),
+                        std::string{"\":\" expected, got \""} + scfx::str_util::to_utf8(get_token(0).lexem()) + "\""
+                    };
                 }
             }
             return res;
@@ -1147,7 +1143,7 @@ namespace scfx {
                         while(true) {
                             scfx::json exptr{get_expr()};
                             if(exptr.is_object()) {
-                                args.push_back(exptr);
+                                args.push_back(std::move(exptr));
                                 if(get_token(0).type_is(token::type::RPAREN)) {
                                     increment_pos();
                                     break;

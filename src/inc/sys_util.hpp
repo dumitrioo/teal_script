@@ -192,48 +192,6 @@ namespace scfx::sys_util {
     }
 #endif
 
-//     static std::string error_string(int e) {
-//         switch(e) {
-//             case EPERM: return "EPERM";
-//             case ENOENT: return "ENOENT";
-//             case ESRCH: return "ESRCH";
-//             case EINTR: return "EINTR";
-//             case EIO: return "EIO";
-//             case ENXIO: return "ENXIO";
-//             case E2BIG: return "E2BIG";
-//             case ENOEXEC: return "ENOEXEC";
-//             case EBADF: return "EBADF";
-//             case ECHILD: return "ECHILD";
-//             case EAGAIN: return "EAGAIN";
-//             case ENOMEM: return "ENOMEM";
-//             case EACCES: return "EACCES";
-//             case EFAULT: return "EFAULT";
-// #ifndef _WIN32
-//             case ENOTBLK: return "ENOTBLK";
-// #endif
-//             case EBUSY: return "EBUSY";
-//             case EEXIST: return "EEXIST";
-//             case EXDEV: return "EXDEV";
-//             case ENODEV: return "ENODEV";
-//             case ENOTDIR: return "ENOTDIR";
-//             case EISDIR: return "EISDIR";
-//             case EINVAL: return "EINVAL";
-//             case ENFILE: return "ENFILE";
-//             case EMFILE: return "EMFILE";
-//             case ENOTTY: return "ENOTTY";
-//             case ETXTBSY: return "ETXTBSY";
-//             case EFBIG: return "EFBIG";
-//             case ENOSPC: return "ENOSPC";
-//             case ESPIPE: return "ESPIPE";
-//             case EROFS: return "EROFS";
-//             case EMLINK: return "EMLINK";
-//             case EPIPE: return "EPIPE";
-//             case EDOM: return "EDOM";
-//             case ERANGE: return "ERANGE";
-//             default: return "<UNKNOWN>";
-//         }
-//     }
-
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
     static std::string backtrace() {
 #ifdef USE_BACK_TRACE
@@ -590,6 +548,27 @@ namespace scfx::sys_util {
 #endif
         }
         return result;
+    }
+
+    bool increase_stack(rlim_t const requiredStackSize) {
+        bool res{false};
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
+        struct rlimit currentLimit;
+        int status;
+        status = getrlimit(RLIMIT_STACK, &currentLimit);
+        if (status == 0) {
+            if (currentLimit.rlim_cur < requiredStackSize) {
+                currentLimit.rlim_cur = requiredStackSize;
+                status = setrlimit(RLIMIT_STACK, &currentLimit);
+                if (status == 0) {
+                    res = true;
+                }
+            }
+        }
+#elif defined(PLATFORM_APPLE)
+#elif defined(PLATFORM_WINDOWS)
+#endif
+        return res;
     }
 
 }

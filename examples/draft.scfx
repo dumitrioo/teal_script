@@ -1,31 +1,53 @@
-global_init() if !cycle_nanosleep() set_cycle_nanosleep(1'000'000);
+global_init() {
+    set_cycle_nanosleep(1'000'000);
+    set_inactive_nanosleep(1'000'000);
+}
 global_init glbl_ini();
+
 
 function undef_test() {
     println("undef_test()");
     return 0;
 }
 
-function sinus(x) {
+function sinus(x)
     return sin(x);
-}
 
 function integral(func, beg, end, dx) {
     s = 0.0;
-    for(x = beg; x <= end; x += dx) {
+    for(x = beg; x <= end; x += dx)
         s += func(x) * dx;
-    }
     return s;
 }
 
+function clamp(v, mi, ma)
+    return v < mi ? mi : v > ma ? ma : v;
+
+function M_E(y)
+    return y;
+
 my_drafts() {
+    console.enable_colors(true);
+    console.fixed();
 
-    println(integral(sinus, 0.0, 3.141592653589793238462, 0.001));
-    return exit();
+    println(1 <=> 2 == LESS);
 
-    println(1 <=> 2 == less);
+    /////////////////////////////////////////////////////////////////////
 
-    return exit();
+    k = M_E;
+    k.println();
+    x(vec4(43434,43434,343434,4443434)).println();
+
+    /////////////////////////////////////////////////////////////////////
+
+    s = "123123123123";
+    s[0] = '0';
+    println(s);
+
+    /////////////////////////////////////////////////////////////////////
+
+    println(integral(sin, 0.0, M_PI, 0.001), -1.5, 2.5);
+    println(integral(sinus, -M_PI, M_PI, 0.001));
 
     {
         v = vec4(1,2,3,4);
@@ -61,16 +83,17 @@ my_drafts() {
         m1.println();
     }
 
-    return exit();
+    /////////////////////////////////////////////////////////////////////
 
     println("string" + array(48,49,50) + 1 + vec4());
-    return exit();
 
-    if(this.ctr % 5 == 0) {
+    /////////////////////////////////////////////////////////////////////
+
+    if !(this.ctr % 5)
         this.res = randf() > 0.5;
-    }
     ++this.ctr;
-    return this.res;
+
+    /////////////////////////////////////////////////////////////////////
 
     sdsd = 3 * undefined;
     sdsd.println();
@@ -79,17 +102,22 @@ my_drafts() {
     k = 3 + undefined;
     k = undefined - 3;
     k.println();
-    return exit();
+
+    /////////////////////////////////////////////////////////////////////
 
     undef_test();
     f = undef_test;
     f();
     undefine(f);
-    try f(); catch(e) e.println(" (caught)");
+    try
+        f();
+    catch(e)
+        e.println(" (caught)");
     undef_test();
     f = undef_test;
     f();
-    return exit();
+
+    /////////////////////////////////////////////////////////////////////
 
     this.k = array();
     this.k[0] = array();
@@ -101,9 +129,9 @@ my_drafts() {
     this.k.typeof().println();
     this.k.sizeof().println();
     this.k.println();
-    return exit(0);
 
-    undefine = undefined;
+    /////////////////////////////////////////////////////////////////////
+
     k = undefine;
     s = "123";
     println("s = ", s);
@@ -112,12 +140,16 @@ my_drafts() {
     k(k);
     println("k = ", k);
     s = "123";
-    try k(s); catch(e) e.println(" (caught)");
+    try
+        k(s);
+    catch(e)
+        e.println(" (caught)");
     println("s = ", s);
     undefine(undefine);
     undefine(s);
     println("s = ", s);
-    return exit();
+
+    /////////////////////////////////////////////////////////////////////
 
     s = string();
     tot_num = 1024 * 2;
@@ -129,7 +161,8 @@ my_drafts() {
     e = steady_clock();
     s.println();
     (e - b).println();
-    return exit();
+
+    /////////////////////////////////////////////////////////////////////
 
     for(i = 0; i < 256; ++i) {
         println(i, " (", itoa(i, 16), "): ", isspace(i) ? "space" : "");
@@ -144,6 +177,7 @@ my_drafts() {
             break;
         }
     }
-    return exit(0);
+    exit();
 }
+
 my_drafts drf();

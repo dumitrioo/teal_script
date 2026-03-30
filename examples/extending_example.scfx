@@ -1,27 +1,49 @@
 extension_test() {
-    println("////////////////////////////////////////////////////////////////");
-    println("// this is usage part of extending example.                   //");
-    println("// for host part, see \"examples/interpreter/main.cpp\"         //");
-    println("////////////////////////////////////////////////////////////////");
+    console.print("////////////////////////////////////////////////////////////////");
+    console.print("// a usage (scripting) part of extending example              //");
+    console.print("// for host part, see \"examples/interpreter/main.cpp\"         //");
+    console.print("////////////////////////////////////////////////////////////////");
     try {
+        console.print();
+        console.print("------------------------------------------------------------------------");
+        console.print("trying to call a function \"hello_from_cpp()\" provided by C++ host side");
+        console.print("\"hello_from_cpp()\" function is the real native code part called from");
+        console.print("within this script with the arguments provided by the script");
+        console.print("--------");
         hello_from_cpp("1", 2, object("{k:4}"));
-        console.println("-----------------------------------");
+        console.print("--------");
+        console.print();
 
-        console.println(
+        console.print("------------------------------------------------------------------------");
+        console.print("displaying a constant provided by the C++ host side");
+        console.print("--------");
+        console.print(
             "The_Answer_to_the_Ultimate_Question_of_Life_the_Universe_and_Everything: ",
             The_Answer_to_the_Ultimate_Question_of_Life_the_Universe_and_Everything
         );
-        console.println("-----------------------------------");
+        console.print("--------");
+        console.print();
 
-        console.println("constructing a new example object with value of 5");
+        console.print("------------------------------------------------------------------------");
+        console.print("constructing an instance of the object type provided by the C++ host");
+        console.print("side using factory function and initializing a new object with value of");
+        console.print("5 passing that value to a factory function");
+        console.print("--------");
         exobj = example_object(5);
-        console.println("a new object's value: ", exobj.get_val());
-        console.println("set a new value of 8 to the object");
+        console.print("a new object's value: ", exobj.get_val());
+        console.print("change it to 8 using the \"set_val()\" method");
         exobj.set_val(8);
-        console.println("now object's value equals to: ", exobj.get_val());
-        console.println("-----------------------------------");
+        console.print("now object's value equals to: ", exobj.get_val());
+        console.print("and now try to set string value");
+        try {
+            exobj.set_val("ejjerg");
+            console.print("now object's value equals to: ", exobj.get_val());
+        } catch(e) {
+            console.error(e);
+        }
+        console.print("--------");
     } catch(e) {
-        console.error("in test 14 - ", e);
+        console.error(e);
     }
     exit();
 }

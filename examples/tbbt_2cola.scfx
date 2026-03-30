@@ -59,7 +59,7 @@ tbbt2cola(sg) {
     outstr += "Current queue state: " + serialize_tbbt_array(a) + "\n";
     outstr += "Current RLE-optimized queue state: " + a.to_string() + "\n";
     outstr += "----------------------------------------------------------------";
-    console.println(outstr);
+    console.print(outstr);
     return 0;
 }
 

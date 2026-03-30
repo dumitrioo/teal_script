@@ -102,8 +102,8 @@ function mysin(x) {
 
 sin_test() {
     console.setprecision(26);
-    console.println(sin(1.0));
-    console.println(mysin(1.0));
+    console.print(sin(1.0));
+    console.print(mysin(1.0));
     return 0;
 }
 
@@ -130,14 +130,14 @@ fib_test fibtst();
 
 
 misc_test() {
-    console.println(pow(2, -0.5));
+    console.print(pow(2, -0.5));
     console.setprecision(16);
     ts = steady_clock();
     tw = timestamp();
-    console.println(ts, " ", ts / 3600);
-    console.println(tw.fseconds(), " ", tw.fseconds() / 3600);
-    console.println(timestamp(ts).as_iso_8601(0));
-    console.println(tw.as_iso_8601(0));
+    console.print(ts, " ", ts / 3600);
+    console.print(tw.fseconds(), " ", tw.fseconds() / 3600);
+    console.print(timestamp(ts).as_iso_8601(0));
+    console.print(tw.as_iso_8601(0));
 
     return 0;
 }
@@ -149,7 +149,7 @@ untab(argv) {
     dir_or_filename = "/path/to/file_or_dir";
     if(file_exists(dir_or_filename)) {
         try {
-            console.println("processing file ", dir_or_filename);
+            console.print("processing file ", dir_or_filename);
             save_to_file(dir_or_filename, dir_or_filename.load_from_file().replace_substr("\t", " " * 4));
         } catch(e) {
             console.error(e);
@@ -159,7 +159,7 @@ untab(argv) {
         for(i = 0; i < dir_list.size(); ++i) {
             if(file_exists(dir_list[i])) {
                 try {
-                    console.println("processing file ", dir_list[i]);
+                    console.print("processing file ", dir_list[i]);
                     save_to_file(dir_list[i], dir_list[i].load_from_file().replace_substr("\t", " " * 4));
                 } catch(e) {
                     console.error(e);
@@ -186,9 +186,9 @@ finddupes() {
         for(i = 0; i < dupes.size(); ++i) {
             if(dupes[i].size() > 1) {
                 for(j = 0; j < dupes[i].size(); ++j) {
-                    console.println(dupes[i][j]);
+                    console.print(dupes[i][j]);
                 }
-                console.println("----------------------------------------------------------");
+                console.print("----------------------------------------------------------");
             }
         }
     }
@@ -202,7 +202,7 @@ exception_test() {
     try {
         throw 12;
     } catch(e) {
-        console.println(e);
+        console.print(e);
     }
     return 0;
 }
@@ -212,7 +212,7 @@ exception_test exctst();
 
 simply_test() {
     sv = str_tok("spssususususdgsdyustgsfsyutsfdesf", "s");
-    console.println(sv);
+    console.print(sv);
     return 0;
 }
 
@@ -223,11 +223,11 @@ cpu_test() {
     if(!this.cpuperf) {
         this.cpuperf = perf_stat();
         if(!this.cpuperf.start()) {
-            console.println("spssususususdgsdyustgsfsyutsfdesf");
+            console.print("spssususususdgsdyustgsfsyutsfdesf");
             return (0);
         }
     }
-    console.println("cpu: ", this.cpuperf.cpu_load() * 100, "%, self: ", this.cpuperf.self_cpu_consumption() * 100, "%");
+    console.print("cpu: ", this.cpuperf.cpu_load() * 100, "%, self: ", this.cpuperf.self_cpu_consumption() * 100, "%");
     sleep(0.05);
     return 0;
 }
@@ -254,7 +254,7 @@ my_test() {
         p = s * solar_constant;
         sunpower = num_to_suffixed(p, 18);
         console.setprecision(36);
-        console.println(sunpower[0], " ", sunpower[1], "W");
+        console.print(sunpower[0], " ", sunpower[1], "W");
 
         throw "exit";
     } catch(e) {
@@ -280,7 +280,7 @@ ctr(anything) {
         this.delay += sign(t) * t * t;
         this.tsfs = tsfs;
         if(this.i % 1000 == 0) {
-            console.println(ts.as_iso_8601(), " ", this.delay);
+            console.print(ts.as_iso_8601(), " ", this.delay);
         }
     }
     return this.delay;
@@ -310,10 +310,10 @@ test_mat() {
         for(i = 0.0; i < 60.0; i += 0.1) {
             point = vec4(i, 0, 0);
             v1 = p * l * point;
-            console.println(point, "   ", v1);
+            console.print(point, "   ", v1);
         }
     } catch(e) {
-        console.println("error ", e);
+        console.print("error ", e);
     }
 
     return 0;

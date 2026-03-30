@@ -101,6 +101,9 @@ namespace scfx {
                 if(out_thread_.joinable()) { out_thread_.join(); }
             }
 
+            void print(std::vector<scfx::valbox> const &args) {
+                cout_out((terminal_colours_ ? "\033[32mprint\033[0m" : "print"), args);
+            }
             void info(std::vector<scfx::valbox> const &args) {
                 cout_out((terminal_colours_ ? "\033[34minfo\033[0m" : "info"), args);
             }
@@ -117,7 +120,7 @@ namespace scfx {
                 cout_out((terminal_colours_ ? "\033[91merror\033[0m" : "error"), args);
             }
 
-            void print(std::vector<scfx::valbox> const &args) {
+            void rawprint(std::vector<scfx::valbox> const &args) {
                 std::stringstream out{};
                 if(setfill_) { out << std::setfill(fill_char_); }
                 if(setw_) { out << std::setw(w_); }
@@ -286,6 +289,9 @@ namespace scfx {
 #else
         class console {
         public:
+            void print(std::vector<scfx::valbox> const &args) {
+                cout_out((terminal_colours_ ? "\033[32mprint\033[0m" : "print"), args);
+            }
             void info(std::vector<scfx::valbox> const &args) {
                 cout_out((terminal_colours_ ? "\033[34minfo\033[0m" : "info"), args);
             }
@@ -302,7 +308,7 @@ namespace scfx {
                 cout_out((terminal_colours_ ? "\033[91merror\033[0m" : "error"), args);
             }
 
-            void print(std::vector<scfx::valbox> const &args) {
+            void rawprint(std::vector<scfx::valbox> const &args) {
                 std::stringstream out{};
                 if(setfill_) { out << std::setfill(fill_char_); }
                 if(setw_) { out << std::setw(w_); }
@@ -429,9 +435,9 @@ namespace scfx {
             });
 
             // ordering
-            add_var("less", -1);
-            add_var("equal", 0);
-            add_var("greater", 1);
+            add_var("LESS", -1);
+            add_var("EQUAL", 0);
+            add_var("GREATER", 1);
 
             add_var("EPERM", EPERM);     // 1   Operation not permitted
             add_var("ENOENT", ENOENT);   // 2   No such file or directory
@@ -614,7 +620,6 @@ namespace scfx {
             add_method("console", "debug", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(args, detail::console *)->debug(args1); return {valbox_no_initialize::dont_do_it}; });
             add_method("console", "error", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(args, detail::console *)->error(args1); return {valbox_no_initialize::dont_do_it}; });
             add_method("console", "print", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(args, detail::console *)->print(args1); return {valbox_no_initialize::dont_do_it}; });
-            add_method("console", "println", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(args, detail::console *)->println(args1); return {valbox_no_initialize::dont_do_it}; });
             add_method("console", "flush", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) SCFXTHIS(args, detail::console *)->flush(); return scfx::valbox{valbox_no_initialize::dont_do_it}; });
             add_method("console", "fixed", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) SCFXTHIS(args, detail::console *)->fixed(); return scfx::valbox{valbox_no_initialize::dont_do_it}; });
             add_method("console", "scientific", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) SCFXTHIS(args, detail::console *)->scientific(); return scfx::valbox{valbox_no_initialize::dont_do_it}; });
@@ -628,8 +633,8 @@ namespace scfx {
             add_method("console", "enable_colors", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2) SCFXTHIS(args, detail::console *)->enable_colors(args[1].cast_to_bool()); return scfx::valbox{valbox_no_initialize::dont_do_it}; });
             add_method("console", "colors_enabled", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return SCFXTHIS(args, detail::console *)->colors_enabled(); });
             add_method("console", "sync_stdio", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2) return SCFXTHIS(args, detail::console *)->setsync(args[1].cast_to_bool()); });
+            add_function("print", SCFXFUN(args) { con_.rawprint(args); return {valbox_no_initialize::dont_do_it}; });
             add_function("println", SCFXFUN(args) { con_.println(args); return {valbox_no_initialize::dont_do_it}; });
-            add_function("print", SCFXFUN(args) { con_.print(args); return {valbox_no_initialize::dont_do_it}; });
 
 
             add_function("to_string", SCFXFUN(args) {
@@ -955,7 +960,7 @@ namespace scfx {
                 if(a1r.is_undefined_ref()) {
                     a1r.become_array();
                 }
-                a1r.as_array().push_back(args[1].clone());
+                a1r.as_array().push_back(args[1]);
                 return args[0];
             });
 
@@ -966,7 +971,7 @@ namespace scfx {
                 if(a1r.is_undefined_ref()) {
                     a1r.become_array();
                 }
-                a1r.as_array().insert(a1r.as_array().begin(), args[1].clone());
+                a1r.as_array().insert(a1r.as_array().begin(), args[1]);
                 return args[0];
             });
             add_function("pop_front", SCFXFUN(args) {
@@ -2377,7 +2382,7 @@ namespace scfx {
         std::list<std::pair<std::shared_ptr<so>, extension_interface *>> loaded_extensions_{};
         static std::size_t constexpr version_major_{1};
         static std::size_t constexpr version_minor_{3};
-        static std::size_t constexpr version_patch_{2};
+        static std::size_t constexpr version_patch_{8};
     };
 
 }

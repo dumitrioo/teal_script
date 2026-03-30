@@ -182,7 +182,7 @@ namespace scfx {
                     || (what_next_ == expected::listed && !nxt_lst_->contains(scfx::str_util::to_utf8(tt)))
                     || (stack_.size() == 1 && top().closed)
                 ) {
-                    static const std::unordered_map<std::string, std::string> exp_map {
+                    static const emhash8::HashMap<std::string, std::string> exp_map {
                         {"str" , "<string>" },
                         {"sts" , "<single-quoted string>" },
                         {"sgn" , "<sign>" },
@@ -568,11 +568,13 @@ namespace scfx {
         using o_t = std::map<std::string, json>;
 #else
         using o_t = emhash8::HashMap<std::string, json>;
+        // using o_t = std::unordered_map<std::string, json>;
 #endif
         using a_t = std::vector<json>;
+
     public:
         json() = default;
-        ~json() = default;
+        ~json() { cleanup(); }
         json(json const &that): v_{that.v_}, t_{that.t_} {}
         json(json &&that) noexcept: v_{std::move(that.v_)}, t_{that.t_} { that.t_ = jo_null; }
         json &operator=(const json &that) { if(this != &that) { v_ = that.v_; t_ = that.t_; } return *this; }
@@ -581,10 +583,10 @@ namespace scfx {
         json(char const *v): v_{std::string{v}}, t_{jo_string} {}
         json(std::string const &v): v_{(v)}, t_{jo_string} {}
         json(std::string &&v) noexcept(std::is_nothrow_move_constructible<std::string>::value): v_{std::move(v)}, t_{jo_string} {}
-        json(std::string_view const &v): v_{(std::string{v})}, t_{jo_string} {}
+        json(std::string_view v): v_{(std::string{v})}, t_{jo_string} {}
         json(wchar_t const *v): v_{scfx::str_util::to_utf8(v)}, t_{jo_string} {}
         json(std::wstring const &v): v_{scfx::str_util::to_utf8(v)}, t_{jo_string} {}
-        json(std::wstring_view const &v): v_{scfx::str_util::to_utf8((std::wstring{v}))}, t_{jo_string} {}
+        json(std::wstring_view v): v_{scfx::str_util::to_utf8((std::wstring{v}))}, t_{jo_string} {}
         json(std::int64_t v): v_{v}, t_{jo_int} {}
         json(std::uint64_t v): v_{static_cast<std::int64_t>(v)}, t_{jo_int} {}
         json(std::int32_t v): v_{static_cast<std::int64_t>(v)}, t_{jo_int} {}
@@ -1384,7 +1386,7 @@ namespace scfx {
             return *this;
         }
 
-        json &parse(std::string_view const &s) {
+        json &parse(std::string_view s) {
             *this = deserialize(s);
             return *this;
         }
@@ -1398,7 +1400,7 @@ namespace scfx {
             return deserialize(std::string{s.begin(), s.end()});
         }
 
-        static json deserialize(std::string_view const &s) {
+        static json deserialize(std::string_view s) {
             return deserialize(std::string{s});
         }
 
@@ -1461,7 +1463,8 @@ namespace scfx {
                 newline = "\n";
                 space = " ";
             }
-            return serialize_actual5(use_formatting, indent, newline, space, 0);
+            // return serialize_actual5(use_formatting, indent, newline, space, 0);
+            return serialize_actual5_nr(this, use_formatting, indent, newline, space, 0);
         }
 
         std::vector<std::uint8_t> bserialize() const {
@@ -1720,6 +1723,110 @@ namespace scfx {
             }
         }
 
+        static std::string serialize_actual5_nr(json const *this_, bool use_formatting, std::string indent, std::string newline, std::string space, int level) {
+            auto prefix{[use_formatting, indent](int lvl) {
+                std::string prfx{};
+                if(use_formatting) {
+                    for(int l{0}; l < lvl; ++l) { prfx += indent; }
+                }
+                return prfx;
+            }};
+            struct frame {
+                json const *this_{nullptr};
+                std::stringstream result_{};
+                int curr_level_{0};
+                size_t i_{0};
+                size_t phase_{0};
+                std::size_t maxind_{0};
+            };
+            frame stack_res{};
+            std::deque<frame> stack{};
+            stack.emplace_back(this_, std::stringstream{}, level, 0, 0, 0);
+            while(!stack.empty()) {
+                if(stack.back().this_->t_ == jo_null) {
+                    stack.back().result_ << "null";
+                    stack_res = std::move(stack.back());
+                    stack.pop_back();
+                } else if(stack.back().this_->t_ == jo_int) {
+                    stack.back().result_ << str_util::itoa<std::string>(stack.back().this_->as<std::int64_t>());
+                    stack_res = std::move(stack.back());
+                    stack.pop_back();
+                } else if(stack.back().this_->t_ == jo_flt) {
+                    stack.back().result_ << str_util::ftoa(stack.back().this_->as<long double>(), std::numeric_limits<long double>::digits10);
+                    stack_res = std::move(stack.back());
+                    stack.pop_back();
+                } else if(stack.back().this_->t_ == jo_bool) {
+                    stack.back().result_ << (stack.back().this_->as<bool>() ? "true" : "false");
+                    stack_res = std::move(stack.back());
+                    stack.pop_back();
+                } else if(stack.back().this_->t_ == jo_string) {
+                    stack.back().result_ << std::string{"\""} + detail::escape(stack.back().this_->as<std::string>()) + std::string{"\""};
+                    stack_res = std::move(stack.back());
+                    stack.pop_back();
+                } else if(stack.back().this_->t_ == jo_object) {
+                    if(stack.back().phase_ == 0) {
+                        stack.back().result_ << std::string{"{"} + (stack.back().this_->as<o_t>().size() ? newline : "");
+                        stack.back().i_ = 0;
+                        stack.back().phase_ = 1;
+                        continue;
+                    } else if(stack.back().phase_ == 1) {
+                        if(stack.back().i_ < stack.back().this_->as<o_t>().size()) {
+                            auto p{stack.back().this_->as<o_t>().begin()};
+                            for(size_t i{}; i < stack.back().i_; ++i) { ++p; }
+                            ++stack.back().i_;
+
+                            if(!detail::is_ident(p->first)) {
+                                stack.back().result_ << prefix(stack.back().curr_level_) + indent + std::string{"\""} + p->first + "\"";
+                            } else {
+                                stack.back().result_ << prefix(stack.back().curr_level_) + indent + p->first;
+                            }
+                            stack.back().result_ << std::string{} + ":" + space;
+                            stack.back().phase_ = 2;
+                            stack.emplace_back(&p->second, std::stringstream{}, stack.back().curr_level_ + 1, 0, 0, 0);
+                            continue;
+                        } else {
+                            stack.back().result_ << (stack.back().i_ > 0 ? newline + prefix(stack.back().curr_level_) : "") + "}";
+                            stack_res = std::move(stack.back());
+                            stack.pop_back();
+                        }
+                    } else if(stack.back().phase_ == 2) {
+                        stack.back().result_ << stack_res.result_.str();
+                        stack.back().result_ << "," + (stack.back().i_ < stack.back().this_->as<o_t>().size() ? newline : "");
+                        stack.back().phase_ = 1;
+                        continue;
+                    }
+                } else if(stack.back().this_->t_ == jo_array) {
+                    if(stack.back().phase_ == 0) {
+                        stack.back().result_ << std::string{"["} + (stack.back().this_->as<a_t>().size() ? newline : "");
+                        stack.back().maxind_ = stack.back().this_->max_array_index();
+                        stack.back().i_ = 0;
+                        stack.back().phase_ = 1;
+                        continue;
+                    } else if(stack.back().phase_ == 1) {
+                        if(stack.back().i_ <= stack.back().maxind_) {
+                            stack.back().result_ << prefix(stack.back().curr_level_) + indent;
+                            stack.back().phase_ = 2;
+                            stack.emplace_back(&stack.back().this_->as<a_t>().at(stack.back().i_), std::stringstream{}, stack.back().curr_level_ + 1, 0, 0, 0);
+                            continue;
+                        } else {
+                            stack.back().result_ << (stack.back().i_ > 0 ? newline + prefix(stack.back().curr_level_) : "") + "]";
+                            stack_res = std::move(stack.back());
+                            stack.pop_back();
+                        }
+                    } else if(stack.back().phase_ == 2) {
+                        ++stack.back().i_;
+                        stack.back().result_ << stack_res.result_.str();
+                        stack.back().result_ << "," + (stack.back().i_ < stack.back().this_->as<a_t>().size() ? newline : "");
+                        stack.back().phase_ = 1;
+                        continue;
+                    }
+                } else {
+                    throw json_error{"json error: invalid json"};
+                }
+            }
+            return stack_res.result_.str();
+        }
+
         void bserialize_actual(scfx::serializer &ser) const {
             if(!type_valid()) {
                 throw json_error{"json error: invalid state"};
@@ -1791,6 +1898,62 @@ namespace scfx {
                 throw json_error{"json error: invalid json"};
             }
             return res;
+        }
+
+    private:
+        void cleanup() {
+            struct frame {
+                json *j_{nullptr};
+                bool cleaned_{false};
+            };
+            frame stack_res{};
+            std::deque<frame> stack{};
+            stack.emplace_back(this);
+            while(!stack.empty()) {
+                if(stack.back().j_->is_object()) {
+                    o_t &o{stack.back().j_->as<o_t>()};
+                    if(!o.empty()) {
+                        auto it{o.begin()};
+                        if(stack_res.cleaned_) {
+                            stack_res.cleaned_ = false;
+                            o.erase(it);
+                        } else {
+                            if(it->second.is_object() || it->second.is_array()) {
+                                stack.emplace_back(&it->second);
+                            } else {
+                                o.erase(it);
+                            }
+                        }
+                    } else {
+                        stack.back().cleaned_ = true;
+                        stack_res = std::move(stack.back());
+                        stack.pop_back();
+                    }
+                } else if(stack.back().j_->is_array()) {
+                    a_t &a{stack.back().j_->as<a_t>()};
+                    if(!a.empty()) {
+                        auto it{a.begin()};
+                        if(stack_res.cleaned_) {
+                            stack_res.cleaned_ = false;
+                            a.erase(it);
+                        } else {
+                            if(it->is_object() || it->is_array()) {
+                                stack.emplace_back(&(*it));
+                            } else {
+                                a.erase(it);
+                            }
+                        }
+                    } else {
+                        stack.back().cleaned_ = true;
+                        stack_res = std::move(stack.back());
+                        stack.pop_back();
+                    }
+                } else {
+                    stack.back().cleaned_ = true;
+                    stack_res = std::move(stack.back());
+                    stack.pop_back();
+                }
+            }
         }
 
     private:

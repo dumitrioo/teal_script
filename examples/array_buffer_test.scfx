@@ -23,9 +23,21 @@ function parttblentry(e) {
 
 mbr_parser() {
     // replace as needed
-    devname = "/dev/sda";
+    // devname = "/dev/sda";
+    devname = "/home/dmitry/projects/work/cleverfiles/test_assignment/fs/fs";
     // probably, root access is needed for direct read from the hardware device
     ab = array_buffer(file(devname).read(512));
+
+
+    ///////////////////////////////////////////////////////////////
+    println(hexdump(ab.to_string()));
+    ab.u16_at(510).ntoh().itoa(16).println();
+    ab.u16_at(510) = 0x3322;
+    println(hexdump(ab.to_string()));
+    exit();
+    return 0;
+    ///////////////////////////////////////////////////////////////
+
 
     if(ab.size() != 512) {
         console.error("invalid data size for MBR: ", ab.size());
@@ -49,7 +61,7 @@ mbr_parser() {
     println("Partition entry №4");
     parttblentry(ab.sub_buffer(494, 16));
 
-    println("Boot signature: 0x", itoa(tole(ab.u16_at(510)), 16, 4));
+    println("Boot signature: 0x", itoa(ntoh(ab.u16_at(510)), 16, 4));
 
     return exit(0);
 }

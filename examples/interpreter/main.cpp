@@ -36,7 +36,6 @@ int main(int argc, char **argv) {
     // The runtime
     scfx::runtime rt{};
 
-
     // The host part of scripting language possibilities extending example.
     // For usage, see script "examples/extending_example.scfx".
 
@@ -72,6 +71,9 @@ int main(int argc, char **argv) {
         // check number of arguments, when needed, including
         // implicit object reference as the first arg
         SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+        if(!args[1].is_numeric()) {
+            throw std::runtime_error{"the value must be of numeric type"};
+        }
         SCFXTHIS(args, example_object).set_val(args[1].cast_to_s32());
         return 0;
     });

@@ -54,7 +54,7 @@ namespace scfx {
     class primary_expression: public expression {
     public:
         primary_expression(valbox const &val): val_{val} {}
-        valbox eval(execution_context *, eval_caller_type, valbox *) override { return val_; }
+        valbox eval(execution_context *, eval_caller_type, valbox *) override { return val_/*.clone()*/; }
         bool primary() const override { return true; }
 
     private:
@@ -1518,6 +1518,8 @@ namespace scfx {
                 std::unique_lock l{primary_val_mtp_};
                 primary_val_ = res;
                 primary_ = true;
+                lval_.reset();
+                rval_.reset();
             }
             return res;
         }

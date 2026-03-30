@@ -219,126 +219,233 @@ namespace scfx {
         }
 
         expr_ptr chop_expression(scfx::json const &ast) {
-            expr_ptr res{};
-            static std::set<std::string> const hobi{"hex", "oct", "bin", "int"};
-            if(ast.is_null()) {
-                return std::make_shared<void_expression>();
-            }
-            if(ast["subtype"].as_string() == "binop") {
-                scfx::json const &cnt{ast["content"]};
-                if(cnt["left"].is_null() || cnt["right"].is_null()) {
-                    throw compilation_error{ast["loc"]["line"].try_as_number(), ast["loc"]["col"].try_as_number(),
-                        std::string{"invalid expression"}
-                    };
+            static std::unordered_set<std::string> const hobi{"hex", "oct", "bin", "int"};
+
+            struct frame {
+                json const *ast{nullptr};
+                expr_ptr res{};
+                expr_ptr buf1{};
+                expr_ptr buf2{};
+                size_t phase{0};
+            };
+            frame stack_res{};
+            std::deque<frame> stack{};
+            stack.emplace_back(&ast);
+
+            while(!stack.empty()) {
+                if(stack.back().ast->is_null()) {
+                    stack.back().res = std::make_shared<void_expression>();
+                    stack_res = std::move(stack.back());
+                    stack.pop_back();
+                    continue;
                 }
-                res = std::make_shared<binop_expression>(
-                    static_cast<token::type>(cnt["oper_enum"].as_int()),
-                    chop_expression(cnt["left"]),
-                    chop_expression(cnt["right"])
-                );
-                res->set_loc(ast["loc"]["line"].try_as_number(), ast["loc"]["col"].try_as_number());
-            } else if(ast["subtype"].as_string() == "ternop") {
-                scfx::json const &cnt{ast["content"]};
-                if(cnt["condition"].is_null() || cnt["true_expr"].is_null() || cnt["false_expr"].is_null()) {
-                    throw compilation_error{ast["loc"]["line"].try_as_number(), ast["loc"]["col"].try_as_number(),
-                        std::string{"invalid expression"}
-                    };
-                }
-                if(static_cast<token::type>(cnt["oper_enum"].as_int(-1)) == token::type::QUESTION) {
-                    res = std::make_shared<ternop_expression>(
-                        chop_expression(cnt["condition"]),
-                        chop_expression(cnt["true_expr"]),
-                        chop_expression(cnt["false_expr"])
-                    );
-                    res->set_loc(ast["loc"]["line"].try_as_number(), ast["loc"]["col"].try_as_number());
-                }
-            } else if(ast["subtype"].as_string() == "prefix") {
-                scfx::json const &cnt{ast["content"]};
-                if(cnt["operand"].is_null() || cnt["oper_enum"].is_null()) {
-                    throw compilation_error{ast["loc"]["line"].try_as_number(), ast["loc"]["col"].try_as_number(),
-                        std::string{"invalid expression"}
-                    };
-                }
-                res = std::make_shared<prefix_unop_expression>(
-                    static_cast<token::type>(cnt["oper_enum"].as_int()),
-                    chop_expression(cnt["operand"])
-                );
-                res->set_loc(ast["loc"]["line"].try_as_number(), ast["loc"]["col"].try_as_number());
-            } else if(ast["subtype"].as_string() == "postfix") {
-                scfx::json const &cnt{ast["content"]};
-                if(cnt["operand"].is_null() || cnt["oper_enum"].is_null()) {
-                    throw compilation_error{ast["loc"]["line"].try_as_number(), ast["loc"]["col"].try_as_number(),
-                        std::string{"invalid expression"}
-                    };
-                }
-                res = std::make_shared<postfix_unop_expression>(
-                    chop_expression(cnt["operand"]),
-                    static_cast<token::type>(cnt["oper_enum"].as_int())
-                );
-                res->set_loc(ast["loc"]["line"].try_as_number(), ast["loc"]["col"].try_as_number());
-            } else if(ast["subtype"].as_string() == "identifier") {
-                scfx::json const &cnt{ast["content"]};
-                res = std::make_shared<sym_expression>(cnt.as_string());
-                res->set_loc(ast["loc"]["line"].try_as_number(), ast["loc"]["col"].try_as_number());
-            } else if(ast["subtype"].as_string() == "literal") {
-                scfx::json const &cnt{ast["content"]};
-                if(ast["literal"].as_string() == "flt") {
-                    res = std::make_shared<primary_expression>(cnt.as_longdouble());
-                    res->set_loc(ast["loc"]["line"].try_as_number(), ast["loc"]["col"].try_as_number());
-                } else if(
-                    hobi.find(ast["literal"].as_string()) != hobi.end()
-                ) {
-                    res = std::make_shared<primary_expression>(cnt.as_number());
-                    res->set_loc(ast["loc"]["line"].try_as_number(), ast["loc"]["col"].try_as_number());
-                } else if(ast["literal"].as_string() == "bool") {
-                    res = std::make_shared<primary_expression>(cnt.as_boolean());
-                    res->set_loc(ast["loc"]["line"].try_as_number(), ast["loc"]["col"].try_as_number());
-                } else if(ast["literal"].as_string() == "undefined") {
-                    res = std::make_shared<primary_expression>(valbox{valbox_no_initialize::dont_do_it});
-                    res->set_loc(ast["loc"]["line"].try_as_number(), ast["loc"]["col"].try_as_number());
-                } else if(ast["literal"].as_string() == "str") {
-                    res = std::make_shared<primary_expression>(cnt.as_string());
-                    res->set_loc(ast["loc"]["line"].try_as_number(), ast["loc"]["col"].try_as_number());
-                } else if(ast["literal"].as_string() == "chr") {
-                    std::wstring chr_str{scfx::str_util::from_utf8(cnt.as_string())};
-                    if(chr_str.size() == 1) {
-                        if(chr_str[0] < 256) {
-                            res = std::make_shared<primary_expression>((char)chr_str[0]);
-                        } else {
-                            res = std::make_shared<primary_expression>(chr_str[0]);
+                if((*stack.back().ast)["subtype"].as_string() == "binop") {
+                    scfx::json const &cnt{(*stack.back().ast)["content"]};
+                    if(stack.back().phase == 0) {
+                        if(cnt["left"].is_null() || cnt["right"].is_null()) {
+                            throw compilation_error{(*stack.back().ast)["loc"]["line"].try_as_number(), (*stack.back().ast)["loc"]["col"].try_as_number(),
+                                std::string{"invalid expression"}
+                            };
                         }
-                    } else if(chr_str.size() > 1) {
-                        uint32_t c{};
-                        int pos{(int)(chr_str.size() - 1)};
-                        for(size_t i{0}; i < 4 && pos >= 0; ++i) {
-                            int cc{(std::uint8_t)chr_str[pos]};
-                            c |= cc << (i * 8);
-                            --pos;
-                        }
-                        res = std::make_shared<primary_expression>((wchar_t)c);
-                    } else {
-                        throw compilation_error{
-                            ast["loc"]["line"].try_as_number(),
-                                           ast["loc"]["col"].try_as_number(),
-                                           "invalid character"
-                        };
+                        stack.back().phase = 1;
+                        stack.emplace_back(&cnt["left"]);
+                        continue;
+                    } else if(stack.back().phase == 1) {
+                        stack.back().buf1 = stack_res.res;
+                        stack.back().phase = 2;
+                        stack.emplace_back(&cnt["right"]);
+                        continue;
+                    } else if(stack.back().phase == 2) {
+                        stack.back().res = std::make_shared<binop_expression>(
+                            static_cast<token::type>(cnt["oper_enum"].as_int()),
+                            stack.back().buf1,
+                            stack_res.res
+                        );
+                        stack.back().res->set_loc(
+                            (*stack.back().ast)["loc"]["line"].try_as_number(),
+                            (*stack.back().ast)["loc"]["col"].try_as_number()
+                        );
+                        stack_res = std::move(stack.back());
+                        stack.pop_back();
                     }
-                    res->set_loc(ast["loc"]["line"].try_as_number(), ast["loc"]["col"].try_as_number());
+                } else if((*stack.back().ast)["subtype"].as_string() == "ternop") {
+                    scfx::json const &cnt{(*stack.back().ast)["content"]};
+                    if(stack.back().phase == 0) {
+                        if(
+                            cnt["condition"].is_null() || cnt["true_expr"].is_null() || cnt["false_expr"].is_null() ||
+                            static_cast<token::type>(cnt["oper_enum"].as_int(-1)) != token::type::QUESTION
+                        ) {
+                            throw compilation_error{
+                                (*stack.back().ast)["loc"]["line"].try_as_number(),
+                                (*stack.back().ast)["loc"]["col"].try_as_number(),
+                                std::string{"invalid expression"}
+                            };
+                        }
+                        stack.back().phase = 1;
+                        stack.emplace_back(&cnt["condition"]);
+                        continue;
+                    } else if(stack.back().phase == 1) {
+                        stack.back().buf1 = stack_res.res;
+                        stack.back().phase = 2;
+                        stack.emplace_back(&cnt["true_expr"]);
+                        continue;
+                    } else if(stack.back().phase == 2) {
+                        stack.back().buf2 = stack_res.res;
+                        stack.back().phase = 3;
+                        stack.emplace_back(&cnt["false_expr"]);
+                        continue;
+                    } else if(stack.back().phase == 3) {
+                        stack.back().res = std::make_shared<ternop_expression>(
+                            stack.back().buf1,
+                            stack.back().buf2,
+                            stack_res.res
+                        );
+                        stack.back().res->set_loc(
+                            (*stack.back().ast)["loc"]["line"].try_as_number(),
+                            (*stack.back().ast)["loc"]["col"].try_as_number()
+                        );
+                        stack_res = std::move(stack.back());
+                        stack.pop_back();
+                    }
+                } else if((*stack.back().ast)["subtype"].as_string() == "prefix") {
+                    scfx::json const &cnt{(*stack.back().ast)["content"]};
+                    if(stack.back().phase == 0) {
+                        if(cnt["operand"].is_null() || cnt["oper_enum"].is_null()) {
+                            throw compilation_error{
+                                (*stack.back().ast)["loc"]["line"].try_as_number(),
+                                (*stack.back().ast)["loc"]["col"].try_as_number(),
+                                std::string{"invalid expression"}
+                            };
+                        }
+                        stack.back().phase = 1;
+                        stack.emplace_back(&cnt["operand"]);
+                        continue;
+                    } else if(stack.back().phase == 1) {
+                        stack.back().res = std::make_shared<prefix_unop_expression>(
+                            static_cast<token::type>(cnt["oper_enum"].as_int()),
+                            stack_res.res
+                        );
+                        stack.back().res->set_loc(
+                            (*stack.back().ast)["loc"]["line"].try_as_number(),
+                            (*stack.back().ast)["loc"]["col"].try_as_number()
+                        );
+                        stack_res = std::move(stack.back());
+                        stack.pop_back();
+                    }
+                } else if((*stack.back().ast)["subtype"].as_string() == "postfix") {
+                    scfx::json const &cnt{(*stack.back().ast)["content"]};
+                    if(stack.back().phase == 0) {
+                        if(cnt["operand"].is_null() || cnt["oper_enum"].is_null()) {
+                            throw compilation_error{
+                                (*stack.back().ast)["loc"]["line"].try_as_number(),
+                                (*stack.back().ast)["loc"]["col"].try_as_number(),
+                                std::string{"invalid expression"}
+                            };
+                        }
+                        stack.back().phase = 1;
+                        stack.emplace_back(&cnt["operand"]);
+                        continue;
+                    } else if(stack.back().phase == 1) {
+                        stack.back().res = std::make_shared<postfix_unop_expression>(
+                            stack_res.res,
+                            static_cast<token::type>(cnt["oper_enum"].as_int())
+                        );
+                        stack.back().res->set_loc(
+                            (*stack.back().ast)["loc"]["line"].try_as_number(),
+                            (*stack.back().ast)["loc"]["col"].try_as_number()
+                        );
+                        stack_res = std::move(stack.back());
+                        stack.pop_back();
+                    }
+                } else if((*stack.back().ast)["subtype"].as_string() == "identifier") {
+                    scfx::json const &cnt{(*stack.back().ast)["content"]};
+                    stack.back().res = std::make_shared<sym_expression>(cnt.as_string());
+                    stack.back().res->set_loc((*stack.back().ast)["loc"]["line"].try_as_number(), (*stack.back().ast)["loc"]["col"].try_as_number());
+                    stack_res = std::move(stack.back());
+                    stack.pop_back();
+                } else if((*stack.back().ast)["subtype"].as_string() == "literal") {
+                    scfx::json const &cnt{(*stack.back().ast)["content"]};
+                    if((*stack.back().ast)["literal"].as_string() == "flt") {
+                        stack.back().res = std::make_shared<primary_expression>(cnt.as_longdouble());
+                        stack.back().res->set_loc((*stack.back().ast)["loc"]["line"].try_as_number(), (*stack.back().ast)["loc"]["col"].try_as_number());
+                        stack_res = std::move(stack.back());
+                        stack.pop_back();
+                    } else if(hobi.find((*stack.back().ast)["literal"].as_string()) != hobi.end()) {
+                        stack.back().res = std::make_shared<primary_expression>(cnt.as_number());
+                        stack.back().res->set_loc((*stack.back().ast)["loc"]["line"].try_as_number(), (*stack.back().ast)["loc"]["col"].try_as_number());
+                        stack_res = std::move(stack.back());
+                        stack.pop_back();
+                    } else if((*stack.back().ast)["literal"].as_string() == "bool") {
+                        stack.back().res = std::make_shared<primary_expression>(cnt.as_boolean());
+                        stack.back().res->set_loc((*stack.back().ast)["loc"]["line"].try_as_number(), (*stack.back().ast)["loc"]["col"].try_as_number());
+                        stack_res = std::move(stack.back());
+                        stack.pop_back();
+                    } else if((*stack.back().ast)["literal"].as_string() == "undefined") {
+                        stack.back().res = std::make_shared<primary_expression>(valbox{valbox_no_initialize::dont_do_it});
+                        stack.back().res->set_loc((*stack.back().ast)["loc"]["line"].try_as_number(), (*stack.back().ast)["loc"]["col"].try_as_number());
+                        stack_res = std::move(stack.back());
+                        stack.pop_back();
+                    } else if((*stack.back().ast)["literal"].as_string() == "str") {
+                        stack.back().res = std::make_shared<primary_expression>(cnt.as_string());
+                        stack.back().res->set_loc((*stack.back().ast)["loc"]["line"].try_as_number(), (*stack.back().ast)["loc"]["col"].try_as_number());
+                        stack_res = std::move(stack.back());
+                        stack.pop_back();
+                    } else if((*stack.back().ast)["literal"].as_string() == "chr") {
+                        std::wstring chr_str{scfx::str_util::from_utf8(cnt.as_string())};
+                        if(chr_str.size() == 1) {
+                            if(chr_str[0] < 256) {
+                                stack.back().res = std::make_shared<primary_expression>((char)chr_str[0]);
+                            } else {
+                                stack.back().res = std::make_shared<primary_expression>(chr_str[0]);
+                            }
+                        } else if(chr_str.size() > 1) {
+                            uint32_t c{};
+                            int pos{(int)(chr_str.size() - 1)};
+                            for(size_t i{0}; i < 4 && pos >= 0; ++i) {
+                                int cc{(std::uint8_t)chr_str[pos]};
+                                c |= cc << (i * 8);
+                                --pos;
+                            }
+                            stack.back().res = std::make_shared<primary_expression>((wchar_t)c);
+                        } else {
+                            throw compilation_error{
+                                (*stack.back().ast)["loc"]["line"].try_as_number(),
+                                (*stack.back().ast)["loc"]["col"].try_as_number(),
+                                "invalid character"
+                            };
+                        }
+                        stack.back().res->set_loc((*stack.back().ast)["loc"]["line"].try_as_number(), (*stack.back().ast)["loc"]["col"].try_as_number());
+                        stack_res = std::move(stack.back());
+                        stack.pop_back();
+                    }
+                } else if((*stack.back().ast)["subtype"].as_string() == "func_call") {
+                    scfx::json const &cnt{(*stack.back().ast)["content"]};
+                    if(stack.back().phase == 0) {
+                        if(cnt["func"].is_null()) {
+                            throw compilation_error{
+                                (*stack.back().ast)["loc"]["line"].try_as_number(),
+                                (*stack.back().ast)["loc"]["col"].try_as_number(),
+                                std::string{"invalid expression"}
+                            };
+                        }
+                        stack.back().phase = 1;
+                        stack.emplace_back(&cnt["func"]);
+                        continue;
+                    } else if(stack.back().phase == 1) {
+                        stack.back().res = std::make_shared<func_call_expression>(
+                            stack_res.res,
+                            func_call_args(cnt["args"])
+                        );
+                        stack.back().res->set_loc(
+                            (*stack.back().ast)["loc"]["line"].try_as_number(),
+                            (*stack.back().ast)["loc"]["col"].try_as_number()
+                        );
+                        stack_res = std::move(stack.back());
+                        stack.pop_back();
+                    }
                 }
-            } else if(ast["subtype"].as_string() == "func_call") {
-                scfx::json const &cnt{ast["content"]};
-                if(cnt["func"].is_null()) {
-                    throw compilation_error{ast["loc"]["line"].try_as_number(), ast["loc"]["col"].try_as_number(),
-                        std::string{"invalid expression"}
-                    };
-                }
-                res = std::make_shared<func_call_expression>(
-                    chop_expression(cnt["func"]),
-                    func_call_args(cnt["args"])
-                );
-                res->set_loc(ast["loc"]["line"].try_as_number(), ast["loc"]["col"].try_as_number());
             }
-            return res;
+            return stack_res.res;
         }
 
         std::vector<expr_ptr> func_call_args(scfx::json const &ast) {

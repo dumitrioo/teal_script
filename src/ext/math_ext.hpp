@@ -1174,16 +1174,16 @@ namespace scfx {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
   /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
-  /* CHAR */        [](valbox const &v) -> valbox { return std::trunc(static_cast<long double>(v.as_char())); },
-  /* S8 */          [](valbox const &v) -> valbox { return std::trunc(static_cast<long double>(v.as_s8())); },
-  /* U8 */          [](valbox const &v) -> valbox { return std::trunc(static_cast<long double>(v.as_u8())); },
-  /* S16 */         [](valbox const &v) -> valbox { return std::trunc(static_cast<long double>(v.as_s16())); },
-  /* U16 */         [](valbox const &v) -> valbox { return std::trunc(static_cast<long double>(v.as_u16())); },
-  /* WCHAR */       [](valbox const &v) -> valbox { return std::trunc(static_cast<long double>(v.as_wchar())); },
-  /* S32 */         [](valbox const &v) -> valbox { return std::trunc(static_cast<long double>(v.as_s32())); },
-  /* U32 */         [](valbox const &v) -> valbox { return std::trunc(static_cast<long double>(v.as_u32())); },
-  /* S64 */         [](valbox const &v) -> valbox { return std::trunc(static_cast<long double>(v.as_s64())); },
-  /* U64 */         [](valbox const &v) -> valbox { return std::trunc(static_cast<long double>(v.as_u64())); },
+  /* CHAR */        [](valbox const &v) -> valbox { return static_cast<long double>(v.as_char()); },
+  /* S8 */          [](valbox const &v) -> valbox { return static_cast<long double>(v.as_s8()); },
+  /* U8 */          [](valbox const &v) -> valbox { return static_cast<long double>(v.as_u8()); },
+  /* S16 */         [](valbox const &v) -> valbox { return static_cast<long double>(v.as_s16()); },
+  /* U16 */         [](valbox const &v) -> valbox { return static_cast<long double>(v.as_u16()); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return static_cast<long double>(v.as_wchar()); },
+  /* S32 */         [](valbox const &v) -> valbox { return static_cast<long double>(v.as_s32()); },
+  /* U32 */         [](valbox const &v) -> valbox { return static_cast<long double>(v.as_u32()); },
+  /* S64 */         [](valbox const &v) -> valbox { return static_cast<long double>(v.as_s64()); },
+  /* U64 */         [](valbox const &v) -> valbox { return static_cast<long double>(v.as_u64()); },
   /* FLOAT */       [](valbox const &v) -> valbox { return std::trunc(v.as_float()); },
   /* DOUBLE */      [](valbox const &v) -> valbox { return std::trunc(v.as_double()); },
   /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::trunc(v.as_long_double()); },
@@ -1205,16 +1205,16 @@ namespace scfx {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 static std::array<std::function<valbox(valbox const &)>, 25> const funcs{
   /* BOOL */        [](valbox const & ) -> valbox { return valbox{}; },
-  /* CHAR */        [](valbox const &v) -> valbox { return std::round(static_cast<long double>(v.as_char())); },
-  /* S8 */          [](valbox const &v) -> valbox { return std::round(static_cast<long double>(v.as_s8())); },
-  /* U8 */          [](valbox const &v) -> valbox { return std::round(static_cast<long double>(v.as_u8())); },
-  /* S16 */         [](valbox const &v) -> valbox { return std::round(static_cast<long double>(v.as_s16())); },
-  /* U16 */         [](valbox const &v) -> valbox { return std::round(static_cast<long double>(v.as_u16())); },
-  /* WCHAR */       [](valbox const &v) -> valbox { return std::round(static_cast<long double>(v.as_wchar())); },
-  /* S32 */         [](valbox const &v) -> valbox { return std::round(static_cast<long double>(v.as_s32())); },
-  /* U32 */         [](valbox const &v) -> valbox { return std::round(static_cast<long double>(v.as_u32())); },
-  /* S64 */         [](valbox const &v) -> valbox { return std::round(static_cast<long double>(v.as_s64())); },
-  /* U64 */         [](valbox const &v) -> valbox { return std::round(static_cast<long double>(v.as_u64())); },
+  /* CHAR */        [](valbox const &v) -> valbox { return static_cast<long double>(v.as_char()); },
+  /* S8 */          [](valbox const &v) -> valbox { return static_cast<long double>(v.as_s8()); },
+  /* U8 */          [](valbox const &v) -> valbox { return static_cast<long double>(v.as_u8()); },
+  /* S16 */         [](valbox const &v) -> valbox { return static_cast<long double>(v.as_s16()); },
+  /* U16 */         [](valbox const &v) -> valbox { return static_cast<long double>(v.as_u16()); },
+  /* WCHAR */       [](valbox const &v) -> valbox { return static_cast<long double>(v.as_wchar()); },
+  /* S32 */         [](valbox const &v) -> valbox { return static_cast<long double>(v.as_s32()); },
+  /* U32 */         [](valbox const &v) -> valbox { return static_cast<long double>(v.as_u32()); },
+  /* S64 */         [](valbox const &v) -> valbox { return static_cast<long double>(v.as_s64()); },
+  /* U64 */         [](valbox const &v) -> valbox { return static_cast<long double>(v.as_u64()); },
   /* FLOAT */       [](valbox const &v) -> valbox { return std::round(v.as_float()); },
   /* DOUBLE */      [](valbox const &v) -> valbox { return std::round(v.as_double()); },
   /* LONG_DOUBLE */ [](valbox const &v) -> valbox { return std::round(v.as_long_double()); },
@@ -1591,11 +1591,26 @@ namespace scfx {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 return args[0].as_vec4().length();
             });
-            rt->add_function("at", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 3) return args[0].as_mat4().at(args[1].cast_to_u64(), args[2].cast_to_u64()); });
-            rt->add_function("x", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].as_vec4().x(); });
-            rt->add_function("y", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].as_vec4().y(); });
-            rt->add_function("z", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].as_vec4().z(); });
-            rt->add_function("w", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].as_vec4().w(); });
+            rt->add_function("at", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 3)
+                return args[0].as_mat4().at(args[1].cast_to_u64(), args[2].cast_to_u64());
+            });
+            rt->add_function("x", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                return args[0].as_vec4().x();
+            });
+            rt->add_function("y", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                return args[0].as_vec4().y();
+            });
+            rt->add_function("z", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                return args[0].as_vec4().z();
+            });
+            rt->add_function("w", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                return args[0].as_vec4().w();
+            });
 
             rt->add_function("spheric_to_cartesian", SCFXFUN(args) {
                 if(args.size() == 1) {
