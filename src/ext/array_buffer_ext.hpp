@@ -475,7 +475,11 @@ namespace scfx {
                 requires(std::is_fundamental_v<T>)
             void assign_from_value(T v) {
                 buf_.resize(sizeof(T));
-                std::copy((std::uint8_t const *)&v, (std::uint8_t const *)&v + sizeof(T), buf_.data());
+                std::copy(
+                    reinterpret_cast<std::uint8_t const *>(&v),
+                    reinterpret_cast<std::uint8_t const *>(&v) + sizeof(T),
+                    buf_.data()
+                );
             }
             void fill_with(std::uint8_t c) { for(auto &&cc: buf_) { cc = c; } }
 
@@ -566,12 +570,13 @@ namespace scfx {
             template<typename T>
                 requires(std::is_fundamental_v<std::remove_cvref_t<T>>)
             std::remove_cvref_t<T> get_at(std::size_t at) const {
-                if(buf_.size() < at + sizeof(std::remove_cvref_t<T>)) {
+                using res_t = std::remove_cvref_t<T>;
+                if(buf_.size() < at + sizeof(res_t)) {
                     throw std::runtime_error{"requested data is out of buffer bounds"};
                 }
-                std::remove_cvref_t<T> res{};
+                res_t res{};
                 std::uint8_t const *dptr{buf_.data() + at};
-                std::copy(dptr, dptr + sizeof(std::remove_cvref_t<T>), &res);
+                std::copy(dptr, dptr + sizeof(res_t), reinterpret_cast<std::uint8_t *>(&res));
                 return res;
             }
 
