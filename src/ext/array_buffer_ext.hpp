@@ -46,6 +46,34 @@ namespace scfx {
                 }
                 throw std::runtime_error{"invalid argument(s)"};
             });
+            rt->add_function("as_array_buffer", SCFXFUN(args) {
+                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                if(args[0].is_string_ref()) {
+                    return scfx::valbox{std::make_shared<array_buffer>(args[0].as_string()), "array_buffer"};
+                } else if(args[0].is_class_ref() && args[0].class_name() == "array_buffer") {
+                    return scfx::valbox{std::make_shared<array_buffer>(*SCFXTHIS(args, std::shared_ptr<array_buffer>)), "array_buffer"};
+                } else if(args[0].is_numeric()) {
+                    std::shared_ptr<array_buffer> res{std::make_shared<array_buffer>()};
+                    if(args[0].is_bool_ref()) { res->assign_from_value(args[0].as_bool()); } else
+                    if(args[0].is_char_ref()) { res->assign_from_value(args[0].as_char()); } else
+                    if(args[0].is_wchar_ref()) { res->assign_from_value(args[0].as_wchar()); } else
+                    if(args[0].is_s8_ref()) { res->assign_from_value(args[0].as_s8()); } else
+                    if(args[0].is_u8_ref()) { res->assign_from_value(args[0].as_u8()); } else
+                    if(args[0].is_s16_ref()) { res->assign_from_value(args[0].as_s16()); } else
+                    if(args[0].is_u16_ref()) { res->assign_from_value(args[0].as_u16()); } else
+                    if(args[0].is_s32_ref()) { res->assign_from_value(args[0].as_s32()); } else
+                    if(args[0].is_u32_ref()) { res->assign_from_value(args[0].as_u32()); } else
+                    if(args[0].is_s64_ref()) { res->assign_from_value(args[0].as_s64()); } else
+                    if(args[0].is_u64_ref()) { res->assign_from_value(args[0].as_u64()); } else
+                    if(args[0].is_float_ref()) { res->assign_from_value(args[0].as_float()); } else
+                    if(args[0].is_double_ref()) { res->assign_from_value(args[0].as_double()); } else
+                    if(args[0].is_long_double_ref()) { res->assign_from_value(args[0].as_long_double()); } else {
+                        throw std::runtime_error{"invalid argument(s)"};
+                    }
+                    return scfx::valbox{res, "array_buffer"};
+                }
+                throw std::runtime_error{"invalid argument(s)"};
+            });
             rt->add_method("array_buffer", "size", SCFXFUN(args) {
                 SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 return SCFXTHIS(args, std::shared_ptr<array_buffer>)->size();
@@ -438,10 +466,17 @@ namespace scfx {
         public:
             array_buffer() = default;
             array_buffer(std::string const &strbuf) { assign(strbuf); }
+            array_buffer(std::wstring const &strbuf) { assign(strbuf.data(), strbuf.size() * sizeof(std::wstring::value_type)); }
             array_buffer(std::vector<std::uint8_t>::size_type s) { buf_.resize(s); }
             void resize(std::vector<std::uint8_t>::size_type s) { buf_.resize(s); }
             std::size_t size() const noexcept { return buf_.size(); }
 
+            template<typename T>
+                requires(std::is_fundamental_v<T>)
+            void assign_from_value(T v) {
+                buf_.resize(sizeof(T));
+                std::copy((std::uint8_t const *)&v, (std::uint8_t const *)&v + sizeof(T), buf_.data());
+            }
             void fill_with(std::uint8_t c) { for(auto &&cc: buf_) { cc = c; } }
 
             void assign(array_buffer const &that) { if(&that != this) { buf_ = that.buf_; } }
@@ -535,7 +570,8 @@ namespace scfx {
                     throw std::runtime_error{"requested data is out of buffer bounds"};
                 }
                 std::remove_cvref_t<T> res{};
-                std::memcpy(&res, &buf_[at], sizeof(std::remove_cvref_t<T>));
+                std::uint8_t const *dptr{buf_.data() + at};
+                std::copy(dptr, dptr + sizeof(std::remove_cvref_t<T>), &res);
                 return res;
             }
 

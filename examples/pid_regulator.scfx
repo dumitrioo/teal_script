@@ -16,7 +16,7 @@ val_with_rand mock_in(0.0, 1000.0, 5);
 forward mock_kp(0.8);
 forward mock_ki(0.4);
 forward mock_kd(0.000001);
-forward mock_km(500.0);
+forward mock_km(1000.0);
 
 // choose and return first one defined
 first_defined in(real_in, mock_in);
@@ -119,7 +119,7 @@ logprint(in, e1, pidval, e2, mathval) {
     dt = t - this.prev_t;
     if(dt > 0.1) {
         this.prev_t = t;
-        console.info("target: ", in,
+        console.print("target: ", in,
             " | err1: ", e1, ", PID val: ", pidval,
             " | err2: ", e2, ", Math val: ", mathval
         );

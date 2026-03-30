@@ -14,6 +14,58 @@ namespace scfx {
         func_call
     };
 
+
+    class nv_expression {
+    public:
+        enum class fixness{
+            none, prefix, postfix, infix, ternary
+        };
+
+        valbox eval(execution_context *, eval_caller_type, valbox *) {
+            return {};
+        }
+        std::string const &symbol() const & { return symbol_; }
+        valbox primary_val() const {
+            std::shared_lock l{primary_val_mtp_};
+            return primary_val_;
+        }
+        void mark_fun_ref() { fun_ref_ = true; }
+        bool primary() const { return primary_.load(std::memory_order_acquire); }
+        void reset_primary() { primary_ = false; }
+        bool fun_ref() const { return fun_ref_; }
+
+        void set_loc(std::int64_t line, std::int64_t col) { line_ = line; col_ = col; }
+        std::int64_t line() const { return line_; }
+        std::int64_t col() const { return col_; }
+
+        bool is_symbolic() const { return false; }
+        bool is_binop() const { return false; }
+        token::type binop_type() const { return token::type::NONE; }
+
+    private:
+        std::int64_t line_{0};
+        std::int64_t col_{0};
+        bool fun_ref_{false};
+
+        // primary
+        std::atomic<bool> primary_{false};
+        mutable shared_mutex primary_val_mtp_{};
+        valbox primary_val_{};
+        std::string name_{};
+
+        // symbolic
+        std::string symbol_{};
+
+        // unary/binary/ternary operator
+        fixness opfix_{fixness::none};
+        token::type opcode_{token::type::NONE};
+        std::shared_ptr<nv_expression> sub_val_1_{};
+        std::shared_ptr<nv_expression> sub_val_2_{};
+        std::shared_ptr<nv_expression> sub_val_3_{};
+        std::vector<std::shared_ptr<nv_expression>> args_{};
+    };
+
+
     class expression {
     public:
         virtual ~expression() {}
@@ -46,9 +98,6 @@ namespace scfx {
         valbox eval(execution_context *, eval_caller_type, valbox *) override {
             return valbox{valbox_no_initialize::dont_do_it};
         }
-
-    private:
-        std::string name_{};
     };
 
     class primary_expression: public expression {
@@ -81,16 +130,18 @@ namespace scfx {
             valbox res{valbox_no_initialize::dont_do_it};
             if(fun_ref()) {
                 res = ctx->find_func(name_);
-                execution_context::obj_type objtyp{execution_context::obj_type::unknown};
+                execution_context::obj_type objtyp{objtyp_.load(std::memory_order::acquire)};
                 if(!res.is_func_ref()) {
-                    res = ctx->find_val_by_sym_name(name_, line(), col(), objtyp);
+                    res = ctx->find_val_by_sym_name(name_, line(), col(), objtyp, objtyp);
+                    objtyp_.store(objtyp, std::memory_order::release);
                 }
             } else {
                 bool excepted{false};
                 runtime_error er{{}, {}, {}};
                 try {
-                    execution_context::obj_type objtyp{execution_context::obj_type::unknown};
-                    res = ctx->find_val_by_sym_name(name_, line(), col(), objtyp);
+                    execution_context::obj_type objtyp{objtyp_.load(std::memory_order::acquire)};
+                    res = ctx->find_val_by_sym_name(name_, line(), col(), objtyp, objtyp);
+                    objtyp_.store(objtyp, std::memory_order::release);
                     if(objtyp == execution_context::obj_type::global_var) {
                         std::unique_lock l{primary_val_mtp_};
                         primary_val_ = res;
@@ -123,6 +174,7 @@ namespace scfx {
         mutable shared_mutex primary_val_mtp_{};
         valbox primary_val_{};
         std::string name_{};
+        std::atomic<execution_context::obj_type> objtyp_{execution_context::obj_type::unknown};
         std::atomic<bool> primary_{false};
     };
 
@@ -1518,8 +1570,6 @@ namespace scfx {
                 std::unique_lock l{primary_val_mtp_};
                 primary_val_ = res;
                 primary_ = true;
-                lval_.reset();
-                rval_.reset();
             }
             return res;
         }

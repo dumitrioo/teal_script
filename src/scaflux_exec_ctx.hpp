@@ -162,7 +162,57 @@ namespace scfx {
             user_fun,
             global_fun,
         };
-        valbox find_val_by_sym_name(std::string const &name, int64_t l, int64_t c, obj_type &objtyp) {
+        valbox find_val_by_sym_name(std::string const &name, int64_t l, int64_t c, obj_type &objtyp, obj_type suggested_type) {
+            switch(suggested_type) {
+                case obj_type::user_fun:
+                    if((rt_ptr_->user_functions_search())(name)) {
+                        objtyp = obj_type::user_fun;
+                        return valbox{rt_ptr_->user_function_selector(), name, true};
+                    }
+                    break;
+                case obj_type::global_fun: {
+                    dict_map_t<std::string, valbox>::iterator gvd_it{rt_ptr_->global_functions_dictionary()->find(name)};
+                        if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
+                            objtyp = obj_type::global_fun;
+                            return gvd_it->second.clone();
+                        }
+                    }
+                    break;
+                case obj_type::stack_var: {
+                        valbox res{valbox_no_initialize::dont_do_it};
+                        int64_t stb{-2};
+                        for(int64_t i{stack_ptr_}; i >= 0; --i) {
+                            if(stb != -2 && i <= stb) {
+                                break;
+                            }
+                            if(stack_[i].get(name, res)) {
+                                objtyp = obj_type::stack_var;
+                                return res;
+                            }
+                            if(stb == -2) {
+                                stb = stack_barrier();
+                            }
+                        }
+                        if(create_if_not_exists()) {
+                            valbox res{};
+                            stack_[stack_ptr_].put(name, res);
+                            objtyp = obj_type::stack_var;
+                            return res;
+                        }
+                    }
+                    break;
+                case obj_type::global_var: {
+                        dict_map_t<std::string, valbox>::iterator gvd_it{rt_ptr_->global_constants_dictionary()->find(name)};
+                        if(gvd_it != rt_ptr_->global_constants_dictionary()->end()) {
+                            objtyp = obj_type::global_var;
+                            return gvd_it->second.clone();
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+
             objtyp = obj_type::unknown;
             valbox res{valbox_no_initialize::dont_do_it};
             int64_t stb{-2};

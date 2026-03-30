@@ -172,12 +172,12 @@ namespace scfx::math {
     };
 
 #if 0
-    // from quake game (just for fun)
-    static float one_div_sqrt(float x) noexcept {
+    // from Quake III Arena game (just for fun)
+    static float Q_rsqrt(float x) noexcept {
         float x2{x * 0.5f};
         float y{x};
         std::int32_t i{*(std::int32_t *)&y};
-        i = /*0x5f3759df*/ 0x5f3504f3 - (i >> 1);
+        i = 0x5f3759df - (i >> 1);
         y = *(float *)&i;
         y = y * (1.5f - x2 * y * y);
         y = y * (1.5f - x2 * y * y);
@@ -185,7 +185,7 @@ namespace scfx::math {
     }
 
     // intended for double numbers (for fun also)
-    static double one_div_sqrt(double x) noexcept {
+    static double Q_rsqrt(double x) noexcept {
         double x2{x * 0.5};
         double y{x};
         std::int64_t i{*(std::int64_t *)&y};

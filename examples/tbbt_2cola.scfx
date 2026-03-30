@@ -80,8 +80,32 @@ tbbt2cola duplicating_beverage_d(sqg);
 tbbt2cola duplicating_beverage_e(sqg);
 tbbt2cola duplicating_beverage_f(sqg);
 
+tbbt2cola duplicating_beverage_10(sqg);
+tbbt2cola duplicating_beverage_11(sqg);
+tbbt2cola duplicating_beverage_12(sqg);
+tbbt2cola duplicating_beverage_13(sqg);
+tbbt2cola duplicating_beverage_14(sqg);
+tbbt2cola duplicating_beverage_15(sqg);
+tbbt2cola duplicating_beverage_16(sqg);
+tbbt2cola duplicating_beverage_17(sqg);
+tbbt2cola duplicating_beverage_18(sqg);
+tbbt2cola duplicating_beverage_19(sqg);
+tbbt2cola duplicating_beverage_1a(sqg);
+tbbt2cola duplicating_beverage_1b(sqg);
+tbbt2cola duplicating_beverage_1c(sqg);
+tbbt2cola duplicating_beverage_1d(sqg);
+tbbt2cola duplicating_beverage_1e(sqg);
+tbbt2cola duplicating_beverage_1f(sqg);
 
-sqgen() { if(this.gen == undefined) { this.gen = sequence_generator(); } return this.gen; }
+
+sqgen() {
+    if(this.gen == undefined) {
+        set_cycle_nanosleep(0);
+        set_inactive_nanosleep(0);
+        this.gen = sequence_generator();
+    }
+    return this.gen;
+}
 sqgen sqg();
 
 
