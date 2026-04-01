@@ -1743,81 +1743,82 @@ namespace scfx {
             std::deque<frame> stack{};
             stack.emplace_back(this_, std::stringstream{}, level, 0, 0, 0);
             while(!stack.empty()) {
-                if(stack.back().this_->t_ == jo_null) {
-                    stack.back().result_ << "null";
-                    stack_res = std::move(stack.back());
+                frame &top{stack.back()};
+                if(top.this_->t_ == jo_null) {
+                    top.result_ << "null";
+                    stack_res = std::move(top);
                     stack.pop_back();
-                } else if(stack.back().this_->t_ == jo_int) {
-                    stack.back().result_ << str_util::itoa<std::string>(stack.back().this_->as<std::int64_t>());
-                    stack_res = std::move(stack.back());
+                } else if(top.this_->t_ == jo_int) {
+                    top.result_ << str_util::itoa<std::string>(top.this_->as<std::int64_t>());
+                    stack_res = std::move(top);
                     stack.pop_back();
-                } else if(stack.back().this_->t_ == jo_flt) {
-                    stack.back().result_ << str_util::ftoa(stack.back().this_->as<long double>(), std::numeric_limits<long double>::digits10);
-                    stack_res = std::move(stack.back());
+                } else if(top.this_->t_ == jo_flt) {
+                    top.result_ << str_util::ftoa(top.this_->as<long double>(), std::numeric_limits<long double>::digits10);
+                    stack_res = std::move(top);
                     stack.pop_back();
-                } else if(stack.back().this_->t_ == jo_bool) {
-                    stack.back().result_ << (stack.back().this_->as<bool>() ? "true" : "false");
-                    stack_res = std::move(stack.back());
+                } else if(top.this_->t_ == jo_bool) {
+                    top.result_ << (top.this_->as<bool>() ? "true" : "false");
+                    stack_res = std::move(top);
                     stack.pop_back();
-                } else if(stack.back().this_->t_ == jo_string) {
-                    stack.back().result_ << std::string{"\""} + detail::escape(stack.back().this_->as<std::string>()) + std::string{"\""};
-                    stack_res = std::move(stack.back());
+                } else if(top.this_->t_ == jo_string) {
+                    top.result_ << std::string{"\""} + detail::escape(top.this_->as<std::string>()) + std::string{"\""};
+                    stack_res = std::move(top);
                     stack.pop_back();
-                } else if(stack.back().this_->t_ == jo_object) {
-                    if(stack.back().phase_ == 0) {
-                        stack.back().result_ << std::string{"{"} + (stack.back().this_->as<o_t>().size() ? newline : "");
-                        stack.back().i_ = 0;
-                        stack.back().phase_ = 1;
+                } else if(top.this_->t_ == jo_object) {
+                    if(top.phase_ == 0) {
+                        top.result_ << std::string{"{"} + (top.this_->as<o_t>().size() ? newline : "");
+                        top.i_ = 0;
+                        top.phase_ = 1;
                         continue;
-                    } else if(stack.back().phase_ == 1) {
-                        if(stack.back().i_ < stack.back().this_->as<o_t>().size()) {
-                            auto p{stack.back().this_->as<o_t>().begin()};
-                            for(size_t i{}; i < stack.back().i_; ++i) { ++p; }
-                            ++stack.back().i_;
+                    } else if(top.phase_ == 1) {
+                        if(top.i_ < top.this_->as<o_t>().size()) {
+                            auto p{top.this_->as<o_t>().begin()};
+                            for(size_t i{}; i < top.i_; ++i) { ++p; }
+                            ++top.i_;
 
                             if(!detail::is_ident(p->first)) {
-                                stack.back().result_ << prefix(stack.back().curr_level_) + indent + std::string{"\""} + p->first + "\"";
+                                top.result_ << prefix(top.curr_level_) + indent + std::string{"\""} + p->first + "\"";
                             } else {
-                                stack.back().result_ << prefix(stack.back().curr_level_) + indent + p->first;
+                                top.result_ << prefix(top.curr_level_) + indent + p->first;
                             }
-                            stack.back().result_ << std::string{} + ":" + space;
-                            stack.back().phase_ = 2;
-                            stack.emplace_back(&p->second, std::stringstream{}, stack.back().curr_level_ + 1, 0, 0, 0);
+                            top.result_ << std::string{} + ":" + space;
+                            top.phase_ = 2;
+                            stack.emplace_back(&p->second, std::stringstream{}, top.curr_level_ + 1, 0, 0, 0);
                             continue;
                         } else {
-                            stack.back().result_ << (stack.back().i_ > 0 ? newline + prefix(stack.back().curr_level_) : "") + "}";
-                            stack_res = std::move(stack.back());
+                            top.result_ << (top.i_ > 0 ? newline + prefix(top.curr_level_) : "") + "}";
+                            stack_res = std::move(top);
                             stack.pop_back();
                         }
-                    } else if(stack.back().phase_ == 2) {
-                        stack.back().result_ << stack_res.result_.str();
-                        stack.back().result_ << "," + (stack.back().i_ < stack.back().this_->as<o_t>().size() ? newline : "");
-                        stack.back().phase_ = 1;
+                    } else if(top.phase_ == 2) {
+                        top.result_ << stack_res.result_.str();
+                        top.result_ << "," + (top.i_ < top.this_->as<o_t>().size() ? newline : "");
+                        top.phase_ = 1;
                         continue;
                     }
-                } else if(stack.back().this_->t_ == jo_array) {
-                    if(stack.back().phase_ == 0) {
-                        stack.back().result_ << std::string{"["} + (stack.back().this_->as<a_t>().size() ? newline : "");
-                        stack.back().maxind_ = stack.back().this_->max_array_index();
-                        stack.back().i_ = 0;
-                        stack.back().phase_ = 1;
+                } else if(top.this_->t_ == jo_array) {
+                    if(top.phase_ == 0) {
+                        top.result_ << std::string{"["} + (top.this_->as<a_t>().size() ? newline : "");
+                        top.maxind_ = top.this_->max_array_index();
+                        top.i_ = 0;
+                        top.phase_ = 1;
                         continue;
-                    } else if(stack.back().phase_ == 1) {
-                        if(stack.back().i_ <= stack.back().maxind_) {
-                            stack.back().result_ << prefix(stack.back().curr_level_) + indent;
-                            stack.back().phase_ = 2;
-                            stack.emplace_back(&stack.back().this_->as<a_t>().at(stack.back().i_), std::stringstream{}, stack.back().curr_level_ + 1, 0, 0, 0);
+                    } else if(top.phase_ == 1) {
+                        if(top.i_ <= top.maxind_) {
+                            top.result_ << prefix(top.curr_level_) + indent;
+                            top.phase_ = 2;
+                            stack.emplace_back(&top.this_->as<a_t>().at(top.i_), std::stringstream{}, top.curr_level_ + 1, 0, 0, 0);
                             continue;
                         } else {
-                            stack.back().result_ << (stack.back().i_ > 0 ? newline + prefix(stack.back().curr_level_) : "") + "]";
-                            stack_res = std::move(stack.back());
+                            top.result_ << (top.i_ > 0 ? newline + prefix(top.curr_level_) : "") + "]";
+                            stack_res = std::move(top);
                             stack.pop_back();
                         }
-                    } else if(stack.back().phase_ == 2) {
-                        ++stack.back().i_;
-                        stack.back().result_ << stack_res.result_.str();
-                        stack.back().result_ << "," + (stack.back().i_ < stack.back().this_->as<a_t>().size() ? newline : "");
-                        stack.back().phase_ = 1;
+                    } else if(top.phase_ == 2) {
+                        ++top.i_;
+                        top.result_ << stack_res.result_.str();
+                        top.result_ << "," + (top.i_ < top.this_->as<a_t>().size() ? newline : "");
+                        top.phase_ = 1;
                         continue;
                     }
                 } else {
@@ -1910,8 +1911,9 @@ namespace scfx {
             std::deque<frame> stack{};
             stack.emplace_back(this);
             while(!stack.empty()) {
-                if(stack.back().j_->is_object()) {
-                    o_t &o{stack.back().j_->as<o_t>()};
+                frame &top{stack.back()};
+                if(top.j_->is_object()) {
+                    o_t &o{top.j_->as<o_t>()};
                     if(!o.empty()) {
                         auto it{o.begin()};
                         if(stack_res.cleaned_) {
@@ -1925,12 +1927,12 @@ namespace scfx {
                             }
                         }
                     } else {
-                        stack.back().cleaned_ = true;
-                        stack_res = std::move(stack.back());
+                        top.cleaned_ = true;
+                        stack_res = std::move(top);
                         stack.pop_back();
                     }
-                } else if(stack.back().j_->is_array()) {
-                    a_t &a{stack.back().j_->as<a_t>()};
+                } else if(top.j_->is_array()) {
+                    a_t &a{top.j_->as<a_t>()};
                     if(!a.empty()) {
                         auto it{a.begin()};
                         if(stack_res.cleaned_) {
@@ -1944,13 +1946,13 @@ namespace scfx {
                             }
                         }
                     } else {
-                        stack.back().cleaned_ = true;
-                        stack_res = std::move(stack.back());
+                        top.cleaned_ = true;
+                        stack_res = std::move(top);
                         stack.pop_back();
                     }
                 } else {
-                    stack.back().cleaned_ = true;
-                    stack_res = std::move(stack.back());
+                    top.cleaned_ = true;
+                    stack_res = std::move(top);
                     stack.pop_back();
                 }
             }
