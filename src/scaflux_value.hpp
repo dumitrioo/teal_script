@@ -919,17 +919,14 @@ namespace scfx {
                     become_object();
                 }
                 if(is_object_ref()) {
-                    std::string s{indx.as_string()};
-                    object_t &o{as_object()};
-                    return &o[s];
+                    return as_object()[indx.as_string()];
                 }
             } else if(t_of_indx == type::WSTRING) {
                 if(t == type::UNDEFINED) {
                     become_object();
                 }
                 if(t == type::OBJECT) {
-                    object_t &o{as_object()};
-                    return o[scfx::str_util::to_utf8(indx.as_wstring())];
+                    return as_object()[scfx::str_util::to_utf8(indx.as_wstring())];
                 }
             } else if(is_numeric_type(t_of_indx)) {
                 std::uint64_t i{indx.cast_to_u64()};
@@ -6149,6 +6146,7 @@ namespace scfx {
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        try { return str_util::atoui(as_string()); } catch (...) { return as_string().empty() ? 0 : as_string()[0]; }
                 case type::WSTRING:       try { return str_util::atoui(cast_to_string()); } catch (...) { return as_wstring().empty() ? 0 : as_wstring()[0]; }
+                case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
             return 0;
@@ -6172,6 +6170,7 @@ namespace scfx {
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        try { return str_util::atoui(as_string()); } catch (...) {} break;
                 case type::WSTRING:       try { return str_util::atoui(cast_to_string()); } catch (...) {} break;
+                case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
             return 0;
@@ -6195,6 +6194,7 @@ namespace scfx {
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        try { return str_util::atoi(as_string()); } catch (...) {} break;
                 case type::WSTRING:       try { return str_util::atoi(cast_to_string()); } catch (...) {} break;
+                case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
             return 0;
@@ -6218,6 +6218,7 @@ namespace scfx {
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        try { return str_util::atoui(as_string()); } catch (...) {} break;
                 case type::WSTRING:       try { return str_util::atoui(cast_to_string()); } catch (...) {} break;
+                case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
             return 0;
@@ -6241,6 +6242,7 @@ namespace scfx {
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        try { return str_util::atoi(as_string()); } catch (...) {} break;
                 case type::WSTRING:       try { return str_util::atoi(cast_to_string()); } catch (...) {} break;
+                case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
             return 0;
@@ -6264,6 +6266,7 @@ namespace scfx {
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        try { return str_util::atoui(as_string()); } catch (...) {} break;
                 case type::WSTRING:       try { return str_util::atoui(cast_to_string()); } catch (...) {} break;
+                case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
             return 0;
@@ -6287,6 +6290,7 @@ namespace scfx {
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        try { return str_util::atoi(as_string()); } catch (...) {} break;
                 case type::WSTRING:       try { return str_util::atoi(cast_to_string()); } catch (...) {} break;
+                case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
             return 0;
@@ -6310,6 +6314,7 @@ namespace scfx {
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        try { return str_util::atoi(as_string()); } catch (...) {} break;
                 case type::WSTRING:       try { return str_util::atoi(cast_to_string()); } catch (...) {} break;
+                case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
             return 0;
@@ -6333,6 +6338,7 @@ namespace scfx {
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        try { return str_util::atoui(as_string()); } catch (...) {} break;
                 case type::WSTRING:       try { return str_util::atoui(cast_to_string()); } catch (...) {} break;
+                case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
             return 0;
@@ -6356,6 +6362,7 @@ namespace scfx {
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        try { return str_util::atoi(as_string()); } catch (...) {} break;
                 case type::WSTRING:       try { return str_util::atoi(cast_to_string()); } catch (...) {} break;
+                case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
             return 0;
@@ -6379,6 +6386,7 @@ namespace scfx {
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        try { return str_util::atoui(as_string()); } catch (...) {} break;
                 case type::WSTRING:       try { return str_util::atoui(cast_to_string()); } catch (...) {} break;
+                case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
             return 0;
@@ -6402,6 +6410,7 @@ namespace scfx {
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        try { return str_util::atof(as_string()); } catch (...) {} break;
                 case type::WSTRING:       try { return str_util::atof(cast_to_string()); } catch (...) {} break;
+                case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
             return 0;
@@ -6425,6 +6434,7 @@ namespace scfx {
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        try { return str_util::atof(as_string()); } catch (...) {} break;
                 case type::WSTRING:       try { return str_util::atof(cast_to_string()); } catch (...) {} break;
+                case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
             return 0;
@@ -6448,6 +6458,7 @@ namespace scfx {
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        try { return str_util::atof(as_string()); } catch (...) {} break;
                 case type::WSTRING:       try { return str_util::atof(cast_to_string()); } catch (...) { } break;
+                case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
             return 0;
@@ -6491,6 +6502,7 @@ namespace scfx {
                     }
                 case type::OBJECT:        return !as_object().empty();
                 case type::ARRAY:         return !as_array().empty();
+                case type::POINTER:       return deref().as_ptr() != nullptr;
                 default: break;
             }
             return false;
@@ -6514,6 +6526,7 @@ namespace scfx {
                 case type::WCHAR:         return as_wchar();
                 case type::STRING:        return as_string().empty() ? 0 : as_string()[0];
                 case type::WSTRING:       return as_wstring().empty() ? 0 : as_wstring()[0];
+                case type::POINTER:       return (uintptr_t)deref().as_ptr();
                 default: break;
             }
             return 0;

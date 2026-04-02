@@ -83,8 +83,8 @@ global_init() {
         console.fixed();
         console.setprecision(4);
         this.initialized = true;
-        set_cycle_nanosleep(500'000);
-        set_inactive_nanosleep(500'000);
+        set_cycle_nanosleep(1'000'000);
+        set_inactive_nanosleep(1'000'000);
     }
 }
 

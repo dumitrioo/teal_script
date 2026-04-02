@@ -14,58 +14,6 @@ namespace scfx {
         func_call
     };
 
-
-    class nv_expression {
-    public:
-        enum class fixness{
-            none, prefix, postfix, infix, ternary
-        };
-
-        valbox eval(execution_context *, eval_caller_type, valbox *) {
-            return {};
-        }
-        std::string const &symbol() const & { return symbol_; }
-        valbox primary_val() const {
-            std::shared_lock l{primary_val_mtp_};
-            return primary_val_;
-        }
-        void mark_fun_ref() { fun_ref_ = true; }
-        bool primary() const { return primary_.load(std::memory_order_acquire); }
-        void reset_primary() { primary_ = false; }
-        bool fun_ref() const { return fun_ref_; }
-
-        void set_loc(std::int64_t line, std::int64_t col) { line_ = line; col_ = col; }
-        std::int64_t line() const { return line_; }
-        std::int64_t col() const { return col_; }
-
-        bool is_symbolic() const { return false; }
-        bool is_binop() const { return false; }
-        token::type binop_type() const { return token::type::NONE; }
-
-    private:
-        std::int64_t line_{0};
-        std::int64_t col_{0};
-        bool fun_ref_{false};
-
-        // primary
-        std::atomic<bool> primary_{false};
-        mutable shared_mutex primary_val_mtp_{};
-        valbox primary_val_{};
-        std::string name_{};
-
-        // symbolic
-        std::string symbol_{};
-
-        // unary/binary/ternary operator
-        fixness opfix_{fixness::none};
-        token::type opcode_{token::type::NONE};
-        std::shared_ptr<nv_expression> sub_val_1_{};
-        std::shared_ptr<nv_expression> sub_val_2_{};
-        std::shared_ptr<nv_expression> sub_val_3_{};
-        std::vector<std::shared_ptr<nv_expression>> args_{};
-    };
-
-
     class expression {
     public:
         virtual ~expression() {}
@@ -129,8 +77,8 @@ namespace scfx {
             }
             valbox res{valbox_no_initialize::dont_do_it};
             if(fun_ref()) {
-                res = ctx->find_func(name_);
                 execution_context::obj_type objtyp{objtyp_.load(std::memory_order::acquire)};
+                res = ctx->find_func(name_, objtyp);
                 if(!res.is_func_ref()) {
                     res = ctx->find_val_by_sym_name(name_, line(), col(), objtyp, objtyp);
                     objtyp_.store(objtyp, std::memory_order::release);
@@ -829,9 +777,8 @@ namespace scfx {
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
                     try {
-                        // ok: r < l  --->  l > r
-                        res = this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr) <
-                              this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr);
+                        res = this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr) >
+                              this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr);
                     } catch (runtime_error const &e) {
                         er = e;
                         excepted = true;
@@ -1353,10 +1300,9 @@ namespace scfx {
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
-                    valbox res{valbox_no_initialize::dont_do_it};
-                    res = this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref().cast_to_bool() ||
-                          this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref().cast_to_bool();
-                    return res;
+                    bool l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref().cast_to_bool()};
+                    if(l) { return true; }
+                    return this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref().cast_to_bool();
                 },
                 /* BITAND */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
@@ -1387,10 +1333,9 @@ namespace scfx {
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
-                    valbox res{valbox_no_initialize::dont_do_it};
-                    res = this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref().cast_to_bool() &&
-                          this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref().cast_to_bool();
-                    return res;
+                    bool l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref().cast_to_bool()};
+                    if(!l) { return false; }
+                    return this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref().cast_to_bool();
                 },
                 /* QUESTION */ nullptr,
                 /* COLON */ nullptr,
@@ -1401,8 +1346,13 @@ namespace scfx {
                 /* LBRACKET */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox res{valbox_no_initialize::dont_do_it};
-                    valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-                    valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
+                    valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};                    
+                    valbox r{valbox_no_initialize::dont_do_it};
+                    {
+                        bool old{ctx->set_create_if_not_exists(false)};
+                        shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
+                        r = this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref();
+                    }
                     valbox::type lt{l.val_or_pointed_type()};
                     valbox::type rt{r.val_or_pointed_type()};
                     if(ctx->create_if_not_exists()) {
@@ -1520,7 +1470,8 @@ namespace scfx {
                         } else {
                             if(caller_type == eval_caller_type::func_call) {
                                 valbox found_fn{};
-                                if(ctx->find_func(this_->rval_->symbol(), found_fn)) {
+                                execution_context::obj_type objtyp{execution_context::obj_type::unknown};
+                                if(ctx->find_func(this_->rval_->symbol(), found_fn, objtyp)) {
                                     res = found_fn;
                                     this_->sym_ = this_->rval_->symbol();
                                 } else {

@@ -39,6 +39,22 @@ function Q_rsqrt(x) {
 }
 
 my_drafts() {
+    println(false, " && ", false, " = ", false && false);
+    println(false, " && ", true, " = ", false && true);
+    println(true, " && ", false, " = ", true && false);
+    println(true, " && ", true, " = ", true && true);
+    println();
+    println(false, " || ", false, " = ", false || false);
+    println(false, " || ", true, " = ", false || true);
+    println(true, " || ", false, " = ", true || false);
+    println(true, " || ", true, " = ", true || true);
+
+    ++k;
+    k.println();
+
+    a[0].name = "string";
+    println(a + string(3));
+
     console.enable_colors(true);
     console.fixed();
     console.setprecision(16);

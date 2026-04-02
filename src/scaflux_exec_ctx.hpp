@@ -161,6 +161,7 @@ namespace scfx {
             global_var,
             user_fun,
             global_fun,
+            method,
         };
         valbox find_val_by_sym_name(std::string const &name, int64_t l, int64_t c, obj_type &objtyp, obj_type suggested_type) {
             switch(suggested_type) {
@@ -265,27 +266,59 @@ namespace scfx {
             return res;
         }
 
-        valbox find_func(std::string const &name) const {
-            if((rt_ptr_->user_functions_search())(name)) {
-                return valbox{rt_ptr_->user_function_selector(), name, true};
+        valbox find_func(std::string const &name, obj_type &sym_type) const {
+            if(sym_type == obj_type::user_fun) {
+                if((rt_ptr_->user_functions_search())(name)) {
+                    sym_type = obj_type::user_fun;
+                    return valbox{rt_ptr_->user_function_selector(), name, true};
+                }
+                auto gvd_it{rt_ptr_->global_functions_dictionary()->find(name)};
+                if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
+                    sym_type = obj_type::global_fun;
+                    return gvd_it->second;
+                }
+            } else {
+                auto gvd_it{rt_ptr_->global_functions_dictionary()->find(name)};
+                if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
+                    sym_type = obj_type::global_fun;
+                    return gvd_it->second;
+                }
+                if((rt_ptr_->user_functions_search())(name)) {
+                    sym_type = obj_type::user_fun;
+                    return valbox{rt_ptr_->user_function_selector(), name, true};
+                }
             }
-            auto gvd_it{rt_ptr_->global_functions_dictionary()->find(name)};
-            if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
-                return gvd_it->second;
-            }
+            sym_type = obj_type::unknown;
             return {};
         }
 
-        bool find_func(std::string const &name, valbox &fn) const {
-            if((rt_ptr_->user_functions_search())(name)) {
-                fn = valbox{rt_ptr_->user_function_selector(), name, true};
-                return true;
+        bool find_func(std::string const &name, valbox &fn, obj_type &sym_type) const {
+            if(sym_type == obj_type::user_fun) {
+                if((rt_ptr_->user_functions_search())(name)) {
+                    sym_type = obj_type::user_fun;
+                    fn = valbox{rt_ptr_->user_function_selector(), name, true};
+                    return true;
+                }
+                auto gvd_it{rt_ptr_->global_functions_dictionary()->find(name)};
+                if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
+                    fn = gvd_it->second;
+                    sym_type = obj_type::global_fun;
+                    return true;
+                }
+            } else {
+                auto gvd_it{rt_ptr_->global_functions_dictionary()->find(name)};
+                if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
+                    fn = gvd_it->second;
+                    sym_type = obj_type::global_fun;
+                    return true;
+                }
+                if((rt_ptr_->user_functions_search())(name)) {
+                    sym_type = obj_type::user_fun;
+                    fn = valbox{rt_ptr_->user_function_selector(), name, true};
+                    return true;
+                }
             }
-            auto gvd_it{rt_ptr_->global_functions_dictionary()->find(name)};
-            if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
-                fn = gvd_it->second;
-                return true;
-            }
+            sym_type = obj_type::unknown;
             return false;
         }
 
