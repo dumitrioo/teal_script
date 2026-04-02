@@ -29,9 +29,7 @@ DEFINES += RW_MUTEX_ATOMIC_SM_SLEEP_NANOS=100000
 ###############################################################################
 
 ###############################################################################
-# DEFINES += USE_FILE_MAGIC
-# DEFINES += SCFX_USE_ZMQ
-# DEFINES += SCFX_USE_RAYLIB
+DEFINES += USE_FILE_MAGIC
 ###############################################################################
 
 ###############################################################################
@@ -121,9 +119,7 @@ QMAKE_CFLAGS_RELEASE += -O3
 
 LIBS += -lpthread -ldl
 LIBS += -lz
-# LIBS += -lmagic
-# LIBS += -lraylib
-# LIBS += -lzmq
+LIBS += -lmagic
 
 DISTFILES += \
     ../alu74181.scfx \

@@ -6,13 +6,6 @@
 
 #include <scaflux_runtime.hpp>
 
-#ifdef SCFX_USE_ZMQ
-#include "optext/zmq_ext.hpp"
-#endif
-#ifdef SCFX_USE_RAYLIB
-#include "optext/ray_ext.hpp"
-#endif
-
 // Just a regular C++ class to be added as an <<object type>> to the scripting runtime
 class example_object {
 public:
@@ -82,22 +75,6 @@ int main(int argc, char **argv) {
         return SCFXTHIS(args, example_object).get_val();
     });
     // -----------------------------------------------------------------------------------
-
-    // -----------------------------------------------------------------------------------
-    // Example of adding extension to the runtime
-#ifdef SCFX_USE_ZMQ
-    zmq_ext zmq{};
-    // The extension for ZeroMQ is used in "examples/ex_srv.scfx" and "examples/ex_cli.scfx" scripts
-    zmq.register_runtime(&rt);
-#endif
-    // One more extension
-#ifdef SCFX_USE_RAYLIB
-    ray_ext ray{};
-    // The extension for RayLib is used in "examples/alu74181.scfx" script
-    ray.register_runtime(&rt);
-#endif
-    // -----------------------------------------------------------------------------------
-
 
 #ifndef SCFX_DEBUGGING
     try {
