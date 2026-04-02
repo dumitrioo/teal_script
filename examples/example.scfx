@@ -1,16 +1,3 @@
-exmpl_execution_time_limit(dt) {
-    if(this.t == undefined) {
-        this.t = timestamp().fseconds() + dt;
-    }
-    if(timestamp().fseconds() > this.t) {
-        exit();
-    }
-    return 0;
-}
-
-exmpl_execution_time_limit exmpltlim(1.0);
-
-
 function rnd_str(n) {
     res = "";
     for (i = 0; i < n; ++i) {

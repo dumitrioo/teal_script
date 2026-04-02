@@ -79,7 +79,6 @@ tbbt2cola duplicating_beverage_c(sqg);
 tbbt2cola duplicating_beverage_d(sqg);
 tbbt2cola duplicating_beverage_e(sqg);
 tbbt2cola duplicating_beverage_f(sqg);
-
 tbbt2cola duplicating_beverage_10(sqg);
 tbbt2cola duplicating_beverage_11(sqg);
 tbbt2cola duplicating_beverage_12(sqg);
@@ -97,7 +96,6 @@ tbbt2cola duplicating_beverage_1d(sqg);
 tbbt2cola duplicating_beverage_1e(sqg);
 tbbt2cola duplicating_beverage_1f(sqg);
 
-
 sqgen() {
     if(this.gen == undefined) {
         set_cycle_nanosleep(0);
@@ -107,7 +105,3 @@ sqgen() {
     return this.gen;
 }
 sqgen sqg();
-
-
-tbbtetl_execution_time_limit(t) if this.t == undefined this.t = timestamp().fseconds() + t; else if timestamp().fseconds() > this.t exit();
-tbbtetl_execution_time_limit tbbtetl(1);
