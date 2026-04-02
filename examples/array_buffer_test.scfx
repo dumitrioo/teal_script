@@ -23,8 +23,7 @@ function parttblentry(e) {
 
 mbr_parser() {
     // replace as needed
-    // devname = "/dev/sda";
-    devname = "/home/dmitry/projects/work/cleverfiles/test_assignment/fs/fs";
+    devname = "/dev/sda";
     // probably, root access is needed for direct read from the hardware device
     ab = array_buffer(file(devname).read(512));
 
