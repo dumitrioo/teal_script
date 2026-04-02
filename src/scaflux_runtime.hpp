@@ -1574,13 +1574,27 @@ namespace scfx {
         void loading_complete() {
             std::unique_lock l{workers_mtp_};
             for(auto &&wcp: worker_cells_) {
-                worker_cell_instance const &curr_cell{wcp.second};
+                worker_cell_instance &curr_cell{wcp.second};
                 auto type_it{worker_cells_templates_.find(curr_cell.type_name())};
                 if(type_it != worker_cells_templates_.end()) {
-                    if(curr_cell. actual_args_info(). size() != static_cast<size_t>(type_it->second.num_args())) {
+                    if(curr_cell.actual_args_info().size() != static_cast<size_t>(type_it->second.num_args())) {
                         throw runtime_error{curr_cell.line(), curr_cell.col(), "actual arguments count for the cell mismatch"};
                     }
+                    curr_cell.set_type_info(type_it->second.num_args(), type_it->second.arg_names());
                 }
+
+                // std::string const &curr_cell_type_name{curr_cell.type_name()};
+
+                // if(!curr_cell.type_info_transferred()) {
+                //     auto type_it{worker_cells_templates_.find(curr_cell_type_name)};
+                //     if(type_it != worker_cells_templates_.end()) {
+                //         if(curr_cell.actual_args_info().size() != static_cast<size_t>(type_it->second.num_args())) {
+                //             throw runtime_error{curr_cell.line(), curr_cell.col(), "actual arguments count for the cell mismatch"};
+                //         }
+                //         curr_cell.set_type_info(type_it->second.num_args(), type_it->second.arg_names());
+                //     }
+                // }
+
             }
         }
 
@@ -1921,9 +1935,9 @@ namespace scfx {
                             exctx_ptr->clear_all_jumps_request();
                             bool have_locked{false};
                             for(auto &&wrkcl: worker_cells_) {
-                                if(wrkcl.second.try_lock()) {
+                                worker_cell_instance &curr_cell{wrkcl.second};
+                                if(curr_cell.try_lock()) {
                                     have_locked = true;
-                                    worker_cell_instance &curr_cell{wrkcl.second};
                                     scfx::shut_on_destroy sod{[&]() { curr_cell.unlock(); }};
                                     std::string const &curr_cell_type_name{curr_cell.type_name()};
 

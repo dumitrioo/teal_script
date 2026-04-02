@@ -29,9 +29,9 @@ DEFINES += RW_MUTEX_ATOMIC_SM_SLEEP_NANOS=100000
 ###############################################################################
 
 ###############################################################################
-DEFINES += USE_FILE_MAGIC
-DEFINES += SCFX_USE_ZMQ
-DEFINES += SCFX_USE_RAYLIB
+# DEFINES += USE_FILE_MAGIC
+# DEFINES += SCFX_USE_ZMQ
+# DEFINES += SCFX_USE_RAYLIB
 ###############################################################################
 
 ###############################################################################
@@ -121,9 +121,9 @@ QMAKE_CFLAGS_RELEASE += -O3
 
 LIBS += -lpthread -ldl
 LIBS += -lz
-LIBS += -lmagic
-LIBS += -lraylib
-LIBS += -lzmq
+# LIBS += -lmagic
+# LIBS += -lraylib
+# LIBS += -lzmq
 
 DISTFILES += \
     ../alu74181.scfx \
@@ -134,6 +134,7 @@ DISTFILES += \
     ../example.scfx \
     ../alu74181.png \
     ../extending_example.scfx \
+    ../one_second_limit.scfx \
     ../pid_regulator.scfx \
     ../quad_eq.scfx \
     ../sockets_server.scfx \

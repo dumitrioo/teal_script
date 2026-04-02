@@ -1,0 +1,11 @@
+exmpl_exec_time_limiter(dt) {
+    if(this.t == undefined) {
+        this.t = timestamp().fseconds() + dt;
+    }
+    if(timestamp().fseconds() > this.t) {
+        exit();
+    }
+    return 0;
+}
+
+exmpl_exec_time_limiter one_second_limit(1.0);
