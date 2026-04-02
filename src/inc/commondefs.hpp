@@ -265,6 +265,16 @@ namespace scfx {
     using off_t = off64_t;
     using pos_t = pos64_t;
 
+    template <std::size_t byte_size>
+    using uintn_t =
+        typename std::conditional<byte_size == 1, std::uint8_t,
+            typename std::conditional<byte_size == 2, std::uint16_t,
+                typename std::conditional<byte_size == 3 || byte_size == 4, std::uint32_t,
+                    std::uint64_t
+                >::type
+            >::type
+        >::type;
+
 #ifdef PLATFORM_WINDOWS
 #if defined(ENVIRONMENT64)
     using ssize_t = std::int64_t ;

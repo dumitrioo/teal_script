@@ -2115,15 +2115,15 @@ namespace scfx {
         }
 
         // runtime interface ---------------------------------------------------------------
-        dict_map_t<std::string, valbox> *global_constants_dictionary() override {
+        str_map_t<valbox> *global_constants_dictionary() override {
             return &global_constants_dictionary_;
         }
 
-        dict_map_t<std::string, valbox> *global_functions_dictionary() override {
+        str_map_t<valbox> *global_functions_dictionary() override {
             return &global_functions_dictionary_;
         }
 
-        dict_map_t<std::string, dict_map_t<std::string, valbox>> *global_methods_dictionary() override {
+        str_map_t<str_map_t<valbox>> *global_methods_dictionary() override {
             return &global_methods_dictionary_;
         }
 
@@ -2303,23 +2303,23 @@ namespace scfx {
         std::list<std::thread> threads_{};
         std::int64_t wait_granularity_nsec_{100LL};
 
-        dict_map_t<std::string, valbox> global_constants_dictionary_{
+        str_map_t<valbox> global_constants_dictionary_{
             {"M_E", valbox{2.7182818284590452353602874713526624977572470936999595749669676277240766L}},
             {"M_PI", valbox{3.1415926535897932384626433832795028841971693993751058209749445923078164L}},
             {"M_PHI", valbox{1.6180339887498948482045868343656381177203091798057628621354486227052605L}},
         };
-        dict_map_t<std::string, valbox> global_functions_dictionary_{};
-        dict_map_t<std::string, dict_map_t<std::string, valbox>> global_methods_dictionary_{};
+        str_map_t<valbox> global_functions_dictionary_{};
+        str_map_t<str_map_t<valbox>> global_methods_dictionary_{};
         shared_mutex input_cells_mtp_{};
-        map_t<std::string, input_cell> input_cells_{};
-        map_t<std::string, std::string> input_names_to_instances_mapping_{};
+        str_map_t<input_cell> input_cells_{};
+        str_map_t<std::string> input_names_to_instances_mapping_{};
         shared_mutex outputs_mtp_{};
-        mutable map_t<std::string, valbox> outputs_{};
+        mutable str_map_t<valbox> outputs_{};
         mutable shared_mutex workers_mtp_{};
-        map_t<std::string, worker_cell_definition_info> worker_cells_templates_{};
-        map_t<std::string, worker_cell_instance> worker_cells_{};
-        map_t<std::string, statement_ptr> worker_bodies_{};
-        map_t<std::string, function_definition> user_functions_{};
+        str_map_t<worker_cell_definition_info> worker_cells_templates_{};
+        str_map_t<worker_cell_instance> worker_cells_{};
+        str_map_t<statement_ptr> worker_bodies_{};
+        str_map_t<function_definition> user_functions_{};
         std::function<bool(std::string)> user_functions_search_{
             [this](std::string const &fname) -> bool {
                 auto it{user_functions_.find(fname)};
@@ -2330,7 +2330,7 @@ namespace scfx {
             [this](std::vector<valbox> &fargs) -> valbox {
                 execution_context *exctx{reinterpret_cast<execution_context *>(fargs[0].as_ptr())};
 
-                typename map_t<std::string, function_definition>::const_iterator it{user_functions_.find(fargs[1].as_string())};
+                typename str_map_t<function_definition>::const_iterator it{user_functions_.find(fargs[1].as_string())};
 
                 if(it == user_functions_.end()) {
                     throw std::runtime_error{"function not found"};

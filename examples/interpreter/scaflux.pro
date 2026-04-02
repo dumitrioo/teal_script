@@ -39,7 +39,7 @@ DEFINES += SCFX_USE_EMHASH8_MAP
 ###############################################################################
 
 ###############################################################################
-DEFINES += STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
+# DEFINES += STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
 ###############################################################################
 
 INCLUDEPATH += ../../src
@@ -74,6 +74,7 @@ HEADERS += \
     ../../src/inc/file_util.hpp \
     ../../src/inc/fsm_tokenizer.hpp \
     ../../src/inc/hash/adler.hpp \
+    ../../src/inc/hash/hash.hpp \
     ../../src/inc/json.hpp \
     ../../src/inc/lzari.hpp \
     ../../src/inc/math/math_util.hpp \

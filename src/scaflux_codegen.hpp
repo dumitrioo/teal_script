@@ -16,13 +16,13 @@ namespace scfx {
     public:
         void chop(
             scfx::json const &ast,
-            map_t<std::string, input_cell> &input_cells,
-            map_t<std::string, std::string> &input_names_to_instances_mapping,
-            map_t<std::string, worker_cell_definition_info> &worker_cells_templates,
-            map_t<std::string, worker_cell_instance> &worker_cells,
-            map_t<std::string, statement_ptr> &worker_bodies,
-            map_t<std::string, function_definition> &user_functions,
-            dict_map_t<std::string, valbox> const &global_functions_dictionary
+            str_map_t<input_cell> &input_cells,
+            str_map_t<std::string> &input_names_to_instances_mapping,
+            str_map_t<worker_cell_definition_info> &worker_cells_templates,
+            str_map_t<worker_cell_instance> &worker_cells,
+            str_map_t<statement_ptr> &worker_bodies,
+            str_map_t<function_definition> &user_functions,
+            str_map_t<valbox> const &global_functions_dictionary
         ) {
             for(std::size_t i = 0; i < ast.size(); ++i) {
                 scfx::json const &cur{ast[i]};

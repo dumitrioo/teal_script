@@ -165,7 +165,7 @@ namespace scfx {
         }
 
         void instant_single_char() {
-            static map_t<std::string, token::type> const singles{
+            static str_map_t<token::type> const singles{
                 {"(", token::type::LPAREN},
                 {")", token::type::RPAREN},
                 {"[", token::type::LBRACKET},

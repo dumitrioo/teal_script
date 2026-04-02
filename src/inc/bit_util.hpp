@@ -5,6 +5,12 @@
 
 namespace scfx::bit_util {
 
+    static std::uint8_t byte_flip(std::uint8_t n) {
+        constexpr std::uint64_t ta{17848844570815808640ULL};
+        return (((ta >> ((n & 0xf) << 2)) & 0xf) << 4) | ((ta >> (((n >> 4) & 0xf) << 2)) & 0xf);
+    }
+
+
     template<typename T>
     [[nodiscard]]
     constexpr T byteswap(T val) noexcept {
@@ -26,7 +32,7 @@ namespace scfx::bit_util {
 
     static constexpr void inplace_swap(void *data, std::size_t count) {
         if(data && count > 1) {
-            std::size_t const count_half{count / 2};
+            std::size_t const count_half{count >> 1};
             for(std::size_t i{0}; i < count_half; ++i) {
                 std::swap(
                     *(reinterpret_cast<std::uint8_t *>(data) + i),

@@ -81,7 +81,7 @@ namespace scfx {
             ENDOFFILE,
         };
 
-        static inline map_t<type, std::string> const type_names {
+        static inline num_map_t<type, std::string> const type_names {
             {type::NONE, "NONE"},
             {type::INT_LITERAL, "INT_LITERAL"},
             {type::HEX_LITERAL, "HEX_LITERAL"},

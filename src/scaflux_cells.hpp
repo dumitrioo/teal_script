@@ -132,7 +132,7 @@ namespace scfx {
             return arg_names_;
         }
 
-        map_t<std::string, std::int64_t> const &arg_numbers_by_name() const {
+        str_map_t<std::int64_t> const &arg_numbers_by_name() const {
             return arg_number_by_name_;
         }
 
@@ -154,7 +154,7 @@ namespace scfx {
         std::int64_t col_{};
         std::string type_name_{};
         std::vector<std::string> arg_names_{};
-        map_t<std::string, std::int64_t> arg_number_by_name_{};
+        str_map_t<std::int64_t> arg_number_by_name_{};
     };
 
 
@@ -254,7 +254,7 @@ namespace scfx {
             return out_name_;
         }
 
-        self_fields_map_t<std::string, valbox> *cell_self_values_ptr() & {
+        str_map_t<valbox> *cell_self_values_ptr() & {
             return &cell_self_values_;
         }
 
@@ -301,7 +301,7 @@ namespace scfx {
         std::int64_t col_{};
         std::string type_name_{};
         std::string inst_name_{};
-        self_fields_map_t<std::string, valbox> cell_self_values_{};
+        str_map_t<valbox> cell_self_values_{};
         std::vector<arg_info> args_info_{};
 #if defined(SCFX_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
         mutable shared_mutex val_mtp_{};
@@ -371,7 +371,7 @@ namespace scfx {
             return arg_names_;
         }
 
-        map_t<std::string, std::int64_t> const &arg_number_by_name() const {
+        str_map_t<std::int64_t> const &arg_number_by_name() const {
             return arg_number_by_name_;
         }
 
@@ -402,7 +402,7 @@ namespace scfx {
         std::string name_{};
         statement_ptr body_{};
         std::vector<std::string> arg_names_{};
-        map_t<std::string, std::int64_t> arg_number_by_name_{};
+        str_map_t<std::int64_t> arg_number_by_name_{};
     };
 
 }

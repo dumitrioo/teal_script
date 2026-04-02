@@ -163,18 +163,16 @@ namespace scfx {
             global_fun,
             method,
         };
-        valbox find_val_by_sym_name(std::string const &name, int64_t l, int64_t c, obj_type &objtyp, obj_type suggested_type) {
-            switch(suggested_type) {
+        valbox find_val_by_sym_name(std::string const &name, int64_t l, int64_t c, obj_type &objtyp) {
+            switch(objtyp) {
                 case obj_type::user_fun:
                     if((rt_ptr_->user_functions_search())(name)) {
-                        objtyp = obj_type::user_fun;
                         return valbox{rt_ptr_->user_function_selector(), name, true};
                     }
                     break;
                 case obj_type::global_fun: {
-                    dict_map_t<std::string, valbox>::iterator gvd_it{rt_ptr_->global_functions_dictionary()->find(name)};
+                    str_map_t<valbox>::iterator gvd_it{rt_ptr_->global_functions_dictionary()->find(name)};
                         if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
-                            objtyp = obj_type::global_fun;
                             return gvd_it->second.clone();
                         }
                     }
@@ -187,7 +185,6 @@ namespace scfx {
                                 break;
                             }
                             if(stack_[i].get(name, res)) {
-                                objtyp = obj_type::stack_var;
                                 return res;
                             }
                             if(stb == -2) {
@@ -197,15 +194,13 @@ namespace scfx {
                         if(create_if_not_exists()) {
                             valbox res{};
                             stack_[stack_ptr_].put(name, res);
-                            objtyp = obj_type::stack_var;
                             return res;
                         }
                     }
                     break;
                 case obj_type::global_var: {
-                        dict_map_t<std::string, valbox>::iterator gvd_it{rt_ptr_->global_constants_dictionary()->find(name)};
+                        str_map_t<valbox>::iterator gvd_it{rt_ptr_->global_constants_dictionary()->find(name)};
                         if(gvd_it != rt_ptr_->global_constants_dictionary()->end()) {
-                            objtyp = obj_type::global_var;
                             return gvd_it->second.clone();
                         }
                     }
@@ -235,7 +230,7 @@ namespace scfx {
                 objtyp = obj_type::stack_var;
                 return res;
             }
-            dict_map_t<std::string, valbox>::iterator gvd_it{rt_ptr_->global_constants_dictionary()->find(name)};
+            str_map_t<valbox>::iterator gvd_it{rt_ptr_->global_constants_dictionary()->find(name)};
             if(gvd_it != rt_ptr_->global_constants_dictionary()->end()) {
                 objtyp = obj_type::global_var;
                 return gvd_it->second.clone();
@@ -269,7 +264,6 @@ namespace scfx {
         valbox find_func(std::string const &name, obj_type &sym_type) const {
             if(sym_type == obj_type::user_fun) {
                 if((rt_ptr_->user_functions_search())(name)) {
-                    sym_type = obj_type::user_fun;
                     return valbox{rt_ptr_->user_function_selector(), name, true};
                 }
                 auto gvd_it{rt_ptr_->global_functions_dictionary()->find(name)};
@@ -277,15 +271,24 @@ namespace scfx {
                     sym_type = obj_type::global_fun;
                     return gvd_it->second;
                 }
-            } else {
+            } else if(sym_type == obj_type::global_fun) {
                 auto gvd_it{rt_ptr_->global_functions_dictionary()->find(name)};
                 if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
-                    sym_type = obj_type::global_fun;
                     return gvd_it->second;
                 }
                 if((rt_ptr_->user_functions_search())(name)) {
                     sym_type = obj_type::user_fun;
                     return valbox{rt_ptr_->user_function_selector(), name, true};
+                }
+            } else {
+                if((rt_ptr_->user_functions_search())(name)) {
+                    sym_type = obj_type::user_fun;
+                    return valbox{rt_ptr_->user_function_selector(), name, true};
+                }
+                auto gvd_it{rt_ptr_->global_functions_dictionary()->find(name)};
+                if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
+                    sym_type = obj_type::global_fun;
+                    return gvd_it->second;
                 }
             }
             sym_type = obj_type::unknown;
@@ -295,7 +298,6 @@ namespace scfx {
         bool find_func(std::string const &name, valbox &fn, obj_type &sym_type) const {
             if(sym_type == obj_type::user_fun) {
                 if((rt_ptr_->user_functions_search())(name)) {
-                    sym_type = obj_type::user_fun;
                     fn = valbox{rt_ptr_->user_function_selector(), name, true};
                     return true;
                 }
@@ -305,16 +307,27 @@ namespace scfx {
                     sym_type = obj_type::global_fun;
                     return true;
                 }
-            } else {
+            } else if(sym_type == obj_type::global_fun) {
                 auto gvd_it{rt_ptr_->global_functions_dictionary()->find(name)};
                 if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
                     fn = gvd_it->second;
-                    sym_type = obj_type::global_fun;
                     return true;
                 }
                 if((rt_ptr_->user_functions_search())(name)) {
                     sym_type = obj_type::user_fun;
                     fn = valbox{rt_ptr_->user_function_selector(), name, true};
+                    return true;
+                }
+            } else {
+                if((rt_ptr_->user_functions_search())(name)) {
+                    sym_type = obj_type::user_fun;
+                    fn = valbox{rt_ptr_->user_function_selector(), name, true};
+                    return true;
+                }
+                auto gvd_it{rt_ptr_->global_functions_dictionary()->find(name)};
+                if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
+                    fn = gvd_it->second;
+                    sym_type = obj_type::global_fun;
                     return true;
                 }
             }
@@ -366,11 +379,11 @@ namespace scfx {
             return rt_ptr_->get_output(name);
         }
 
-        void set_self_fields(self_fields_map_t<std::string, valbox> *sf) {
+        void set_self_fields(str_map_t<valbox> *sf) {
             self_fields_ = sf;
         }
 
-        self_fields_map_t<std::string, valbox> *self_fields() {
+        str_map_t<valbox> *self_fields() {
             return self_fields_;
         }
 
@@ -418,7 +431,7 @@ namespace scfx {
             }
 
         private:
-            map_t<std::string, valbox> m_{};
+            str_map_t<valbox> m_{};
         };
 
         runtime_interface *rt_ptr_{nullptr};
@@ -430,7 +443,7 @@ namespace scfx {
         std::uint64_t return_requested_{0};
         std::uint64_t continue_requested_{0};
         std::uint64_t break_requested_{0};
-        self_fields_map_t<std::string, valbox> *self_fields_{nullptr};
+        str_map_t<valbox> *self_fields_{nullptr};
         std::uint64_t create_if_not_exists_{0};
     };
 

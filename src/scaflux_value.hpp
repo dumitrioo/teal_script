@@ -56,7 +56,7 @@ namespace scfx {
         };
 
         static type str_to_type(std::string const &idr) {
-            static map_t<std::string, type> const tmap{
+            static str_map_t<type> const tmap{
                 {"bool", type::BOOL},
                 {"char", type::CHAR},
                 {"wchar", type::WCHAR},
@@ -134,7 +134,7 @@ namespace scfx {
 
     private:
         using array_t = std::deque<valbox>;
-        using object_t = map_t<std::string, valbox>;
+        using object_t = str_map_t<valbox>;
         using value_t = std::variant<
             bool,
             char,

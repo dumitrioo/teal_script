@@ -80,15 +80,15 @@ namespace scfx {
                 execution_context::obj_type objtyp{objtyp_.load(std::memory_order::acquire)};
                 res = ctx->find_func(name_, objtyp);
                 if(!res.is_func_ref()) {
-                    res = ctx->find_val_by_sym_name(name_, line(), col(), objtyp, objtyp);
-                    objtyp_.store(objtyp, std::memory_order::release);
+                    res = ctx->find_val_by_sym_name(name_, line(), col(), objtyp);
                 }
+                objtyp_.store(objtyp, std::memory_order::release);
             } else {
                 bool excepted{false};
                 runtime_error er{{}, {}, {}};
                 try {
                     execution_context::obj_type objtyp{objtyp_.load(std::memory_order::acquire)};
-                    res = ctx->find_val_by_sym_name(name_, line(), col(), objtyp, objtyp);
+                    res = ctx->find_val_by_sym_name(name_, line(), col(), objtyp);
                     objtyp_.store(objtyp, std::memory_order::release);
                     if(objtyp == execution_context::obj_type::global_var) {
                         std::unique_lock l{primary_val_mtp_};
@@ -1355,83 +1355,51 @@ namespace scfx {
                     }
                     valbox::type lt{l.val_or_pointed_type()};
                     valbox::type rt{r.val_or_pointed_type()};
-                    if(ctx->create_if_not_exists()) {
-                        if(l.is_undefined()) {
-                            if(valbox::is_numeric_type(rt)) {
-                                l.become_array();
-                            } else if(valbox::is_any_string_type(rt)) {
-                                l.become_object();
+                    bool excepted{false};
+                    runtime_error er{{}, {}, {}};
+                    try {
+                        if(ctx->create_if_not_exists()) {
+                            if(l.is_undefined()) {
+                                if(valbox::is_numeric_type(rt)) {
+                                    l.become_array();
+                                } else if(valbox::is_any_string_type(rt)) {
+                                    l.become_object();
+                                }
                             }
-                        }
-                        bool excepted{false};
-                        runtime_error er{{}, {}, {}};
-                        try {
                             res = l[r];
-                        } catch (runtime_error const &e) {
-                            er = e;
-                            excepted = true;
-                        } catch (std::exception const &e) {
-                            er = runtime_error(this_->line_, this_->col_, e.what());
-                            excepted = true;
-                        } catch (...) {
-                            er = runtime_error(this_->line_, this_->col_, "unknown error");
-                            excepted = true;
-                        }
-                        if(excepted) {
-                            throw er;
-                        }
-                    } else {
-                        if(valbox::is_any_string_type(rt)) {
-                            if(lt != valbox::type::OBJECT) {
-                                throw runtime_error{this_->line(), this_->col(), "wrong left operand for indirection"};
-                            }
-                            if(l.as_object().end() == l.as_object().find(r.cast_to_string())) {
-                                throw runtime_error{this_->line(), this_->col(), "field not found"};
-                            }
-                            bool excepted{false};
-                            runtime_error er{{}, {}, {}};
-                            try {
+                        } else {
+                            if(valbox::is_any_string_type(rt)) {
+                                if(lt != valbox::type::OBJECT) {
+                                    throw runtime_error{this_->line(), this_->col(), "wrong left operand for indirection"};
+                                }
+                                if(l.as_object().end() == l.as_object().find(r.cast_to_string())) {
+                                    throw runtime_error{this_->line(), this_->col(), "field not found"};
+                                }
                                 res = l[r];
-                            } catch (runtime_error const &e) {
-                                er = e;
-                                excepted = true;
-                            } catch (std::exception const &e) {
-                                er = runtime_error(this_->line_, this_->col_, e.what());
-                                excepted = true;
-                            } catch (...) {
-                                er = runtime_error(this_->line_, this_->col_, "unknown error");
-                                excepted = true;
-                            }
-                            if(excepted) {
-                                throw er;
-                            }
-                        } else if(valbox::is_numeric_type(rt)) {
-                            if(lt == valbox::type::ARRAY) {
-                                auto const &ar{l.as_array()};
-                                auto indx{r.cast_to_u64()};
-                                if(indx < ar.size()) {
-                                    res = ar.at(indx);
-                                }
-                            } else {
-                                bool excepted{false};
-                                runtime_error er{{}, {}, {}};
-                                try {
+                            } else if(valbox::is_numeric_type(rt)) {
+                                if(lt == valbox::type::ARRAY) {
+                                    auto const &ar{l.as_array()};
+                                    auto indx{r.cast_to_u64()};
+                                    if(indx < ar.size()) {
+                                        res = ar.at(indx);
+                                    }
+                                } else {
                                     res = l[r];
-                                } catch (runtime_error const &e) {
-                                    er = e;
-                                    excepted = true;
-                                } catch (std::exception const &e) {
-                                    er = runtime_error(this_->line_, this_->col_, e.what());
-                                    excepted = true;
-                                } catch (...) {
-                                    er = runtime_error(this_->line_, this_->col_, "unknown error");
-                                    excepted = true;
-                                }
-                                if(excepted) {
-                                    throw er;
                                 }
                             }
                         }
+                    } catch (runtime_error const &e) {
+                        er = e;
+                        excepted = true;
+                    } catch (std::exception const &e) {
+                        er = runtime_error(this_->line_, this_->col_, e.what());
+                        excepted = true;
+                    } catch (...) {
+                        er = runtime_error(this_->line_, this_->col_, "unknown error");
+                        excepted = true;
+                    }
+                    if(excepted) {
+                        throw er;
                     }
                     res.set_pointed(l);
                     return res;

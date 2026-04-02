@@ -310,27 +310,36 @@ example2() {
         // this.rule = 232; // sharpen
         // this.rule = 240;
         this.a = array();
-        for (i = 0; i < 128; ++i) {
+        for (i = 0; i < 64; ++i) {
             this.a[i] = (hwrand() & 1).u8();
         }
         this.c = 0;
     }
     CN = this.a.size();
+    s = "";
+    s.reserve(CN);
     for (i = 0; i < CN; ++i) {
-        console.print(this.a[i] ? "." : " ");
+        s += this.a[i] ? "." : " ";
     }
-    console.print();
+    console.print(s);
     a = array();
-    a[0] = 0;
+    a[0] = u8();
     for (i = 1; i <= CN; ++i) {
         indx = (this.a[i - 1] << 2) | (this.a[i % CN] << 1) | this.a[(i + 1) % CN];
-        a[i % CN] = (this.rule >> indx) & 1;
+        a[i % CN] = u8((this.rule >> indx) & 1);
     }
     this.a = a;
     return this.a;
 }
 
-example2 ex2();
+example2 ex2_1();
+example2 ex2_2();
+example2 ex2_3();
+example2 ex2_4();
+example2 ex2_5();
+example2 ex2_6();
+example2 ex2_7();
+example2 ex2_8();
 
 
 example1() {

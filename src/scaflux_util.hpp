@@ -3,6 +3,7 @@
 #include "inc/commondefs.hpp"
 #include "inc/file_util.hpp"
 #include "inc/str_util.hpp"
+#include "inc/hash/hash.hpp"
 #include "inc/mt_synchro.hpp"
 #include "inc/math/math_util.hpp"
 #include "inc/json.hpp"
@@ -81,29 +82,32 @@ namespace scfx {
 #undef SCFX_DEFINE_BASE_LINE_COL_ERROR
 #undef SCFX_DEFINE_DERIVED_ERROR
 
+    template <std::uint8_t T_numBytes>
+    using UintSelector =
+        typename std::conditional<T_numBytes == 1, std::uint8_t,
+            typename std::conditional<T_numBytes == 2, std::uint16_t,
+                typename std::conditional<T_numBytes == 3 || T_numBytes == 4, std::uint32_t,
+                    std::uint64_t
+                >::type
+            >::type
+        >::type;
 
 #ifdef SCFX_DEBUGGING
     template<typename K_T, typename V_T>
-    using map_t = std::map<K_T, V_T>;
-    template<typename K_T, typename V_T>
-    using self_fields_map_t = std::map<K_T, V_T>;
-    template<typename K_T, typename V_T>
-    using dict_map_t = std::map<K_T, V_T>;
+    using num_map_t = std::map<K_T, V_T>;
+    template<typename V_T>
+    using str_map_t = std::map<std::string, V_T>;
 #else
     #ifdef SCFX_USE_EMHASH8_MAP
-    template<typename K_T, typename V_T, typename HASH_T = std::hash<K_T>>
-    using map_t = emhash8::HashMap<K_T, V_T, HASH_T>;
-    template<typename K_T, typename V_T, typename HASH_T = std::hash<K_T>>
-    using self_fields_map_t = emhash8::HashMap<K_T, V_T, HASH_T>;
-    template<typename K_T, typename V_T, typename HASH_T = std::hash<K_T>>
-    using dict_map_t = emhash8::HashMap<K_T, V_T, HASH_T>;
+    template<typename K_T, typename V_T>
+    using num_map_t = emhash8::HashMap<K_T, V_T, num_hash<K_T>>;
+    template<typename V_T>
+    using str_map_t = emhash8::HashMap<std::string, V_T, str_crc<std::string>>;
     #else
     template<typename K_T, typename V_T>
-    using map_t = std::map<K_T, V_T>;
-    template<typename K_T, typename V_T>
-    using self_fields_map_t = std::map<K_T, V_T>;
-    template<typename K_T, typename V_T>
-    using dict_map_t = std::unordered_map<K_T, V_T>;
+    using num_map_t = std::map<K_T, V_T>;
+    template<typename V_T>
+    using str_map_t = std::map<std::string, V_T>;
     #endif
 #endif
 

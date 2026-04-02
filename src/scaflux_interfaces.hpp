@@ -11,9 +11,9 @@ namespace scfx {
     class runtime_interface {
     public:
         virtual ~runtime_interface() = default;
-        virtual dict_map_t<std::string, valbox> *global_constants_dictionary() = 0;
-        virtual dict_map_t<std::string, valbox> *global_functions_dictionary() = 0;
-        virtual dict_map_t<std::string, dict_map_t<std::string, valbox>> *global_methods_dictionary() = 0;
+        virtual str_map_t<valbox> *global_constants_dictionary() = 0;
+        virtual str_map_t<valbox> *global_functions_dictionary() = 0;
+        virtual str_map_t<str_map_t<valbox>> *global_methods_dictionary() = 0;
         virtual std::function<bool(std::string)> const &user_functions_search() = 0;
         virtual std::function<valbox(std::vector<valbox> &)> const &user_function_selector() = 0;
         virtual valbox get_input(std::string const &) = 0;
