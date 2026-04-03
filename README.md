@@ -1,40 +1,52 @@
 # Welcome to TealScript
 
-TealScript is a dynamically typed, embedded, extensible from the host code scripting language in the Data-flow Graph Paradigm intended to make the process of creation a complex control systems extremely easy.
+TealScript is a high‑throughput signal processing platform: ingest sensor data, perform intelligent analysis, and emit control commands in real time. Optimized for embedded systems, autonomous systems, and distributed controllers. TealScript built-in language is a dynamically typed, embedded, extensible from the host code scripting language in the Data-flow Graph Paradigm intended to make the process of creation a complex control scenarios extremely easy.
+
+This is a "sense → compute → act" system that combines reliable telemetry ingestion, preprocessing, and configurable decision engines. Its architecture is built for parallel processing and high throughput: streaming pipelines, optimized filters, and an asynchronous parallel dispatcher for output commands ensure performance in demanding real-world environments. 
+
+The platform supports flexible input formats, allowing integration with virtually any data source, extended analysis (filtering, event detection, ML inference), and ьгдешзду output channels for driving actuators and networked controllers. TealScript integrates easily at source code level becoming a part of telemetry, remote monitoring and controlling workflows.
+
 
 ## Why?
 
-The advantage of C++ is that it can solve many of the development tasks. And this is also its problem. C++ programmers typically use it for absolutely everything in their work, ignoring the fact that object-oriented and imperative approaches are not so good for certain tasks. There is a class of tasks that are much easier to solve using specialized tools. One such tool and a description of the tasks it can solve are presented here...
+In short, to expand the capabilities of C++. The advantage of C++ is that it can solve all of the development tasks. C++ programmers typically use their favorite language for everything in their work, ignoring the fact that object-oriented and imperative approaches are not so good for certain tasks. There is a class of tasks that are much easier to solve using specialized tools and approaches. One such tool and a description of the tasks it can solve are presented here...
+
 
 ## The Data-flow Graph Paradigm
 
-The Data-flow Graph paradigm (discrete time, clocked synchronous, modular, data-centric) is a declarative pure functional paradigm. Unlike imperative programming languages, program in this language does not have a single entry point. Instead, programmer writes logic by defining a set of compute elements (cells, nodes) connected to each other into a computation network accordingly to a logical schema that is a solution of the certain problem, in order to perform necessary computations resolving that problem. All the compute elements are executed independently (simultaneously in case of multi-threaded execution mode), and every time the compute element is done, it is executed (with updated input parameters coming from other elements outputs) again and again and again and so on, until the system stops working.
+The data-flow graph paradigm (discrete-time, clocked, modular, data-centric) is a declarative, purely functional approach. Unlike imperative languages, programs in this paradigm has no single entry point. Instead, the developer describes a set of compute elements (also called "cells" or "nodes") wired together into a computation network according to a logical schema that represents the solution to a given problem. Each compute element runs independently - possibly concurrently in multi-threaded mode - and whenever an element finishes it re-executes (with updated inputs which are outputs from other elements). This cycle continues until the system is stopped. Good examples of the data-flow graph paradigm are artificial neural networks and Unreal Engine Blueprints.
+
 
 ## Implementation
 
-The library is implemented as an execution tree interpreter, without dependencies on third-party software for source code translation (lexical analyze, parsing, code generation), and therefore has an extremely small memory footprint. Moreover, since the source code is converted not into machine code but into an execution tree, the library is not tied to any hardware architecture, being portable.
+The engine is implemented as an execution tree interpreter and does not rely on third-party tools for lexical analysis, parsing, or code generation, giving it a very small memory footprint. Because source code is compiled into an execution tree rather than machine code, the library is hardware-agnostic and portable to any system with a C++20-capable compiler.
 
-TealScript language breaks the functional purity of DFG paradigm being partialy statelful in favor of convenience while resolving many tasks. Every compute node (cell, element) is an instance of the "template" - a data transforming object that looks like a function but is an "object" type and is able to keep state between calls in form of instance's variables available through "this" keyword.
+TealScript, while based on the data-flow graph paradigm, departs from strict functional purity being partialy statelful for convenience of solving many tasks. Each compute node (cell or element) is an instance of object that syntactically resembles a function definition but can retain state between execution cycles via instance's variables accessible through the "this" keyword.
 
-The system can operate in a synchronous single threaded mode and in asynchronous multi threaded mode utilizing all the processor cores of the system on which it is running. In terms of performance, a program in the embedded language is similar to a program in Python; however, given the ability to work in multi-threaded mode, the overall resulting performance can be significantly higher.
+The system can run synchronously in single-threaded mode or asynchronously in multi-threaded mode, using as many processor cores as needed from available amount of CPU cores. Performance of code written in the embedded language is comparable to Python for single-threaded workloads; however, multi-threaded execution (the most common and natural mode of the system) can yield substantially higher overall throughput.
+
 
 ## Application
 
-One of the problems classes, that can be easily solved by this scripting language, is the complex real-time control of multitude actuators/indicators/displays/etc. within a logical circuit, based on the analysis of incoming signals from multitude input devices. However, the language's capabilities also allow it to solve problems that are typically solved by the Turing-complete languages, as its type system, language constructs, and set of operations make this scripting language Turing-complete. The language's extensibility from host code also enhances its ability to solve the diverse tasks assigned to scripting engines.
+This scripting language excels at complex real-time control logic: logical schemas written in the language can manage many physical or software actuators, indicators, and displays in parallel by analyzing signals from numerous input devices. The language is also Turing-complete - its type system, constructs, and operations enable it to handle tasks normally solved by general-purpose languages. Extensibility from host code further broadens its applicability.
 
-Possible application for this engine may include:
- * Easy automation of any systems containing embedded computers and electronics together with sensors, actuator units and monitoring system.
- * Logical interconnecting between separately attached hardware/virtual devices.
- * Programmatic functionality extension for simpler components (adding intelligence into simple systems).
- * Parallel analysis of somehow dependant input data from many sources (logical information consolidation).
+Possible applications for this engine include:
+
+ * Automating systems that combine embedded computers, electronics, sensors, actuators, and monitoring.
+ * Logically linking separately attached hardware or virtual devices.
+ * Adding programmatic intelligence to simpler components.
+ * Parallel analysis and consolidation of related input data from many sources.
+
 
 ## Usage
 
 To add support for TealScript into your C++ application, you need at least C++20 standard capable compiler. Include [header file](src/tealscript_runtime.hpp) from your C++ source file, then instantiate TealScript runtime object, load source code and extensions shared libraries into it and execute in single- or multi-threaded mode. To extend the scripting language with functions, variables and objects, you should add entities separately or in form of extension to this runtime object, using rules described in the document mentioned below, in "More information" section. You can explore the [interpreter](examples/interpreter/main.cpp) application source code and scripts [extending_example](examples/extending_example.teal), [alu74181](examples/alu74181.teal), [tbbt_2cola](examples/tbbt_2cola.teal), [example](examples/example.teal), [draft](examples/draft.teal) as the examples of embedding a library and extending of the language's functionality. 
 
+
 ## Demos and Examples
 
 To build example application, CMake script is provided. In addition, for Linux users there is a Shell scripts for building and running some of the examples...
+
 
 # More information
 
