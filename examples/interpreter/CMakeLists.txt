@@ -4,11 +4,11 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}
     ../../src
 )
 
-add_executable(scaflux
+add_executable(tealscript
     main.cpp
 )
 
-target_link_libraries(scaflux
+target_link_libraries(tealscript
     pthread
     dl
     z
@@ -20,5 +20,5 @@ if(NOT magic_LIBRARY)
 else()
     message(STATUS "magic found")
     add_definitions(-DUSE_FILE_MAGIC)
-    target_link_libraries(scaflux magic)
+    target_link_libraries(tealscript magic)
 endif()

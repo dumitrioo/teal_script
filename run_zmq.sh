@@ -1,1 +1,1 @@
-./bin/scaflux ./examples/ex_cli.scfx ./examples/ex_srv.scfx ./examples/one_second_limit.scfx ./bin/libzeromq.so
+./bin/tealscript ./examples/ex_cli.teal ./examples/ex_srv.teal ./examples/one_second_limit.teal ./bin/libzeromq.so

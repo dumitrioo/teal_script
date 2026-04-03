@@ -23,7 +23,7 @@
 #include <wincrypt.h>
 #endif
 
-namespace scfx::sys_util {
+namespace teal::sys_util {
 
     class endian {
     private:
@@ -67,10 +67,10 @@ namespace scfx::sys_util {
         std::uint32_t value;
     } host_order = { { 0, 1, 2, 3 } };
 
-#define HOST_ORDER (scfx::sys_util::host_order.value)
-#define HOST_ORDER_LE (scfx::sys_util::HOST_ORDER_LITTLE_ENDIAN)
-#define HOST_ORDER_BE (scfx::sys_util::HOST_ORDER_BIG_ENDIAN)
-#define HOST_ORDER_PDP (scfx::sys_util::HOST_ORDER_PDP_ENDIAN)
+#define HOST_ORDER (teal::sys_util::host_order.value)
+#define HOST_ORDER_LE (teal::sys_util::HOST_ORDER_LITTLE_ENDIAN)
+#define HOST_ORDER_BE (teal::sys_util::HOST_ORDER_BIG_ENDIAN)
+#define HOST_ORDER_PDP (teal::sys_util::HOST_ORDER_PDP_ENDIAN)
 
     template<typename S_T>
     static S_T check_dir_slash(const S_T &path) {
@@ -122,7 +122,7 @@ namespace scfx::sys_util {
 #ifdef PLATFORM_WINDOWS
     template<typename FUNC_T>
     void for_reg_key(HKEY hk,
-                    const scfx::str_util::tstring &path,
+                    const teal::str_util::tstring &path,
                     FUNC_T apply,
                     REGSAM sam = KEY_ALL_ACCESS,
                     std::size_t max_nesting = -1,
@@ -209,7 +209,7 @@ namespace scfx::sys_util {
             if(pc == 0) {
                 break;
             }
-            ss << "0x" << scfx::str_util::utoa(pc, 16);
+            ss << "0x" << teal::str_util::utoa(pc, 16);
 
             char sym[256];
             if(unw_get_proc_name(&cursor, sym, sizeof(sym), &offset) == 0) {
@@ -219,7 +219,7 @@ namespace scfx::sys_util {
                 if (status == 0) {
                     sym_str = demangled;
                 }
-                ss << ' ' << sym_str << "+0x" << scfx::str_util::utoa(offset, 16) << '\n';
+                ss << ' ' << sym_str << "+0x" << teal::str_util::utoa(offset, 16) << '\n';
             } else {
                 ss << " -- error: unable to obtain symbol name for this frame\n";
             }
@@ -394,14 +394,14 @@ namespace scfx::sys_util {
         char path[1024];
         path[0] = 0;
         if(readlink("/proc/self/exe", path, dest_len) != -1) {
-            return scfx::file_util::extract_file_dir(path);
+            return teal::file_util::extract_file_dir(path);
         }
         return path;
 #elif defined(PLATFORM_WINDOWS)
         TCHAR szFileName[MAX_PATH];
         GetModuleFileName(0, szFileName, MAX_PATH);
 #ifdef _TCHAR_DEFINED
-        return scfx::str_util::to_utf8(szFileName);
+        return teal::str_util::to_utf8(szFileName);
 #else
         return szFileName;
 #endif
@@ -486,8 +486,8 @@ namespace scfx::sys_util {
     static std::string system_vendor() {
         std::string res{};
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
-        auto vendor_info{scfx::file_util::load_from_file("/sys/devices/virtual/dmi/id/sys_vendor")};
-        res = scfx::str_util::trim(std::string{vendor_info.begin(), vendor_info.end()});
+        auto vendor_info{teal::file_util::load_from_file("/sys/devices/virtual/dmi/id/sys_vendor")};
+        res = teal::str_util::trim(std::string{vendor_info.begin(), vendor_info.end()});
 #endif
         return res;
     }
@@ -503,7 +503,7 @@ namespace scfx::sys_util {
             std::string root_fs{};
             while(nullptr != (ent = getmntent(mounts_file))) {
                 if(std::string{ent->mnt_dir} == "/") {
-                    root_fs = scfx::file_util::extract_file_name(ent->mnt_fsname);
+                    root_fs = teal::file_util::extract_file_name(ent->mnt_fsname);
                     found = true;
                     break;
                 }
@@ -516,8 +516,8 @@ namespace scfx::sys_util {
                     ++it
                     ) {
                     if(std::filesystem::is_symlink(it->symlink_status())) {
-                        std::string fname{scfx::file_util::extract_file_name(it->path())};
-                        std::string slnk{scfx::file_util::extract_file_name(std::filesystem::read_symlink(*it))};
+                        std::string fname{teal::file_util::extract_file_name(it->path())};
+                        std::string slnk{teal::file_util::extract_file_name(std::filesystem::read_symlink(*it))};
                         if(slnk == root_fs) {
                             res = fname;
                             break;

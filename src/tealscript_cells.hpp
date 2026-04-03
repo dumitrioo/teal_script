@@ -4,13 +4,13 @@
 #include "inc/file_util.hpp"
 #include "inc/str_util.hpp"
 
-#include "scaflux_util.hpp"
-#include "scaflux_token.hpp"
-#include "scaflux_expr.hpp"
-#include "scaflux_statement.hpp"
-#include "scaflux_exec_ctx.hpp"
+#include "tealscript_util.hpp"
+#include "tealscript_token.hpp"
+#include "tealscript_expr.hpp"
+#include "tealscript_statement.hpp"
+#include "tealscript_exec_ctx.hpp"
 
-namespace scfx {
+namespace teal {
 
     class input_cell {
     public:
@@ -19,7 +19,7 @@ namespace scfx {
         }
 
         void exec(execution_context *ctx) {
-#if defined(SCFX_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
+#if defined(TEAL_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
             std::unique_lock l{val_mtp_};
 #else
             std::unique_lock l{*val_mtp_};
@@ -28,7 +28,7 @@ namespace scfx {
         }
 
         void set_value(valbox const &val) {
-#if defined(SCFX_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
+#if defined(TEAL_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
             std::unique_lock l{val_mtp_};
 #else
             std::unique_lock l{*val_mtp_};
@@ -37,7 +37,7 @@ namespace scfx {
         }
 
         valbox curr_value() const {
-#if defined(SCFX_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
+#if defined(TEAL_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
             std::shared_lock l{val_mtp_};
 #else
             std::shared_lock l{*val_mtp_};
@@ -69,7 +69,7 @@ namespace scfx {
     private:
         std::int64_t line_{};
         std::int64_t col_{};
-#if defined(SCFX_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
+#if defined(TEAL_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
         mutable shared_mutex val_mtp_{};
 #else
         mutable std::unique_ptr<shared_mutex> val_mtp_{std::make_unique<shared_mutex>()};
@@ -229,7 +229,7 @@ namespace scfx {
         }
 
         void set_curr_value(valbox const &v) {
-#if defined(SCFX_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
+#if defined(TEAL_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
             std::unique_lock l{val_mtp_};
 #else
             std::unique_lock l{*val_mtp_};
@@ -238,7 +238,7 @@ namespace scfx {
         }
 
         valbox curr_value() const {
-#if defined(SCFX_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
+#if defined(TEAL_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
             std::shared_lock l{val_mtp_};
 #else
             std::shared_lock l{*val_mtp_};
@@ -272,7 +272,7 @@ namespace scfx {
         }
 
         bool try_lock() {
-#if defined(SCFX_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
+#if defined(TEAL_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
             return locker_.try_lock();
 #else
             return locker_->try_lock();
@@ -280,7 +280,7 @@ namespace scfx {
         }
 
         void unlock() {
-#if defined(SCFX_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
+#if defined(TEAL_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
             return locker_.unlock();
 #else
             locker_->unlock();
@@ -303,7 +303,7 @@ namespace scfx {
         std::string inst_name_{};
         str_map_t<valbox> cell_self_values_{};
         std::vector<arg_info> args_info_{};
-#if defined(SCFX_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
+#if defined(TEAL_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
         mutable shared_mutex val_mtp_{};
 #else
         mutable std::unique_ptr<shared_mutex> val_mtp_{std::make_unique<shared_mutex>()};
@@ -311,7 +311,7 @@ namespace scfx {
         valbox val_{};
         std::string out_name_{};
         std::uint64_t type_info_transferred_{0};
-#if defined(SCFX_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
+#if defined(TEAL_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
         mutable shared_mutex locker_{};
 #else
         mutable std::unique_ptr<shared_mutex> locker_{std::make_unique<shared_mutex>()};

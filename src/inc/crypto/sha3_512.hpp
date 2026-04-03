@@ -3,7 +3,7 @@
 #include "../commondefs.hpp"
 #include "keccak.hpp"
 
-namespace scfx {
+namespace teal {
 
     namespace crypt {
 

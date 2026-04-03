@@ -4,13 +4,13 @@
 #include "inc/file_util.hpp"
 #include "inc/str_util.hpp"
 
-#include "scaflux_util.hpp"
-#include "scaflux_token.hpp"
-#include "scaflux_lexer.hpp"
-#include "scaflux_expr.hpp"
-#include "scaflux_statement.hpp"
+#include "tealscript_util.hpp"
+#include "tealscript_token.hpp"
+#include "tealscript_lexer.hpp"
+#include "tealscript_expr.hpp"
+#include "tealscript_statement.hpp"
 
-namespace scfx {
+namespace teal {
 
     class parser {
     public:
@@ -23,8 +23,8 @@ namespace scfx {
             tokens_pos_ = -1;
         }
 
-        scfx::json parse() {
-            scfx::json res{};
+        teal::json parse() {
+            teal::json res{};
             tokens_pos_ = tokens_.empty() ? -1 : 0;
             while(!get_token(0).is_eof()) {
                 auto s{get_top_level_statement()};
@@ -37,8 +37,8 @@ namespace scfx {
     private:
         std::list<std::string> loops_nesting_{};
 
-        scfx::json get_top_level_statement() {
-            scfx::json res{};
+        teal::json get_top_level_statement() {
+            teal::json res{};
             res = get_func_def_statement();
             if(res.is_object()) { return res; }
             res = get_cell_def_statement();
@@ -52,8 +52,8 @@ namespace scfx {
             };
         }
 
-        scfx::json get_statement() {
-            scfx::json res{};
+        teal::json get_statement() {
+            teal::json res{};
             res = get_empty_statement();
             if(res.is_object()) { return res; }
             res = get_if_else_statement();
@@ -83,8 +83,8 @@ namespace scfx {
             };
         }
 
-        scfx::json get_func_def_statement() {
-            scfx::json res{};
+        teal::json get_func_def_statement() {
+            teal::json res{};
             if(
                 get_token(0).lexem() == L"function" &&
                 get_token(1).is_id() &&
@@ -102,8 +102,8 @@ namespace scfx {
             return res;
         }
 
-        scfx::json get_function_def_args_list() {
-            scfx::json res{};
+        teal::json get_function_def_args_list() {
+            teal::json res{};
             if(get_token(0).type_is(token::type::LPAREN)) {
                 check_eof();
                 increment_pos();
@@ -132,8 +132,8 @@ namespace scfx {
             return res;
         }
 
-        scfx::json get_cell_def_statement() {
-            scfx::json res{};
+        teal::json get_cell_def_statement() {
+            teal::json res{};
             if(
                 get_token(0).is_id() && get_token(1).type_is(token::type::LPAREN)
             ) {
@@ -149,8 +149,8 @@ namespace scfx {
             return res;
         }
 
-        scfx::json get_cell_def_args_list() {
-            scfx::json res{};
+        teal::json get_cell_def_args_list() {
+            teal::json res{};
             if(get_token(0).type_is(token::type::LPAREN)) {
                 increment_pos();
                 res["type"] = "cell_arguments_names";
@@ -176,12 +176,12 @@ namespace scfx {
             return res;
         }
 
-        scfx::json get_cell_def_body() {
+        teal::json get_cell_def_body() {
             return get_statement();
         }
 
-        scfx::json get_cell_instantiation_statement() {
-            scfx::json res{};
+        teal::json get_cell_instantiation_statement() {
+            teal::json res{};
             if(
                 get_token(0).is_id() &&
                 get_token(1).is_id() &&
@@ -243,8 +243,8 @@ namespace scfx {
             }
         }
 
-        scfx::json get_cell_instance_args_list() {
-            scfx::json res{};
+        teal::json get_cell_instance_args_list() {
+            teal::json res{};
             check_eof();
             if(get_token(0).type_is(token::type::LPAREN)) {
                 res["type"] = "cell_actual_arguments";
@@ -270,8 +270,8 @@ namespace scfx {
             return res;
         }
 
-        scfx::json get_compound_statement() {
-            scfx::json res{};
+        teal::json get_compound_statement() {
+            teal::json res{};
             if(get_token(0).type_is(token::type::LCURLY)) {
                 res["loc"]["line"] = get_token(0).line();
                 res["loc"]["col"] = get_token(0).col();
@@ -301,13 +301,13 @@ namespace scfx {
             return res;
         }
 
-        scfx::json get_try_block_statement() {
-            scfx::json res{};
+        teal::json get_try_block_statement() {
+            teal::json res{};
             if(get_token(0).is_id() && get_token(0).lexem() == L"try") {
                 res["loc"]["line"] = get_token(0).line();
                 res["loc"]["col"] = get_token(0).col();
                 increment_pos();
-                scfx::json trystat{get_statement()};
+                teal::json trystat{get_statement()};
                 if(trystat.is_object()) {
                     check_eof();
                     if(get_token(0).is_id() && get_token(0).lexem() == L"catch") {
@@ -316,7 +316,7 @@ namespace scfx {
                         if(get_token(0).lexem() == L"(") {
                             increment_pos();
                             check_eof();
-                            scfx::json catchexpr{};
+                            teal::json catchexpr{};
                             if(get_token(0).is_id()) {
                                 catchexpr = get_expr();
                                 if(
@@ -349,7 +349,7 @@ namespace scfx {
                                     "invalid \"try\": identifier expected"
                                 };
                             }
-                            scfx::json catchstat{get_statement()};
+                            teal::json catchstat{get_statement()};
                             if(catchstat.is_object()) {
                                 res["type"] = "statement";
                                 res["subtype"] = "try";
@@ -388,16 +388,16 @@ namespace scfx {
             return res;
         }
 
-        scfx::json get_if_else_statement() {
-            scfx::json res{};
+        teal::json get_if_else_statement() {
+            teal::json res{};
             if(get_token(0).is_id() && get_token(0).lexem() == L"if") {
                 res["loc"]["line"] = get_token(0).line();
                 res["loc"]["col"] = get_token(0).col();
                 increment_pos();
-                scfx::json ifexpr{get_expr()};
+                teal::json ifexpr{get_expr()};
                 if(ifexpr.is_object()) {
-                    scfx::json ifstat{get_statement()};
-                    scfx::json elsestat{};
+                    teal::json ifstat{get_statement()};
+                    teal::json elsestat{};
                     if(ifstat.is_object()) {
                         check_eof();
                         if(get_token(0).is_id() && get_token(0).lexem() == L"else") {
@@ -427,20 +427,20 @@ namespace scfx {
             return res;
         }
 
-        scfx::json get_while_statement() {
-            scfx::json res{};
+        teal::json get_while_statement() {
+            teal::json res{};
             if(get_token(0).is_id() && get_token(0).lexem() == L"while") {
                 res["loc"]["line"] = get_token(0).line();
                 res["loc"]["col"] = get_token(0).col();
                 loops_nesting_.push_front("while");
-                scfx::shut_on_destroy pop_nest{
+                teal::shut_on_destroy pop_nest{
                     [&]() { loops_nesting_.pop_front(); }
                 };
                 increment_pos();
                 check_eof();
                 if(get_token(0).type_is(token::type::LPAREN)) {
                     increment_pos();
-                    scfx::json expr{get_expr()};
+                    teal::json expr{get_expr()};
                     if(expr.is_object()) {
                         check_eof();
                         if(get_token(0).type_is(token::type::RPAREN)) {
@@ -483,20 +483,20 @@ namespace scfx {
             return res;
         }
 
-        scfx::json get_for_statement() {
-            scfx::json res{};
+        teal::json get_for_statement() {
+            teal::json res{};
             if(get_token(0).is_id() && get_token(0).lexem() == L"for") {
                 res["loc"]["line"] = get_token(0).line();
                 res["loc"]["col"] = get_token(0).col();
                 loops_nesting_.push_front("for");
-                scfx::shut_on_destroy pop_nest{[&]() {
+                teal::shut_on_destroy pop_nest{[&]() {
                     loops_nesting_.pop_front();
                 }};
                 increment_pos();
                 check_eof();
                 if(get_token(0).type_is(token::type::LPAREN)) {
                     increment_pos();
-                    scfx::json init_expr{};
+                    teal::json init_expr{};
                     check_eof();
                     if(get_token(0).type_is(token::type::SEMICOLON)) {
                         init_expr["type"] = "expression";
@@ -512,7 +512,7 @@ namespace scfx {
                         check_eof();
                         if(get_token(0).type_is(token::type::SEMICOLON)) {
                             increment_pos();
-                            scfx::json cond_expr{};
+                            teal::json cond_expr{};
                             check_eof();
                             if(get_token(0).type_is(token::type::SEMICOLON)) {
                                 cond_expr["type"] = "expression";
@@ -528,7 +528,7 @@ namespace scfx {
                                 check_eof();
                                 if(get_token(0).type_is(token::type::SEMICOLON)) {
                                     increment_pos();
-                                    scfx::json incr_expr{};
+                                    teal::json incr_expr{};
                                     check_eof();
                                     if(get_token(0).type_is(token::type::SEMICOLON)) {
                                         incr_expr["type"] = "expression";
@@ -612,8 +612,8 @@ namespace scfx {
             return res;
         }
 
-        scfx::json get_return_statement() {
-            scfx::json res{};
+        teal::json get_return_statement() {
+            teal::json res{};
             if(get_token(0).is_id() && get_token(0).lexem() == L"return") {
                 res["loc"]["line"] = get_token(0).line();
                 res["loc"]["col"] = get_token(0).col();
@@ -634,15 +634,15 @@ namespace scfx {
             return res;
         }
 
-        scfx::json get_throw_statement() {
-            scfx::json res{};
+        teal::json get_throw_statement() {
+            teal::json res{};
             if(get_token(0).is_id() && get_token(0).lexem() == L"throw") {
                 res["loc"]["line"] = get_token(0).line();
                 res["loc"]["col"] = get_token(0).col();
                 increment_pos();
                 res["type"] = "statement";
                 res["subtype"] = "throw";
-                scfx::json ct{get_expr()};
+                teal::json ct{get_expr()};
                 if(ct.is_null()) {
                     throw compilation_error{
                         get_token(0).line(),
@@ -664,8 +664,8 @@ namespace scfx {
             return res;
         }
 
-        scfx::json get_continue_statement() {
-            scfx::json res{};
+        teal::json get_continue_statement() {
+            teal::json res{};
             if(get_token(0).is_id() && get_token(0).lexem() == L"continue") {
                 res["loc"]["line"] = get_token(0).line();
                 res["loc"]["col"] = get_token(0).col();
@@ -692,8 +692,8 @@ namespace scfx {
             return res;
         }
 
-        scfx::json get_break_statement() {
-            scfx::json res{};
+        teal::json get_break_statement() {
+            teal::json res{};
             if(get_token(0).is_id() && get_token(0).lexem() == L"break") {
                 res["loc"]["line"] = get_token(0).line();
                 res["loc"]["col"] = get_token(0).col();
@@ -720,8 +720,8 @@ namespace scfx {
             return res;
         }
 
-        scfx::json get_expression_statement() {
-            scfx::json res{};
+        teal::json get_expression_statement() {
+            teal::json res{};
             std::int64_t l{get_token(0).line()};
             std::int64_t c{get_token(0).col()};
             auto expr{get_expr()};
@@ -748,8 +748,8 @@ namespace scfx {
             return res;
         }
 
-        scfx::json get_empty_statement() {
-            scfx::json res{};
+        teal::json get_empty_statement() {
+            teal::json res{};
             if(get_token(0).type_is(token::type::SEMICOLON)) {
                 res["loc"]["line"] = get_token(0).line();
                 res["loc"]["col"] = get_token(0).col();
@@ -760,16 +760,16 @@ namespace scfx {
             return res;
         }
 
-        scfx::json get_expr() {
+        teal::json get_expr() {
             return get_prio_17();
         }
 
-        scfx::json get_prio_17() {
+        teal::json get_prio_17() {
             return get_prio_16();
         }
 
-        scfx::json get_prio_16() {
-            scfx::json res{get_prio_15()};
+        teal::json get_prio_16() {
+            teal::json res{get_prio_15()};
             token const &tk{get_token(0)};
             if(
                 tk.type_is(token::type::ASSIGN) ||
@@ -784,7 +784,7 @@ namespace scfx {
                 tk.type_is(token::type::BITORASSIGN) ||
                 tk.type_is(token::type::XORASSIGN)
             ) {
-                scfx::json over_res{};
+                teal::json over_res{};
                 over_res["loc"]["line"] = get_token(0).line();
                 over_res["loc"]["col"] = get_token(0).col();
                 increment_pos();
@@ -796,7 +796,7 @@ namespace scfx {
                 res = std::move(over_res);
                 res["content"]["right"] = get_prio_16();
             } else if(tk.type_is(token::type::QUESTION)) {
-                scfx::json over_res{};
+                teal::json over_res{};
                 over_res["loc"]["line"] = get_token(0).line();
                 over_res["loc"]["col"] = get_token(0).col();
                 increment_pos();
@@ -813,19 +813,19 @@ namespace scfx {
                     res = std::move(over_res);
                 } else {
                     throw compilation_error{get_token(0).line(), get_token(0).col(),
-                        std::string{"\":\" expected, got \""} + scfx::str_util::to_utf8(get_token(0).lexem()) + "\""
+                        std::string{"\":\" expected, got \""} + teal::str_util::to_utf8(get_token(0).lexem()) + "\""
                     };
                 }
             }
             return res;
         }
 
-        scfx::json get_prio_15() {
-            scfx::json res{get_prio_14()};
+        teal::json get_prio_15() {
+            teal::json res{get_prio_14()};
             while(true) {
                 token const &tk{get_token(0)};
                 if(tk.type_is(token::type::OR)) {
-                    scfx::json over_res{};
+                    teal::json over_res{};
                     over_res["loc"]["line"] = get_token(0).line();
                     over_res["loc"]["col"] = get_token(0).col();
                     increment_pos();
@@ -843,12 +843,12 @@ namespace scfx {
             return res;
         }
 
-        scfx::json get_prio_14() {
-            scfx::json res{get_prio_13()};
+        teal::json get_prio_14() {
+            teal::json res{get_prio_13()};
             while(true) {
                 token const &tk{get_token(0)};
                 if(tk.type_is(token::type::AND)) {
-                    scfx::json over_res{};
+                    teal::json over_res{};
                     over_res["loc"]["line"] = get_token(0).line();
                     over_res["loc"]["col"] = get_token(0).col();
                     over_res["type"] = "expression";
@@ -866,12 +866,12 @@ namespace scfx {
             return res;
         }
 
-        scfx::json get_prio_13() {
-            scfx::json res{get_prio_12()};
+        teal::json get_prio_13() {
+            teal::json res{get_prio_12()};
             while(true) {
                 token const &tk{get_token(0)};
                 if(tk.type_is(token::type::BITOR)) {
-                    scfx::json over_res{};
+                    teal::json over_res{};
                     over_res["loc"]["line"] = get_token(0).line();
                     over_res["loc"]["col"] = get_token(0).col();
                     increment_pos();
@@ -889,12 +889,12 @@ namespace scfx {
             return res;
         }
 
-        scfx::json get_prio_12() {
-            scfx::json res{get_prio_11()};
+        teal::json get_prio_12() {
+            teal::json res{get_prio_11()};
             while(true) {
                 token const &tk{get_token(0)};
                 if(tk.type_is(token::type::XOR)) {
-                    scfx::json over_res{};
+                    teal::json over_res{};
                     over_res["loc"]["line"] = get_token(0).line();
                     over_res["loc"]["col"] = get_token(0).col();
                     increment_pos();
@@ -912,12 +912,12 @@ namespace scfx {
             return res;
         }
 
-        scfx::json get_prio_11() {
-            scfx::json res{get_prio_10()};
+        teal::json get_prio_11() {
+            teal::json res{get_prio_10()};
             while(true) {
                 token const &tk{get_token(0)};
                 if(tk.type_is(token::type::BITAND)) {
-                    scfx::json over_res{};
+                    teal::json over_res{};
                     over_res["loc"]["line"] = get_token(0).line();
                     over_res["loc"]["col"] = get_token(0).col();
                     increment_pos();
@@ -935,12 +935,12 @@ namespace scfx {
             return res;
         }
 
-        scfx::json get_prio_10() {
-            scfx::json res{get_prio_9()};
+        teal::json get_prio_10() {
+            teal::json res{get_prio_9()};
             while(true) {
                 token const &tk{get_token(0)};
                 if(tk.type_is(token::type::EQUAL) || tk.type_is(token::type::NOTEQUAL)) {
-                    scfx::json over_res{};
+                    teal::json over_res{};
                     over_res["loc"]["line"] = get_token(0).line();
                     over_res["loc"]["col"] = get_token(0).col();
                     over_res["type"] = "expression";
@@ -958,8 +958,8 @@ namespace scfx {
             return res;
         }
 
-        scfx::json get_prio_9() {
-            scfx::json res{get_prio_8()};
+        teal::json get_prio_9() {
+            teal::json res{get_prio_8()};
             while(true) {
                 token const &tk{get_token(0)};
                 if(
@@ -968,7 +968,7 @@ namespace scfx {
                     tk.type_is(token::type::GREATER) ||
                     tk.type_is(token::type::GREATEREQUAL)
                 ) {
-                    scfx::json over_res{};
+                    teal::json over_res{};
                     over_res["loc"]["line"] = get_token(0).line();
                     over_res["loc"]["col"] = get_token(0).col();
                     over_res["type"] = "expression";
@@ -986,12 +986,12 @@ namespace scfx {
             return res;
         }
 
-        scfx::json get_prio_8() {
-            scfx::json res{get_prio_7()};
+        teal::json get_prio_8() {
+            teal::json res{get_prio_7()};
             while(true) {
                 token const &tk{get_token(0)};
                 if(tk.type_is(token::type::SPACESHIP)) {
-                    scfx::json over_res{};
+                    teal::json over_res{};
                     over_res["loc"]["line"] = get_token(0).line();
                     over_res["loc"]["col"] = get_token(0).col();
                     over_res["type"] = "expression";
@@ -1009,12 +1009,12 @@ namespace scfx {
             return res;
         }
 
-        scfx::json get_prio_7() {
-            scfx::json res{get_prio_6()};
+        teal::json get_prio_7() {
+            teal::json res{get_prio_6()};
             while(true) {
                 token const &tk{get_token(0)};
                 if(tk.type_is(token::type::LSHIFT) || tk.type_is(token::type::RSHIFT)) {
-                    scfx::json over_res{};
+                    teal::json over_res{};
                     over_res["loc"]["line"] = get_token(0).line();
                     over_res["loc"]["col"] = get_token(0).col();
                     over_res["type"] = "expression";
@@ -1032,12 +1032,12 @@ namespace scfx {
             return res;
         }
 
-        scfx::json get_prio_6() {
-            scfx::json res{get_prio_5()};
+        teal::json get_prio_6() {
+            teal::json res{get_prio_5()};
             while(true) {
                 token const &tk{get_token(0)};
                 if(tk.type_is(token::type::PLUS) || tk.type_is(token::type::MINUS)) {
-                    scfx::json over_res{};
+                    teal::json over_res{};
                     over_res["loc"]["line"] = get_token(0).line();
                     over_res["loc"]["col"] = get_token(0).col();
                     over_res["type"] = "expression";
@@ -1055,8 +1055,8 @@ namespace scfx {
             return res;
         }
 
-        scfx::json get_prio_5() {
-            scfx::json res{get_prio_4()};
+        teal::json get_prio_5() {
+            teal::json res{get_prio_4()};
             while(true) {
                 token const &tk{get_token(0)};
                 if(
@@ -1064,7 +1064,7 @@ namespace scfx {
                     tk.type_is(token::type::SLASH) ||
                     tk.type_is(token::type::MOD)
                 ) {
-                    scfx::json over_res{};
+                    teal::json over_res{};
                     over_res["loc"]["line"] = get_token(0).line();
                     over_res["loc"]["col"] = get_token(0).col();
                     over_res["type"] = "expression";
@@ -1082,13 +1082,13 @@ namespace scfx {
             return res;
         }
 
-        scfx::json get_prio_4() {
+        teal::json get_prio_4() {
             return get_prio_3();
         }
 
-        scfx::json get_prio_3() {
+        teal::json get_prio_3() {
             token const &tk{get_token(0)};
-            scfx::json res{};
+            teal::json res{};
             if(
                 tk.type_is(token::type::MINUS) ||
                 tk.type_is(token::type::PLUS) ||
@@ -1111,8 +1111,8 @@ namespace scfx {
             return res;
         }
 
-        scfx::json get_prio_2() {
-            scfx::json res{get_prio_1()};
+        teal::json get_prio_2() {
+            teal::json res{get_prio_1()};
             bool cont{true};
             while(cont) {
                 cont = false;
@@ -1122,7 +1122,7 @@ namespace scfx {
                     tk.type_is(token::type::INCREMENT) ||
                     tk.type_is(token::type::DECREMENT)
                 ) {
-                    scfx::json over_res{};
+                    teal::json over_res{};
                     over_res["loc"]["line"] = get_token(0).line();
                     over_res["loc"]["col"] = get_token(0).col();
                     over_res["type"] = "expression";
@@ -1135,13 +1135,13 @@ namespace scfx {
                 } else if(tk.type_is(token::type::LPAREN)) {
                     cont = true;
 
-                    scfx::json args{};
+                    teal::json args{};
                     increment_pos();
                     if(get_token(0).type_is(token::type::RPAREN)) {
                         increment_pos();
                     } else {
                         while(true) {
-                            scfx::json exptr{get_expr()};
+                            teal::json exptr{get_expr()};
                             if(exptr.is_object()) {
                                 args.push_back(std::move(exptr));
                                 if(get_token(0).type_is(token::type::RPAREN)) {
@@ -1159,7 +1159,7 @@ namespace scfx {
                             }
                         }
                     }
-                    scfx::json over_res{};
+                    teal::json over_res{};
                     over_res["loc"]["line"] = tk.line();
                     over_res["loc"]["col"] = tk.col();
                     over_res["type"] = "expression";
@@ -1171,7 +1171,7 @@ namespace scfx {
                     cont = true;
                     token const &tk{get_token(0)};
                     increment_pos();
-                    scfx::json indx_expr{get_expr()};
+                    teal::json indx_expr{get_expr()};
                     if(indx_expr.is_object()) {
                         if(get_token(0).type_is(token::type::RBRACKET)) {
                             increment_pos();
@@ -1181,7 +1181,7 @@ namespace scfx {
                     } else {
                         throw compilation_error{get_token(0).line(), get_token(0).col(), "invalid indirection"};
                     }
-                    scfx::json over_res{};
+                    teal::json over_res{};
                     over_res["loc"]["line"] = tk.line();
                     over_res["loc"]["col"] = tk.col();
                     over_res["type"] = "expression";
@@ -1197,7 +1197,7 @@ namespace scfx {
                     cont = true;
                     token const &tk{get_token(0)};
                     increment_pos();
-                    scfx::json over_res{};
+                    teal::json over_res{};
                     over_res["loc"]["line"] = tk.line();
                     over_res["loc"]["col"] = tk.col();
                     over_res["type"] = "expression";
@@ -1212,25 +1212,25 @@ namespace scfx {
             return res;
         }
 
-        scfx::json get_prio_1() {
+        teal::json get_prio_1() {
             return get_primary();
         }
 
-        scfx::json get_primary() {
+        teal::json get_primary() {
             token const &tk{get_token(0)};
             if(tk.type_is(token::type::FP_LITERAL) || tk.type_is(token::type::FP_EXP_LITERAL)) {
-                scfx::json res{};
+                teal::json res{};
                 increment_pos();
                 res["loc"]["line"] = tk.line();
                 res["loc"]["col"] = tk.col();
                 res["type"] = "expression";
                 res["subtype"] = "literal";
                 res["literal"] = "flt";
-                res["content"] = std::stold(scfx::str_util::to_utf8(tk.lexem()));
+                res["content"] = std::stold(teal::str_util::to_utf8(tk.lexem()));
                 return res;
             } else if(tk.type_is(token::type::INT_LITERAL)) {
                 increment_pos();
-                scfx::json res{};
+                teal::json res{};
                 res["loc"]["line"] = tk.line();
                 res["loc"]["col"] = tk.col();
                 res["type"] = "expression";
@@ -1239,7 +1239,7 @@ namespace scfx {
                 std::string msg{};
                 bool bam{false};
                 try {
-                    res["content"] = scfx::str_util::atoi(scfx::str_util::to_utf8(tk.lexem()), 10, true);
+                    res["content"] = teal::str_util::atoi(teal::str_util::to_utf8(tk.lexem()), 10, true);
                 } catch (std::exception const &e) {
                     msg = e.what();
                     bam = true;
@@ -1250,7 +1250,7 @@ namespace scfx {
                 return res;
             } else if(tk.type_is(token::type::HEX_LITERAL)) {
                 increment_pos();
-                scfx::json res{};
+                teal::json res{};
                 res["loc"]["line"] = tk.line();
                 res["loc"]["col"] = tk.col();
                 res["type"] = "expression";
@@ -1259,7 +1259,7 @@ namespace scfx {
                 std::string msg{};
                 bool bam{false};
                 try {
-                    res["content"] = scfx::str_util::atoui(scfx::str_util::to_utf8(tk.lexem()), 16, true);
+                    res["content"] = teal::str_util::atoui(teal::str_util::to_utf8(tk.lexem()), 16, true);
                 } catch (std::exception const &e) {
                     msg = e.what();
                     bam = true;
@@ -1270,7 +1270,7 @@ namespace scfx {
                 return res;
             } else if(tk.type_is(token::type::OCT_LITERAL)) {
                 increment_pos();
-                scfx::json res{};
+                teal::json res{};
                 res["loc"]["line"] = tk.line();
                 res["loc"]["col"] = tk.col();
                 res["type"] = "expression";
@@ -1279,7 +1279,7 @@ namespace scfx {
                 std::string msg{};
                 bool bam{false};
                 try {
-                    res["content"] = scfx::str_util::atoui(scfx::str_util::to_utf8(tk.lexem()), 8, true);
+                    res["content"] = teal::str_util::atoui(teal::str_util::to_utf8(tk.lexem()), 8, true);
                 } catch (std::exception const &e) {
                     msg = e.what();
                     bam = true;
@@ -1290,7 +1290,7 @@ namespace scfx {
                 return res;
             } else if(tk.type_is(token::type::BIN_LITERAL)) {
                 increment_pos();
-                scfx::json res{};
+                teal::json res{};
                 res["loc"]["line"] = tk.line();
                 res["loc"]["col"] = tk.col();
                 res["type"] = "expression";
@@ -1299,7 +1299,7 @@ namespace scfx {
                 std::string msg{};
                 bool bam{false};
                 try {
-                    res["content"] = scfx::str_util::atoui(scfx::str_util::to_utf8(tk.lexem()), 2, true);
+                    res["content"] = teal::str_util::atoui(teal::str_util::to_utf8(tk.lexem()), 2, true);
                 } catch (std::exception const &e) {
                     msg = e.what();
                     bam = true;
@@ -1310,23 +1310,23 @@ namespace scfx {
                 return res;
             } else if(tk.type_is(token::type::STRING_LITERAL)) {
                 increment_pos();
-                scfx::json res{};
+                teal::json res{};
                 res["loc"]["line"] = tk.line();
                 res["loc"]["col"] = tk.col();
                 res["type"] = "expression";
                 res["subtype"] = "literal";
                 res["literal"] = "str";
-                res["content"] = scfx::str_util::to_utf8(tk.lexem());
+                res["content"] = teal::str_util::to_utf8(tk.lexem());
                 return res;
             } else if(tk.type_is(token::type::CHAR_LITERAL)) {
                 increment_pos();
-                scfx::json res{};
+                teal::json res{};
                 res["loc"]["line"] = tk.line();
                 res["loc"]["col"] = tk.col();
                 res["type"] = "expression";
                 res["subtype"] = "literal";
                 res["literal"] = "chr";
-                res["content"] = scfx::str_util::to_utf8(tk.lexem());
+                res["content"] = teal::str_util::to_utf8(tk.lexem());
                 return res;
             } else if(tk.type_is(token::type::IDENTIFIER)) {
                 if(!expression_part(tk.lexem())) {
@@ -1334,14 +1334,14 @@ namespace scfx {
                         tk.line(),
                         tk.col(),
                         std::string{"invalid expression: \""} +
-                            scfx::str_util::to_utf8(tk.lexem()) +
+                            teal::str_util::to_utf8(tk.lexem()) +
                             "\" cannot be a part of expression"
                     };
                 }
 
                 increment_pos();
                 if(tk.lexem() == L"true") {
-                    scfx::json res{};
+                    teal::json res{};
                     res["loc"]["line"] = tk.line();
                     res["loc"]["col"] = tk.col();
                     res["type"] = "expression";
@@ -1350,7 +1350,7 @@ namespace scfx {
                     res["content"] = true;
                     return res;
                 } else if(tk.lexem() == L"false") {
-                    scfx::json res{};
+                    teal::json res{};
                     res["loc"]["line"] = tk.line();
                     res["loc"]["col"] = tk.col();
                     res["type"] = "expression";
@@ -1359,7 +1359,7 @@ namespace scfx {
                     res["content"] = false;
                     return res;
                 } else if(tk.lexem() == L"undefined") {
-                    scfx::json res{};
+                    teal::json res{};
                     res["loc"]["line"] = tk.line();
                     res["loc"]["col"] = tk.col();
                     res["type"] = "expression";
@@ -1368,7 +1368,7 @@ namespace scfx {
                     res["content"].clear();
                     return res;
                 } else {
-                    scfx::json res{};
+                    teal::json res{};
                     res["loc"]["line"] = tk.line();
                     res["loc"]["col"] = tk.col();
                     res["type"] = "expression";
@@ -1378,7 +1378,7 @@ namespace scfx {
                 }
             } else if(tk.type_is(token::type::LPAREN)) {
                 increment_pos();
-                scfx::json res{get_expr()};
+                teal::json res{get_expr()};
                 if(get_token(0).type_is_not(token::type::RPAREN)) {
                     throw compilation_error{get_token(0).line(), get_token(0).col(), "expected parentesis"};
                 }

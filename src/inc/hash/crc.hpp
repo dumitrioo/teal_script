@@ -3,7 +3,7 @@
 #include "../commondefs.hpp"
 #include "../bit_util.hpp"
 
-namespace scfx {
+namespace teal {
 
     template <typename T, T POLYNOMIAL, T INITIAL_REMAINDER, bool REFLECT_DATA, bool REFLECT_REMAINDER, T FINAL_XOR_VALUE>
     class crc_calc {

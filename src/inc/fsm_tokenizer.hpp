@@ -10,7 +10,7 @@
 #include <functional>
 #include "str_util.hpp"
 
-namespace scfx {
+namespace teal {
 
     namespace detail {
 
@@ -356,7 +356,7 @@ namespace scfx {
                         } else {
                             if(ch == RULES_SEPARATOR) {
                                 rule_parse_state_ = parse_states::rule;
-                                state_name = scfx::str_util::trim(state_name);
+                                state_name = teal::str_util::trim(state_name);
                                 if(state_name.empty()) {
                                     throw std::runtime_error{"error in rules"};
                                 }
@@ -373,7 +373,7 @@ namespace scfx {
                             rule_parse_state_ = parse_states::target;
                             if(symbol_or_class.size() > 2) {
                                 symbol_or_class = symbol_or_class.substr(0, symbol_or_class.size() - RULE_TO_TARGET_TRANSITION.size() + 1);
-                                symbol_or_class = scfx::str_util::trim(symbol_or_class);
+                                symbol_or_class = teal::str_util::trim(symbol_or_class);
                                 if(symbol_or_class.empty()) {
                                     throw std::runtime_error{"error in rules"};
                                 }
@@ -392,28 +392,28 @@ namespace scfx {
                             escape = false;
                         } else {
                             if(ch == RULES_SEPARATOR) {
-                                next_state = scfx::str_util::trim(next_state);
+                                next_state = teal::str_util::trim(next_state);
                                 if(next_state.empty()) {
                                     throw std::runtime_error{"error in rules"};
                                 }
                                 add_rule(
-                                    scfx::str_util::trim(state_name),
-                                    scfx::str_util::trim(symbol_or_class),
-                                    scfx::str_util::trim(next_state)
+                                    teal::str_util::trim(state_name),
+                                    teal::str_util::trim(symbol_or_class),
+                                    teal::str_util::trim(next_state)
                                 );
                                 symbol_or_class.clear();
                                 next_state.clear();
                                 rule_parse_state_ = parse_states::rule;
                             } else if(ch == RULESET_FINALIZER) {
                                 rule_parse_state_ = parse_states::initial;
-                                next_state = scfx::str_util::trim(next_state);
+                                next_state = teal::str_util::trim(next_state);
                                 if(next_state.empty()) {
                                     throw std::runtime_error{"error in rules"};
                                 }
                                 add_rule(
-                                    scfx::str_util::trim(state_name),
-                                    scfx::str_util::trim(symbol_or_class),
-                                    scfx::str_util::trim(next_state)
+                                    teal::str_util::trim(state_name),
+                                    teal::str_util::trim(symbol_or_class),
+                                    teal::str_util::trim(next_state)
                                 );
                                 state_name.clear();
                                 symbol_or_class.clear();
@@ -497,7 +497,7 @@ namespace scfx {
                             } else if(cc == ']') {
                                 ls = local_states::end;
                                 continue;
-                            } else if(scfx::str_util::string_starts_from(sym_or_class.substr(i), CATEGORY_SPACE)) {
+                            } else if(teal::str_util::string_starts_from(sym_or_class.substr(i), CATEGORY_SPACE)) {
                                 if(local_not_cond) {
                                     not_spaces = true;
                                 } else {
@@ -505,7 +505,7 @@ namespace scfx {
                                 }
                                 i += CATEGORY_SPACE.size() - 1;
                                 continue;
-                            } else if(scfx::str_util::string_starts_from(sym_or_class.substr(i), CATEGORY_ALPHA)) {
+                            } else if(teal::str_util::string_starts_from(sym_or_class.substr(i), CATEGORY_ALPHA)) {
                                 if(local_not_cond) {
                                     not_alphas = true;
                                 } else {
@@ -513,28 +513,28 @@ namespace scfx {
                                 }
                                 i += CATEGORY_ALPHA.size() - 1;
                                 continue;
-                            } else if(scfx::str_util::string_starts_from(sym_or_class.substr(i), CATEGORY_ALNUM)) {
+                            } else if(teal::str_util::string_starts_from(sym_or_class.substr(i), CATEGORY_ALNUM)) {
                                 if(local_not_cond) not_digits = true; else digits = true;
                                 if(local_not_cond) not_alphas = true; else alphas = true;
                                 i += CATEGORY_ALNUM.size() - 1;
                                 continue;
-                            } else if(scfx::str_util::string_starts_from(sym_or_class.substr(i), CATEGORY_CNTRL)) {
+                            } else if(teal::str_util::string_starts_from(sym_or_class.substr(i), CATEGORY_CNTRL)) {
                                 if(local_not_cond) not_cntrl = true; else cntrl = true;
                                 i += CATEGORY_CNTRL.size() - 1;
                                 continue;
-                            } else if(scfx::str_util::string_starts_from(sym_or_class.substr(i), CATEGORY_DIGIT)) {
+                            } else if(teal::str_util::string_starts_from(sym_or_class.substr(i), CATEGORY_DIGIT)) {
                                 if(local_not_cond) not_digits = true; else digits = true;
                                 i += CATEGORY_DIGIT.size() - 1;
                                 continue;
-                            } else if(scfx::str_util::string_starts_from(sym_or_class.substr(i), CATEGORY_PUNCT)) {
+                            } else if(teal::str_util::string_starts_from(sym_or_class.substr(i), CATEGORY_PUNCT)) {
                                 if(local_not_cond) not_puncts = true; else puncts = true;
                                 i += CATEGORY_PUNCT.size() - 1;
                                 continue;
-                            } else if(scfx::str_util::string_starts_from(sym_or_class.substr(i), CATEGORY_HEX)) {
+                            } else if(teal::str_util::string_starts_from(sym_or_class.substr(i), CATEGORY_HEX)) {
                                 if(local_not_cond) not_hex = true; else hex = true;
                                 i += CATEGORY_HEX.size() - 1;
                                 continue;
-                            } else if(scfx::str_util::string_starts_from(sym_or_class.substr(i), CATEGORY_OCT)) {
+                            } else if(teal::str_util::string_starts_from(sym_or_class.substr(i), CATEGORY_OCT)) {
                                 if(local_not_cond) not_oct = true; else oct = true;
                                 i += CATEGORY_OCT.size() - 1;
                                 continue;
@@ -553,13 +553,13 @@ namespace scfx {
                 }
 
                 bool neg_found{false};
-                if(not_spaces) { if(scfx::str_util::fltr<STR_T>::isspace(sym)) { neg_found = true; } }
-                if(not_alphas) { if(scfx::str_util::fltr<STR_T>::isalpha(sym)) { neg_found = true; } }
-                if(not_digits) { if(scfx::str_util::fltr<STR_T>::isdigit(sym)) { neg_found = true; } }
-                if(not_puncts) { if(scfx::str_util::fltr<STR_T>::ispunct(sym)) { neg_found = true; } }
-                if(not_cntrl) { if(scfx::str_util::fltr<STR_T>::iscntrl(sym)) { neg_found = true; } }
-                if(not_hex) { if(scfx::str_util::fltr<STR_T>::ishexdigit(sym)) { neg_found = true; } }
-                if(not_oct) { if(scfx::str_util::fltr<STR_T>::isoctdigit(sym)) { neg_found = true; } }
+                if(not_spaces) { if(teal::str_util::fltr<STR_T>::isspace(sym)) { neg_found = true; } }
+                if(not_alphas) { if(teal::str_util::fltr<STR_T>::isalpha(sym)) { neg_found = true; } }
+                if(not_digits) { if(teal::str_util::fltr<STR_T>::isdigit(sym)) { neg_found = true; } }
+                if(not_puncts) { if(teal::str_util::fltr<STR_T>::ispunct(sym)) { neg_found = true; } }
+                if(not_cntrl) { if(teal::str_util::fltr<STR_T>::iscntrl(sym)) { neg_found = true; } }
+                if(not_hex) { if(teal::str_util::fltr<STR_T>::ishexdigit(sym)) { neg_found = true; } }
+                if(not_oct) { if(teal::str_util::fltr<STR_T>::isoctdigit(sym)) { neg_found = true; } }
                 for(auto c: negative_set) {
                     if(sym == c) {
                         neg_found = true;
@@ -569,13 +569,13 @@ namespace scfx {
 
                 bool pos_given{false};
                 bool pos_found{false};
-                if(spaces) { pos_given = true; if(scfx::str_util::fltr<STR_T>::isspace(sym)) { pos_found = true; } }
-                if(alphas) { pos_given = true; if(scfx::str_util::fltr<STR_T>::isalpha(sym)) { pos_found = true; } }
-                if(digits) { pos_given = true; if(scfx::str_util::fltr<STR_T>::isdigit(sym)) { pos_found = true; } }
-                if(puncts) { pos_given = true; if(scfx::str_util::fltr<STR_T>::ispunct(sym)) { pos_found = true; } }
-                if(cntrl) { pos_given = true; if(scfx::str_util::fltr<STR_T>::iscntrl(sym)) { pos_found = true; } }
-                if(hex) { pos_given = true; if(scfx::str_util::fltr<STR_T>::ishexdigit(sym)) { pos_found = true; } }
-                if(oct) { pos_given = true; if(scfx::str_util::fltr<STR_T>::isoctdigit(sym)) { pos_found = true; } }
+                if(spaces) { pos_given = true; if(teal::str_util::fltr<STR_T>::isspace(sym)) { pos_found = true; } }
+                if(alphas) { pos_given = true; if(teal::str_util::fltr<STR_T>::isalpha(sym)) { pos_found = true; } }
+                if(digits) { pos_given = true; if(teal::str_util::fltr<STR_T>::isdigit(sym)) { pos_found = true; } }
+                if(puncts) { pos_given = true; if(teal::str_util::fltr<STR_T>::ispunct(sym)) { pos_found = true; } }
+                if(cntrl) { pos_given = true; if(teal::str_util::fltr<STR_T>::iscntrl(sym)) { pos_found = true; } }
+                if(hex) { pos_given = true; if(teal::str_util::fltr<STR_T>::ishexdigit(sym)) { pos_found = true; } }
+                if(oct) { pos_given = true; if(teal::str_util::fltr<STR_T>::isoctdigit(sym)) { pos_found = true; } }
                 for(auto const &c: set) {
                     pos_given = true;
                     if(sym == c) {
@@ -641,7 +641,7 @@ namespace scfx {
             auto state_map_it{rules_.find(state_current_)};
             if(state_map_it == rules_.end()) {
                 std::stringstream ss{};
-                ss << "at line " << current_l_ + 1 << ", col " << current_c_ + 1 << ": no rules for transition from state \"" << scfx::str_util::fltr<STR_T>::utf8(state_current_) << "\"";
+                ss << "at line " << current_l_ + 1 << ", col " << current_c_ + 1 << ": no rules for transition from state \"" << teal::str_util::fltr<STR_T>::utf8(state_current_) << "\"";
                 throw std::runtime_error{ss.str()};
             }
             STR_T match_state{};
@@ -747,19 +747,19 @@ namespace scfx {
             }
         }
 
-        STR_T RULE_TO_TARGET_TRANSITION{scfx::str_util::fltr<STR_T>::cast(">>")};
-        STR_T STATE_INITIAL{scfx::str_util::fltr<STR_T>::cast("#rd")};
-        STR_T STATE_ERROR{scfx::str_util::fltr<STR_T>::cast("#er")};
-        STR_T CLASS_DEFAULT{scfx::str_util::fltr<STR_T>::cast("$df")};
-        STR_T CLASS_EOF{scfx::str_util::fltr<STR_T>::cast("$ef")};
-        STR_T CATEGORY_SPACE{scfx::str_util::fltr<STR_T>::cast(":space:")};
-        STR_T CATEGORY_ALPHA{scfx::str_util::fltr<STR_T>::cast(":alpha:")};
-        STR_T CATEGORY_ALNUM{scfx::str_util::fltr<STR_T>::cast(":alnum:")};
-        STR_T CATEGORY_CNTRL{scfx::str_util::fltr<STR_T>::cast(":cntrl:")};
-        STR_T CATEGORY_DIGIT{scfx::str_util::fltr<STR_T>::cast(":digit:")};
-        STR_T CATEGORY_PUNCT{scfx::str_util::fltr<STR_T>::cast(":punct:")};
-        STR_T CATEGORY_HEX{scfx::str_util::fltr<STR_T>::cast(":hex:")};
-        STR_T CATEGORY_OCT{scfx::str_util::fltr<STR_T>::cast(":oct:")};
+        STR_T RULE_TO_TARGET_TRANSITION{teal::str_util::fltr<STR_T>::cast(">>")};
+        STR_T STATE_INITIAL{teal::str_util::fltr<STR_T>::cast("#rd")};
+        STR_T STATE_ERROR{teal::str_util::fltr<STR_T>::cast("#er")};
+        STR_T CLASS_DEFAULT{teal::str_util::fltr<STR_T>::cast("$df")};
+        STR_T CLASS_EOF{teal::str_util::fltr<STR_T>::cast("$ef")};
+        STR_T CATEGORY_SPACE{teal::str_util::fltr<STR_T>::cast(":space:")};
+        STR_T CATEGORY_ALPHA{teal::str_util::fltr<STR_T>::cast(":alpha:")};
+        STR_T CATEGORY_ALNUM{teal::str_util::fltr<STR_T>::cast(":alnum:")};
+        STR_T CATEGORY_CNTRL{teal::str_util::fltr<STR_T>::cast(":cntrl:")};
+        STR_T CATEGORY_DIGIT{teal::str_util::fltr<STR_T>::cast(":digit:")};
+        STR_T CATEGORY_PUNCT{teal::str_util::fltr<STR_T>::cast(":punct:")};
+        STR_T CATEGORY_HEX{teal::str_util::fltr<STR_T>::cast(":hex:")};
+        STR_T CATEGORY_OCT{teal::str_util::fltr<STR_T>::cast(":oct:")};
         CHAR_T ESCAPE_CHAR{'\\'};
         CHAR_T SELF_CHAR_PREFIX{'<'};
         CHAR_T OUTER_CHAR_PREFIX{'^'};

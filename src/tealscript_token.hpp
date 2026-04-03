@@ -4,9 +4,9 @@
 #include "inc/file_util.hpp"
 #include "inc/str_util.hpp"
 
-#include "scaflux_util.hpp"
+#include "tealscript_util.hpp"
 
-namespace scfx {
+namespace teal {
 
     class token {
     public:

@@ -4,7 +4,7 @@
 #include "adler.hpp"
 #include "crc.hpp"
 
-namespace scfx {
+namespace teal {
 
     template<typename T>
     struct num_hash {

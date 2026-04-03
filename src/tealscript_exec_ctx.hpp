@@ -3,26 +3,26 @@
 #include "inc/commondefs.hpp"
 #include "inc/emhash/hash_set8.hpp"
 
-#include "scaflux_util.hpp"
-#include "scaflux_value.hpp"
-#include "scaflux_token.hpp"
-#include "scaflux_interfaces.hpp"
+#include "tealscript_util.hpp"
+#include "tealscript_value.hpp"
+#include "tealscript_token.hpp"
+#include "tealscript_interfaces.hpp"
 
-namespace scfx {
+namespace teal {
 
-    class scfx_function_not_found: public runtime_error {
+    class teal_function_not_found: public runtime_error {
     public:
-        scfx_function_not_found(std::int64_t l, std::int64_t c, const std::string &msg): runtime_error{l, c, msg} {
+        teal_function_not_found(std::int64_t l, std::int64_t c, const std::string &msg): runtime_error{l, c, msg} {
         }
     };
-    class scfx_identifier_not_found: public runtime_error {
+    class teal_identifier_not_found: public runtime_error {
     public:
-        scfx_identifier_not_found(std::int64_t l, std::int64_t c, const std::string &msg): runtime_error{l, c, msg} {
+        teal_identifier_not_found(std::int64_t l, std::int64_t c, const std::string &msg): runtime_error{l, c, msg} {
         }
     };
-    class scfx_global_identifier_exists: public runtime_error {
+    class teal_global_identifier_exists: public runtime_error {
     public:
-        scfx_global_identifier_exists(std::int64_t l, std::int64_t c, const std::string &msg): runtime_error{l, c, msg} {
+        teal_global_identifier_exists(std::int64_t l, std::int64_t c, const std::string &msg): runtime_error{l, c, msg} {
         }
     };
 
@@ -244,7 +244,7 @@ namespace scfx {
                 objtyp = obj_type::user_fun;
                 return valbox{rt_ptr_->user_function_selector(), name, true};
             }
-            throw scfx_identifier_not_found{l, c,
+            throw teal_identifier_not_found{l, c,
                 std::string{"identifier \""} + name + "\" not found"
             };
         }
@@ -344,7 +344,7 @@ namespace scfx {
                 }
             }
             std::string em{"method "}; em += class_name; em += "."; em += method_name; em += "() not found";
-            throw scfx_function_not_found{l, c, em};
+            throw teal_function_not_found{l, c, em};
         }
 
         void set_input(std::string const &name, valbox const &val) {

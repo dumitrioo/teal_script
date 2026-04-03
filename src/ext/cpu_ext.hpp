@@ -9,11 +9,11 @@
 #include "../inc/containers/circular_buffer.hpp"
 #include "../inc/mt_synchro.hpp"
 
-#include "../scaflux_value.hpp"
-#include "../scaflux_util.hpp"
-#include "../scaflux_interfaces.hpp"
+#include "../tealscript_value.hpp"
+#include "../tealscript_util.hpp"
+#include "../tealscript_interfaces.hpp"
 
-namespace scfx {
+namespace teal {
 
     class cpu_ext: public extension_interface {
     public:
@@ -35,21 +35,21 @@ namespace scfx {
             if(rt_ == nullptr) {
                 return;
             }
-            rt->add_function("perf_stat", SCFXFUN() {
-                return scfx::valbox{std::make_shared<cpu_pc<double>>(), "perf_stat"};
+            rt->add_function("perf_stat", TEALFUN() {
+                return teal::valbox{std::make_shared<cpu_pc<double>>(), "perf_stat"};
             });
-            rt->add_method("perf_stat", "start", SCFXFUN(args) {
-                return SCFXTHIS(args, std::shared_ptr<cpu_pc<double>>)->start();
+            rt->add_method("perf_stat", "start", TEALFUN(args) {
+                return TEALTHIS(args, std::shared_ptr<cpu_pc<double>>)->start();
             });
-            rt->add_method("perf_stat", "stop", SCFXFUN(args) {
-                SCFXTHIS(args, std::shared_ptr<cpu_pc<double>>)->stop();
+            rt->add_method("perf_stat", "stop", TEALFUN(args) {
+                TEALTHIS(args, std::shared_ptr<cpu_pc<double>>)->stop();
                 return 0;
             });
-            rt->add_method("perf_stat", "cpu_load", SCFXFUN(args) {
-                return SCFXTHIS(args, std::shared_ptr<cpu_pc<double>>)->cpu_load();
+            rt->add_method("perf_stat", "cpu_load", TEALFUN(args) {
+                return TEALTHIS(args, std::shared_ptr<cpu_pc<double>>)->cpu_load();
             });
-            rt->add_method("perf_stat", "self_cpu_consumption", SCFXFUN(args) {
-                return SCFXTHIS(args, std::shared_ptr<cpu_pc<double>>)->self_cpu_consumption();
+            rt->add_method("perf_stat", "self_cpu_consumption", TEALFUN(args) {
+                return TEALTHIS(args, std::shared_ptr<cpu_pc<double>>)->self_cpu_consumption();
             });
         }
         void unregister_runtime() override {
@@ -162,7 +162,7 @@ namespace scfx {
                 FILETIME KernelTime;
                 FILETIME UserTime;
                 if(GetProcessTimes(hProcess, &CreationTime, &ExitTime, &KernelTime, &UserTime)) {
-                    scfx::timespec_wrapper now{ scfx::timespec_wrapper::now() };
+                    teal::timespec_wrapper now{ teal::timespec_wrapper::now() };
                     curr_cpu_kernel_last_scan_time_ = KernelTime;
                     curr_cpu_user_last_scan_time_ = UserTime;
                     curr_cpu_milestone_last_scan_time_ = now;
@@ -225,17 +225,17 @@ namespace scfx {
                 FILETIME UserTime;
                 DWORD pid{ GetCurrentProcessId() };
                 if(GetProcessTimes(GetCurrentProcess(), &CreationTime, &ExitTime, &KernelTime, &UserTime)) {
-                    scfx::timespec_wrapper now{ scfx::timespec_wrapper::now() };
-                    scfx::timespec_wrapper TSWKernelTime{ KernelTime };
-                    scfx::timespec_wrapper TSWUserTime{ UserTime };
-                    scfx::timespec_wrapper dt{ now - curr_cpu_milestone_last_scan_time_ };
+                    teal::timespec_wrapper now{ teal::timespec_wrapper::now() };
+                    teal::timespec_wrapper TSWKernelTime{ KernelTime };
+                    teal::timespec_wrapper TSWUserTime{ UserTime };
+                    teal::timespec_wrapper dt{ now - curr_cpu_milestone_last_scan_time_ };
                     if(/*TSWKernelTime != curr_cpu_kernel_last_scan_time_ ||
                     TSWUserTime != curr_cpu_user_last_scan_time_ ||*/
                         dt.fseconds() > 1
                         ) {
                         dt *= n_of_processors_;
-                        scfx::timespec_wrapper dt_k{ TSWKernelTime - curr_cpu_kernel_last_scan_time_ };
-                        scfx::timespec_wrapper dt_u{ TSWUserTime - curr_cpu_user_last_scan_time_ };
+                        teal::timespec_wrapper dt_k{ TSWKernelTime - curr_cpu_kernel_last_scan_time_ };
+                        teal::timespec_wrapper dt_u{ TSWUserTime - curr_cpu_user_last_scan_time_ };
                         FLT_T self_cpu_consumption{ (FLT_T)((/*dt_k + */dt_u).fseconds() / dt.fseconds()) };
                         self_cpu_consumption_buff_.push_back(self_cpu_consumption);
                         curr_cpu_kernel_last_scan_time_ = TSWKernelTime;
@@ -297,13 +297,13 @@ namespace scfx {
             std::thread cpu_usage_thread_;
             clock_t last_clk_{0};
             clock_t clock_last{0};
-            scfx::scalar_circular_buffer<FLT_T, 5> self_cpu_consumption_buff_{};
+            teal::scalar_circular_buffer<FLT_T, 5> self_cpu_consumption_buff_{};
 #if defined(__linux)
             struct tms tsmpl_last_{};
 #elif defined(WINDOWS)
-            scfx::timespec_wrapper curr_cpu_milestone_last_scan_time_{};
-            scfx::timespec_wrapper curr_cpu_kernel_last_scan_time_{};
-            scfx::timespec_wrapper curr_cpu_user_last_scan_time_{};
+            teal::timespec_wrapper curr_cpu_milestone_last_scan_time_{};
+            teal::timespec_wrapper curr_cpu_kernel_last_scan_time_{};
+            teal::timespec_wrapper curr_cpu_user_last_scan_time_{};
 #endif
             std::atomic<FLT_T> cpu_usage_{ 0 };
             std::atomic<FLT_T> self_cpu_consumption_{ 0 };

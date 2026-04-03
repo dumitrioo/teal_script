@@ -4,7 +4,7 @@
 #include "str_util.hpp"
 #include "bit_util.hpp"
 
-namespace scfx {
+namespace teal {
 
     namespace detail {
 
@@ -30,7 +30,7 @@ namespace scfx {
             }
             std::array<std::uint8_t, 4> byte_buf{};
             std::copy(reinterpret_cast<std::uint8_t const *>(data_ptr), reinterpret_cast<std::uint8_t const *>(data_ptr) + num, byte_buf.begin());
-            std::uint32_t const be_val{scfx::bit_util::swap_on_be<std::uint32_t>{*(std::uint32_t const *)byte_buf.data()}.val};
+            std::uint32_t const be_val{teal::bit_util::swap_on_be<std::uint32_t>{*(std::uint32_t const *)byte_buf.data()}.val};
             std::uint32_t cur_val{be_val};
             std::array<int, 5> res_nums{};
             for(size_t i{0}; i < 5; ++i) {

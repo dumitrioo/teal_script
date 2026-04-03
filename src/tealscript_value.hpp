@@ -8,12 +8,12 @@
 #include "inc/math/matrix4.hpp"
 #include "inc/math/math_util.hpp"
 
-#include "scaflux_util.hpp"
+#include "tealscript_util.hpp"
 
 using std::any_cast;
 using std::any;
 
-namespace scfx {
+namespace teal {
 
     enum class valbox_no_initialize {
         dont_do_it
@@ -129,8 +129,8 @@ namespace scfx {
         }
 
     public:
-        using vec4_t = scfx::math::vector4<long double>;
-        using mat4_t = scfx::math::matrix4<long double>;
+        using vec4_t = teal::math::vector4<long double>;
+        using mat4_t = teal::math::matrix4<long double>;
 
     private:
         using array_t = std::deque<valbox>;
@@ -231,7 +231,7 @@ namespace scfx {
         valbox(long long *v): box_{std::make_shared<box_data>((void *)v, type::POINTER, type::S64)} {}
         valbox(unsigned long long v): box_{std::make_shared<box_data>((std::uint64_t)v, type::U64)} {}
         valbox(unsigned long long *v): box_{std::make_shared<box_data>((void *)v, type::POINTER, type::U64)} {}
-        valbox(scfx::json const &v): box_{std::make_shared<box_data>(value_t{}, type::UNDEFINED)} { from_json(v); }
+        valbox(teal::json const &v): box_{std::make_shared<box_data>(value_t{}, type::UNDEFINED)} { from_json(v); }
         valbox(object_t const &v): box_{std::make_shared<box_data>(v, type::OBJECT)} {}
         valbox(void *v, type pointed_type = type::POINTER): box_{std::make_shared<box_data>(v, type::POINTER, pointed_type)} {}
         valbox(valbox *v): box_{std::make_shared<box_data>((void *)v, type::POINTER, type::VALBOX)} {}
@@ -926,7 +926,7 @@ namespace scfx {
                     become_object();
                 }
                 if(t == type::OBJECT) {
-                    return as_object()[scfx::str_util::to_utf8(indx.as_wstring())];
+                    return as_object()[teal::str_util::to_utf8(indx.as_wstring())];
                 }
             } else if(is_numeric_type(t_of_indx)) {
                 std::uint64_t i{indx.cast_to_u64()};
@@ -5976,10 +5976,10 @@ namespace scfx {
                         case type::CLASS: throw std::runtime_error{"inappropriate value"};
                         case type::FUNC: throw std::runtime_error{"inappropriate value"};
                         case type::STRING:
-                            thisref.from_json(scfx::json::deserialize(thatref.as_string()));
+                            thisref.from_json(teal::json::deserialize(thatref.as_string()));
                             break;
                         case type::WSTRING:
-                            thisref.from_json(scfx::json::deserialize(thatref.as_wstring()));
+                            thisref.from_json(teal::json::deserialize(thatref.as_wstring()));
                             break;
                         case type::UNDEFINED: thisref.as_object().clear(); break;
                         case type::VALBOX: throw std::runtime_error{"inappropriate value"};
@@ -6547,9 +6547,9 @@ namespace scfx {
                 case type::DOUBLE:        { std::stringstream ss{}; ss << as_double(); return ss.str(); }
                 case type::LONG_DOUBLE:   { std::stringstream ss{}; ss << as_long_double(); return ss.str(); }
                 case type::BOOL:          { return as_bool() ? "true" : "false"; }
-                case type::WCHAR:         { std::wstring s{}; s += as_wchar(); return scfx::str_util::to_utf8(s); }
+                case type::WCHAR:         { std::wstring s{}; s += as_wchar(); return teal::str_util::to_utf8(s); }
                 case type::STRING:        return as_string();
-                case type::WSTRING:       return scfx::str_util::to_utf8(as_wstring());
+                case type::WSTRING:       return teal::str_util::to_utf8(as_wstring());
                 case type::OBJECT:        return to_json().serialize5(4);
                 case type::ARRAY: {
                     std::string res{};
@@ -6579,9 +6579,9 @@ namespace scfx {
                 case type::LONG_DOUBLE:   { std::wstringstream ss{}; ss << as_long_double(); return ss.str(); }
                 case type::BOOL:          { return as_bool() ? L"true" : L"false"; }
                 case type::WCHAR:         { std::wstring s{}; s += as_wchar(); return s; }
-                case type::STRING:        return scfx::str_util::from_utf8(as_string());
+                case type::STRING:        return teal::str_util::from_utf8(as_string());
                 case type::WSTRING:       return as_wstring();
-                case type::OBJECT:        return scfx::str_util::from_utf8(to_json().serialize5(4));
+                case type::OBJECT:        return teal::str_util::from_utf8(to_json().serialize5(4));
                 case type::ARRAY: {
                     std::wstring res{};
                     for(auto &&v: as_array()) {
@@ -6724,14 +6724,14 @@ namespace scfx {
                     break;
                 case type::STRING: {
                     try {
-                            res = valbox{scfx::json::deserialize(as_string())}.as_object();
+                            res = valbox{teal::json::deserialize(as_string())}.as_object();
                         } catch(...) {
                         }
                     }
                     break;
                 case type::WSTRING: {
                         try {
-                            res = valbox{scfx::json::deserialize(cast_to_string())}.as_object();
+                            res = valbox{teal::json::deserialize(cast_to_string())}.as_object();
                         } catch(...) {
                         }
                     }
@@ -6742,34 +6742,34 @@ namespace scfx {
             return res;
         }
 
-        scfx::json to_json() const {
+        teal::json to_json() const {
             if(is_undefined_ref()) {
-                return scfx::json{};
+                return teal::json{};
             } else if(is_string_ref()) {
-                return scfx::json{as_string()};
+                return teal::json{as_string()};
             } else if(is_bool_ref()) {
-                return scfx::json{as_bool()};
+                return teal::json{as_bool()};
             } else if(is_char_ref()) {
                 std::string s{}; s += as_char();
-                return scfx::json{s};
+                return teal::json{s};
             } else if(is_wchar_ref()) {
                 std::wstring s{}; s += as_wchar();
-                return scfx::json{s};
+                return teal::json{s};
             } else if(is_wstring_ref()) {
-                return scfx::json{as_wstring()};
+                return teal::json{as_wstring()};
             } else if(is_any_int_number()) {
-                return scfx::json{cast_num_to_num<std::int64_t>()};
+                return teal::json{cast_num_to_num<std::int64_t>()};
             } else if(is_any_fp_number()) {
-                return scfx::json{cast_num_to_num<long double>()};
+                return teal::json{cast_num_to_num<long double>()};
             } else if(is_array_ref()) {
-                scfx::json res{};
+                teal::json res{};
                 res.become_array();
                 for(auto &&v: as_array()) {
                     res.push_back(v.to_json());
                 }
                 return res;
             } else if(is_object_ref()) {
-                scfx::json res{};
+                teal::json res{};
                 res.become_object();
                 object_t const &o{as_object()};
                 for(auto &&p: o) {
@@ -6782,7 +6782,7 @@ namespace scfx {
             return {};
         }
 
-        valbox &from_json(scfx::json const &v) {
+        valbox &from_json(teal::json const &v) {
             valbox &vr{deref()};
             vr.pointed_box_.reset();
             if(v.is_number()) {
@@ -6816,7 +6816,7 @@ namespace scfx {
                     vr.box_->pointed_type_ = type::UNDEFINED;
                     vr.box_->class_.clear();
                 }
-                v.traverse_object([&](std::string const &key, scfx::json const &val) {
+                v.traverse_object([&](std::string const &key, teal::json const &val) {
                     vr[key].from_json(val);
                 });
             } else if(v.is_null()) {
@@ -6849,9 +6849,9 @@ namespace scfx {
                 case type::DOUBLE: os << as_double(); break;
                 case type::LONG_DOUBLE: os << as_long_double(); break;
                 case type::BOOL: os << (as_bool() ? "true" : "false"); break;
-                case type::WCHAR: { std::wstring ws{}; ws += as_wchar(); os << scfx::str_util::to_utf8(ws); } break;
+                case type::WCHAR: { std::wstring ws{}; ws += as_wchar(); os << teal::str_util::to_utf8(ws); } break;
                 case type::STRING: os << as_string(); break;
-                case type::WSTRING: os << scfx::str_util::to_utf8(as_wstring()); break;
+                case type::WSTRING: os << teal::str_util::to_utf8(as_wstring()); break;
                 case type::CLASS: os << "<" << deref().class_name() << ">"; break;
                 case type::POINTER: os << deref().dump(); break;
                 case type::UNDEFINED: os << "<undefined>"; break;
@@ -7001,9 +7001,9 @@ namespace scfx {
             case valbox::type::DOUBLE: os << v.as_double(); break;
             case valbox::type::LONG_DOUBLE: os << v.as_long_double(); break;
             case valbox::type::BOOL: os << (v.as_bool() ? "true" : "false"); break;
-            case valbox::type::WCHAR: { std::wstring ws{}; ws += v.as_wchar(); os << scfx::str_util::to_utf8(ws); } break;
+            case valbox::type::WCHAR: { std::wstring ws{}; ws += v.as_wchar(); os << teal::str_util::to_utf8(ws); } break;
             case valbox::type::STRING: os << v.as_string(); break;
-            case valbox::type::WSTRING: os << scfx::str_util::to_utf8(v.as_wstring()); break;
+            case valbox::type::WSTRING: os << teal::str_util::to_utf8(v.as_wstring()); break;
             case valbox::type::CLASS: os << "<" << v.deref().class_name() << ">"; break;
             case valbox::type::POINTER: os << v.deref(); break;
             case valbox::type::UNDEFINED: os << "<undefined>"; break;

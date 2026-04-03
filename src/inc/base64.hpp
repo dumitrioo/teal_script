@@ -3,7 +3,7 @@
 #include "commondefs.hpp"
 #include "str_util.hpp"
 
-namespace scfx {
+namespace teal {
 
     namespace detail {
 

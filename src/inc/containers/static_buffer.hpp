@@ -2,7 +2,7 @@
 
 #include "../commondefs.hpp"
 
-namespace scfx {
+namespace teal {
 
     template<typename T, std::size_t N>
     class static_buff {

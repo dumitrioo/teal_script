@@ -2,7 +2,7 @@
 
 #include "../commondefs.hpp"
 
-namespace scfx {
+namespace teal {
 
     template<typename T, std::size_t CAPACITY
 #if (__cplusplus < 202000L)

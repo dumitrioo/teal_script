@@ -2,7 +2,7 @@
 
 #include "commondefs.hpp"
 
-namespace scfx::str_util {
+namespace teal::str_util {
 
     class unicode_operations {
     public:

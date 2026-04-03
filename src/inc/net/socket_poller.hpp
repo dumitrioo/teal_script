@@ -16,7 +16,7 @@ extern "C" {
 #include <WinSock2.h>
 #endif
 
-namespace scfx::net {
+namespace teal::net {
 
     DEFINE_RUNTIME_ERROR_CLASS(poll_error)
 
@@ -131,7 +131,7 @@ namespace scfx::net {
                 events_map_.clear();
                 last_error_ = 0;
             }
-            std::vector<poll_event> wait(std::size_t maxcount = 64, scfx::timespec_wrapper const &timeout = scfx::eternity) {
+            std::vector<poll_event> wait(std::size_t maxcount = 64, teal::timespec_wrapper const &timeout = teal::eternity) {
                 std::vector<poll_event> result{};
                 std::vector<struct pollfd> events_vec{};
                 {
@@ -143,7 +143,7 @@ namespace scfx::net {
                     }
                 }
                 if(!events_vec.empty()) {
-                    int poll_res = ::poll(&events_vec[0], events_vec.size(), timeout == scfx::eternity ? std::numeric_limits<int>::max() : timeout.milliseconds());
+                    int poll_res = ::poll(&events_vec[0], events_vec.size(), timeout == teal::eternity ? std::numeric_limits<int>::max() : timeout.milliseconds());
                     if(poll_res > 0) {
                         result.reserve(poll_res);
                         for(std::size_t i = 0; i < events_vec.size(); ++i) {
@@ -234,7 +234,7 @@ namespace scfx::net {
                     epfd_ = -1;
                 }
             }
-            std::vector<poll_event> wait(std::size_t maxcount = 64, scfx::timespec_wrapper const &timeout = scfx::eternity) {
+            std::vector<poll_event> wait(std::size_t maxcount = 64, teal::timespec_wrapper const &timeout = teal::eternity) {
                 if(maxcount <= 0) {
                     throw poll_error("bad arguments for epoll wait()");
                 }
@@ -243,7 +243,7 @@ namespace scfx::net {
                     events_buf_.resize(maxcount);
                 }
 
-                int wait_result = ::epoll_wait(epfd_, &events_buf_[0], maxcount, timeout == scfx::eternity ? -1 : timeout.milliseconds());
+                int wait_result = ::epoll_wait(epfd_, &events_buf_[0], maxcount, timeout == teal::eternity ? -1 : timeout.milliseconds());
                 if(wait_result > 0) {
                     std::vector<poll_event> events(wait_result);
                     for(int i = 0; i < wait_result; i++) {
@@ -256,7 +256,7 @@ namespace scfx::net {
                     return events;
                 } else if(wait_result < 0) {
                     last_error_ = errno;
-                    throw poll_error{scfx::sys_util::error_str(scfx::sys_util::last_error())};
+                    throw poll_error{teal::sys_util::error_str(teal::sys_util::last_error())};
                 }
 
                 return {};
@@ -318,7 +318,7 @@ namespace scfx::net {
                 return true;
             }
             void close() {}
-            std::vector<poll_event> wait(std::size_t maxcount = 64, scfx::timespec_wrapper const &timeout = scfx::eternity) {
+            std::vector<poll_event> wait(std::size_t maxcount = 64, teal::timespec_wrapper const &timeout = teal::eternity) {
                 std::vector<poll_event> events;
                 std::unique_lock l_buf(events_buf_mtp_);
                 if (events_buf_.size()) {
@@ -393,7 +393,7 @@ namespace scfx::net {
         void close() {
             impl_.close();
         }
-        std::vector<poll_event> wait(std::size_t maxcount = 64, scfx::timespec_wrapper const &timeout = scfx::eternity) {
+        std::vector<poll_event> wait(std::size_t maxcount = 64, teal::timespec_wrapper const &timeout = teal::eternity) {
             return impl_.wait(maxcount, timeout);
         }
         int last_error() const {

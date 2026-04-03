@@ -3,7 +3,7 @@
 #include "../commondefs.hpp"
 #include "../bit_util.hpp"
 
-namespace scfx {
+namespace teal {
 
     namespace crypt {
 

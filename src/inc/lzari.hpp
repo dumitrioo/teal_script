@@ -3,7 +3,7 @@
 #include "commondefs.hpp"
 #include "hash/adler.hpp"
 
-namespace scfx {
+namespace teal {
 
     DEFINE_RUNTIME_ERROR_CLASS_MSG(encoding_error, "data compression error")
     DEFINE_RUNTIME_ERROR_CLASS_MSG(decoding_error, "data decompression error")

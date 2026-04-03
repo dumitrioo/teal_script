@@ -26,7 +26,7 @@
            | ((std::uint32_t) *((str) + 0) << 24); \
 }
 
-namespace scfx {
+namespace teal {
 
     namespace crypt {
 

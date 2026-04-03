@@ -3,7 +3,7 @@
 #include "../commondefs.hpp"
 #include "matrix4.hpp"
 
-namespace scfx::math {
+namespace teal::math {
 
     template<typename T>
     class vector4 {
@@ -256,7 +256,7 @@ namespace scfx::math {
 }
 
 template<typename T>
-static std::ostream &operator<<(std::ostream &os, scfx::math::vector4<T> const &v) {
+static std::ostream &operator<<(std::ostream &os, teal::math::vector4<T> const &v) {
     std::stringstream ss{};
     ss << "{";
     std::string sep{};

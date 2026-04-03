@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <ctime>
 
-namespace scfx {
+namespace teal {
 
     class timespec_wrapper final {
     public:
@@ -267,7 +267,7 @@ namespace scfx {
                                     neg = currc == '-';
                                 } else {
                                     if(!buf.empty()) {
-                                        brdn[state] = scfx::str_util::atoi(std::string{buf});
+                                        brdn[state] = teal::str_util::atoi(std::string{buf});
                                         buf.clear();
                                         state = (states)((int)state + 1);
                                     }
@@ -279,7 +279,7 @@ namespace scfx {
                                     if(state == ye) { sign_set = true; }
                                 }
                                 if(cno + 1 == dts.size() && !buf.empty()) {
-                                    std::int64_t bval{scfx::str_util::atoi(std::string{buf})};
+                                    std::int64_t bval{teal::str_util::atoi(std::string{buf})};
                                     brdn[state] = bval;
                                 }
                             }
@@ -482,7 +482,7 @@ namespace scfx {
         static std::string subseconds_to_str(long double val, std::size_t prec) {
             if(prec > 0) {
                 if(prec > 9) { prec = 9; }
-                std::string sscnd{scfx::str_util::ftoa(val, prec)};
+                std::string sscnd{teal::str_util::ftoa(val, prec)};
                 if(sscnd == "0") { sscnd = "0.0";}
                 sscnd = sscnd.substr(1);
                 while(sscnd.size() < prec + 1) {
@@ -553,18 +553,18 @@ namespace scfx {
         void parse_iso_8601(CHAR_T const *buff, std::size_t bsize) {
             try {
                 enum class tk_t {none, num, colon, dot, comma, minus, plus, t, w, z, spc};
-                scfx::static_buff<int, 24> num_idx{};
-                scfx::static_buff<int, 24> colon_idx{};
-                scfx::static_buff<int, 24> dot_idx{};
-                scfx::static_buff<int, 24> comma_idx{};
-                scfx::static_buff<int, 24> minus_idx{};
-                scfx::static_buff<int, 24> plus_idx{};
-                scfx::static_buff<int, 24> t_idx{};
-                scfx::static_buff<int, 24> w_idx{};
-                scfx::static_buff<int, 24> z_idx{};
-                scfx::static_buff<int, 24> spc_idx{};
+                teal::static_buff<int, 24> num_idx{};
+                teal::static_buff<int, 24> colon_idx{};
+                teal::static_buff<int, 24> dot_idx{};
+                teal::static_buff<int, 24> comma_idx{};
+                teal::static_buff<int, 24> minus_idx{};
+                teal::static_buff<int, 24> plus_idx{};
+                teal::static_buff<int, 24> t_idx{};
+                teal::static_buff<int, 24> w_idx{};
+                teal::static_buff<int, 24> z_idx{};
+                teal::static_buff<int, 24> spc_idx{};
                 struct bufs {
-                    scfx::static_buff<char, 16> buff{};
+                    teal::static_buff<char, 16> buff{};
                     tk_t t{tk_t::none};
                     bool is_none() const { return t == tk_t::none; }
                     bool is_num() const { return t == tk_t::num; }
@@ -582,10 +582,10 @@ namespace scfx {
                         return std::string_view{buff.data(), buff.size()};
                     }
                     std::int64_t num() const {
-                        return scfx::str_util::atoi(std::string_view{buff.data(), buff.size()});
+                        return teal::str_util::atoi(std::string_view{buff.data(), buff.size()});
                     }
                 };
-                scfx::static_buff<bufs, 24> b{};
+                teal::static_buff<bufs, 24> b{};
                 tk_t curr_class{tk_t::none};
                 for(std::size_t i{}; i < bsize; ++i) {
                     char c{(char)buff[i]};
@@ -713,8 +713,8 @@ namespace scfx {
                                 }
                             } else if(b[w_idx[0] + 1].buff.size() == 3) {
                                 std::string wwd{b[w_idx[0] + 1].buff.data(), b[w_idx[0] + 1].buff.size()};
-                                res_week = scfx::str_util::atoi(wwd.substr(0, 2));
-                                res_week_day = scfx::str_util::atoi(wwd.substr(2));
+                                res_week = teal::str_util::atoi(wwd.substr(0, 2));
+                                res_week_day = teal::str_util::atoi(wwd.substr(2));
                                 have_yw = false;
                                 have_ywd = true;
                                 min_time_index = w_idx[0] + 2;
@@ -775,9 +775,9 @@ namespace scfx {
                                 b[date_index].buff.size() == 8
                                 ) {
                                 std::string yyyymmdd{b[date_index].buff.data(), b[date_index].buff.size()};
-                                res_year = scfx::str_util::atoi(yyyymmdd.substr(0, 4));
-                                res_month = scfx::str_util::atoi(yyyymmdd.substr(4, 2));
-                                res_day = scfx::str_util::atoi(yyyymmdd.substr(6, 2));
+                                res_year = teal::str_util::atoi(yyyymmdd.substr(0, 4));
+                                res_month = teal::str_util::atoi(yyyymmdd.substr(4, 2));
+                                res_day = teal::str_util::atoi(yyyymmdd.substr(6, 2));
                                 have_ymd = true;
                                 if(min_time_index < 0) { min_time_index = date_index + 1; }
                             } else if(
@@ -786,8 +786,8 @@ namespace scfx {
                                 b[date_index].buff.size() == 7
                                 ) {
                                 std::string yyyyDDD{b[date_index].buff.data(), b[date_index].buff.size()};
-                                res_year = scfx::str_util::atoi(yyyyDDD.substr(0, 4));
-                                res_year_day = scfx::str_util::atoi(yyyyDDD.substr(4, 3));
+                                res_year = teal::str_util::atoi(yyyyDDD.substr(0, 4));
+                                res_year_day = teal::str_util::atoi(yyyyDDD.substr(4, 3));
                                 have_yod = true;
                                 if(min_time_index < 0) { min_time_index = date_index + 1; }
                             }
@@ -839,9 +839,9 @@ namespace scfx {
                             (int)b.size() > hhmmss_index && b[hhmmss_index].is_num() && b[hhmmss_index].buff.size() == 6
                             ) {
                             std::string hhmmss{b[hhmmss_index].buff.data(), b[hhmmss_index].buff.size()};
-                            res_hour = scfx::str_util::atoi(hhmmss.substr(0, 2));
-                            res_minute = scfx::str_util::atoi(hhmmss.substr(2, 2));
-                            res_second = scfx::str_util::atoi(hhmmss.substr(4, 2));
+                            res_hour = teal::str_util::atoi(hhmmss.substr(0, 2));
+                            res_minute = teal::str_util::atoi(hhmmss.substr(2, 2));
+                            res_second = teal::str_util::atoi(hhmmss.substr(4, 2));
                             min_gmt_offs_start = hhmmss_index + 1;
                             if(
                                 (int)b.size() > hhmmss_index + 2 &&
@@ -877,13 +877,13 @@ namespace scfx {
                             (int)b.size() > gmt_val_offs && b[gmt_val_offs].is_num() && b[gmt_val_offs].buff.size() == 4
                             ) {
                             std::string val{b[gmt_val_offs].buff.data(), b[gmt_val_offs].buff.size()};
-                            res_gmt_offs_hour = scfx::str_util::atoi(val.substr(0, 2));
-                            res_gmt_offs_min = scfx::str_util::atoi(val.substr(2, 2));
+                            res_gmt_offs_hour = teal::str_util::atoi(val.substr(0, 2));
+                            res_gmt_offs_min = teal::str_util::atoi(val.substr(2, 2));
                             if(b[min_gmt_offs_start].is_minus()) { res_gmt_offs_sign = -1; }
                             have_gmtoffs = true;
                         } else if((int)b.size() == gmt_val_offs + 1 && b[gmt_val_offs].is_num()) {
                             std::string val{b[gmt_val_offs].buff.data(), b[gmt_val_offs].buff.size()};
-                            res_gmt_offs_hour = scfx::str_util::atoi(val.substr(0, 2));
+                            res_gmt_offs_hour = teal::str_util::atoi(val.substr(0, 2));
                             res_gmt_offs_min = 0;
                             if(b[min_gmt_offs_start].is_minus()) { res_gmt_offs_sign = -1; }
                             have_gmtoffs = true;
@@ -965,7 +965,7 @@ namespace scfx {
 
 }
 
-inline std::ostream &operator<<(std::ostream &os, scfx::timespec_wrapper const &ts) {
+inline std::ostream &operator<<(std::ostream &os, teal::timespec_wrapper const &ts) {
     os << ts.as_iso_8601_str(3);
     return os;
 }

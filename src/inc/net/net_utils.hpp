@@ -10,7 +10,7 @@
 #include <sys/uio.h>
 #endif
 
-namespace scfx::net {
+namespace teal::net {
 
     enum class address_family: int {
         unspecified = AF_UNSPEC,
@@ -80,7 +80,7 @@ namespace scfx::net {
     static std::string ntop(in_addr_t i) {
         std::string res{};
         in_addr a{};
-        a.s_addr = scfx::bit_util::swap_on_le<in_addr_t>{i}.val;
+        a.s_addr = teal::bit_util::swap_on_le<in_addr_t>{i}.val;
         std::vector<char> buff{}; buff.resize(512);
         auto ret{inet_ntop(AF_INET, &a, &buff[0], buff.size())};
         if(ret) {
@@ -108,8 +108,8 @@ namespace scfx::net {
     }
 
     static std::string ipv4_to_hex(std::string const &addr) {
-        in_addr an{scfx::net::pton(addr)};
-        std::string res{scfx::str_util::utoa<std::string>(scfx::bit_util::swap_on_le<std::uint32_t>{an.s_addr}.val, 16)};
+        in_addr an{teal::net::pton(addr)};
+        std::string res{teal::str_util::utoa<std::string>(teal::bit_util::swap_on_le<std::uint32_t>{an.s_addr}.val, 16)};
         while(res.size() < 8) {
             res = std::string{"0"} + res;
         }
@@ -118,9 +118,9 @@ namespace scfx::net {
 
     static std::string ipv6_to_hex(std::string const &addr) {
         std::string res{};
-        in6_addr an{scfx::net::pton6(addr)};
+        in6_addr an{teal::net::pton6(addr)};
         for(int i{0}; i < 16; ++i) {
-            std::string ns{scfx::str_util::utoa<std::string>(((std::uint8_t const *)&an)[i], 16)};
+            std::string ns{teal::str_util::utoa<std::string>(((std::uint8_t const *)&an)[i], 16)};
             while(ns.size() < 2) {
                 ns = std::string{"0"} + ns;
             }

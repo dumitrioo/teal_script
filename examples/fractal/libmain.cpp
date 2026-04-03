@@ -1,6 +1,6 @@
-#include "../../src/scaflux_interfaces.hpp"
+#include "../../src/tealscript_interfaces.hpp"
 
-class fractal_ext: public scfx::extension_interface {
+class fractal_ext: public teal::extension_interface {
     class fractal {
     public:
         fractal() {
@@ -84,7 +84,7 @@ class fractal_ext: public scfx::extension_interface {
             return std::pair<int, int>{field_.begin()->first, itlast->first};
         }
 
-        mutable scfx::shared_mutex field_mtp_{};
+        mutable teal::shared_mutex field_mtp_{};
         std::map<int, std::map<int, char>> field_{};
     };
 
@@ -98,7 +98,7 @@ public:
     fractal_ext(fractal_ext &&) = delete;
     fractal_ext &operator=(fractal_ext &&) = delete;
 
-    void register_runtime(scfx::runtime_interface *rt) override {
+    void register_runtime(teal::runtime_interface *rt) override {
         std::unique_lock l{rt_mtp_};
         if(rt_ != nullptr) {
             return;
@@ -108,27 +108,27 @@ public:
             return;
         }
         try {
-            rt->add_var("fractal_field", scfx::valbox{&frc, "fractal"});
+            rt->add_var("fractal_field", teal::valbox{&frc, "fractal"});
         } catch (...) {
         }
         try {
-            rt->add_method("fractal", "set_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 4)
+            rt->add_method("fractal", "set_at", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 4)
                 args[0].as_class<fractal *>()->set_at(args[1].cast_to_s32(), args[2].cast_to_s32(), args[3].cast_to_char());
                 return true;
             });
         } catch (...) {
         }
         try {
-            rt->add_method("fractal", "get_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 3)
+            rt->add_method("fractal", "get_at", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 3)
                 return args[0].as_class<fractal *>()->at(args[1].cast_to_s32(), args[2].cast_to_s32());
             });
         } catch (...) {
         }
         try {
-            rt->add_method("fractal", "dump", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+            rt->add_method("fractal", "dump", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 return args[0].as_class<fractal *>()->dump();
             });
         } catch (...) {
@@ -148,16 +148,16 @@ public:
     }
 
 private:
-    scfx::shared_mutex rt_mtp_{};
-    scfx::runtime_interface *rt_{nullptr};
+    teal::shared_mutex rt_mtp_{};
+    teal::runtime_interface *rt_{nullptr};
 
     fractal frc{};
 };
 
-scfx::extension_interface *create_scfx_extension() {
+teal::extension_interface *create_teal_extension() {
     static fractal_ext extinst{};
     return &extinst;
 }
 
-void remove_scfx_extension(scfx::extension_interface *) {
+void remove_teal_extension(teal::extension_interface *) {
 }

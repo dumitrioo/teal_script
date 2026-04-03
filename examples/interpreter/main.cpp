@@ -4,7 +4,7 @@
 #include <filesystem>
 #include <iostream>
 
-#include <scaflux_runtime.hpp>
+#include <tealscript_runtime.hpp>
 
 // Just a regular C++ class to be added as an <<object type>> to the scripting runtime
 class example_object {
@@ -27,15 +27,15 @@ int main(int argc, char **argv) {
     }
 
     // The runtime
-    scfx::runtime rt{};
+    teal::runtime rt{};
 
     // The host part of scripting language possibilities extending example.
-    // For usage, see script "examples/extending_example.scfx".
+    // For usage, see script "examples/extending_example.teal".
 
     // -----------------------------------------------------------------------------------
     // Example of adding function to the runtime
     rt.add_function("hello_from_cpp",
-        SCFXFUN(args) {
+        TEALFUN(args) {
             std::cout << "C++ extension function hello_from_cpp() called with arguments:" << std::endl;
             for(auto &&a: args) {
                 std::cout << "\t" << a << std::endl;
@@ -53,30 +53,30 @@ int main(int argc, char **argv) {
     // -----------------------------------------------------------------------------------
     // Example of adding object type to the runtime
     rt.add_function("example_object",
-        SCFXFUN(args) {
+        TEALFUN(args) {
             if(args.size() > 0) {
-                return scfx::valbox{example_object{args[0].cast_to_s32()}, "example_object"};
+                return teal::valbox{example_object{args[0].cast_to_s32()}, "example_object"};
             }
-            return scfx::valbox{example_object{}, "example_object"};
+            return teal::valbox{example_object{}, "example_object"};
         }
     );
-    rt.add_method("example_object", "set_val", SCFXFUN(args) {
+    rt.add_method("example_object", "set_val", TEALFUN(args) {
         // check number of arguments, when needed, including
         // implicit object reference as the first arg
-        SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+        TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
         if(!args[1].is_numeric()) {
             throw std::runtime_error{"the value must be of numeric type"};
         }
-        SCFXTHIS(args, example_object).set_val(args[1].cast_to_s32());
+        TEALTHIS(args, example_object).set_val(args[1].cast_to_s32());
         return 0;
     });
-    rt.add_method("example_object", "get_val", SCFXFUN(args) {
-        SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-        return SCFXTHIS(args, example_object).get_val();
+    rt.add_method("example_object", "get_val", TEALFUN(args) {
+        TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+        return TEALTHIS(args, example_object).get_val();
     });
     // -----------------------------------------------------------------------------------
 
-#ifndef SCFX_DEBUGGING
+#ifndef TEAL_DEBUGGING
     try {
 #endif
         for(std::size_t i{1}; i < args.size(); ++i) {
@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
             throw std::runtime_error{"nothing to do - no working elements"};
         }
 
-#ifdef SINGLE_THREADED_SCFX
+#ifdef SINGLE_THREADED_TEAL
         while(!rt.termination_requested()) {
             rt.run_cycle();
         }
@@ -108,7 +108,7 @@ int main(int argc, char **argv) {
         if(rt.failure()) { throw std::runtime_error{rt.failure_description()}; }
 #endif
 
-#ifndef SCFX_DEBUGGING
+#ifndef TEAL_DEBUGGING
     } catch(std::exception const &e) {
         std::cerr << "error: " << e.what() << std::endl;
     }

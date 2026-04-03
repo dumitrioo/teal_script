@@ -4,7 +4,7 @@
 #include "vector4.hpp"
 #include "matrix4.hpp"
 
-namespace scfx::math {
+namespace teal::math {
 
     template<typename T, typename FUNC_T>
     static T df(FUNC_T const &f, T x, T dx = 1e-6) noexcept {

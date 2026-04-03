@@ -2,7 +2,7 @@
 
 #include "commondefs.hpp"
 
-namespace scfx {
+namespace teal {
 
     template<typename T>
     class sequence_generator {

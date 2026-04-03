@@ -2,7 +2,7 @@
 
 #include "../commondefs.hpp"
 
-namespace scfx::math {
+namespace teal::math {
 
     template<typename T>
     class matrix4 {

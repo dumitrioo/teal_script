@@ -2,12 +2,12 @@
 
 #include "inc/commondefs.hpp"
 
-#include "scaflux_util.hpp"
-#include "scaflux_value.hpp"
-#include "scaflux_expr.hpp"
-#include "scaflux_exec_ctx.hpp"
+#include "tealscript_util.hpp"
+#include "tealscript_value.hpp"
+#include "tealscript_expr.hpp"
+#include "tealscript_exec_ctx.hpp"
 
-namespace scfx {
+namespace teal {
 
     class statement {
     public:
@@ -62,7 +62,7 @@ namespace scfx {
         void exec(execution_context *ctx) override {
             if(ctx->some_jump_requested()) { return; }
             ctx->new_stack_frame();
-            scfx::shut_on_destroy leave_try_frame{[&]() { ctx->del_stack_frame(); }};
+            teal::shut_on_destroy leave_try_frame{[&]() { ctx->del_stack_frame(); }};
             std::string err_msg{""};
             valbox err_obj{valbox_no_initialize::dont_do_it};
             bool excepted_obj{false};
@@ -82,7 +82,7 @@ namespace scfx {
             if(excepted) {
                 if(catch_expr_->is_symbolic()) {
                     ctx->new_stack_frame();
-                    scfx::shut_on_destroy leave_catch_frame{[&]() { ctx->del_stack_frame(); }};
+                    teal::shut_on_destroy leave_catch_frame{[&]() { ctx->del_stack_frame(); }};
                     bool old{ctx->set_create_if_not_exists(true)};
                     valbox ce{catch_expr_->eval(ctx, eval_caller_type::no_matter, nullptr)};
                     ctx->set_create_if_not_exists(old);
@@ -124,7 +124,7 @@ namespace scfx {
         void exec(execution_context *ctx) override {
             if(ctx->some_jump_requested()) { return; }
             ctx->new_stack_frame();
-            scfx::shut_on_destroy leave_frame{[&]() {
+            teal::shut_on_destroy leave_frame{[&]() {
                 ctx->del_stack_frame();
             }};
             if(cond_expr_->eval(ctx, eval_caller_type::no_matter, nullptr).cast_to_bool()) {
@@ -165,7 +165,7 @@ namespace scfx {
             }
             if(own_frame_) {
                 ctx->new_stack_frame();
-                scfx::shut_on_destroy leave_frame{[&]() { ctx->del_stack_frame(); }};
+                teal::shut_on_destroy leave_frame{[&]() { ctx->del_stack_frame(); }};
                 process(ctx);
             } else {
                 process(ctx);
@@ -214,7 +214,7 @@ namespace scfx {
         void exec(execution_context *ctx) override {
             if(ctx->some_jump_requested()) { return; }
             ctx->new_stack_frame();
-            scfx::shut_on_destroy leave_frame{[&]() {
+            teal::shut_on_destroy leave_frame{[&]() {
                 ctx->del_stack_frame();
             }};
             while(cond_expr_->eval(ctx, eval_caller_type::no_matter, nullptr).cast_to_bool()) {
@@ -249,7 +249,7 @@ namespace scfx {
         void exec(execution_context *ctx) override {
             if(ctx->some_jump_requested()) { return; }
             ctx->new_stack_frame();
-            scfx::shut_on_destroy leave_frame{[&]() {
+            teal::shut_on_destroy leave_frame{[&]() {
                 ctx->del_stack_frame();
             }};
 

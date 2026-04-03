@@ -1,1 +1,1 @@
-./bin/scaflux ./examples/pid_regulator.scfx
+./bin/tealscript ./examples/pid_regulator.teal

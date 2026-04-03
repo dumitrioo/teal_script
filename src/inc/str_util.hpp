@@ -10,7 +10,7 @@
 #include "unicode_operations.hpp"
 #endif
 
-namespace scfx::str_util {
+namespace teal::str_util {
 
     template<typename T, std::size_t N, typename U>
 #if (__cplusplus >= 202000L)
@@ -1034,7 +1034,7 @@ namespace scfx::str_util {
             if(k == 0) {
                 max_offs_string = "000";
             } else {
-                max_offs_string = scfx::str_util::utoa<std::string>((k - 1), 16);
+                max_offs_string = teal::str_util::utoa<std::string>((k - 1), 16);
             }
             std::size_t moss = max_offs_string.size() + 1;
 
@@ -1043,7 +1043,7 @@ namespace scfx::str_util {
                     res << '\n';
                 }
 
-                std::string curr_offs_string = scfx::str_util::utoa<std::string>(offs, 16);
+                std::string curr_offs_string = teal::str_util::utoa<std::string>(offs, 16);
                 while(curr_offs_string.size() < moss) {
                     curr_offs_string = std::string("0") + curr_offs_string;
                 }
@@ -1059,7 +1059,7 @@ namespace scfx::str_util {
                         res << " ";
                     }
                     if(offs + i < s) {
-                        std::string curr_hex_byte = scfx::str_util::utoa<std::string>(bd[offs + i], 16);
+                        std::string curr_hex_byte = teal::str_util::utoa<std::string>(bd[offs + i], 16);
                         while(curr_hex_byte.size() < 2) {
                             curr_hex_byte = std::string("0") + curr_hex_byte;
                         }
@@ -1079,10 +1079,10 @@ namespace scfx::str_util {
                         u[0] = c >= ' ' && c < 128 ? c : '.';
                     } else {
                         if(c < ' ') {
-                            int last{scfx::str_util::ucs_to_utf8(c + 0x2400, u)};
+                            int last{teal::str_util::ucs_to_utf8(c + 0x2400, u)};
                             u[last] = 0;
                         } else if(c >= 128) {
-                            scfx::str_util::ucs_to_utf8(c, u);
+                            teal::str_util::ucs_to_utf8(c, u);
                         } else {
                             u[0] = c;
                         }
@@ -1144,56 +1144,56 @@ namespace scfx::str_util {
 
     template<>
     struct fltr<std::wstring> {
-        static std::wstring cast(const std::string& v) { return scfx::str_util::from_utf8(v); }
+        static std::wstring cast(const std::string& v) { return teal::str_util::from_utf8(v); }
         static std::wstring cast(const std::wstring& v) { return v; }
-        static std::string utf8(std::wstring const &v) { return scfx::str_util::to_utf8(v); }
+        static std::string utf8(std::wstring const &v) { return teal::str_util::to_utf8(v); }
         static std::wstring wide(std::wstring const &v) { return v; }
-        static bool isspace(std::wstring::value_type sym) { return scfx::str_util::iswspace(sym) != 0; }
-        static bool isalpha(std::wstring::value_type sym) { return scfx::str_util::iswalpha(sym) != 0; }
-        static bool isdigit(std::wstring::value_type sym) { return scfx::str_util::iswdigit(sym) != 0; }
-        static bool isalnum(std::wstring::value_type sym) { return scfx::str_util::iswalnum(sym) != 0; }
-        static bool ispunct(std::wstring::value_type sym) { return scfx::str_util::iswpunct(sym) != 0; }
-        static bool iscntrl(std::wstring::value_type sym) { return scfx::str_util::iswcntrl(sym) != 0; }
-        static bool ishexdigit(int c) { return scfx::str_util::ishex(c) != 0; }
+        static bool isspace(std::wstring::value_type sym) { return teal::str_util::iswspace(sym) != 0; }
+        static bool isalpha(std::wstring::value_type sym) { return teal::str_util::iswalpha(sym) != 0; }
+        static bool isdigit(std::wstring::value_type sym) { return teal::str_util::iswdigit(sym) != 0; }
+        static bool isalnum(std::wstring::value_type sym) { return teal::str_util::iswalnum(sym) != 0; }
+        static bool ispunct(std::wstring::value_type sym) { return teal::str_util::iswpunct(sym) != 0; }
+        static bool iscntrl(std::wstring::value_type sym) { return teal::str_util::iswcntrl(sym) != 0; }
+        static bool ishexdigit(int c) { return teal::str_util::ishex(c) != 0; }
         static bool isoctdigit(int c) { return (c >= '0' && c <= '7'); }
         static bool isbindigit(int c) { return c == '0' || c == '1'; }
         static std::wstring strtolower(std::wstring v) {
-            std::transform(v.begin(), v.end(), v.begin(), [](wchar_t c){ return scfx::str_util::towlower(c); });
+            std::transform(v.begin(), v.end(), v.begin(), [](wchar_t c){ return teal::str_util::towlower(c); });
             return v;
         }
         static std::wstring strtoupper(std::wstring v) {
-            std::transform(v.begin(), v.end(), v.begin(), [](wchar_t c){ return scfx::str_util::towupper(c); });
+            std::transform(v.begin(), v.end(), v.begin(), [](wchar_t c){ return teal::str_util::towupper(c); });
             return v;
         }
-        static wchar_t tolower(wchar_t v) { return scfx::str_util::towlower(v); }
-        static wchar_t toupper(wchar_t v) { return scfx::str_util::towupper(v); }
+        static wchar_t tolower(wchar_t v) { return teal::str_util::towlower(v); }
+        static wchar_t toupper(wchar_t v) { return teal::str_util::towupper(v); }
     };
 
     template<>
     struct fltr<std::string> {
-        static std::string cast(const std::wstring& v) { return scfx::str_util::to_utf8(v); }
+        static std::string cast(const std::wstring& v) { return teal::str_util::to_utf8(v); }
         static std::string cast(const std::string& v) { return v; }
         static std::string utf8(std::string const &v) { return v; }
-        static std::wstring wide(std::string const &v) { return scfx::str_util::from_utf8(v); }
-        static bool isspace(std::string::value_type sym) { return scfx::str_util::isspace(sym) != 0; }
-        static bool isalpha(std::string::value_type sym) { return scfx::str_util::isalpha(sym) != 0; }
-        static bool isdigit(std::string::value_type sym) { return scfx::str_util::isdigit(sym) != 0; }
-        static bool isalnum(std::string::value_type sym) { return scfx::str_util::isalnum(sym) != 0; }
-        static bool ispunct(std::string::value_type sym) { return scfx::str_util::ispunct(sym) != 0; }
-        static bool iscntrl(std::string::value_type sym) { return scfx::str_util::iscntrl(sym) != 0; }
-        static bool ishexdigit(int c) { return scfx::str_util::ishex(c) != 0; }
+        static std::wstring wide(std::string const &v) { return teal::str_util::from_utf8(v); }
+        static bool isspace(std::string::value_type sym) { return teal::str_util::isspace(sym) != 0; }
+        static bool isalpha(std::string::value_type sym) { return teal::str_util::isalpha(sym) != 0; }
+        static bool isdigit(std::string::value_type sym) { return teal::str_util::isdigit(sym) != 0; }
+        static bool isalnum(std::string::value_type sym) { return teal::str_util::isalnum(sym) != 0; }
+        static bool ispunct(std::string::value_type sym) { return teal::str_util::ispunct(sym) != 0; }
+        static bool iscntrl(std::string::value_type sym) { return teal::str_util::iscntrl(sym) != 0; }
+        static bool ishexdigit(int c) { return teal::str_util::ishex(c) != 0; }
         static bool isoctdigit(int c) { return (c >= '0' && c <= '7'); }
         static bool isbindigit(int c) { return c == '0' || c == '1'; }
         static std::string strtolower(std::string v) {
-            std::transform(v.begin(), v.end(), v.begin(), [](wchar_t c){ return scfx::str_util::tolower(c); });
+            std::transform(v.begin(), v.end(), v.begin(), [](wchar_t c){ return teal::str_util::tolower(c); });
             return v;
         }
         static std::string strtoupper(std::string v) {
-            std::transform(v.begin(), v.end(), v.begin(), [](wchar_t c){ return scfx::str_util::toupper(c); });
+            std::transform(v.begin(), v.end(), v.begin(), [](wchar_t c){ return teal::str_util::toupper(c); });
             return v;
         }
-        static char tolower(char v) { return scfx::str_util::tolower(v); }
-        static char toupper(char v) { return scfx::str_util::toupper(v); }
+        static char tolower(char v) { return teal::str_util::tolower(v); }
+        static char toupper(char v) { return teal::str_util::toupper(v); }
     };
 
     template<typename STR_T>

@@ -41,7 +41,7 @@
 #include <istream>
 #include <ostream>
 
-namespace scfx::file_util {
+namespace teal::file_util {
 
     template<typename T>
     struct native_path_separator;
@@ -91,7 +91,7 @@ namespace scfx::file_util {
 
     static std::string extract_file_ext(const std::string &file_name) {
 #if (__cplusplus < 201700L)
-        std::vector<std::string> tokens = scfx::str_util::str_tok<std::string>(file_name, ".");
+        std::vector<std::string> tokens = teal::str_util::str_tok<std::string>(file_name, ".");
         if(tokens.size() < 2) {
             return "";
         }
@@ -105,7 +105,7 @@ namespace scfx::file_util {
 
     static std::string extract_file_name(const std::string &path) {
 #if (__cplusplus < 201700L)
-        std::vector<std::string> tokens = scfx::str_util::str_tok<std::string>(path, native_path_separator<std::string>::val(), true);
+        std::vector<std::string> tokens = teal::str_util::str_tok<std::string>(path, native_path_separator<std::string>::val(), true);
         while(tokens.size() && tokens[tokens.size() - 1].empty()) {
             auto end_it{tokens.end()}; --end_it;
             tokens.erase(end_it);
@@ -122,7 +122,7 @@ namespace scfx::file_util {
 
     static std::string extract_file_dir(const std::string &path) {
 #if (__cplusplus < 201700L)
-        std::vector<std::string> tokens = scfx::str_util::str_tok<std::string>(path, native_path_separator<std::string>::val(), true);
+        std::vector<std::string> tokens = teal::str_util::str_tok<std::string>(path, native_path_separator<std::string>::val(), true);
         while(tokens.size() && tokens[tokens.size() - 1].empty()) {
             auto end_it{tokens.end()}; --end_it;
             tokens.erase(end_it);
@@ -548,7 +548,7 @@ namespace scfx::file_util {
 
     static std::string suffix_file_name_number(std::string const &fn, int num) {
         std::string tfn{fn};
-        std::string sn{scfx::str_util::itoa<std::string>(static_cast<std::int64_t>(num))};
+        std::string sn{teal::str_util::itoa<std::string>(static_cast<std::int64_t>(num))};
         auto dot_pos{tfn.find('.')};
         if(dot_pos != std::string::npos) {
             return tfn.substr(0, dot_pos) + "(" + sn + ")" + tfn.substr(dot_pos);
@@ -568,7 +568,7 @@ namespace scfx::file_util {
             const std::string &path,
             std::size_t fsize = static_cast<std::size_t>(0),
             kind k = kind::file,
-            scfx::timespec_wrapper mtime = {}
+            teal::timespec_wrapper mtime = {}
         ):
             path_{path},
             size_{fsize},
@@ -581,7 +581,7 @@ namespace scfx::file_util {
         void set_path(const std::string &fp) { path_ = fp; }
         const std::string &full_path() const { return path_; }
 
-        scfx::timespec_wrapper modify_time() const { return modify_time_; }
+        teal::timespec_wrapper modify_time() const { return modify_time_; }
         bool is_file() const { return kind_ == kind::file; }
         bool is_dir() const { return kind_ == kind::dir; }
         bool is_sym() const { return kind_ == kind::sym; }
@@ -591,7 +591,7 @@ namespace scfx::file_util {
         std::string path_;
         std::size_t size_{0};
         kind kind_{kind::none};
-        scfx::timespec_wrapper modify_time_{};
+        teal::timespec_wrapper modify_time_{};
     };
 
 #if (__cplusplus < 201700L)
@@ -695,7 +695,7 @@ namespace scfx::file_util {
                 auto tt{entry.last_write_time()};
                 std::stringstream ss{};
                 ss << tt << "+0";
-                scfx::timespec_wrapper mt{ss.str()};
+                teal::timespec_wrapper mt{ss.str()};
                 if(entry.is_regular_file()) {
                     if(!apply(dir_entry{entry.path().string(), entry.file_size(), dir_entry::kind::file, mt})) {
                         break;
@@ -711,7 +711,7 @@ namespace scfx::file_util {
                 auto tt{entry.last_write_time()};
                 std::stringstream ss{};
                 ss << tt << "+0";
-                scfx::timespec_wrapper mt{ss.str()};
+                teal::timespec_wrapper mt{ss.str()};
                 if(entry.is_regular_file()) {
                     if(!apply(dir_entry{entry.path().string(), entry.file_size(), dir_entry::kind::file, mt})) {
                         break;

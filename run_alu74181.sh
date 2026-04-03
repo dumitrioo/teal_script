@@ -1,1 +1,1 @@
-./bin/scaflux ./examples/alu74181.scfx ./bin/libray.so
+./bin/tealscript ./examples/alu74181.teal ./bin/libray.so

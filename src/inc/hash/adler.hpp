@@ -2,7 +2,7 @@
 
 #include "../commondefs.hpp"
 
-namespace scfx {
+namespace teal {
 
     static std::uint32_t adler32(void const *buf, std::size_t buflength) {
         std::uint32_t s1{1};

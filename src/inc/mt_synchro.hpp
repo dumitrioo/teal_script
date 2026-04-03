@@ -2,7 +2,7 @@
 
 #include "commondefs.hpp"
 
-namespace scfx::mt {
+namespace teal::mt {
 
     class atomic_spin_mutex {
     public:

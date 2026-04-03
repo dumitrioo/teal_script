@@ -6,22 +6,22 @@ CONFIG   -= app_bundle
 TEMPLATE = app
 
 ###############################################################################
-# DEFINES += SINGLE_THREADED_SCFX
-# DEFINES += SCFX_DEBUGGING
+# DEFINES += SINGLE_THREADED_TEAL
+# DEFINES += TEAL_DEBUGGING
 ###############################################################################
 
 ###############################################################################
-# DEFINES += SCFX_USE_ASYNC_CONSOLE
+# DEFINES += TEAL_USE_ASYNC_CONSOLE
 ###############################################################################
 
 ###############################################################################
-# DEFINES += SCFX_USE_CUSTOM_MUTEX
+# DEFINES += TEAL_USE_CUSTOM_MUTEX
 DEFINES += MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING
 DEFINES += MUTEX_ATOMIC_SM_SLEEP_NANOS=100000
 ###############################################################################
 
 ###############################################################################
-# DEFINES += SCFX_USE_CUSTOM_SHARED_MUTEX
+# DEFINES += TEAL_USE_CUSTOM_SHARED_MUTEX
 DEFINES += RW_MUTEX_PRIORITIES
 # DEFINES += RW_MUTEX_UPGRADEABLE
 DEFINES += RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING
@@ -33,7 +33,7 @@ DEFINES += USE_FILE_MAGIC
 ###############################################################################
 
 ###############################################################################
-DEFINES += SCFX_USE_EMHASH8_MAP
+DEFINES += TEAL_USE_EMHASH8_MAP
 ###############################################################################
 
 ###############################################################################
@@ -72,6 +72,7 @@ HEADERS += \
     ../../src/inc/file_util.hpp \
     ../../src/inc/fsm_tokenizer.hpp \
     ../../src/inc/hash/adler.hpp \
+    ../../src/inc/hash/crc.hpp \
     ../../src/inc/hash/hash.hpp \
     ../../src/inc/json.hpp \
     ../../src/inc/lzari.hpp \
@@ -95,18 +96,18 @@ HEADERS += \
     ../../src/ext/math_ext.hpp \
     ../../src/ext/rand_ext.hpp \
     ../../src/ext/time_ext.hpp \
-    ../../src/scaflux_cells.hpp \
-    ../../src/scaflux_codegen.hpp \
-    ../../src/scaflux_exec_ctx.hpp \
-    ../../src/scaflux_expr.hpp \
-    ../../src/scaflux_interfaces.hpp \
-    ../../src/scaflux_lexer.hpp \
-    ../../src/scaflux_parser.hpp \
-    ../../src/scaflux_runtime.hpp \
-    ../../src/scaflux_statement.hpp \
-    ../../src/scaflux_token.hpp \
-    ../../src/scaflux_util.hpp \
-    ../../src/scaflux_value.hpp \
+    ../../src/tealscript_cells.hpp \
+    ../../src/tealscript_codegen.hpp \
+    ../../src/tealscript_exec_ctx.hpp \
+    ../../src/tealscript_expr.hpp \
+    ../../src/tealscript_interfaces.hpp \
+    ../../src/tealscript_lexer.hpp \
+    ../../src/tealscript_parser.hpp \
+    ../../src/tealscript_runtime.hpp \
+    ../../src/tealscript_statement.hpp \
+    ../../src/tealscript_token.hpp \
+    ../../src/tealscript_util.hpp \
+    ../../src/tealscript_value.hpp \
     optext/ray_ext.hpp \
     optext/zmq_ext.hpp
 
@@ -122,18 +123,18 @@ LIBS += -lz
 LIBS += -lmagic
 
 DISTFILES += \
-    ../alu74181.scfx \
-    ../array_buffer_test.scfx \
-    ../draft.scfx \
-    ../ex_cli.scfx \
-    ../ex_srv.scfx \
-    ../example.scfx \
+    ../alu74181.teal \
+    ../array_buffer_test.teal \
+    ../draft.teal \
+    ../ex_cli.teal \
+    ../ex_srv.teal \
     ../alu74181.png \
-    ../extending_example.scfx \
-    ../one_second_limit.scfx \
-    ../pid_regulator.scfx \
-    ../quad_eq.scfx \
-    ../sockets_server.scfx \
-    ../tbbt_2cola.scfx \
-    ../tests.scfx \
-    ../unix_socket.scfx
+    ../example.teal \
+    ../extending_example.teal \
+    ../one_second_limit.teal \
+    ../pid_regulator.teal \
+    ../quad_eq.teal \
+    ../sockets_server.teal \
+    ../tbbt_2cola.teal \
+    ../tests.teal \
+    ../unix_socket.teal

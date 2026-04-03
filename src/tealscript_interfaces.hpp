@@ -3,10 +3,10 @@
 #include "inc/commondefs.hpp"
 #include "inc/emhash/hash_set8.hpp"
 
-#include "scaflux_util.hpp"
-#include "scaflux_value.hpp"
+#include "tealscript_util.hpp"
+#include "tealscript_value.hpp"
 
-namespace scfx {
+namespace teal {
 
     class runtime_interface {
     public:
@@ -42,5 +42,5 @@ namespace scfx {
 
 }
 
-extern "C" scfx::extension_interface *create_scfx_extension();
-extern "C" void remove_scfx_extension(scfx::extension_interface *);
+extern "C" teal::extension_interface *create_teal_extension();
+extern "C" void remove_teal_extension(teal::extension_interface *);

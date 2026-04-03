@@ -4,11 +4,11 @@
 #include "../inc/crypto/sha256.hpp"
 #include "../inc/crypto/sha512.hpp"
 
-#include "../scaflux_value.hpp"
-#include "../scaflux_util.hpp"
-#include "../scaflux_interfaces.hpp"
+#include "../tealscript_value.hpp"
+#include "../tealscript_util.hpp"
+#include "../tealscript_interfaces.hpp"
 
-namespace scfx {
+namespace teal {
 
     class crypto_ext: public extension_interface {
     public:
@@ -30,21 +30,21 @@ namespace scfx {
             if(rt_ == nullptr) {
                 return;
             }
-            rt->add_function("sha256", SCFXFUN(args) {
+            rt->add_function("sha256", TEALFUN(args) {
                 if(args.size() == 1) {
                     std::string s{args[0].cast_to_string()};
-                    std::array<std::uint8_t, scfx::crypt::sha256::DIGEST_SIZE> h{scfx::crypt::sha256sum(s.data(), s.size())};
-                    return scfx::valbox{std::string{h.begin(), h.end()}};
+                    std::array<std::uint8_t, teal::crypt::sha256::DIGEST_SIZE> h{teal::crypt::sha256sum(s.data(), s.size())};
+                    return teal::valbox{std::string{h.begin(), h.end()}};
                 }
-                return scfx::valbox{std::string{}};
+                return teal::valbox{std::string{}};
             });
-            rt->add_function("sha512", SCFXFUN(args) {
+            rt->add_function("sha512", TEALFUN(args) {
                 if(args.size() == 1) {
                     std::string s{args[0].cast_to_string()};
-                    std::array<std::uint8_t, scfx::crypt::sha512::digest_size()> h{scfx::crypt::sha512sum(s.data(), s.size())};
-                    return scfx::valbox{std::string{h.begin(), h.end()}};
+                    std::array<std::uint8_t, teal::crypt::sha512::digest_size()> h{teal::crypt::sha512sum(s.data(), s.size())};
+                    return teal::valbox{std::string{h.begin(), h.end()}};
                 }
-                return scfx::valbox{std::string{}};
+                return teal::valbox{std::string{}};
             });
         }
 

@@ -4,7 +4,7 @@
 #include "sys_util.hpp"
 #include "bit_util.hpp"
 
-namespace scfx {
+namespace teal {
 
     class serializer;
     class serial_reader;
@@ -127,7 +127,7 @@ namespace scfx {
             first |= first >> 1;
             first |= first >> 2;
             first |= first >> 4;
-            return 9 - scfx::bit_util::num_of_set_bits(first);
+            return 9 - teal::bit_util::num_of_set_bits(first);
         }
 
         static std::uint64_t m_to_n(std::uint8_t const *mbuf, std::uint64_t *increment) {
@@ -295,8 +295,8 @@ namespace scfx {
 
 
         class size_surrounded_buffer final {
-            friend class scfx::serializer;
-            friend class scfx::serial_reader;
+            friend class teal::serializer;
+            friend class teal::serial_reader;
             friend class serialized_data_iter;
 
         public:
@@ -394,14 +394,14 @@ namespace scfx {
                 }
             }
 
-            scfx::bytevec as_bytevec() const {
+            teal::bytevec as_bytevec() const {
                 if(size()) {
-                    return scfx::bytevec{
+                    return teal::bytevec{
                         reinterpret_cast<std::uint8_t const *>(data()),
                         reinterpret_cast<std::uint8_t const *>(data()) + size()
                     };
                 } else {
-                    return scfx::bytevec{};
+                    return teal::bytevec{};
                 }
             }
 
@@ -433,7 +433,7 @@ namespace scfx {
             void set_sizes(size_type s) {
                 unumber_to_mem(s, buffer_start());
                 unumber_to_mem(s, reinterpret_cast<std::uint8_t *>(data()) + s);
-                scfx::bit_util::inplace_swap(reinterpret_cast<std::uint8_t *>(data()) + s, size_size());
+                teal::bit_util::inplace_swap(reinterpret_cast<std::uint8_t *>(data()) + s, size_size());
             }
 
             void set_data(void const *d, size_type s) {
@@ -467,7 +467,7 @@ namespace scfx {
                                 std::uint8_t const *bs_ptr{b + ss + s};
                                 if(ss > 1) { std::memcpy(buff, bs_ptr, ss); } else { buff[0] = *bs_ptr; }
                                 std::uint64_t bs{};
-                                if(ss > 1) { scfx::bit_util::inplace_swap(buff, ss); }
+                                if(ss > 1) { teal::bit_util::inplace_swap(buff, ss); }
                                 mem_to_unumber(buff, bs);
                                 if(bs == s) {
                                     return true;
@@ -487,7 +487,7 @@ namespace scfx {
 
                 std::uint8_t buff[16];
                 std::memcpy(buff, prev_last_size_ptr, prev_size_size);
-                scfx::bit_util::inplace_swap(buff, prev_size_size);
+                teal::bit_util::inplace_swap(buff, prev_size_size);
 
                 std::uint64_t prev_size{0};
                 mem_to_unumber(buff, prev_size);
@@ -674,36 +674,36 @@ namespace scfx {
 
         serializer(void const *data, size_type size) {
             if(data && size) {
-                serialized_data_ = scfx::bytevec{
+                serialized_data_ = teal::bytevec{
                     reinterpret_cast<std::uint8_t const *>(data),
                     reinterpret_cast<std::uint8_t const *>(data) + size
                 };
             }
         }
 
-        serializer(scfx::bytevec const &data):
+        serializer(teal::bytevec const &data):
             serialized_data_{data} {
         }
 
-        serializer(scfx::bytevec &&data):
+        serializer(teal::bytevec &&data):
             serialized_data_{std::move(data)} {
         }
 
-        serializer &operator=(scfx::bytevec const &data) {
+        serializer &operator=(teal::bytevec const &data) {
             serialized_data_ = data;
             return *this;
         }
 
-        serializer &operator=(scfx::bytevec &&data) {
+        serializer &operator=(teal::bytevec &&data) {
             serialized_data_ = std::move(data);
             return *this;
         }
 
-        scfx::bytevec const &data_vec() const & {
+        teal::bytevec const &data_vec() const & {
             return serialized_data_;
         }
 
-        scfx::bytevec take_vec() {
+        teal::bytevec take_vec() {
             return std::move(serialized_data_);
         }
 
@@ -762,7 +762,7 @@ namespace scfx {
             push_back(str, (::wcslen(str)) * sizeof(wchar_t));
         }
 
-        void push_back(scfx::bytevec const &vec) {
+        void push_back(teal::bytevec const &vec) {
             push_back(vec.data(), vec.size());
         }
 
@@ -884,7 +884,7 @@ namespace scfx {
             return *this;
         }
 
-        serializer &operator<<(scfx::bytevec const &vec) {
+        serializer &operator<<(teal::bytevec const &vec) {
             push_back(vec);
             return *this;
         }
@@ -896,7 +896,7 @@ namespace scfx {
         }
 
     private:
-        scfx::bytevec serialized_data_{};
+        teal::bytevec serialized_data_{};
     };
 
 
@@ -914,7 +914,7 @@ namespace scfx {
         {
         }
 
-        serial_reader(scfx::bytevec const &data):
+        serial_reader(teal::bytevec const &data):
             data_{reinterpret_cast<std::uint8_t const *>(data.data())},
             data_size_{data.size()}
         {

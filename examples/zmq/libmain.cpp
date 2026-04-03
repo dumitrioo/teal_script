@@ -1,8 +1,8 @@
-#include "../../src/scaflux_interfaces.hpp"
+#include "../../src/tealscript_interfaces.hpp"
 
 #include <zmq.h>
 
-class zmq_ext: public scfx::extension_interface {
+class zmq_ext: public teal::extension_interface {
 public:
     zmq_ext() = default;
     zmq_ext(zmq_ext const &) = delete;
@@ -11,7 +11,7 @@ public:
     zmq_ext&operator=(zmq_ext &&) = delete;
     ~zmq_ext() = default;
 
-    void register_runtime(scfx::runtime_interface *rt) override {
+    void register_runtime(teal::runtime_interface *rt) override {
         std::unique_lock l{rt_mtp_};
         if(rt_ != nullptr) {
             return;
@@ -252,27 +252,27 @@ public:
         rt->add_var("ZMQ_PROTOCOL_ERROR_WS_UNSPECIFIED", ZMQ_PROTOCOL_ERROR_WS_UNSPECIFIED);
 
 
-        rt->add_function("zmq_errno", SCFXFUN() { return zmq_errno(); });
-        rt->add_function("zmq_errstr", SCFXFUN() { return zmq_strerror(zmq_errno()); });
-        rt->add_function("zmq_err_to_str", SCFXFUN(args) { return zmq_strerror(args[0].cast_num_to_num<int>()); });
-        rt->add_function("zmq_ctx_new", SCFXFUN() { return zmq_ctx_new(); });
-        rt->add_function("zmq_ctx_term", SCFXFUN(args) { return zmq_ctx_term(args[0].as_ptr()); });
-        rt->add_function("zmq_ctx_shutdown", SCFXFUN(args) { return zmq_ctx_shutdown(args[0].as_ptr()); });
-        rt->add_function("zmq_ctx_set", SCFXFUN(args) { return zmq_ctx_set(args[0].as_ptr(), args[1].cast_num_to_num<int>(), args[2].cast_num_to_num<int>()); });
-        rt->add_function("zmq_ctx_get", SCFXFUN(args) { return zmq_ctx_get(args[0].as_ptr(), args[1].cast_num_to_num<int>()); });
-        rt->add_function("zmq_socket", SCFXFUN(args) { return zmq_socket(args[0].as_ptr(), args[1].cast_num_to_num<int>()); });
-        rt->add_function("zmq_bind", SCFXFUN(args) { return zmq_bind(args[0].as_ptr(), args[1].cast_to_string().c_str()); });
-        rt->add_function("zmq_connect", SCFXFUN(args) { return zmq_connect(args[0].as_ptr(), args[1].cast_to_string().c_str()); });
+        rt->add_function("zmq_errno", TEALFUN() { return zmq_errno(); });
+        rt->add_function("zmq_errstr", TEALFUN() { return zmq_strerror(zmq_errno()); });
+        rt->add_function("zmq_err_to_str", TEALFUN(args) { return zmq_strerror(args[0].cast_num_to_num<int>()); });
+        rt->add_function("zmq_ctx_new", TEALFUN() { return zmq_ctx_new(); });
+        rt->add_function("zmq_ctx_term", TEALFUN(args) { return zmq_ctx_term(args[0].as_ptr()); });
+        rt->add_function("zmq_ctx_shutdown", TEALFUN(args) { return zmq_ctx_shutdown(args[0].as_ptr()); });
+        rt->add_function("zmq_ctx_set", TEALFUN(args) { return zmq_ctx_set(args[0].as_ptr(), args[1].cast_num_to_num<int>(), args[2].cast_num_to_num<int>()); });
+        rt->add_function("zmq_ctx_get", TEALFUN(args) { return zmq_ctx_get(args[0].as_ptr(), args[1].cast_num_to_num<int>()); });
+        rt->add_function("zmq_socket", TEALFUN(args) { return zmq_socket(args[0].as_ptr(), args[1].cast_num_to_num<int>()); });
+        rt->add_function("zmq_bind", TEALFUN(args) { return zmq_bind(args[0].as_ptr(), args[1].cast_to_string().c_str()); });
+        rt->add_function("zmq_connect", TEALFUN(args) { return zmq_connect(args[0].as_ptr(), args[1].cast_to_string().c_str()); });
 
-        rt->add_function("zmq_setsockopt", SCFXFUN(args) {
-            SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 3, 3)
+        rt->add_function("zmq_setsockopt", TEALFUN(args) {
+            TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 3, 3)
             int opt{args[1].cast_num_to_num<int>()};
             auto d{args[2].cast_to_byte_array()};
             return zmq_setsockopt(args[0].as_ptr(), opt, d.data(), d.size());
         });
 
-        rt->add_function("zmq_z85_encode", SCFXFUN(args) {
-            SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 1)
+        rt->add_function("zmq_z85_encode", TEALFUN(args) {
+            TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 1)
             auto src{args[0].cast_to_byte_array()};
             if(src.empty()) {
                 return std::string{};
@@ -283,8 +283,8 @@ public:
             return std::string{(char *)dst.data()};
         });
 
-        rt->add_function("zmq_z85_decode", SCFXFUN(args) {
-            SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 1)
+        rt->add_function("zmq_z85_decode", TEALFUN(args) {
+            TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 1)
             auto src{args[0].cast_to_string()};
             if(src.empty()) {
                 return std::vector<std::uint8_t>{};
@@ -295,8 +295,8 @@ public:
             return dst;
         });
 
-        rt->add_function("zmq_send", SCFXFUN(args) {
-            SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 2, 3)
+        rt->add_function("zmq_send", TEALFUN(args) {
+            TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 2, 3)
             std::vector<std::uint8_t> buf{args[1].cast_to_byte_array()};
             if(args.size() == 3) {
                 return zmq_send(args[0].as_ptr(), buf.data(), buf.size(), args[2].cast_num_to_num<int>());
@@ -304,13 +304,13 @@ public:
                 return zmq_send(args[0].as_ptr(), buf.data(), buf.size(), 0);
             }
         });
-        rt->add_function("zmq_send_more", SCFXFUN(args) {
-            SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 2, 2)
+        rt->add_function("zmq_send_more", TEALFUN(args) {
+            TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 2, 2)
             std::vector<std::uint8_t> buf{args[1].cast_to_byte_array()};
             return zmq_send(args[0].as_ptr(), buf.data(), buf.size(), ZMQ_MORE);
         });
-        rt->add_function("zmq_recv", SCFXFUN(args) {
-            SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 3)
+        rt->add_function("zmq_recv", TEALFUN(args) {
+            TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 3)
             int nrd{0};
             std::vector<std::uint8_t> buf{};
             if(args.size() > 1) {
@@ -582,14 +582,14 @@ public:
     }
 
 private:
-    scfx::shared_mutex rt_mtp_{};
-    scfx::runtime_interface *rt_{nullptr};
+    teal::shared_mutex rt_mtp_{};
+    teal::runtime_interface *rt_{nullptr};
 };
 
-scfx::extension_interface *create_scfx_extension() {
+teal::extension_interface *create_teal_extension() {
     static zmq_ext extinst{};
     return &extinst;
 }
 
-void remove_scfx_extension(scfx::extension_interface *) {
+void remove_teal_extension(teal::extension_interface *) {
 }

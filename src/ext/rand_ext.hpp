@@ -2,11 +2,11 @@
 
 #include "../inc/commondefs.hpp"
 
-#include "../scaflux_value.hpp"
-#include "../scaflux_util.hpp"
-#include "../scaflux_interfaces.hpp"
+#include "../tealscript_value.hpp"
+#include "../tealscript_util.hpp"
+#include "../tealscript_interfaces.hpp"
 
-namespace scfx {
+namespace teal {
 
     class rand_ext: public extension_interface {
         template<typename T>
@@ -43,26 +43,26 @@ namespace scfx {
             if(rt_ == nullptr) {
                 return;
             }
-            rt->add_function("normal_dist_prng", SCFXFUN(args) {
+            rt->add_function("normal_dist_prng", TEALFUN(args) {
                 if(args.size() == 1) {
-                    return scfx::valbox{std::make_shared<norm_dist_gen<long double>>(args[0].cast_to_long_double()), "normal_dist_prng"};
+                    return teal::valbox{std::make_shared<norm_dist_gen<long double>>(args[0].cast_to_long_double()), "normal_dist_prng"};
                 } else if(args.size() == 2) {
-                    return scfx::valbox{std::make_shared<norm_dist_gen<long double>>(args[0].cast_to_long_double(), args[1].cast_to_long_double()), "normal_dist_prng"};
+                    return teal::valbox{std::make_shared<norm_dist_gen<long double>>(args[0].cast_to_long_double(), args[1].cast_to_long_double()), "normal_dist_prng"};
                 }
-                return scfx::valbox{std::make_shared<norm_dist_gen<long double>>(), "normal_dist_prng"};
+                return teal::valbox{std::make_shared<norm_dist_gen<long double>>(), "normal_dist_prng"};
             });
-            rt->add_method("normal_dist_prng", "gen", SCFXFUN(args) {
+            rt->add_method("normal_dist_prng", "gen", TEALFUN(args) {
                 if(args.size() == 1) {
-                    return SCFXTHIS(args, std::shared_ptr<norm_dist_gen<long double>>)->gen();
+                    return TEALTHIS(args, std::shared_ptr<norm_dist_gen<long double>>)->gen();
                 }
                 return static_cast<long double>(0);
             });
-            rt->add_function("rand", SCFXFUN() { return ud_(dre_); });
-            rt->add_function("hwrand", SCFXFUN() { return ud_(rd_); });
-            rt->add_function("randf", SCFXFUN() { return urd_(dre_); });
-            rt->add_function("hwrandf", SCFXFUN() { return urd_(rd_); });
-            rt->add_function("frand", SCFXFUN() { return urd_(dre_); });
-            rt->add_function("hw_frand", SCFXFUN() { return urd_(rd_); });
+            rt->add_function("rand", TEALFUN() { return ud_(dre_); });
+            rt->add_function("hwrand", TEALFUN() { return ud_(rd_); });
+            rt->add_function("randf", TEALFUN() { return urd_(dre_); });
+            rt->add_function("hwrandf", TEALFUN() { return urd_(rd_); });
+            rt->add_function("frand", TEALFUN() { return urd_(dre_); });
+            rt->add_function("hw_frand", TEALFUN() { return urd_(rd_); });
         }
 
         void unregister_runtime() override {

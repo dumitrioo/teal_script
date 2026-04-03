@@ -1,1 +1,1 @@
-./bin/scaflux ./bin/libfractal.so ./examples/fractal/fractal.scfx
+./bin/tealscript ./bin/libfractal.so ./examples/fractal/fractal.teal

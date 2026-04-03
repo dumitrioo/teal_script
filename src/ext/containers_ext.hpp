@@ -4,11 +4,11 @@
 #include "../inc/sequence_generator.hpp"
 #include "../inc/str_util.hpp"
 
-#include "../scaflux_value.hpp"
-#include "../scaflux_util.hpp"
-#include "../scaflux_interfaces.hpp"
+#include "../tealscript_value.hpp"
+#include "../tealscript_util.hpp"
+#include "../tealscript_interfaces.hpp"
 
-namespace scfx {
+namespace teal {
 
     class containers_ext: public extension_interface {
     public:
@@ -30,37 +30,37 @@ namespace scfx {
             if(rt_ == nullptr) {
                 return;
             }
-            rt_->add_function("dictionary", SCFXFUN() {
+            rt_->add_function("dictionary", TEALFUN() {
                 return valbox{std::make_shared<dictionary>(), "dictionary"};
             });
-            rt_->add_method("dictionary", "put", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 3)
-                return SCFXTHIS(args, std::shared_ptr<dictionary>)->put(args[1], args[2]);
+            rt_->add_method("dictionary", "put", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 3)
+                return TEALTHIS(args, std::shared_ptr<dictionary>)->put(args[1], args[2]);
             });
-            rt_->add_method("dictionary", "key_exists", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                return SCFXTHIS(args, std::shared_ptr<dictionary>)->key_exists(args[1]);
+            rt_->add_method("dictionary", "key_exists", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                return TEALTHIS(args, std::shared_ptr<dictionary>)->key_exists(args[1]);
             });
-            rt_->add_method("dictionary", "list_keys", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                return SCFXTHIS(args, std::shared_ptr<dictionary>)->list_keys();
+            rt_->add_method("dictionary", "list_keys", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                return TEALTHIS(args, std::shared_ptr<dictionary>)->list_keys();
             });
-            rt_->add_method("dictionary", "at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                return SCFXTHIS(args, std::shared_ptr<dictionary>)->at(args[1]);
+            rt_->add_method("dictionary", "at", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                return TEALTHIS(args, std::shared_ptr<dictionary>)->at(args[1]);
             });
-            rt_->add_method("dictionary", "erase", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                return SCFXTHIS(args, std::shared_ptr<dictionary>)->erase(args[1]);
+            rt_->add_method("dictionary", "erase", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                return TEALTHIS(args, std::shared_ptr<dictionary>)->erase(args[1]);
             });
-            rt_->add_method("dictionary", "clear", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                SCFXTHIS(args, std::shared_ptr<dictionary>)->clear();
+            rt_->add_method("dictionary", "clear", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                TEALTHIS(args, std::shared_ptr<dictionary>)->clear();
                 return 0;
             });
-            rt_->add_method("dictionary", "size", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                return SCFXTHIS(args, std::shared_ptr<dictionary>)->size();
+            rt_->add_method("dictionary", "size", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                return TEALTHIS(args, std::shared_ptr<dictionary>)->size();
             });
 
 
@@ -68,54 +68,54 @@ namespace scfx {
 
 
 
-            rt_->add_function("queue", SCFXFUN() {
+            rt_->add_function("queue", TEALFUN() {
                 return valbox{std::make_shared<queue>(), "queue"};
             });
-            rt_->add_method("queue", "push_front", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                SCFXTHIS(args, std::shared_ptr<queue>)->push_front(args[1]);
+            rt_->add_method("queue", "push_front", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                TEALTHIS(args, std::shared_ptr<queue>)->push_front(args[1]);
                 return args[1];
             });
-            rt_->add_method("queue", "push_back", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                SCFXTHIS(args, std::shared_ptr<queue>)->push_back(args[1]);
+            rt_->add_method("queue", "push_back", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                TEALTHIS(args, std::shared_ptr<queue>)->push_back(args[1]);
                 return args[1];
             });
-            rt_->add_method("queue", "pop_front", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                return SCFXTHIS(args, std::shared_ptr<queue>)->pop_front();
+            rt_->add_method("queue", "pop_front", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                return TEALTHIS(args, std::shared_ptr<queue>)->pop_front();
             });
-            rt_->add_method("queue", "pop_back", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                return SCFXTHIS(args, std::shared_ptr<queue>)->pop_back();
+            rt_->add_method("queue", "pop_back", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                return TEALTHIS(args, std::shared_ptr<queue>)->pop_back();
             });
-            rt_->add_method("queue", "at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                return SCFXTHIS(args, std::shared_ptr<queue>)->at(args[1].cast_to_size_t());
+            rt_->add_method("queue", "at", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                return TEALTHIS(args, std::shared_ptr<queue>)->at(args[1].cast_to_size_t());
             });
-            rt_->add_method("queue", "erase", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                return SCFXTHIS(args, std::shared_ptr<queue>)->erase(args[1].cast_to_size_t());
+            rt_->add_method("queue", "erase", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                return TEALTHIS(args, std::shared_ptr<queue>)->erase(args[1].cast_to_size_t());
             });
-            rt_->add_method("queue", "clear", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                return SCFXTHIS(args, std::shared_ptr<queue>)->clear();
+            rt_->add_method("queue", "clear", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                return TEALTHIS(args, std::shared_ptr<queue>)->clear();
             });
 
 
-            rt_->add_function("sequence_generator", SCFXFUN() {
+            rt_->add_function("sequence_generator", TEALFUN() {
                 return valbox{std::make_shared<atomic_sequence_generator<uint64_t>>(), "sequence_generator"};
             });
-            rt_->add_method("sequence_generator", "reset", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2)
+            rt_->add_method("sequence_generator", "reset", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2)
                 if(args.size() == 2) {
-                    SCFXTHIS(args, std::shared_ptr<atomic_sequence_generator<uint64_t>>)->reset(args[1].cast_to_u64());
+                    TEALTHIS(args, std::shared_ptr<atomic_sequence_generator<uint64_t>>)->reset(args[1].cast_to_u64());
                 }
                 return args[1];
             });
-            rt_->add_method("sequence_generator", "next", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                return SCFXTHIS(args, std::shared_ptr<atomic_sequence_generator<uint64_t>>)->next();
+            rt_->add_method("sequence_generator", "next", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                return TEALTHIS(args, std::shared_ptr<atomic_sequence_generator<uint64_t>>)->next();
             });
 
         }

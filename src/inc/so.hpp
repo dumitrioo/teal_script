@@ -2,7 +2,7 @@
 
 #include "commondefs.hpp"
 
-namespace scfx {
+namespace teal {
 
     class so {
     public:

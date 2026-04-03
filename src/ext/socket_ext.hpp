@@ -5,11 +5,11 @@
 #include "../inc/net/socket_wrapper.hpp"
 #include "../inc/net/socket_poller.hpp"
 
-#include "../scaflux_value.hpp"
-#include "../scaflux_util.hpp"
-#include "../scaflux_interfaces.hpp"
+#include "../tealscript_value.hpp"
+#include "../tealscript_util.hpp"
+#include "../tealscript_interfaces.hpp"
 
-namespace scfx {
+namespace teal {
 
     class socket_ext: public extension_interface {
     public:
@@ -32,267 +32,267 @@ namespace scfx {
                 return;
             }
 
-            rt->add_var("address_family_inet4", static_cast<int>(scfx::net::address_family::inet4));
-            rt->add_var("address_family_inet6", static_cast<int>(scfx::net::address_family::inet6));
+            rt->add_var("address_family_inet4", static_cast<int>(teal::net::address_family::inet4));
+            rt->add_var("address_family_inet6", static_cast<int>(teal::net::address_family::inet6));
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
-            rt->add_var("address_family_unix", static_cast<int>(scfx::net::address_family::unix_socket));
+            rt->add_var("address_family_unix", static_cast<int>(teal::net::address_family::unix_socket));
 #endif
-            rt->add_var("sock_stream", static_cast<int>(scfx::net::sock_type::stream));
-            rt->add_var("sock_dgram", static_cast<int>(scfx::net::sock_type::dgram));
-            rt->add_var("sock_raw", static_cast<int>(scfx::net::sock_type::raw));
-            rt->add_var("sock_rdm", static_cast<int>(scfx::net::sock_type::rdm));
-            rt->add_var("sock_seqpacket", static_cast<int>(scfx::net::sock_type::seqpacket));
-            rt->add_var("sock_dccp", static_cast<int>(scfx::net::sock_type::dccp));
-            rt->add_var("sock_packet", static_cast<int>(scfx::net::sock_type::packet));
-            rt->add_var("sock_cloexec", static_cast<int>(scfx::net::sock_type::cloexec));
-            rt->add_var("sock_nonblock", static_cast<int>(scfx::net::sock_type::nonblock));
+            rt->add_var("sock_stream", static_cast<int>(teal::net::sock_type::stream));
+            rt->add_var("sock_dgram", static_cast<int>(teal::net::sock_type::dgram));
+            rt->add_var("sock_raw", static_cast<int>(teal::net::sock_type::raw));
+            rt->add_var("sock_rdm", static_cast<int>(teal::net::sock_type::rdm));
+            rt->add_var("sock_seqpacket", static_cast<int>(teal::net::sock_type::seqpacket));
+            rt->add_var("sock_dccp", static_cast<int>(teal::net::sock_type::dccp));
+            rt->add_var("sock_packet", static_cast<int>(teal::net::sock_type::packet));
+            rt->add_var("sock_cloexec", static_cast<int>(teal::net::sock_type::cloexec));
+            rt->add_var("sock_nonblock", static_cast<int>(teal::net::sock_type::nonblock));
 
-            rt->add_function("socket", SCFXFUN() {
-                return valbox{std::make_shared<scfx::net::socket>(), "socket"};
+            rt->add_function("socket", TEALFUN() {
+                return valbox{std::make_shared<teal::net::socket>(), "socket"};
             });
-            rt->add_method("socket", "create", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 4)
+            rt->add_method("socket", "create", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 4)
                 if(args.size() == 1) {
-                    return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->create();
+                    return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->create();
                 } else if(args.size() == 2) {
-                    return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->create(
-                        static_cast<scfx::net::address_family>(args[1].cast_to_int())
+                    return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->create(
+                        static_cast<teal::net::address_family>(args[1].cast_to_int())
                     );
                 } else if(args.size() == 3) {
-                    return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->create(
-                        static_cast<scfx::net::address_family>(args[1].cast_to_int()),
-                        static_cast<scfx::net::sock_type>(args[2].cast_to_int())
+                    return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->create(
+                        static_cast<teal::net::address_family>(args[1].cast_to_int()),
+                        static_cast<teal::net::sock_type>(args[2].cast_to_int())
                     );
                 } else if(args.size() == 4) {
-                    return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->create(
-                        static_cast<scfx::net::address_family>(args[1].cast_to_int()),
-                        static_cast<scfx::net::sock_type>(args[2].cast_to_int()),
+                    return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->create(
+                        static_cast<teal::net::address_family>(args[1].cast_to_int()),
+                        static_cast<teal::net::sock_type>(args[2].cast_to_int()),
                         args[3].cast_to_int()
                     );
                 }
                 return false;
             });
-            rt->add_method("socket", "bind", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 2, 3)
+            rt->add_method("socket", "bind", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 2, 3)
                 if(args.size() == 3) {
-                    return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->bind(args[1].cast_to_string(), args[2].cast_to_u16());
+                    return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->bind(args[1].cast_to_string(), args[2].cast_to_u16());
                 }
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->bind(args[1].cast_to_string(), 0);
+                return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->bind(args[1].cast_to_string(), 0);
             });
-            rt->add_method("socket", "listen", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2)
+            rt->add_method("socket", "listen", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2)
                 if(args.size() == 1) {
-                    return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->listen();
+                    return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->listen();
                 }
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->listen(args[1].cast_to_s32());
+                return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->listen(args[1].cast_to_s32());
             });
-            rt->add_method("socket", "accept", SCFXFUN(args) {
-                std::shared_ptr<scfx::net::socket> client_sock{std::make_shared<scfx::net::socket>()};
-                SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->accept(*client_sock);
+            rt->add_method("socket", "accept", TEALFUN(args) {
+                std::shared_ptr<teal::net::socket> client_sock{std::make_shared<teal::net::socket>()};
+                TEALTHIS(args, std::shared_ptr<teal::net::socket>)->accept(*client_sock);
                 return valbox{client_sock, "socket"};
             });
-            rt->add_method("socket", "connect", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 2, 3)
+            rt->add_method("socket", "connect", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 2, 3)
                 if(args.size() == 3) {
-                    return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->connect(args[1].cast_to_string(), args[2].cast_to_u16());
+                    return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->connect(args[1].cast_to_string(), args[2].cast_to_u16());
                 }
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->connect(args[1].cast_to_string(), 0);
+                return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->connect(args[1].cast_to_string(), 0);
             });
-            rt->add_method("socket", "receive", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                auto vec{SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->receive(args[1].cast_to_s32())};
+            rt->add_method("socket", "receive", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                auto vec{TEALTHIS(args, std::shared_ptr<teal::net::socket>)->receive(args[1].cast_to_s32())};
                 return std::string{vec.begin(), vec.end()};
             });
-            rt->add_method("socket", "send", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_GE(args, 2)
+            rt->add_method("socket", "send", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_GE(args, 2)
                 auto data{args[1].cast_to_byte_array()};
                 if(args.size() == 2) {
-                    return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->send(data.data(), data.size());
+                    return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->send(data.data(), data.size());
                 } else if(args.size() >= 3) {
-                    return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->send(data.data(), data.size(), args[2].cast_to_s32());
+                    return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->send(data.data(), data.size(), args[2].cast_to_s32());
                 }
                 return 0;
             });
-            rt->add_method("socket", "write", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+            rt->add_method("socket", "write", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 auto data{args[1].cast_to_byte_array()};
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->write(data.data(), data.size());
+                return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->write(data.data(), data.size());
             });
-            rt->add_method("socket", "close", SCFXFUN(args) {
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->close();
+            rt->add_method("socket", "close", TEALFUN(args) {
+                return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->close();
             });
-            rt->add_method("socket", "shutdown", SCFXFUN(args) {
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->shutdown();
+            rt->add_method("socket", "shutdown", TEALFUN(args) {
+                return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->shutdown();
             });
-            rt->add_method("socket", "handle", SCFXFUN(args) {
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->handle();
+            rt->add_method("socket", "handle", TEALFUN(args) {
+                return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->handle();
             });
-            rt->add_method("socket", "make_nonblocking", SCFXFUN(args) {
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->make_nonblocking();
+            rt->add_method("socket", "make_nonblocking", TEALFUN(args) {
+                return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->make_nonblocking();
             });
-            rt->add_method("socket", "set_reuse_addr", SCFXFUN(args) {
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->set_reuse_addr();
+            rt->add_method("socket", "set_reuse_addr", TEALFUN(args) {
+                return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->set_reuse_addr();
             });
-            rt->add_method("socket", "make_nodelay", SCFXFUN(args) {
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->make_nodelay();
+            rt->add_method("socket", "make_nodelay", TEALFUN(args) {
+                return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->make_nodelay();
             });
-            rt->add_method("socket", "cork", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->cork(args[1].cast_to_bool());
+            rt->add_method("socket", "cork", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->cork(args[1].cast_to_bool());
             });
-            rt->add_method("socket", "make_nosigpipe", SCFXFUN(args) {
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->make_nosigpipe();
+            rt->add_method("socket", "make_nosigpipe", TEALFUN(args) {
+                return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->make_nosigpipe();
             });
-            rt->add_method("socket", "set_linger", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 3)
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->set_linger(args[1].cast_to_bool(), args[1].cast_to_s32());
+            rt->add_method("socket", "set_linger", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 3)
+                return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->set_linger(args[1].cast_to_bool(), args[1].cast_to_s32());
             });
-            rt->add_method("socket", "set_keepalive", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->set_keepalive(args[1].cast_to_bool());
+            rt->add_method("socket", "set_keepalive", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->set_keepalive(args[1].cast_to_bool());
             });
-            rt->add_method("socket", "get_keepalive", SCFXFUN(args) {
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->get_keepalive();
+            rt->add_method("socket", "get_keepalive", TEALFUN(args) {
+                return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->get_keepalive();
             });
-            rt->add_method("socket", "set_tcp_keepidle", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->set_tcp_keepidle(args[1].cast_to_s32());
+            rt->add_method("socket", "set_tcp_keepidle", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->set_tcp_keepidle(args[1].cast_to_s32());
             });
-            rt->add_method("socket", "get_tcp_keepidle", SCFXFUN(args) {
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->get_tcp_keepidle();
+            rt->add_method("socket", "get_tcp_keepidle", TEALFUN(args) {
+                return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->get_tcp_keepidle();
             });
-            rt->add_method("socket", "set_tcp_keepitvl", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->set_tcp_keepitvl(args[1].cast_to_s32());
+            rt->add_method("socket", "set_tcp_keepitvl", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->set_tcp_keepitvl(args[1].cast_to_s32());
             });
-            rt->add_method("socket", "get_tcp_keepitvl", SCFXFUN(args) {
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->get_tcp_keepitvl();
+            rt->add_method("socket", "get_tcp_keepitvl", TEALFUN(args) {
+                return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->get_tcp_keepitvl();
             });
-            rt->add_method("socket", "set_tcp_keepcnt", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->set_tcp_keepcnt(args[1].cast_to_s32());
+            rt->add_method("socket", "set_tcp_keepcnt", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->set_tcp_keepcnt(args[1].cast_to_s32());
             });
-            rt->add_method("socket", "get_tcp_keepcnt", SCFXFUN(args) {
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->get_tcp_keepcnt();
+            rt->add_method("socket", "get_tcp_keepcnt", TEALFUN(args) {
+                return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->get_tcp_keepcnt();
             });
-            rt->add_method("socket", "set_rcv_timeout", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                scfx::timespec_wrapper orig_to;
-                if(SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->set_rcv_timeout(scfx::timespec_wrapper{args[1].cast_to_long_double()}, orig_to)) {
+            rt->add_method("socket", "set_rcv_timeout", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                teal::timespec_wrapper orig_to;
+                if(TEALTHIS(args, std::shared_ptr<teal::net::socket>)->set_rcv_timeout(teal::timespec_wrapper{args[1].cast_to_long_double()}, orig_to)) {
                     return orig_to.fseconds();
                 }
                 return valbox{};
             });
-            rt->add_method("socket", "peer_addr", SCFXFUN(args) {
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->peer_addr();
+            rt->add_method("socket", "peer_addr", TEALFUN(args) {
+                return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->peer_addr();
             });
-            rt->add_method("socket", "ok", SCFXFUN(args) {
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->ok();
+            rt->add_method("socket", "ok", TEALFUN(args) {
+                return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->ok();
             });
-            rt->add_method("socket", "error_status", SCFXFUN(args) {
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->error_status();
+            rt->add_method("socket", "error_status", TEALFUN(args) {
+                return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->error_status();
             });
-            rt->add_method("socket", "send_message", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+            rt->add_method("socket", "send_message", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 auto data{args[1].cast_to_byte_array()};
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->send_message(data);
+                return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->send_message(data);
             });
-            rt->add_method("socket", "receive_message", SCFXFUN(args) {
-                auto vec{SCFXTHIS(args, std::shared_ptr<scfx::net::socket>)->receive_message()};
+            rt->add_method("socket", "receive_message", TEALFUN(args) {
+                auto vec{TEALTHIS(args, std::shared_ptr<teal::net::socket>)->receive_message()};
                 return std::string{vec.begin(), vec.end()};
             });
 
 #ifdef PLATFORM_APPLE
-            rt->add_var("POLL_EVENT_IN", scfx::net::POLL_EVENT_IN);
-            rt->add_var("POLL_EVENT_PRI", scfx::net::POLL_EVENT_PRI);
-            rt->add_var("POLL_EVENT_OUT", scfx::net::POLL_EVENT_OUT);
-            rt->add_var("POLL_EVENT_RDNORM", scfx::net::POLL_EVENT_RDNORM);
-            rt->add_var("POLL_EVENT_RDBAND", scfx::net::POLL_EVENT_RDBAND);
-            rt->add_var("POLL_EVENT_WRNORM", scfx::net::POLL_EVENT_WRNORM);
-            rt->add_var("POLL_EVENT_WRBAND", scfx::net::POLL_EVENT_WRBAND);
+            rt->add_var("POLL_EVENT_IN", teal::net::POLL_EVENT_IN);
+            rt->add_var("POLL_EVENT_PRI", teal::net::POLL_EVENT_PRI);
+            rt->add_var("POLL_EVENT_OUT", teal::net::POLL_EVENT_OUT);
+            rt->add_var("POLL_EVENT_RDNORM", teal::net::POLL_EVENT_RDNORM);
+            rt->add_var("POLL_EVENT_RDBAND", teal::net::POLL_EVENT_RDBAND);
+            rt->add_var("POLL_EVENT_WRNORM", teal::net::POLL_EVENT_WRNORM);
+            rt->add_var("POLL_EVENT_WRBAND", teal::net::POLL_EVENT_WRBAND);
 #ifdef __USE_GNU
-            rt->add_var("POLL_EVENT_MSG", scfx::net::POLL_EVENT_MSG);
-            rt->add_var("POLL_EVENT_RDHUP", scfx::net::POLL_EVENT_RDHUP);
+            rt->add_var("POLL_EVENT_MSG", teal::net::POLL_EVENT_MSG);
+            rt->add_var("POLL_EVENT_RDHUP", teal::net::POLL_EVENT_RDHUP);
 #endif
-            rt->add_var("POLL_EVENT_ERR", scfx::net::POLL_EVENT_ERR);
-            rt->add_var("POLL_EVENT_HUP", scfx::net::POLL_EVENT_HUP);
+            rt->add_var("POLL_EVENT_ERR", teal::net::POLL_EVENT_ERR);
+            rt->add_var("POLL_EVENT_HUP", teal::net::POLL_EVENT_HUP);
 #elif defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
-            rt->add_var("POLL_EVENT_IN", scfx::net::POLL_EVENT_IN);
-            rt->add_var("POLL_EVENT_PRI", scfx::net::POLL_EVENT_PRI);
-            rt->add_var("POLL_EVENT_OUT", scfx::net::POLL_EVENT_OUT);
-            rt->add_var("POLL_EVENT_RDNORM", scfx::net::POLL_EVENT_RDNORM);
-            rt->add_var("POLL_EVENT_RDBAND", scfx::net::POLL_EVENT_RDBAND);
-            rt->add_var("POLL_EVENT_WRNORM", scfx::net::POLL_EVENT_WRNORM);
-            rt->add_var("POLL_EVENT_WRBAND", scfx::net::POLL_EVENT_WRBAND);
-            rt->add_var("POLL_EVENT_MSG", scfx::net::POLL_EVENT_MSG);
-            rt->add_var("POLL_EVENT_ERR", scfx::net::POLL_EVENT_ERR);
-            rt->add_var("POLL_EVENT_HUP", scfx::net::POLL_EVENT_HUP);
-            rt->add_var("POLL_EVENT_RDHUP", scfx::net::POLL_EVENT_RDHUP);
-            rt->add_var("POLL_EVENT_EXCLUSIVE", scfx::net::POLL_EVENT_EXCLUSIVE);
-            rt->add_var("POLL_EVENT_WAKEUP", scfx::net::POLL_EVENT_WAKEUP);
-            rt->add_var("POLL_EVENT_ONESHOT", scfx::net::POLL_EVENT_ONESHOT);
-            rt->add_var("POLL_EVENT_ET", scfx::net::POLL_EVENT_ET);
+            rt->add_var("POLL_EVENT_IN", teal::net::POLL_EVENT_IN);
+            rt->add_var("POLL_EVENT_PRI", teal::net::POLL_EVENT_PRI);
+            rt->add_var("POLL_EVENT_OUT", teal::net::POLL_EVENT_OUT);
+            rt->add_var("POLL_EVENT_RDNORM", teal::net::POLL_EVENT_RDNORM);
+            rt->add_var("POLL_EVENT_RDBAND", teal::net::POLL_EVENT_RDBAND);
+            rt->add_var("POLL_EVENT_WRNORM", teal::net::POLL_EVENT_WRNORM);
+            rt->add_var("POLL_EVENT_WRBAND", teal::net::POLL_EVENT_WRBAND);
+            rt->add_var("POLL_EVENT_MSG", teal::net::POLL_EVENT_MSG);
+            rt->add_var("POLL_EVENT_ERR", teal::net::POLL_EVENT_ERR);
+            rt->add_var("POLL_EVENT_HUP", teal::net::POLL_EVENT_HUP);
+            rt->add_var("POLL_EVENT_RDHUP", teal::net::POLL_EVENT_RDHUP);
+            rt->add_var("POLL_EVENT_EXCLUSIVE", teal::net::POLL_EVENT_EXCLUSIVE);
+            rt->add_var("POLL_EVENT_WAKEUP", teal::net::POLL_EVENT_WAKEUP);
+            rt->add_var("POLL_EVENT_ONESHOT", teal::net::POLL_EVENT_ONESHOT);
+            rt->add_var("POLL_EVENT_ET", teal::net::POLL_EVENT_ET);
 #elif defined(PLATFORM_WINDOWS)
-            rt->add_var("POLL_EVENT_ET", scfx::net::POLL_EVENT_ET);
-            rt->add_var("POLL_EVENT_IN", scfx::net::POLL_EVENT_IN);
-            rt->add_var("POLL_EVENT_PRI", scfx::net::POLL_EVENT_PRI);
-            rt->add_var("POLL_EVENT_OUT", scfx::net::POLL_EVENT_OUT);
-            rt->add_var("POLL_EVENT_RDNORM", scfx::net::POLL_EVENT_RDNORM);
-            rt->add_var("POLL_EVENT_RDBAND", scfx::net::POLL_EVENT_RDBAND);
-            rt->add_var("POLL_EVENT_WRNORM", scfx::net::POLL_EVENT_WRNORM);
-            rt->add_var("POLL_EVENT_WRBAND", scfx::net::POLL_EVENT_WRBAND);
-            rt->add_var("POLL_EVENT_ERR", scfx::net::POLL_EVENT_ERR);
-            rt->add_var("POLL_EVENT_HUP", scfx::net::POLL_EVENT_HUP);
+            rt->add_var("POLL_EVENT_ET", teal::net::POLL_EVENT_ET);
+            rt->add_var("POLL_EVENT_IN", teal::net::POLL_EVENT_IN);
+            rt->add_var("POLL_EVENT_PRI", teal::net::POLL_EVENT_PRI);
+            rt->add_var("POLL_EVENT_OUT", teal::net::POLL_EVENT_OUT);
+            rt->add_var("POLL_EVENT_RDNORM", teal::net::POLL_EVENT_RDNORM);
+            rt->add_var("POLL_EVENT_RDBAND", teal::net::POLL_EVENT_RDBAND);
+            rt->add_var("POLL_EVENT_WRNORM", teal::net::POLL_EVENT_WRNORM);
+            rt->add_var("POLL_EVENT_WRBAND", teal::net::POLL_EVENT_WRBAND);
+            rt->add_var("POLL_EVENT_ERR", teal::net::POLL_EVENT_ERR);
+            rt->add_var("POLL_EVENT_HUP", teal::net::POLL_EVENT_HUP);
 #endif
 
-            rt->add_function("socket_poller", SCFXFUN() {
-                return valbox{std::make_shared<scfx::net::socket_poller>(), "socket_poller"};
+            rt->add_function("socket_poller", TEALFUN() {
+                return valbox{std::make_shared<teal::net::socket_poller>(), "socket_poller"};
             });
-            rt->add_method("socket_poller", "add_event", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 2, 3)
+            rt->add_method("socket_poller", "add_event", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 2, 3)
                 if(args.size() == 2) {
-                    return SCFXTHIS(args, std::shared_ptr<scfx::net::socket_poller>)->add_event(
-                        SCFXCLASSARG(args, 1, std::shared_ptr<scfx::net::socket>)->handle()
+                    return TEALTHIS(args, std::shared_ptr<teal::net::socket_poller>)->add_event(
+                        TEALCLASSARG(args, 1, std::shared_ptr<teal::net::socket>)->handle()
                     );
                 }
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket_poller>)->add_event(
-                    SCFXCLASSARG(args, 1, std::shared_ptr<scfx::net::socket>)->handle(),
+                return TEALTHIS(args, std::shared_ptr<teal::net::socket_poller>)->add_event(
+                    TEALCLASSARG(args, 1, std::shared_ptr<teal::net::socket>)->handle(),
                     args[2].cast_to_s32()
                 );
             });
-            rt->add_method("socket_poller", "del_event", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+            rt->add_method("socket_poller", "del_event", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 if(args[1].is_numeric()) {
-                    return SCFXTHIS(args, std::shared_ptr<scfx::net::socket_poller>)->del_event(
+                    return TEALTHIS(args, std::shared_ptr<teal::net::socket_poller>)->del_event(
                         args[1].cast_to_s32()
                     );
                 } else {
-                    return SCFXTHIS(args, std::shared_ptr<scfx::net::socket_poller>)->del_event(
-                        SCFXCLASSARG(args, 1, std::shared_ptr<scfx::net::socket>)->handle()
+                    return TEALTHIS(args, std::shared_ptr<teal::net::socket_poller>)->del_event(
+                        TEALCLASSARG(args, 1, std::shared_ptr<teal::net::socket>)->handle()
                     );
                 }
             });
-            rt->add_method("socket_poller", "re_enable", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 3)
-                return SCFXTHIS(args, std::shared_ptr<scfx::net::socket_poller>)->re_enable(
-                    SCFXCLASSARG(args, 1, std::shared_ptr<scfx::net::socket>)->handle(),
+            rt->add_method("socket_poller", "re_enable", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 3)
+                return TEALTHIS(args, std::shared_ptr<teal::net::socket_poller>)->re_enable(
+                    TEALCLASSARG(args, 1, std::shared_ptr<teal::net::socket>)->handle(),
                     args[1].cast_to_u32()
                 );
             });
-            rt->add_method("socket_poller", "close", SCFXFUN(args) {
-                SCFXTHIS(args, std::shared_ptr<scfx::net::socket_poller>)->close();
+            rt->add_method("socket_poller", "close", TEALFUN(args) {
+                TEALTHIS(args, std::shared_ptr<teal::net::socket_poller>)->close();
                 return 0;
             });
-            rt->add_method("socket_poller", "wait", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 2, 3)
+            rt->add_method("socket_poller", "wait", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 2, 3)
                 std::vector<net::poll_event> evts{};
                 if(args.size() == 2) {
-                    evts = SCFXTHIS(args, std::shared_ptr<scfx::net::socket_poller>)->wait(
+                    evts = TEALTHIS(args, std::shared_ptr<teal::net::socket_poller>)->wait(
                         args[1].cast_to_size_t()
                     );
                 } else {
-                    evts = SCFXTHIS(args, std::shared_ptr<scfx::net::socket_poller>)->wait(
-                        args[1].cast_to_size_t(), scfx::timespec_wrapper{args[2].cast_to_long_double()}
+                    evts = TEALTHIS(args, std::shared_ptr<teal::net::socket_poller>)->wait(
+                        args[1].cast_to_size_t(), teal::timespec_wrapper{args[2].cast_to_long_double()}
                     );
                 }
                 valbox res{};

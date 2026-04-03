@@ -2,12 +2,12 @@
 
 #include "inc/commondefs.hpp"
 
-#include "scaflux_util.hpp"
-#include "scaflux_value.hpp"
-#include "scaflux_token.hpp"
-#include "scaflux_exec_ctx.hpp"
+#include "tealscript_util.hpp"
+#include "tealscript_value.hpp"
+#include "tealscript_token.hpp"
+#include "tealscript_exec_ctx.hpp"
 
-namespace scfx {
+namespace teal {
 
     enum class eval_caller_type {
         no_matter,
@@ -162,7 +162,7 @@ namespace scfx {
                 [](prefix_unop_expression *this_, execution_context *ctx) -> valbox {
                     expr_ptr &val{this_->val_};
                     bool old{ctx->set_create_if_not_exists(false)};
-                    scfx::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
+                    teal::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
@@ -191,7 +191,7 @@ namespace scfx {
                 [](prefix_unop_expression *this_, execution_context *ctx) -> valbox {
                     expr_ptr &val{this_->val_};
                     bool old{ctx->set_create_if_not_exists(false)};
-                    scfx::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
+                    teal::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
@@ -225,7 +225,7 @@ namespace scfx {
                 [](prefix_unop_expression *this_, execution_context *ctx) -> valbox {
                     expr_ptr &val{this_->val_};
                     bool old{ctx->set_create_if_not_exists(false)};
-                    scfx::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
+                    teal::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
                     valbox res{!val->eval(ctx, eval_caller_type::no_matter, nullptr).cast_to_bool()};
                     if(val->primary()) {
                         std::unique_lock l{this_->primary_val_mtp_};
@@ -256,7 +256,7 @@ namespace scfx {
                 /* INCREMENT */
                 [](prefix_unop_expression *this_, execution_context *ctx) -> valbox {
                     bool old{ctx->set_create_if_not_exists(true)};
-                    scfx::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
+                    teal::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
                     runtime_error er{{}, {}, {}};
                     try {
                         return ++this_->val_->eval(ctx, eval_caller_type::no_matter, nullptr);
@@ -272,7 +272,7 @@ namespace scfx {
                 /* DECREMENT */
                 [](prefix_unop_expression *this_, execution_context *ctx) -> valbox {
                     bool old{ctx->set_create_if_not_exists(true)};
-                    scfx::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
+                    teal::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
                     runtime_error er{{}, {}, {}};
                     try {
                         return --this_->val_->eval(ctx, eval_caller_type::no_matter, nullptr);
@@ -295,7 +295,7 @@ namespace scfx {
                 [](prefix_unop_expression *this_, execution_context *ctx) -> valbox {
                     expr_ptr &val{this_->val_};
                     bool old{ctx->set_create_if_not_exists(false)};
-                    scfx::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
+                    teal::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
@@ -376,12 +376,12 @@ namespace scfx {
             switch(opcode_) {
                 case token::type::INCREMENT: {
                     bool old{ctx->set_create_if_not_exists(true)};
-                    scfx::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
+                    teal::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
                     return val_->eval(ctx, eval_caller_type::no_matter, nullptr)++;
                 }
                 case token::type::DECREMENT: {
                     bool old{ctx->set_create_if_not_exists(true)};
-                    scfx::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
+                    teal::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
                     return val_->eval(ctx, eval_caller_type::no_matter, nullptr)--;
                 }
                 default:
@@ -412,7 +412,7 @@ namespace scfx {
 
         valbox eval(execution_context *ctx, eval_caller_type, valbox *) override {
             bool old{ctx->set_create_if_not_exists(false)};
-            scfx::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
+            teal::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
             std::string errstr{};
             valbox left_of_dot{valbox_no_initialize::dont_do_it};
             valbox fn{func_->eval(ctx, eval_caller_type::func_call, &left_of_dot)};
@@ -449,7 +449,7 @@ namespace scfx {
             }
             if(user_fn_seltor) {
                 ctx->set_stack_barrier();
-                scfx::shut_on_destroy csb{[ctx]() { ctx->clear_stack_barrier(); }};
+                teal::shut_on_destroy csb{[ctx]() { ctx->clear_stack_barrier(); }};
                 valbox res{fn.as_func()(act_args)};
                 ctx->clear_return_request();
                 return res;

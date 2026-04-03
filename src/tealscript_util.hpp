@@ -7,35 +7,35 @@
 #include "inc/mt_synchro.hpp"
 #include "inc/math/math_util.hpp"
 #include "inc/json.hpp"
-#ifdef SCFX_USE_EMHASH8_MAP
+#ifdef TEAL_USE_EMHASH8_MAP
 #include "inc/emhash/hash_set8.hpp"
 #include "inc/emhash/hash_table8.hpp"
 #endif
 
-#define SCFXFUN(ARGS) [&](std::vector<scfx::valbox> &ARGS) -> scfx::valbox
-#define SCFXNUMARG(ARGS, INDX, TYPE) ARGS[INDX].cast_num_to_num<TYPE>()
-#define SCFX_CHCK_FUN_PARMS_NUM_EQ(ARGS, NUM_ARGS) \
+#define TEALFUN(ARGS) [&](std::vector<teal::valbox> &ARGS) -> teal::valbox
+#define TEALNUMARG(ARGS, INDX, TYPE) ARGS[INDX].cast_num_to_num<TYPE>()
+#define TEAL_CHCK_FUN_PARMS_NUM_EQ(ARGS, NUM_ARGS) \
     if(ARGS.size() != (NUM_ARGS)) { \
         throw std::runtime_error{"wrong actual function arguments number"}; \
     }
-#define SCFX_CHCK_FUN_PARMS_NUM_LE(ARGS, NUM_ARGS) \
+#define TEAL_CHCK_FUN_PARMS_NUM_LE(ARGS, NUM_ARGS) \
     if(ARGS.size() > (NUM_ARGS)) { \
         throw std::runtime_error{"wrong actual function arguments number"}; \
     }
-#define SCFX_CHCK_FUN_PARMS_NUM_GE(ARGS, NUM_ARGS) \
+#define TEAL_CHCK_FUN_PARMS_NUM_GE(ARGS, NUM_ARGS) \
     if(ARGS.size() < (NUM_ARGS)) { \
         throw std::runtime_error{"wrong actual function arguments number"}; \
     }
-#define SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(ARGS, NUM_ARGS_MIN, NUM_ARGS_MAX) \
+#define TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(ARGS, NUM_ARGS_MIN, NUM_ARGS_MAX) \
     if(!(ARGS.size() >= (NUM_ARGS_MIN) && ARGS.size() <= (NUM_ARGS_MAX))) { \
         throw std::runtime_error{"wrong actual function arguments number"}; \
     }
-#define SCFXCLASSARG(ARGS, INDX, TYPE) ARGS[INDX].as_class<TYPE>()
-#define SCFXTHIS(ARGS, TYPE) ARGS[0].as_class<TYPE>()
+#define TEALCLASSARG(ARGS, INDX, TYPE) ARGS[INDX].as_class<TYPE>()
+#define TEALTHIS(ARGS, TYPE) ARGS[0].as_class<TYPE>()
 
-namespace scfx {
+namespace teal {
 
-#define SCFX_DEFINE_BASE_LINE_COL_ERROR(CLASS, BASE_CLASS) class CLASS: public BASE_CLASS { \
+#define TEAL_DEFINE_BASE_LINE_COL_ERROR(CLASS, BASE_CLASS) class CLASS: public BASE_CLASS { \
     public: \
         CLASS(std::int64_t l, std::int64_t c, std::string const &msg): \
             BASE_CLASS{msg}, \
@@ -60,27 +60,27 @@ namespace scfx {
         std::int64_t c_{}; \
     };
 
-#define SCFX_DEFINE_DERIVED_ERROR(CLASS, BASE_CLASS) class CLASS: public BASE_CLASS { \
+#define TEAL_DEFINE_DERIVED_ERROR(CLASS, BASE_CLASS) class CLASS: public BASE_CLASS { \
     public: \
         CLASS(std::int64_t l, std::int64_t c, const std::string &msg): BASE_CLASS{l, c, msg} { \
         } \
     };
 
-    SCFX_DEFINE_BASE_LINE_COL_ERROR(logic_error, std::logic_error)
-    SCFX_DEFINE_BASE_LINE_COL_ERROR(runtime_error, std::runtime_error)
-    SCFX_DEFINE_DERIVED_ERROR(compilation_error, logic_error)
-    SCFX_DEFINE_DERIVED_ERROR(domain_error, logic_error)
-    SCFX_DEFINE_DERIVED_ERROR(future_error, logic_error)
-    SCFX_DEFINE_DERIVED_ERROR(invalid_argument, logic_error)
-    SCFX_DEFINE_DERIVED_ERROR(length_error, logic_error)
-    SCFX_DEFINE_DERIVED_ERROR(out_of_range, logic_error)
-    SCFX_DEFINE_DERIVED_ERROR(range_error, runtime_error)
-    SCFX_DEFINE_DERIVED_ERROR(overflow_error, runtime_error)
-    SCFX_DEFINE_DERIVED_ERROR(underflow_error, runtime_error)
-    SCFX_DEFINE_DERIVED_ERROR(system_error, runtime_error)
+    TEAL_DEFINE_BASE_LINE_COL_ERROR(logic_error, std::logic_error)
+    TEAL_DEFINE_BASE_LINE_COL_ERROR(runtime_error, std::runtime_error)
+    TEAL_DEFINE_DERIVED_ERROR(compilation_error, logic_error)
+    TEAL_DEFINE_DERIVED_ERROR(domain_error, logic_error)
+    TEAL_DEFINE_DERIVED_ERROR(future_error, logic_error)
+    TEAL_DEFINE_DERIVED_ERROR(invalid_argument, logic_error)
+    TEAL_DEFINE_DERIVED_ERROR(length_error, logic_error)
+    TEAL_DEFINE_DERIVED_ERROR(out_of_range, logic_error)
+    TEAL_DEFINE_DERIVED_ERROR(range_error, runtime_error)
+    TEAL_DEFINE_DERIVED_ERROR(overflow_error, runtime_error)
+    TEAL_DEFINE_DERIVED_ERROR(underflow_error, runtime_error)
+    TEAL_DEFINE_DERIVED_ERROR(system_error, runtime_error)
 
-#undef SCFX_DEFINE_BASE_LINE_COL_ERROR
-#undef SCFX_DEFINE_DERIVED_ERROR
+#undef TEAL_DEFINE_BASE_LINE_COL_ERROR
+#undef TEAL_DEFINE_DERIVED_ERROR
 
     template <std::uint8_t T_numBytes>
     using UintSelector =
@@ -92,13 +92,13 @@ namespace scfx {
             >::type
         >::type;
 
-#ifdef SCFX_DEBUGGING
+#ifdef TEAL_DEBUGGING
     template<typename K_T, typename V_T>
     using num_map_t = std::map<K_T, V_T>;
     template<typename V_T>
     using str_map_t = std::map<std::string, V_T>;
 #else
-    #ifdef SCFX_USE_EMHASH8_MAP
+    #ifdef TEAL_USE_EMHASH8_MAP
     template<typename K_T, typename V_T>
     using num_map_t = emhash8::HashMap<K_T, V_T, num_hash<K_T>>;
     template<typename V_T>
@@ -112,14 +112,14 @@ namespace scfx {
 #endif
 
 
-#ifdef SCFX_USE_CUSTOM_SHARED_MUTEX
+#ifdef TEAL_USE_CUSTOM_SHARED_MUTEX
     using shared_mutex = mt::atomic_rw_spin_mutex;
 #else
     using shared_mutex = std::shared_mutex;
 #endif
 
 
-#ifdef SCFX_USE_CUSTOM_MUTEX
+#ifdef TEAL_USE_CUSTOM_MUTEX
     using mutex = mt::atomic_spin_mutex;
 #else
     using mutex = std::mutex;
@@ -130,12 +130,12 @@ namespace scfx {
         if(ident.size() == 0) {
             return false;
         }
-        std::wstring wid{scfx::str_util::from_utf8(ident)};
-        if(!(scfx::str_util::fltr<std::wstring>::isalpha(wid[0]) || wid[0] == '_')) {
+        std::wstring wid{teal::str_util::from_utf8(ident)};
+        if(!(teal::str_util::fltr<std::wstring>::isalpha(wid[0]) || wid[0] == '_')) {
             return false;
         }
         for(std::size_t i{1}; i < wid.size(); ++i) {
-            if(!(scfx::str_util::fltr<std::wstring>::isalnum(wid[0]) || wid[0] == '_')) {
+            if(!(teal::str_util::fltr<std::wstring>::isalnum(wid[0]) || wid[0] == '_')) {
                 return false;
             }
         }
@@ -179,8 +179,8 @@ namespace scfx {
     }
 
     template<typename T>
-    scfx::math::vector4<T> vec4_from_json(scfx::json const &j) {
-        scfx::math::vector4<T> res{};
+    teal::math::vector4<T> vec4_from_json(teal::json const &j) {
+        teal::math::vector4<T> res{};
         try {
             if(j.is_array()) {
                 for(std::size_t i = 0; i < 4 && i < j.size(); ++i) {
@@ -193,38 +193,38 @@ namespace scfx {
                 res.w() = j.key_exists("w") ? j["w"].try_as_long_double() : 0;
             }
         } catch(...) {
-            res = scfx::math::vector4<T>{};
+            res = teal::math::vector4<T>{};
         }
         return res;
     }
 
     template<typename T>
-    scfx::math::vector4<T> vec4_from_str(std::string const &s) {
-        scfx::math::vector4<T> res{};
+    teal::math::vector4<T> vec4_from_str(std::string const &s) {
+        teal::math::vector4<T> res{};
         try {
-            scfx::json j{scfx::json::deserialize(s)};
+            teal::json j{teal::json::deserialize(s)};
             res = vec4_from_json<T>(j);
         } catch(...) {
-            res = scfx::math::vector4<T>{};
+            res = teal::math::vector4<T>{};
         }
         return res;
     }
 
     template<typename T>
-    scfx::math::vector4<T> vec4_from_str(std::wstring const &s) {
-        scfx::math::vector4<T> res{};
+    teal::math::vector4<T> vec4_from_str(std::wstring const &s) {
+        teal::math::vector4<T> res{};
         try {
-            scfx::json j{scfx::json::deserialize(scfx::str_util::to_utf8(s))};
+            teal::json j{teal::json::deserialize(teal::str_util::to_utf8(s))};
             res = vec4_from_json<T>(j);
         } catch(...) {
-            res = scfx::math::vector4<T>{};
+            res = teal::math::vector4<T>{};
         }
         return res;
     }
 
     template<typename T>
-    scfx::math::matrix4<T> mat4_from_json(scfx::json const &j) {
-        scfx::math::matrix4<T> res{};
+    teal::math::matrix4<T> mat4_from_json(teal::json const &j) {
+        teal::math::matrix4<T> res{};
         try {
             if(j.is_array()) {
                 for(std::size_t i = 0; i < 16 && i < j.size(); ++i) {
@@ -237,7 +237,7 @@ namespace scfx {
                 res.w() = j.key_exists("w") ? j["w"].try_as_long_double() : 0;
             }
         } catch(...) {
-            res = scfx::math::matrix4<T>{};
+            res = teal::math::matrix4<T>{};
         }
         return res;
     }

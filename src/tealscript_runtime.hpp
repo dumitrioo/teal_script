@@ -8,20 +8,20 @@
 #include "inc/base64.hpp"
 #include "inc/base85.hpp"
 #include "inc/so.hpp"
-#if defined(SCFX_USE_ASYNC_CONSOLE)
+#if defined(TEAL_USE_ASYNC_CONSOLE)
 #include "inc/containers/concurrentqueue.h"
 #endif
-#include "scaflux_util.hpp"
-#include "scaflux_token.hpp"
-#include "scaflux_lexer.hpp"
-#include "scaflux_expr.hpp"
-#include "scaflux_statement.hpp"
-#include "scaflux_parser.hpp"
-#include "scaflux_lexer.hpp"
-#include "scaflux_cells.hpp"
-#include "scaflux_codegen.hpp"
-#include "scaflux_exec_ctx.hpp"
-#include "scaflux_interfaces.hpp"
+#include "tealscript_util.hpp"
+#include "tealscript_token.hpp"
+#include "tealscript_lexer.hpp"
+#include "tealscript_expr.hpp"
+#include "tealscript_statement.hpp"
+#include "tealscript_parser.hpp"
+#include "tealscript_lexer.hpp"
+#include "tealscript_cells.hpp"
+#include "tealscript_codegen.hpp"
+#include "tealscript_exec_ctx.hpp"
+#include "tealscript_interfaces.hpp"
 
 #include "ext/array_buffer_ext.hpp"
 #include "ext/containers_ext.hpp"
@@ -70,11 +70,11 @@
 #define	ERANGE		34	/* Math result not representable */
 #endif
 
-namespace scfx {
+namespace teal {
 
     namespace detail {
 
-#if defined(SCFX_USE_ASYNC_CONSOLE)
+#if defined(TEAL_USE_ASYNC_CONSOLE)
         class console {
         public:
             console():
@@ -101,26 +101,26 @@ namespace scfx {
                 if(out_thread_.joinable()) { out_thread_.join(); }
             }
 
-            void print(std::vector<scfx::valbox> const &args) {
+            void print(std::vector<teal::valbox> const &args) {
                 cout_out((terminal_colours_ ? "\033[32mprint\033[0m" : "print"), args);
             }
-            void info(std::vector<scfx::valbox> const &args) {
+            void info(std::vector<teal::valbox> const &args) {
                 cout_out((terminal_colours_ ? "\033[34minfo\033[0m" : "info"), args);
             }
-            void log(std::vector<scfx::valbox> const &args) {
+            void log(std::vector<teal::valbox> const &args) {
                 cout_out((terminal_colours_ ? "\033[32mlog\033[0m" : "log"), args);
             }
-            void warn(std::vector<scfx::valbox> const &args) {
+            void warn(std::vector<teal::valbox> const &args) {
                 cout_out((terminal_colours_ ? "\033[35mwarning\033[0m" : "warning"), args);
             }
-            void debug(std::vector<scfx::valbox> const &args) {
+            void debug(std::vector<teal::valbox> const &args) {
                 cout_out((terminal_colours_ ? "\033[93mdebug\033[0m" : "debug"), args);
             }
-            void error(std::vector<scfx::valbox> const &args) {
+            void error(std::vector<teal::valbox> const &args) {
                 cout_out((terminal_colours_ ? "\033[91merror\033[0m" : "error"), args);
             }
 
-            void rawprint(std::vector<scfx::valbox> const &args) {
+            void rawprint(std::vector<teal::valbox> const &args) {
                 std::stringstream out{};
                 if(setfill_) { out << std::setfill(fill_char_); }
                 if(setw_) { out << std::setw(w_); }
@@ -137,7 +137,7 @@ namespace scfx {
                 put_string_to_buffer(out.str(), false);
             }
 
-            void println(std::vector<scfx::valbox> const &args) {
+            void println(std::vector<teal::valbox> const &args) {
                 std::stringstream out{};
                 if(setfill_) { out << std::setfill(fill_char_); }
                 if(setw_) { out << std::setw(w_); }
@@ -170,7 +170,7 @@ namespace scfx {
             bool setsync(bool v) const { return std::ios::sync_with_stdio(v); }
 
         private:
-            void cerr_out(std::string const &type, std::vector<scfx::valbox> const &args) {
+            void cerr_out(std::string const &type, std::vector<teal::valbox> const &args) {
                 std::stringstream out{};
                 if(setfill_) { out << std::setfill(fill_char_); }
                 if(setw_) { out << std::setw(w_); }
@@ -183,7 +183,7 @@ namespace scfx {
                     default: out << std::defaultfloat; break;
                     }
                 }
-                out << scfx::str_util::from_utf8(scfx::timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
+                out << teal::str_util::from_utf8(teal::timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
                 for(auto &&v: args) {
                     out << v;
                 }
@@ -191,7 +191,7 @@ namespace scfx {
                 put_string_to_buffer(out.str(), true);
             }
 
-            void cout_out(std::string const &type, std::vector<scfx::valbox> const &args) {
+            void cout_out(std::string const &type, std::vector<teal::valbox> const &args) {
                 std::stringstream out{};
                 if(setfill_) { out << std::setfill(fill_char_); }
                 if(setw_) { out << std::setw(w_); }
@@ -204,7 +204,7 @@ namespace scfx {
                         default: out << std::defaultfloat; break;
                     }
                 }
-                out << scfx::str_util::from_utf8(scfx::timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
+                out << teal::str_util::from_utf8(teal::timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
                 for(auto &&v: args) {
                     out << v;
                 }
@@ -289,26 +289,26 @@ namespace scfx {
 #else
         class console {
         public:
-            void print(std::vector<scfx::valbox> const &args) {
+            void print(std::vector<teal::valbox> const &args) {
                 cout_out((terminal_colours_ ? "\033[32mprint\033[0m" : "print"), args);
             }
-            void info(std::vector<scfx::valbox> const &args) {
+            void info(std::vector<teal::valbox> const &args) {
                 cout_out((terminal_colours_ ? "\033[34minfo\033[0m" : "info"), args);
             }
-            void log(std::vector<scfx::valbox> const &args) {
+            void log(std::vector<teal::valbox> const &args) {
                 cout_out((terminal_colours_ ? "\033[32mlog\033[0m" : "log"), args);
             }
-            void warn(std::vector<scfx::valbox> const &args) {
+            void warn(std::vector<teal::valbox> const &args) {
                 cout_out((terminal_colours_ ? "\033[35mwarning\033[0m" : "warning"), args);
             }
-            void debug(std::vector<scfx::valbox> const &args) {
+            void debug(std::vector<teal::valbox> const &args) {
                 cout_out((terminal_colours_ ? "\033[93mdebug\033[0m" : "debug"), args);
             }
-            void error(std::vector<scfx::valbox> const &args) {
+            void error(std::vector<teal::valbox> const &args) {
                 cout_out((terminal_colours_ ? "\033[91merror\033[0m" : "error"), args);
             }
 
-            void rawprint(std::vector<scfx::valbox> const &args) {
+            void rawprint(std::vector<teal::valbox> const &args) {
                 std::stringstream out{};
                 if(setfill_) { out << std::setfill(fill_char_); }
                 if(setw_) { out << std::setw(w_); }
@@ -326,7 +326,7 @@ namespace scfx {
                 std::cout << out.str() << std::flush;
             }
 
-            void println(std::vector<scfx::valbox> const &args) {
+            void println(std::vector<teal::valbox> const &args) {
                 std::stringstream out{};
                 if(setfill_) { out << std::setfill(fill_char_); }
                 if(setw_) { out << std::setw(w_); }
@@ -362,7 +362,7 @@ namespace scfx {
             bool setsync(bool v) const { return std::ios::sync_with_stdio(v); }
 
         private:
-            void cerr_out(std::string const &type, std::vector<scfx::valbox> const &args) {
+            void cerr_out(std::string const &type, std::vector<teal::valbox> const &args) {
                 std::stringstream out{};
                 if(setfill_) { out << std::setfill(fill_char_); }
                 if(setw_) { out << std::setw(w_); }
@@ -375,7 +375,7 @@ namespace scfx {
                     default: out << std::defaultfloat; break;
                     }
                 }
-                out << scfx::str_util::from_utf8(scfx::timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
+                out << teal::str_util::from_utf8(teal::timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
                 for(auto &&v: args) {
                     out << v;
                 }
@@ -383,7 +383,7 @@ namespace scfx {
                 std::cerr << out.str() << std::endl;
             }
 
-            void cout_out(std::string const &type, std::vector<scfx::valbox> const &args) {
+            void cout_out(std::string const &type, std::vector<teal::valbox> const &args) {
                 std::stringstream out{};
                 if(setfill_) { out << std::setfill(fill_char_); }
                 if(setw_) { out << std::setw(w_); }
@@ -396,7 +396,7 @@ namespace scfx {
                         default: out << std::defaultfloat; break;
                     }
                 }
-                out << scfx::str_util::from_utf8(scfx::timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
+                out << teal::str_util::from_utf8(teal::timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
                 for(auto &&v: args) {
                     out << v;
                 }
@@ -425,10 +425,10 @@ namespace scfx {
         runtime() {
             exctx_.set_runtime_interface(this);
 
-            add_function("version_major", SCFXFUN(/*args*/) { return version_major_; });
-            add_function("version_minor", SCFXFUN(/*args*/) { return version_minor_; });
-            add_function("version_patch", SCFXFUN(/*args*/) { return version_patch_; });
-            add_function("version_string", SCFXFUN(/*args*/) {
+            add_function("version_major", TEALFUN(/*args*/) { return version_major_; });
+            add_function("version_minor", TEALFUN(/*args*/) { return version_minor_; });
+            add_function("version_patch", TEALFUN(/*args*/) { return version_patch_; });
+            add_function("version_string", TEALFUN(/*args*/) {
                 return str_util::utoa<std::string>(version_major_) + "." +
                        str_util::utoa<std::string>(version_minor_) + "." +
                        str_util::utoa<std::string>(version_patch_);
@@ -474,76 +474,76 @@ namespace scfx {
             add_var("EDOM", EDOM);       // 33  Math argument out of domain of func
             add_var("ERANGE", ERANGE);   // 34  Math result not representable
 
-            add_function("last_error", SCFXFUN() {
+            add_function("last_error", TEALFUN() {
                 return sys_util::last_error();
             });
-            add_function("error_str", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+            add_function("error_str", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 return sys_util::error_str(args[0].cast_to_s64());
             });
 
-            add_function("execute", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+            add_function("execute", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 return std::system(args[0].cast_to_string().c_str());
             });
-            add_function("load_from_file", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                auto fd{scfx::file_util::load_from_file(args[0].cast_to_string())};
+            add_function("load_from_file", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                auto fd{teal::file_util::load_from_file(args[0].cast_to_string())};
                 return std::string{fd.begin(), fd.end()};
             });
-            add_function("save_to_file", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                return scfx::file_util::save_to_file(args[0].cast_to_string(), args[1].cast_to_string());
+            add_function("save_to_file", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                return teal::file_util::save_to_file(args[0].cast_to_string(), args[1].cast_to_string());
             });
-            add_function("delete_filesystem_entry", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                return scfx::file_util::delete_fs_entry(args[0].cast_to_string());
+            add_function("delete_filesystem_entry", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                return teal::file_util::delete_fs_entry(args[0].cast_to_string());
             });
-            add_function("extract_file_dir", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                return scfx::file_util::extract_file_dir(args[0].cast_to_string());
+            add_function("extract_file_dir", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                return teal::file_util::extract_file_dir(args[0].cast_to_string());
             });
-            add_function("extract_file_name", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                return scfx::file_util::extract_file_name(args[0].cast_to_string());
+            add_function("extract_file_name", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                return teal::file_util::extract_file_name(args[0].cast_to_string());
             });
-            add_function("extract_file_ext", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                return scfx::file_util::extract_file_ext(args[0].cast_to_string());
-            });
-
-            add_function("file_exists", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                return scfx::file_util::file_exists(args[0].cast_to_string());
-            });
-            add_function("dir_exists", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                return scfx::file_util::dir_exists(args[0].cast_to_string());
+            add_function("extract_file_ext", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                return teal::file_util::extract_file_ext(args[0].cast_to_string());
             });
 
-            add_function("native_path_seperator", SCFXFUN() {
+            add_function("file_exists", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                return teal::file_util::file_exists(args[0].cast_to_string());
+            });
+            add_function("dir_exists", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                return teal::file_util::dir_exists(args[0].cast_to_string());
+            });
+
+            add_function("native_path_seperator", TEALFUN() {
                 return file_util::native_path_separator<std::string>{}.sym();
             });
 
-            add_function("native_path_seperator_str", SCFXFUN() {
+            add_function("native_path_seperator_str", TEALFUN() {
                 return file_util::native_path_separator<std::string>{}.val();
             });
 
-            add_function("temp_directory_path", SCFXFUN() {
+            add_function("temp_directory_path", TEALFUN() {
                 return std::filesystem::temp_directory_path().string();
             });
 
-            add_function("list_directory", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2)
+            add_function("list_directory", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2)
                 bool recur{false};
                 if(args.size() >= 2) {
                     recur = args[1].cast_to_bool();
                 }
                 valbox names{valbox_no_initialize::dont_do_it};
                 names.become_array();
-                scfx::file_util::for_dir_tree(
+                teal::file_util::for_dir_tree(
                     args[0].cast_to_string(),
-                    [&](scfx::file_util::dir_entry const &de) {
+                    [&](teal::file_util::dir_entry const &de) {
                         names.as_array().push_back(de.full_path());
                         return true;
                     },
@@ -553,30 +553,30 @@ namespace scfx {
             });
 
 #ifdef USE_FILE_MAGIC
-            add_function("data_type", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2);
+            add_function("data_type", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2);
                 std::string res{};
                 if(args[0].is_string_ref()) {
                     if(args.size() == 1) {
-                        res = scfx::file_util::data_type(args[0].as_string());
+                        res = teal::file_util::data_type(args[0].as_string());
                     } else {
-                        res = scfx::file_util::data_type(args[0].as_string(), args[1].cast_to_s32());
+                        res = teal::file_util::data_type(args[0].as_string(), args[1].cast_to_s32());
                     }
                 } else if(args[0].is_array_ref()) {
                     if(args.size() == 1) {
-                        res = scfx::file_util::data_type(args[0].cast_to_string());
+                        res = teal::file_util::data_type(args[0].cast_to_string());
                     } else {
-                        res = scfx::file_util::data_type(args[0].cast_to_string(), args[1].cast_to_s32());
+                        res = teal::file_util::data_type(args[0].cast_to_string(), args[1].cast_to_s32());
                     }
                 }
                 return res;
             });
-            add_function("file_type", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2);
+            add_function("file_type", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2);
                 if(args.size() == 1) {
-                    return scfx::file_util::file_type(args[0].cast_to_string());
+                    return teal::file_util::file_type(args[0].cast_to_string());
                 } else {
-                    return scfx::file_util::file_type(args[0].cast_to_string(), args[1].cast_to_s32());
+                    return teal::file_util::file_type(args[0].cast_to_string(), args[1].cast_to_s32());
                 }
             });
             add_var("MAGIC_NONE", MAGIC_NONE);
@@ -595,8 +595,8 @@ namespace scfx {
             add_var("MAGIC_APPLE", MAGIC_APPLE);
             add_var("MAGIC_EXTENSION", MAGIC_EXTENSION);
 #endif
-            add_function("errno", SCFXFUN() { return errno; });
-            add_function("err_to_str", SCFXFUN(args) { return std::string{strerror(args[0].cast_num_to_num<int>())}; });
+            add_function("errno", TEALFUN() { return errno; });
+            add_function("err_to_str", TEALFUN(args) { return std::string{strerror(args[0].cast_num_to_num<int>())}; });
 
             array_buffer_ext_.register_runtime(this);
             math_ext_.register_runtime(this);
@@ -608,78 +608,78 @@ namespace scfx {
             sockext_.register_runtime(this);
             dict_ext_.register_runtime(this);
 
-            add_var("console", scfx::valbox{&con_, "console"});
-            add_method("console", "info", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_GE(args, 1)
-                std::vector<scfx::valbox> args1{args.begin() + 1, args.end()};
-                SCFXTHIS(args, detail::console *)->info(args1);
+            add_var("console", teal::valbox{&con_, "console"});
+            add_method("console", "info", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1)
+                std::vector<teal::valbox> args1{args.begin() + 1, args.end()};
+                TEALTHIS(args, detail::console *)->info(args1);
                 return {valbox_no_initialize::dont_do_it};
             });
-            add_method("console", "log", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(args, detail::console *)->log(args1); return {valbox_no_initialize::dont_do_it}; });
-            add_method("console", "warn", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(args, detail::console *)->warn(args1); return {valbox_no_initialize::dont_do_it}; });
-            add_method("console", "debug", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(args, detail::console *)->debug(args1); return {valbox_no_initialize::dont_do_it}; });
-            add_method("console", "error", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(args, detail::console *)->error(args1); return {valbox_no_initialize::dont_do_it}; });
-            add_method("console", "print", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<scfx::valbox> args1{args.begin() + 1, args.end()}; SCFXTHIS(args, detail::console *)->print(args1); return {valbox_no_initialize::dont_do_it}; });
-            add_method("console", "flush", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) SCFXTHIS(args, detail::console *)->flush(); return scfx::valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "fixed", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) SCFXTHIS(args, detail::console *)->fixed(); return scfx::valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "scientific", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) SCFXTHIS(args, detail::console *)->scientific(); return scfx::valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "hexfloat", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) SCFXTHIS(args, detail::console *)->hexfloat(); return scfx::valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "defaultfloat", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) SCFXTHIS(args, detail::console *)->defaultfloat(); return scfx::valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "setprecision", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2) SCFXTHIS(args, detail::console *)->setprecision(args[1].cast_to_u64()); return scfx::valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "precision", SCFXFUN(args) { return SCFXTHIS(args, detail::console *)->precision(); });
-            add_method("console", "setw", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2) SCFXTHIS(args, detail::console *)->setw(args[1].cast_to_u64()); return scfx::valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "setfill", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2) SCFXTHIS(args, detail::console *)->setfill(args[1].cast_to_char()); return scfx::valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "fill", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return SCFXTHIS(args, detail::console *)->fill(); });
-            add_method("console", "enable_colors", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2) SCFXTHIS(args, detail::console *)->enable_colors(args[1].cast_to_bool()); return scfx::valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "colors_enabled", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return SCFXTHIS(args, detail::console *)->colors_enabled(); });
-            add_method("console", "sync_stdio", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2) return SCFXTHIS(args, detail::console *)->setsync(args[1].cast_to_bool()); });
-            add_function("print", SCFXFUN(args) { con_.rawprint(args); return {valbox_no_initialize::dont_do_it}; });
-            add_function("println", SCFXFUN(args) { con_.println(args); return {valbox_no_initialize::dont_do_it}; });
+            add_method("console", "log", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<teal::valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, detail::console *)->log(args1); return {valbox_no_initialize::dont_do_it}; });
+            add_method("console", "warn", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<teal::valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, detail::console *)->warn(args1); return {valbox_no_initialize::dont_do_it}; });
+            add_method("console", "debug", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<teal::valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, detail::console *)->debug(args1); return {valbox_no_initialize::dont_do_it}; });
+            add_method("console", "error", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<teal::valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, detail::console *)->error(args1); return {valbox_no_initialize::dont_do_it}; });
+            add_method("console", "print", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<teal::valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, detail::console *)->print(args1); return {valbox_no_initialize::dont_do_it}; });
+            add_method("console", "flush", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, detail::console *)->flush(); return teal::valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "fixed", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, detail::console *)->fixed(); return teal::valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "scientific", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, detail::console *)->scientific(); return teal::valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "hexfloat", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, detail::console *)->hexfloat(); return teal::valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "defaultfloat", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, detail::console *)->defaultfloat(); return teal::valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "setprecision", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) TEALTHIS(args, detail::console *)->setprecision(args[1].cast_to_u64()); return teal::valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "precision", TEALFUN(args) { return TEALTHIS(args, detail::console *)->precision(); });
+            add_method("console", "setw", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) TEALTHIS(args, detail::console *)->setw(args[1].cast_to_u64()); return teal::valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "setfill", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) TEALTHIS(args, detail::console *)->setfill(args[1].cast_to_char()); return teal::valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "fill", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return TEALTHIS(args, detail::console *)->fill(); });
+            add_method("console", "enable_colors", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) TEALTHIS(args, detail::console *)->enable_colors(args[1].cast_to_bool()); return teal::valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "colors_enabled", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return TEALTHIS(args, detail::console *)->colors_enabled(); });
+            add_method("console", "sync_stdio", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) return TEALTHIS(args, detail::console *)->setsync(args[1].cast_to_bool()); });
+            add_function("print", TEALFUN(args) { con_.rawprint(args); return {valbox_no_initialize::dont_do_it}; });
+            add_function("println", TEALFUN(args) { con_.println(args); return {valbox_no_initialize::dont_do_it}; });
 
 
-            add_function("to_string", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+            add_function("to_string", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 std::stringstream ss{};
                 ss << args[0];
                 return ss.str();
             });
 
 
-            add_function("typeof", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+            add_function("typeof", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 valbox::type t{args[0].deref().val_type()};
                 return t == valbox::type::CLASS ? args[0].ref_class_name() : valbox::type_to_str(t);
             });
 
 
-            add_function("sizeof", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+            add_function("sizeof", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 return sizeof_func_(args[0]);
             });
 
-            add_function("is_i64", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_s64_ref(); });
-            add_function("is_u64", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_u64_ref(); });
-            add_function("is_i32", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_s32_ref(); });
-            add_function("is_u32", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_u32_ref(); });
-            add_function("is_i16", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_s16_ref(); });
-            add_function("is_u16", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_u16_ref(); });
-            add_function("is_i8", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_s8_ref(); });
-            add_function("is_u8", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_u8_ref(); });
-            add_function("is_f32", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_float_ref(); });
-            add_function("is_f64", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_double_ref(); });
-            add_function("is_float", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_long_double_ref(); });
-            add_function("is_char", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_char_ref(); });
-            add_function("is_wchar", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_wchar_ref(); });
-            add_function("is_bool", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_bool_ref(); });
-            add_function("is_string", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_string_ref(); });
-            add_function("is_wstring", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_wstring_ref(); });
-            add_function("is_mat4", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_mat4_ref(); });
-            add_function("is_vec4", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_vec4_ref(); });
-            add_function("is_array", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_array_ref(); });
-            add_function("is_object", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_object_ref(); });
+            add_function("is_i64", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_s64_ref(); });
+            add_function("is_u64", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_u64_ref(); });
+            add_function("is_i32", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_s32_ref(); });
+            add_function("is_u32", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_u32_ref(); });
+            add_function("is_i16", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_s16_ref(); });
+            add_function("is_u16", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_u16_ref(); });
+            add_function("is_i8", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_s8_ref(); });
+            add_function("is_u8", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_u8_ref(); });
+            add_function("is_f32", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_float_ref(); });
+            add_function("is_f64", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_double_ref(); });
+            add_function("is_float", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_long_double_ref(); });
+            add_function("is_char", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_char_ref(); });
+            add_function("is_wchar", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_wchar_ref(); });
+            add_function("is_bool", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_bool_ref(); });
+            add_function("is_string", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_string_ref(); });
+            add_function("is_wstring", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_wstring_ref(); });
+            add_function("is_mat4", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_mat4_ref(); });
+            add_function("is_vec4", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_vec4_ref(); });
+            add_function("is_array", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_array_ref(); });
+            add_function("is_object", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_object_ref(); });
 
-            add_function("hton", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+            add_function("hton", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 if(args[0].is_char_ref()) { return args[0].as_char(); }
                 if(args[0].is_bool_ref()) { return args[0].as_bool(); }
                 if(args[0].is_s64_ref()) { return bit_util::swap_on_le<int64_t>{args[0].as_s64()}.val; }
@@ -696,8 +696,8 @@ namespace scfx {
                 if(args[0].is_wchar_ref()) { return bit_util::swap_on_le<wchar_t>{args[0].as_wchar()}.val; }
                 throw std::runtime_error{"invalid argument type"};
             });
-            add_function("ntoh", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+            add_function("ntoh", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 if(args[0].is_char_ref()) { return args[0].as_char(); }
                 if(args[0].is_bool_ref()) { return args[0].as_bool(); }
                 if(args[0].is_s64_ref()) { return bit_util::swap_on_le<int64_t>{args[0].as_s64()}.val; }
@@ -715,8 +715,8 @@ namespace scfx {
                 throw std::runtime_error{"invalid argument type"};
             });
 
-            add_function("tole", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+            add_function("tole", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 if(args[0].is_char_ref()) { return args[0].as_char(); }
                 if(args[0].is_bool_ref()) { return args[0].as_bool(); }
                 if(args[0].is_s64_ref()) { return bit_util::swap_on_be<int64_t>{args[0].as_s64()}.val; }
@@ -733,8 +733,8 @@ namespace scfx {
                 if(args[0].is_wchar_ref()) { return bit_util::swap_on_be<wchar_t>{args[0].as_wchar()}.val; }
                 throw std::runtime_error{"invalid argument type"};
             });
-            add_function("tobe", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+            add_function("tobe", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 if(args[0].is_char_ref()) { return args[0].as_char(); }
                 if(args[0].is_bool_ref()) { return args[0].as_bool(); }
                 if(args[0].is_s64_ref()) { return bit_util::swap_on_le<int64_t>{args[0].as_s64()}.val; }
@@ -752,23 +752,23 @@ namespace scfx {
                 throw std::runtime_error{"invalid argument type"};
             });
 
-            add_function("i64", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return (std::int64_t)0; } return args[0].cast_to_s64(); });
-            add_function("u64", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return (std::uint64_t)0; } return args[0].cast_to_u64(); });
-            add_function("i32", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return (std::int32_t)0; } return args[0].cast_to_s32(); });
-            add_function("u32", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return (std::uint32_t)0; } return args[0].cast_to_u32(); });
-            add_function("i16", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return (std::int16_t)0; } return args[0].cast_to_s16(); });
-            add_function("u16", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return (std::uint16_t)0; } return args[0].cast_to_u16(); });
-            add_function("i8", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return (std::int8_t)0; } return args[0].cast_to_s8(); });
-            add_function("u8", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return (std::uint8_t)0; } return args[0].cast_to_u8(); });
-            add_function("f32", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return (float)0; } return args[0].cast_to_float(); });
-            add_function("f64", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return (double)0; } return args[0].cast_to_double(); });
-            add_function("float", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return (long double)0; } return args[0].cast_num_to_num<long double>(); });
-            add_function("char", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return char{}; } return args[0].cast_to_char(); });
-            add_function("wchar", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return wchar_t{}; } return args[0].cast_to_wchar(); });
-            add_function("bool", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return false; } return args[0].cast_to_bool(); });
-            add_function("string", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return std::string{}; } return args[0].cast_to_string(); });
-            add_function("wstring", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return std::wstring{}; } return args[0].cast_to_wstring(); });
-            add_function("vec4", SCFXFUN(args) {
+            add_function("i64", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return (std::int64_t)0; } return args[0].cast_to_s64(); });
+            add_function("u64", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return (std::uint64_t)0; } return args[0].cast_to_u64(); });
+            add_function("i32", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return (std::int32_t)0; } return args[0].cast_to_s32(); });
+            add_function("u32", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return (std::uint32_t)0; } return args[0].cast_to_u32(); });
+            add_function("i16", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return (std::int16_t)0; } return args[0].cast_to_s16(); });
+            add_function("u16", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return (std::uint16_t)0; } return args[0].cast_to_u16(); });
+            add_function("i8", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return (std::int8_t)0; } return args[0].cast_to_s8(); });
+            add_function("u8", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return (std::uint8_t)0; } return args[0].cast_to_u8(); });
+            add_function("f32", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return (float)0; } return args[0].cast_to_float(); });
+            add_function("f64", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return (double)0; } return args[0].cast_to_double(); });
+            add_function("float", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return (long double)0; } return args[0].cast_num_to_num<long double>(); });
+            add_function("char", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return char{}; } return args[0].cast_to_char(); });
+            add_function("wchar", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return wchar_t{}; } return args[0].cast_to_wchar(); });
+            add_function("bool", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return false; } return args[0].cast_to_bool(); });
+            add_function("string", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return std::string{}; } return args[0].cast_to_string(); });
+            add_function("wstring", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_LE(args, 1) if(args.empty()) { return std::wstring{}; } return args[0].cast_to_wstring(); });
+            add_function("vec4", TEALFUN(args) {
                 valbox res{valbox::vec4_t{0, 0, 0, 1}};
                 if(args.size() == 1) {
                     if(args[0].is_array_ref() || args[0].is_object_ref()) {
@@ -789,7 +789,7 @@ namespace scfx {
                 }
                 return res;
             });
-            add_function("mat4", SCFXFUN(args) {
+            add_function("mat4", TEALFUN(args) {
                 valbox res{valbox::mat4_t::identity()};
                 if(args.size() == 16) {
                     for(std::size_t i{0}; i < 16 && i < args.size(); ++i) {
@@ -821,7 +821,7 @@ namespace scfx {
                 }
                 return res;
             });
-            add_function("array", SCFXFUN(args) {
+            add_function("array", TEALFUN(args) {
                 valbox res{valbox_no_initialize::dont_do_it};
                 res.become_array();
                 if(args.size() == 1 && (args[0].is_array_ref())) {
@@ -835,7 +835,7 @@ namespace scfx {
                 }
                 return res;
             });
-            add_function("object", SCFXFUN(args) {
+            add_function("object", TEALFUN(args) {
                 if(args.empty()) {
                     return valbox{valbox_no_initialize::dont_do_it}.become_object();
                 }
@@ -845,31 +845,31 @@ namespace scfx {
                 valbox res{valbox_no_initialize::dont_do_it};
                 res.become_object();
                 if(args[0].is_string_ref()) {
-                    res.from_json(scfx::json::deserialize(args[0].as_string()));
+                    res.from_json(teal::json::deserialize(args[0].as_string()));
                     return res;
                 } else if(args[0].is_wstring_ref()) {
-                    return scfx::json::deserialize(args[0].as_wstring());
+                    return teal::json::deserialize(args[0].as_wstring());
                 } else if(args[0].is_any_int_number()) {
-                    return scfx::json{args[0].cast_num_to_num<int64_t>()};
+                    return teal::json{args[0].cast_num_to_num<int64_t>()};
                 } else if(args[0].is_any_fp_number()) {
-                    return scfx::json{args[0].cast_num_to_num<long double>()};
+                    return teal::json{args[0].cast_num_to_num<long double>()};
                 } else if(args[0].is_bool_ref()) {
-                    return scfx::json{args[0].cast_num_to_num<long double>()};
+                    return teal::json{args[0].cast_num_to_num<long double>()};
                 }
                 return res;
             });
-            add_function("deserialize", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+            add_function("deserialize", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 valbox res{valbox_no_initialize::dont_do_it};
                 if(args[0].is_string_ref()) {
-                    res.from_json(scfx::json::deserialize(args[0].as_string()));
+                    res.from_json(teal::json::deserialize(args[0].as_string()));
                     return res;
                 } else if(args[0].is_wstring_ref()) {
-                    res.from_json(scfx::json::deserialize(args[0].as_wstring()));
+                    res.from_json(teal::json::deserialize(args[0].as_wstring()));
                 }
                 return res;
             });
-            add_function("serialize", SCFXFUN(args) {
+            add_function("serialize", TEALFUN(args) {
                 valbox res{valbox_no_initialize::dont_do_it};
                 if(args.size() == 1) {
                     res = args[0].to_json().serialize();
@@ -878,7 +878,7 @@ namespace scfx {
                 }
                 return res;
             });
-            add_function("serialize5", SCFXFUN(args) {
+            add_function("serialize5", TEALFUN(args) {
                 valbox res{valbox_no_initialize::dont_do_it};
                 if(args.size() == 1) {
                     res = args[0].to_json().serialize5();
@@ -888,8 +888,8 @@ namespace scfx {
                 return res;
             });
 
-            add_function("contains", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+            add_function("contains", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 auto a1r{args[0].deref()};
                 if(a1r.is_object_ref()) {
                     return a1r.as_object().find(args[1].cast_to_string()) != a1r.as_object().end();
@@ -900,16 +900,16 @@ namespace scfx {
                 return false;
             });
 
-            add_function("key_exists", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+            add_function("key_exists", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 auto a1r{args[0].deref()};
                 if(a1r.is_object_ref()) {
                     return a1r.as_object().find(args[1].cast_to_string()) != a1r.as_object().end();
                 }
                 throw std::runtime_error{"not object"};
             });
-            add_function("string_field_exists", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+            add_function("string_field_exists", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 auto a1r{args[0].deref()};
                 if(a1r.is_object_ref()) {
                     return a1r.as_object().find(args[1].cast_to_string()) != a1r.as_object().end() &&
@@ -918,8 +918,8 @@ namespace scfx {
                 throw std::runtime_error{"not object"};
             });
 
-            add_function("key_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+            add_function("key_at", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 auto a1r{args[0].deref()};
                 if(a1r.is_object_ref()) {
                     return a1r.object_key_at(args[1].cast_to_u64());
@@ -927,8 +927,8 @@ namespace scfx {
                 throw std::runtime_error{"not object"};
             });
 
-            add_function("value_at", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+            add_function("value_at", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 auto a1r{args[0].deref()};
                 if(a1r.is_object_ref()) {
                     return a1r.object_value_at(args[1].cast_to_u64());
@@ -936,8 +936,8 @@ namespace scfx {
                 throw std::runtime_error{"not object"};
             });
 
-            add_function("resize", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+            add_function("resize", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 valbox &a1r{args[0].deref()};
                 if(a1r.is_array_ref()) {
                     auto &vec{a1r.as_array()};
@@ -954,8 +954,8 @@ namespace scfx {
                 }
                 return false;
             });
-            add_function("push_back", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+            add_function("push_back", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 valbox &a1r{args[0].deref()};
                 if(a1r.is_undefined_ref()) {
                     a1r.become_array();
@@ -965,8 +965,8 @@ namespace scfx {
             });
 
 #if 1
-            add_function("push_front", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+            add_function("push_front", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 valbox &a1r{args[0].deref()};
                 if(a1r.is_undefined_ref()) {
                     a1r.become_array();
@@ -974,8 +974,8 @@ namespace scfx {
                 a1r.as_array().insert(a1r.as_array().begin(), args[1]);
                 return args[0];
             });
-            add_function("pop_front", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+            add_function("pop_front", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 valbox &a1r{args[0].deref()};
                 if(a1r.is_array_ref()) {
                     if(a1r.as_array().empty()) {
@@ -990,8 +990,8 @@ namespace scfx {
             });
 #endif
 
-            add_function("pop_back", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+            add_function("pop_back", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 valbox &a1r{args[0].deref()};
                 if(a1r.is_array_ref()) {
                     if(a1r.as_array().empty()) {
@@ -1004,29 +1004,29 @@ namespace scfx {
                 throw std::runtime_error{"not array"};
             });
 
-            add_function("undefine", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+            add_function("undefine", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 args[0].become_undefined();
                 return args[0];
             });
 
-            add_function("replace_substr", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 2, 3)
+            add_function("replace_substr", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 2, 3)
                 if(args.size() == 2) {
-                    return scfx::str_util::to_utf8(scfx::str_util::replace_substring<std::wstring>(
+                    return teal::str_util::to_utf8(teal::str_util::replace_substring<std::wstring>(
                         args[0].cast_to_wstring(), args[1].cast_to_wstring(), std::wstring{}
                     ));
                 }
                 if(args.size() == 3) {
-                    return scfx::str_util::to_utf8(scfx::str_util::replace_substring<std::wstring>(
+                    return teal::str_util::to_utf8(teal::str_util::replace_substring<std::wstring>(
                         args[0].cast_to_wstring(), args[1].cast_to_wstring(), args[2].cast_to_wstring()
                     ));
                 }
                 return std::string{};
             });
 
-            add_function("reserve", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+            add_function("reserve", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 if(args[0].is_string_ref()) {
                     args[0].as_string().reserve(args[1].cast_to_size_t());
                     return true;
@@ -1037,8 +1037,8 @@ namespace scfx {
                 return false;
             });
 
-            add_function("substr", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 3)
+            add_function("substr", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 3)
                 if(args.size() == 1) {
                     return args[0].cast_to_string();
                 } else if(args.size() == 2) {
@@ -1056,8 +1056,8 @@ namespace scfx {
                 return std::string{};
             });
 
-            add_function("slice", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 3)
+            add_function("slice", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 3)
                 if(args[0].is_array_ref()) {
                     if(args.size() == 1) {
                         return args[0];
@@ -1096,17 +1096,17 @@ namespace scfx {
                 return valbox{valbox_no_initialize::dont_do_it};
             });
 
-            add_function("str_tok", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+            add_function("str_tok", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 valbox res{valbox_no_initialize::dont_do_it};
                 res.become_array();
                 if(args[0].is_string_ref()) {
-                    std::vector<std::string> sv{scfx::str_util::str_tok(args[0].cast_to_string(), args[1].cast_to_string())};
+                    std::vector<std::string> sv{teal::str_util::str_tok(args[0].cast_to_string(), args[1].cast_to_string())};
                     for(auto &&s: sv) {
                         res.as_array().push_back(s);
                     }
                 } else if(args[0].is_wstring_ref()) {
-                    std::vector<std::wstring> sv{scfx::str_util::str_tok(args[0].cast_to_wstring(), args[1].cast_to_wstring())};
+                    std::vector<std::wstring> sv{teal::str_util::str_tok(args[0].cast_to_wstring(), args[1].cast_to_wstring())};
                     for(auto &&s: sv) {
                         res.as_array().push_back(s);
                     }
@@ -1114,50 +1114,50 @@ namespace scfx {
                 return res;
             });
 
-            add_function("ltrim", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+            add_function("ltrim", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 if(args[0].is_string_ref()) {
-                    return scfx::str_util::ltrim<std::string>(args[0].as_string());
+                    return teal::str_util::ltrim<std::string>(args[0].as_string());
                 } else if(args[0].is_wstring_ref()) {
-                    return scfx::str_util::ltrim<std::wstring>(args[0].as_wstring());
+                    return teal::str_util::ltrim<std::wstring>(args[0].as_wstring());
                 } else {
                     return args[0];
                 }
             });
 
-            add_function("rtrim", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+            add_function("rtrim", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 if(args[0].is_string_ref()) {
-                    return scfx::str_util::rtrim<std::string>(args[0].as_string());
+                    return teal::str_util::rtrim<std::string>(args[0].as_string());
                 } else if(args[0].is_wstring_ref()) {
-                    return scfx::str_util::rtrim<std::wstring>(args[0].as_wstring());
+                    return teal::str_util::rtrim<std::wstring>(args[0].as_wstring());
                 } else {
                     return args[0];
                 }
             });
-            add_function("trim", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+            add_function("trim", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 if(args[0].is_string_ref()) {
-                    return scfx::str_util::trim<std::string>(args[0].as_string());
+                    return teal::str_util::trim<std::string>(args[0].as_string());
                 } else if(args[0].is_wstring_ref()) {
-                    return scfx::str_util::trim<std::wstring>(args[0].as_wstring());
+                    return teal::str_util::trim<std::wstring>(args[0].as_wstring());
                 } else {
                     return args[0];
                 }
             });
 
-            add_function("isspace", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::isspace(args[0].cast_to_int()); });
-            add_function("isalpha", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::isalpha(args[0].cast_to_int()); });
-            add_function("isdigit", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::isdigit(args[0].cast_to_int()); });
-            add_function("isalnum", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::isalnum(args[0].cast_to_int()); });
-            add_function("ispunct", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::ispunct(args[0].cast_to_int()); });
-            add_function("iscntrl", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::iscntrl(args[0].cast_to_int()); });
-            add_function("ishexdigit", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::ishexdigit(args[0].cast_to_int()); });
-            add_function("isoctdigit", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::isoctdigit(args[0].cast_to_int()); });
-            add_function("isbindigit", SCFXFUN(args) { SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::isbindigit(args[0].cast_to_int()); });
+            add_function("isspace", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::isspace(args[0].cast_to_int()); });
+            add_function("isalpha", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::isalpha(args[0].cast_to_int()); });
+            add_function("isdigit", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::isdigit(args[0].cast_to_int()); });
+            add_function("isalnum", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::isalnum(args[0].cast_to_int()); });
+            add_function("ispunct", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::ispunct(args[0].cast_to_int()); });
+            add_function("iscntrl", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::iscntrl(args[0].cast_to_int()); });
+            add_function("ishexdigit", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::ishexdigit(args[0].cast_to_int()); });
+            add_function("isoctdigit", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::isoctdigit(args[0].cast_to_int()); });
+            add_function("isbindigit", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::isbindigit(args[0].cast_to_int()); });
 
-            add_function("subarray", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 3)
+            add_function("subarray", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 3)
                 if(args[0].is_array_ref()) {
                     if(args.size() == 1) {
                         return args[0].subarray();
@@ -1170,23 +1170,23 @@ namespace scfx {
                 throw std::runtime_error{"the first argument must be array"};
             });
 
-            add_function("hexdump", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 4)
+            add_function("hexdump", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 4)
                 if(args.size() == 1) {
-                    return scfx::str_util::hexdump(args[0].cast_to_byte_array());
+                    return teal::str_util::hexdump(args[0].cast_to_byte_array());
                 } else if(args.size() == 2) {
-                    return scfx::str_util::hexdump(
+                    return teal::str_util::hexdump(
                         args[0].cast_to_byte_array(),
                         args[1].cast_to_u64()
                     );
                 } else if(args.size() == 3) {
-                    return scfx::str_util::hexdump(
+                    return teal::str_util::hexdump(
                         args[0].cast_to_byte_array(),
                         args[1].cast_to_u64(),
                         args[2].cast_to_string()
                     );
                 } else if(args.size() == 4) {
-                    return scfx::str_util::hexdump(
+                    return teal::str_util::hexdump(
                         args[0].cast_to_byte_array(),
                         args[1].cast_to_u64(),
                         args[2].cast_to_string(),
@@ -1196,47 +1196,47 @@ namespace scfx {
                 return std::string{};
             });
 
-            add_function("data_to_base85_str", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 1)
+            add_function("data_to_base85_str", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 1)
                 auto src{args[0].cast_to_byte_array()};
-                return scfx::data_to_base85_str(src);
+                return teal::data_to_base85_str(src);
             });
 
-            add_function("base85_str_to_data", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 1)
+            add_function("base85_str_to_data", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 1)
                 auto src{args[0].cast_to_string()};
-                auto d{scfx::base85_str_to_data(src)};
+                auto d{teal::base85_str_to_data(src)};
                 return std::string{d.begin(), d.end()};
             });
 
-            add_function("data_to_base64_str", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 1)
+            add_function("data_to_base64_str", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 1)
                 auto src{args[0].cast_to_byte_array()};
-                return scfx::data_to_base64_str(src);
+                return teal::data_to_base64_str(src);
             });
 
-            add_function("base64_str_to_data", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 1)
+            add_function("base64_str_to_data", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 1)
                 auto src{args[0].cast_to_string()};
-                auto d{scfx::base64_str_to_data(src)};
+                auto d{teal::base64_str_to_data(src)};
                 return std::string{d.begin(), d.end()};
             });
 
-            add_function("data_to_hex_str", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 1)
+            add_function("data_to_hex_str", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 1)
                 auto src{args[0].cast_to_byte_array()};
-                return scfx::data_to_hex_str(src);
+                return teal::data_to_hex_str(src);
             });
 
-            add_function("hex_str_to_data", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 1)
+            add_function("hex_str_to_data", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 1)
                 auto src{args[0].cast_to_string()};
-                auto d{scfx::hex_str_to_data(src)};
+                auto d{teal::hex_str_to_data(src)};
                 return std::string{d.begin(), d.end()};
             });
 
-            add_function("getset", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+            add_function("getset", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 valbox res{valbox_no_initialize::dont_do_it};
                 res.assign(args[0]);
                 args[0].assign(args[1]);
@@ -1244,159 +1244,159 @@ namespace scfx {
             });
 
 
-            add_function("atoi", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 3)
+            add_function("atoi", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 3)
                 if(args.size() == 1) {
-                    return scfx::str_util::atoi(args[0].cast_to_string());
+                    return teal::str_util::atoi(args[0].cast_to_string());
                 } else if(args.size() == 2) {
-                    return scfx::str_util::atoi(args[0].cast_to_string(), args[1].cast_to_u64());
+                    return teal::str_util::atoi(args[0].cast_to_string(), args[1].cast_to_u64());
                 } else if(args.size() == 3) {
-                    return scfx::str_util::atoi(args[0].cast_to_string(), args[1].cast_to_u64(), args[2].cast_to_bool());
+                    return teal::str_util::atoi(args[0].cast_to_string(), args[1].cast_to_u64(), args[2].cast_to_bool());
                 }
                 return std::int64_t{0};
             });
 
-            add_function("atoui", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2)
+            add_function("atoui", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2)
                 if(args.size() == 1) {
-                    return scfx::str_util::atoui(args[0].cast_to_string());
+                    return teal::str_util::atoui(args[0].cast_to_string());
                 } else if(args.size() == 2) {
-                    return scfx::str_util::atoui(args[0].cast_to_string(), args[1].cast_to_u64());
+                    return teal::str_util::atoui(args[0].cast_to_string(), args[1].cast_to_u64());
                 }
                 return std::uint64_t{0};
             });
 
-            add_function("atof", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                return scfx::str_util::atof(args[0].cast_to_string());
+            add_function("atof", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                return teal::str_util::atof(args[0].cast_to_string());
             });
 
-            add_function("itoa", SCFXFUN(args) {
+            add_function("itoa", TEALFUN(args) {
                 if(args.size() > 0) {
                     if(args.size() > 1) {
                         if(args.size() > 2) {
                             if(args.size() > 3) {
-                                return scfx::str_util::itoa<std::string>(args[0].cast_to_s64(), args[1].cast_to_s64(), args[2].cast_to_s64(), args[3].cast_to_bool());
+                                return teal::str_util::itoa<std::string>(args[0].cast_to_s64(), args[1].cast_to_s64(), args[2].cast_to_s64(), args[3].cast_to_bool());
                             } else {
-                                return scfx::str_util::itoa<std::string>(args[0].cast_to_s64(), args[1].cast_to_s64(), args[2].cast_to_s64());
+                                return teal::str_util::itoa<std::string>(args[0].cast_to_s64(), args[1].cast_to_s64(), args[2].cast_to_s64());
                             }
                         } else {
-                            return scfx::str_util::itoa<std::string>(args[0].cast_to_s64(), args[1].cast_to_s64());
+                            return teal::str_util::itoa<std::string>(args[0].cast_to_s64(), args[1].cast_to_s64());
                         }
                     } else {
-                        return scfx::str_util::itoa<std::string>(args[0].cast_to_s64());
+                        return teal::str_util::itoa<std::string>(args[0].cast_to_s64());
                     }
                 }
                 return std::string{};
             });
 
-            add_function("utoa", SCFXFUN(args) {
+            add_function("utoa", TEALFUN(args) {
                 if(args.size() > 0) {
                     if(args.size() > 1) {
                         if(args.size() > 2) {
                             if(args.size() > 3) {
-                                return scfx::str_util::utoa<std::string>(args[0].cast_to_u64(), args[1].cast_to_s64(), args[2].cast_to_s64(), args[3].cast_to_bool());
+                                return teal::str_util::utoa<std::string>(args[0].cast_to_u64(), args[1].cast_to_s64(), args[2].cast_to_s64(), args[3].cast_to_bool());
                             } else {
-                                return scfx::str_util::utoa<std::string>(args[0].cast_to_u64(), args[1].cast_to_s64(), args[2].cast_to_s64());
+                                return teal::str_util::utoa<std::string>(args[0].cast_to_u64(), args[1].cast_to_s64(), args[2].cast_to_s64());
                             }
                         } else {
-                            return scfx::str_util::utoa<std::string>(args[0].cast_to_u64(), args[1].cast_to_s64());
+                            return teal::str_util::utoa<std::string>(args[0].cast_to_u64(), args[1].cast_to_s64());
                         }
                     } else {
-                        return scfx::str_util::utoa<std::string>(args[0].cast_to_u64());
+                        return teal::str_util::utoa<std::string>(args[0].cast_to_u64());
                     }
                 }
                 return std::string{};
             });
 
-            add_function("ftoa", SCFXFUN(args) {
+            add_function("ftoa", TEALFUN(args) {
                 if(args.size() > 0) {
                     if(args.size() > 1) {
-                        return scfx::str_util::ftoa(args[0].cast_to_long_double(), args[1].cast_to_u64());
+                        return teal::str_util::ftoa(args[0].cast_to_long_double(), args[1].cast_to_u64());
                     } else {
-                        return scfx::str_util::ftoa(args[0].cast_to_long_double());
+                        return teal::str_util::ftoa(args[0].cast_to_long_double());
                     }
                 }
                 return std::string{"0.0"};
             });
 
-            add_function("toupper", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+            add_function("toupper", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 if(args[0].is_char_ref()) {
-                    return scfx::str_util::toupper(args[0].as_char());
+                    return teal::str_util::toupper(args[0].as_char());
                 } else {
-                    return scfx::str_util::towupper(args[0].cast_to_u64());
+                    return teal::str_util::towupper(args[0].cast_to_u64());
                 }
             });
-            add_function("tolower", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+            add_function("tolower", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 if(args[0].is_char_ref()) {
-                    return scfx::str_util::tolower(args[0].as_char());
+                    return teal::str_util::tolower(args[0].as_char());
                 } else {
-                    return scfx::str_util::towlower(args[0].cast_to_u64());
+                    return teal::str_util::towlower(args[0].cast_to_u64());
                 }
             });
 
-            add_function("strtoupper", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+            add_function("strtoupper", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 if(args[0].is_string_ref()) {
-                    return scfx::str_util::fltr<std::string>::strtoupper(args[0].as_string());
+                    return teal::str_util::fltr<std::string>::strtoupper(args[0].as_string());
                 } else if(args[0].is_wstring_ref()) {
-                    return scfx::str_util::fltr<std::wstring>::strtoupper(args[0].as_wstring());
+                    return teal::str_util::fltr<std::wstring>::strtoupper(args[0].as_wstring());
                 } else {
                     throw std::runtime_error{"invalid argument"};
                 }
             });
-            add_function("strtolower", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+            add_function("strtolower", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 if(args[0].is_char_ref()) {
-                    return scfx::str_util::tolower(args[0].as_char());
+                    return teal::str_util::tolower(args[0].as_char());
                 } else {
-                    return scfx::str_util::towlower(args[0].cast_to_u64());
+                    return teal::str_util::towlower(args[0].cast_to_u64());
                 }
             });
 
 
-            add_function("get_bit_field", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 3)
+            add_function("get_bit_field", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 3)
                 if(args[0].is_u64_ref()) {
-                    scfx::bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
+                    teal::bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
                     return bf.get(args[1].cast_to_u64(), args[2].cast_to_u64());
                 } else if(args[0].is_s64_ref()) {
-                    scfx::bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
+                    teal::bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
                     return bf.get(args[1].cast_to_u64(), args[2].cast_to_u64());
                 } else if(args[0].is_u32_ref()) {
-                    scfx::bit_util::bits<std::uint32_t> bf{args[0].cast_to_u32()};
+                    teal::bit_util::bits<std::uint32_t> bf{args[0].cast_to_u32()};
                     return bf.get(args[1].cast_to_u64(), args[2].cast_to_u64());
                 } else if(args[0].is_s32_ref()) {
-                    scfx::bit_util::bits<std::uint32_t> bf{args[0].cast_to_u32()};
+                    teal::bit_util::bits<std::uint32_t> bf{args[0].cast_to_u32()};
                     return bf.get(args[1].cast_to_u64(), args[2].cast_to_u64());
                 } else if(args[0].is_u16_ref()) {
-                    scfx::bit_util::bits<std::uint16_t> bf{args[0].cast_to_u16()};
+                    teal::bit_util::bits<std::uint16_t> bf{args[0].cast_to_u16()};
                     return bf.get(args[1].cast_to_u64(), args[2].cast_to_u64());
                 } else if(args[0].is_s16_ref()) {
-                    scfx::bit_util::bits<std::uint16_t> bf{args[0].cast_to_u16()};
+                    teal::bit_util::bits<std::uint16_t> bf{args[0].cast_to_u16()};
                     return bf.get(args[1].cast_to_u64(), args[2].cast_to_u64());
                 } else if(args[0].is_u8_ref()) {
-                    scfx::bit_util::bits<std::uint8_t> bf{args[0].cast_to_u8()};
+                    teal::bit_util::bits<std::uint8_t> bf{args[0].cast_to_u8()};
                     return bf.get(args[1].cast_to_u64(), args[2].cast_to_u64());
                 } else if(args[0].is_s8_ref()) {
-                    scfx::bit_util::bits<std::uint8_t> bf{args[0].cast_to_u8()};
+                    teal::bit_util::bits<std::uint8_t> bf{args[0].cast_to_u8()};
                     return bf.get(args[1].cast_to_u64(), args[2].cast_to_u64());
                 }
                 return args[0];
             });
 
-            add_function("get_bit", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                scfx::bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
+            add_function("get_bit", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                teal::bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
                 auto bitpos{args[1].cast_to_u64()};
                 return bf.get(bitpos);
             });
 
-            add_function("update_bit", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 3)
-                scfx::bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
+            add_function("update_bit", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 3)
+                teal::bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
                 auto bitpos{args[1].cast_to_u64()};
                 auto bitval{args[2].cast_to_u64()};
                 if(bitval != 0) {
@@ -1409,18 +1409,18 @@ namespace scfx {
                 res.assign_preserving_type(bf.whole());
                 return res;
             });
-            add_function("set_bit", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                scfx::bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
+            add_function("set_bit", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                teal::bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
                 bf.set(args[1].cast_to_u64());
                 valbox res{valbox_no_initialize::dont_do_it};
                 res.become_same_type_as(args[0]);
                 res.assign_preserving_type(bf.whole());
                 return res;
             });
-            add_function("clear_bit", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                scfx::bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
+            add_function("clear_bit", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                teal::bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
                 bf.clr(args[1].cast_to_u64());
                 valbox res{valbox_no_initialize::dont_do_it};
                 res.become_same_type_as(args[0]);
@@ -1429,33 +1429,33 @@ namespace scfx {
             });
 
 
-            add_function("sleep", SCFXFUN(args) {
+            add_function("sleep", TEALFUN(args) {
                 long double time_to_sleep{args[0].cast_to_long_double()};
                 if(time_to_sleep > 0) {
                     std::this_thread::sleep_for(std::chrono::nanoseconds(static_cast<std::int64_t>(time_to_sleep * 1000000000.0L)));
                 }
                 return time_to_sleep;
             });
-            add_function("set_cycle_nanosleep", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1);
+            add_function("set_cycle_nanosleep", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1);
                 uint64_t time_to_sleep{args[0].cast_to_u64()};
                 set_nanoseconds_of_sleeping_between_cycles(time_to_sleep);
                 return time_to_sleep;
             });
-            add_function("cycle_nanosleep", SCFXFUN() {
+            add_function("cycle_nanosleep", TEALFUN() {
                 return sleep_between_cycles_nanoseconds();
             });
-            add_function("set_inactive_nanosleep", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 1);
+            add_function("set_inactive_nanosleep", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1);
                 uint64_t time_to_sleep{args[0].cast_to_u64()};
                 set_sleep_inactive_thread_nanoseconds(time_to_sleep);
                 return time_to_sleep;
             });
-            add_function("inactive_nanosleep", SCFXFUN() {
+            add_function("inactive_nanosleep", TEALFUN() {
                 return sleep_inactive_thread_nanoseconds();
             });
-            add_function("exit", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2);
+            add_function("exit", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2);
                 if(programmatic_termination_enabled_ != 0) {
                     exit_status_ = args.size() == 2 ? args[1].cast_num_to_num<int>() : 0;
                     terminate();
@@ -1465,36 +1465,36 @@ namespace scfx {
                 return programmatic_termination_enabled_ != 0;
             });
 
-            add_function("assert", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_GE(args, 3);
+            add_function("assert", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_GE(args, 3);
                 if(!args[2].cast_to_bool()) {
                     throw runtime_error{args[0].cast_to_s64(), args[0].cast_to_s64(), std::string{"assertion failed"}};
                 }
                 return true;
             });
 
-            add_function("assign", SCFXFUN(args) {
-                SCFX_CHCK_FUN_PARMS_NUM_EQ(args, 2);
+            add_function("assign", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2);
                 args[0].assign_preserving_type(args[1]);
                 return args[0];
             });
 
 
-            add_function("thread_id", SCFXFUN() {
+            add_function("thread_id", TEALFUN() {
                 std::stringstream ss{};
                 ss << std::this_thread::get_id();
                 std::uint64_t res{};
                 ss >> res;
                 return res;
             });
-            add_function("hardware_concurrency", SCFXFUN() {
+            add_function("hardware_concurrency", TEALFUN() {
                 std::shared_lock l{threads_mtp_};
                 auto ts{threads_.size()};
                 return ts > 0 ? ts : 1;
             });
 
 
-            add_function("size", SCFXFUN(args) {
+            add_function("size", TEALFUN(args) {
                 valbox &der{args[0].deref()};
                 switch(der.val_type()) {
                     case valbox::type::STRING: return static_cast<uint64_t>(der.as_string().size());
@@ -1505,7 +1505,7 @@ namespace scfx {
                 }
             });
 
-            add_function("empty", SCFXFUN(args) {
+            add_function("empty", TEALFUN(args) {
                 valbox arg0{args[0]};
                 return arg0.is_undefined_ref() ||
                        (arg0.is_object_ref() && arg0.as_object().empty()) ||
@@ -1547,25 +1547,25 @@ namespace scfx {
             array_buffer_ext_.unregister_runtime();
         }
 
-        scfx::timespec_wrapper valbox_to_timestamp(std::vector<scfx::valbox> const &args) const {
+        teal::timespec_wrapper valbox_to_timestamp(std::vector<teal::valbox> const &args) const {
             if(args.size() >= 1) {
                 if(args[0].is_string_ref()) {
-                    return scfx::timespec_wrapper{args[0].as_string()};
+                    return teal::timespec_wrapper{args[0].as_string()};
                 } else if(args[0].is_wstring_ref()) {
-                    return scfx::timespec_wrapper{args[0].as_wstring()};
+                    return teal::timespec_wrapper{args[0].as_wstring()};
                 } else if(args[0].is_any_fp_number()) {
-                    return scfx::timespec_wrapper{args[0].cast_to_long_double()};
+                    return teal::timespec_wrapper{args[0].cast_to_long_double()};
                 } else if(args[0].is_any_int_number()) {
-                    return scfx::timespec_wrapper{args[0].cast_to_s64()}; // milliseconds
+                    return teal::timespec_wrapper{args[0].cast_to_s64()}; // milliseconds
                 }
             }
-            return scfx::timespec_wrapper::now();
+            return teal::timespec_wrapper::now();
         }
 
         void load_file(std::string const &filename) {
             if(!load_library(filename)) {
-                if(scfx::file_util::file_exists(filename)) {
-                    std::string src{scfx::file_util::load_text_file(filename)};
+                if(teal::file_util::file_exists(filename)) {
+                    std::string src{teal::file_util::load_text_file(filename)};
                     load_source_string(src);
                 }
             }
@@ -1742,7 +1742,7 @@ namespace scfx {
                 exctx_.clear_stack_soft();
                 exctx_.new_stack_frame();
 
-#ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
+#ifdef TEAL_DISABLE_UNDEFINED_CELL_ARGS
                 bool undefineds{false};
 #endif
                 auto &&args_info{curr_cell.actual_args_info()};
@@ -1757,7 +1757,7 @@ namespace scfx {
                         } else {
                             auto w_it{worker_cells_.find(ai.cell_name)};
                             if(w_it != worker_cells_.end()) {
-#ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
+#ifdef TEAL_DISABLE_UNDEFINED_CELL_ARGS
                                 if(w_it->second.curr_value().is_undefined_ref()) {
                                     undefineds = true;
                                     break;
@@ -1768,7 +1768,7 @@ namespace scfx {
                             } else {
                                 auto in_it{input_cells_.find(ai.cell_name)};
                                 if(in_it != input_cells_.end()) {
-#ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
+#ifdef TEAL_DISABLE_UNDEFINED_CELL_ARGS
                                     if(in_it->second.curr_value().is_undefined_ref()) {
                                         undefineds = true;
                                         break;
@@ -1777,9 +1777,9 @@ namespace scfx {
                                     ai.in_cell_ptr = &(in_it->second);
                                     exctx_.set_local_value(curr_arg_name, in_it->second.curr_value());
                                 } else {
-#ifdef SCFX_USE_EXTERNAL_VALUES
+#ifdef TEAL_USE_EXTERNAL_VALUES
                                     valbox val{get_external_value(curr_arg_name)};
-#ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
+#ifdef TEAL_DISABLE_UNDEFINED_CELL_ARGS
                                     if(val.is_undefined()) {
                                         undefineds = true;
                                         break;
@@ -1801,7 +1801,7 @@ namespace scfx {
                             ai.expr_val = ai.expr->eval(&exctx_, eval_caller_type::no_matter, nullptr);
                         }
                         valbox vb{ai.expr_val};
-#ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
+#ifdef TEAL_DISABLE_UNDEFINED_CELL_ARGS
                         if(vb.is_undefined_ref()) {
                             undefineds = true;
                             break;
@@ -1811,7 +1811,7 @@ namespace scfx {
                     }
                 }
 
-#ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
+#ifdef TEAL_DISABLE_UNDEFINED_CELL_ARGS
                 if(undefineds) {
                     curr_cell.set_curr_value(valbox{valbox_no_initialize::dont_do_it});
                     if(!curr_cell.out_name().empty()) {
@@ -1922,7 +1922,7 @@ namespace scfx {
                 threads_.emplace_back([this]() {
                     bool excepted{false};
                     std::string exbuf{};
-#ifndef SCFX_DEBUGGING
+#ifndef TEAL_DEBUGGING
                     try {
 #endif
                         std::shared_ptr<execution_context> exctx{std::make_shared<execution_context>()};
@@ -1938,7 +1938,7 @@ namespace scfx {
                                 worker_cell_instance &curr_cell{wrkcl.second};
                                 if(curr_cell.try_lock()) {
                                     have_locked = true;
-                                    scfx::shut_on_destroy sod{[&]() { curr_cell.unlock(); }};
+                                    teal::shut_on_destroy sod{[&]() { curr_cell.unlock(); }};
                                     std::string const &curr_cell_type_name{curr_cell.type_name()};
 
                                     if(!curr_cell.type_info_transferred()) {
@@ -1956,7 +1956,7 @@ namespace scfx {
                                     exctx_ptr->clear_stack_soft();
                                     exctx_ptr->new_stack_frame();
 
-#ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
+#ifdef TEAL_DISABLE_UNDEFINED_CELL_ARGS
                                     bool undefineds{false};
 #endif
                                     std::vector<worker_cell_instance::arg_info> &args_info{curr_cell.actual_args_info()};
@@ -1971,7 +1971,7 @@ namespace scfx {
                                             } else {
                                                 auto w_it{worker_cells_.find(ai.cell_name)};
                                                 if(w_it != worker_cells_.end()) {
-#ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
+#ifdef TEAL_DISABLE_UNDEFINED_CELL_ARGS
                                                     if(w_it->second.curr_value().is_undefined_ref()) {
                                                         undefineds = true;
                                                         break;
@@ -1982,7 +1982,7 @@ namespace scfx {
                                                 } else {
                                                     auto in_it{input_cells_.find(ai.cell_name)};
                                                     if(in_it != input_cells_.end()) {
-#ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
+#ifdef TEAL_DISABLE_UNDEFINED_CELL_ARGS
                                                         if(in_it->second.curr_value().is_undefined_ref()) {
                                                             undefineds = true;
                                                             break;
@@ -1991,9 +1991,9 @@ namespace scfx {
                                                         ai.in_cell_ptr = &(in_it->second);
                                                         exctx_ptr->set_local_value(curr_arg_name, ai.in_cell_ptr->curr_value());
                                                     } else {
-#ifdef SCFX_USE_EXTERNAL_VALUES
+#ifdef TEAL_USE_EXTERNAL_VALUES
                                                         valbox val{get_external_value(curr_arg_name)};
-#ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
+#ifdef TEAL_DISABLE_UNDEFINED_CELL_ARGS
                                                         if(val.is_undefined()) {
                                                             undefineds = true;
                                                             break;
@@ -2015,7 +2015,7 @@ namespace scfx {
                                                 ai.expr_val = ai.expr->eval(exctx_ptr, eval_caller_type::no_matter, nullptr);
                                             }
                                             valbox vb{ai.expr_val};
-#ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
+#ifdef TEAL_DISABLE_UNDEFINED_CELL_ARGS
                                             if(vb.is_undefined_ref()) {
                                                 undefineds = true;
                                                 break;
@@ -2025,7 +2025,7 @@ namespace scfx {
                                         }
                                     }
 
-#ifdef SCFX_DISABLE_UNDEFINED_CELL_ARGS
+#ifdef TEAL_DISABLE_UNDEFINED_CELL_ARGS
                                     if(undefineds) {
                                         curr_cell.set_curr_value(valbox{valbox_no_initialize::dont_do_it});
                                         if(!curr_cell.out_name().empty()) {
@@ -2062,7 +2062,7 @@ namespace scfx {
                                 std::this_thread::sleep_for(std::chrono::nanoseconds(sleep_between_cycles_nanoseconds_));
                             }
                         }
-#ifndef SCFX_DEBUGGING
+#ifndef TEAL_DEBUGGING
                     } catch(std::exception const &e) {
                         excepted = true;
                         exbuf = e.what();
@@ -2202,7 +2202,7 @@ namespace scfx {
                     prs.add_token(tkn);
                 }
             });
-            for(auto &&c: scfx::str_util::from_utf8(src)) {
+            for(auto &&c: teal::str_util::from_utf8(src)) {
                 lxr.consume_char(c);
             }
             lxr.consume_eof();
@@ -2218,12 +2218,12 @@ namespace scfx {
         bool load_library(std::string const &fname) {
             bool res{false};
             try {
-                std::shared_ptr<scfx::so> dll_ptr{std::make_shared<scfx::so>(fname)};
+                std::shared_ptr<teal::so> dll_ptr{std::make_shared<teal::so>(fname)};
                 if(dll_ptr->ok()) {
-                    auto ld_fn{dll_ptr->symbol<scfx::extension_interface *(*)()>("create_scfx_extension")};
-                    auto unld_fn{dll_ptr->symbol<void (*)(scfx::extension_interface *)>("remove_scfx_extension")};
+                    auto ld_fn{dll_ptr->symbol<teal::extension_interface *(*)()>("create_teal_extension")};
+                    auto unld_fn{dll_ptr->symbol<void (*)(teal::extension_interface *)>("remove_teal_extension")};
                     if(ld_fn && unld_fn) {
-                        scfx::extension_interface *ext{ld_fn()};
+                        teal::extension_interface *ext{ld_fn()};
                         if(ext) {
                             ext->register_runtime(this);
                             std::unique_lock l{loaded_extensions_mtp_};
@@ -2241,7 +2241,7 @@ namespace scfx {
             std::unique_lock l{loaded_extensions_mtp_};
             for(auto &&ep: loaded_extensions_) {
                 ep.second->unregister_runtime();
-                ep.first->symbol<void (*)(scfx::extension_interface *)>("remove_scfx_extension")(ep.second);
+                ep.first->symbol<void (*)(teal::extension_interface *)>("remove_teal_extension")(ep.second);
                 ep.first->close();
             }
             loaded_extensions_.clear();
@@ -2266,8 +2266,8 @@ namespace scfx {
                     case valbox::type::FLOAT: return static_cast<std::size_t>(sizeof(float));
                     case valbox::type::DOUBLE: return static_cast<std::size_t>(sizeof(double));
                     case valbox::type::LONG_DOUBLE: return static_cast<std::size_t>(sizeof(long double));
-                    case valbox::type::VEC4: return static_cast<std::size_t>(sizeof(scfx::math::vector4<long double>));
-                    case valbox::type::MAT4: return static_cast<std::size_t>(sizeof(scfx::math::matrix4<long double>));
+                    case valbox::type::VEC4: return static_cast<std::size_t>(sizeof(teal::math::vector4<long double>));
+                    case valbox::type::MAT4: return static_cast<std::size_t>(sizeof(teal::math::matrix4<long double>));
                     case valbox::type::POINTER: return static_cast<std::size_t>(sizeof(void *));
                     case valbox::type::CLASS: return static_cast<std::size_t>(1);
                     case valbox::type::FUNC: return static_cast<std::size_t>(1);
@@ -2353,10 +2353,10 @@ namespace scfx {
                 function_definition const &fdef{it->second};
 
                 exctx->push_frame_ignore();
-                scfx::shut_on_destroy leave_frame_ign{[exctx]() { exctx->pop_frame_ignore(); }};
+                teal::shut_on_destroy leave_frame_ign{[exctx]() { exctx->pop_frame_ignore(); }};
 
                 exctx->new_stack_frame();
-                scfx::shut_on_destroy leave_frame{[exctx]() {
+                teal::shut_on_destroy leave_frame{[exctx]() {
                     exctx->clear_return_request();
                     exctx->del_stack_frame();
                 }};

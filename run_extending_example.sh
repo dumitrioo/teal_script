@@ -1,1 +1,1 @@
-./bin/scaflux ./examples/extending_example.scfx
+./bin/tealscript ./examples/extending_example.teal

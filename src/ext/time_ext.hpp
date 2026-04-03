@@ -2,11 +2,11 @@
 
 #include "../inc/commondefs.hpp"
 
-#include "../scaflux_value.hpp"
-#include "../scaflux_util.hpp"
-#include "../scaflux_interfaces.hpp"
+#include "../tealscript_value.hpp"
+#include "../tealscript_util.hpp"
+#include "../tealscript_interfaces.hpp"
 
-namespace scfx {
+namespace teal {
 
     class time_ext: public extension_interface {
     public:
@@ -25,59 +25,59 @@ namespace scfx {
             rt_ = rt;
             if(rt_ == nullptr) { return; }
 
-            rt->add_function("timestamp", SCFXFUN(args) {
+            rt->add_function("timestamp", TEALFUN(args) {
                 std::string s{};
                 if(args.size() > 0) {
                     if(args[0].is_string_ref()) {
-                        return scfx::valbox{scfx::timespec_wrapper{args[0].as_string()}, "timespec_wrapper"};
+                        return teal::valbox{teal::timespec_wrapper{args[0].as_string()}, "timespec_wrapper"};
                     } else if(args[0].is_wstring_ref()) {
-                        return scfx::valbox{scfx::timespec_wrapper{args[0].as_wstring()}, "timespec_wrapper"};
+                        return teal::valbox{teal::timespec_wrapper{args[0].as_wstring()}, "timespec_wrapper"};
                     } else if(args[0].is_any_fp_number()) {
-                        return scfx::valbox{scfx::timespec_wrapper{args[0].cast_to_long_double()}, "timespec_wrapper"};
+                        return teal::valbox{teal::timespec_wrapper{args[0].cast_to_long_double()}, "timespec_wrapper"};
                     } else if(args[0].is_any_int_number()) {
-                        return scfx::valbox{scfx::timespec_wrapper{args[0].cast_to_s64()}, "timespec_wrapper"};
+                        return teal::valbox{teal::timespec_wrapper{args[0].cast_to_s64()}, "timespec_wrapper"};
                     }
                 }
-                return scfx::valbox{scfx::timespec_wrapper::now(), "timespec_wrapper"};
+                return teal::valbox{teal::timespec_wrapper::now(), "timespec_wrapper"};
             });
-            rt->add_function("gmtimestamp", SCFXFUN() { return scfx::valbox{scfx::timespec_wrapper::gmtnow(), "timespec_wrapper"}; });
-            rt->add_method("timespec_wrapper", "year", SCFXFUN(args) { return SCFXTHIS(args, scfx::timespec_wrapper).year(); });
-            rt->add_method("timespec_wrapper", "month", SCFXFUN(args) { return SCFXTHIS(args, scfx::timespec_wrapper).month(); });
-            rt->add_method("timespec_wrapper", "day", SCFXFUN(args) { return SCFXTHIS(args, scfx::timespec_wrapper).day(); });
-            rt->add_method("timespec_wrapper", "weekday", SCFXFUN(args) { return SCFXTHIS(args, scfx::timespec_wrapper).weekday(); });
-            rt->add_method("timespec_wrapper", "hour", SCFXFUN(args) { return SCFXTHIS(args, scfx::timespec_wrapper).hour(); });
-            rt->add_method("timespec_wrapper", "min", SCFXFUN(args) { return SCFXTHIS(args, scfx::timespec_wrapper).min(); });
-            rt->add_method("timespec_wrapper", "sec", SCFXFUN(args) { return SCFXTHIS(args, scfx::timespec_wrapper).sec_with_subsec(); });
-            rt->add_method("timespec_wrapper", "seconds", SCFXFUN(args) { return SCFXTHIS(args, scfx::timespec_wrapper).seconds(); });
-            rt->add_method("timespec_wrapper", "fseconds", SCFXFUN(args) { return SCFXTHIS(args, scfx::timespec_wrapper).fseconds(); });
-            rt->add_method("timespec_wrapper", "to_string", SCFXFUN(args) {
+            rt->add_function("gmtimestamp", TEALFUN() { return teal::valbox{teal::timespec_wrapper::gmtnow(), "timespec_wrapper"}; });
+            rt->add_method("timespec_wrapper", "year", TEALFUN(args) { return TEALTHIS(args, teal::timespec_wrapper).year(); });
+            rt->add_method("timespec_wrapper", "month", TEALFUN(args) { return TEALTHIS(args, teal::timespec_wrapper).month(); });
+            rt->add_method("timespec_wrapper", "day", TEALFUN(args) { return TEALTHIS(args, teal::timespec_wrapper).day(); });
+            rt->add_method("timespec_wrapper", "weekday", TEALFUN(args) { return TEALTHIS(args, teal::timespec_wrapper).weekday(); });
+            rt->add_method("timespec_wrapper", "hour", TEALFUN(args) { return TEALTHIS(args, teal::timespec_wrapper).hour(); });
+            rt->add_method("timespec_wrapper", "min", TEALFUN(args) { return TEALTHIS(args, teal::timespec_wrapper).min(); });
+            rt->add_method("timespec_wrapper", "sec", TEALFUN(args) { return TEALTHIS(args, teal::timespec_wrapper).sec_with_subsec(); });
+            rt->add_method("timespec_wrapper", "seconds", TEALFUN(args) { return TEALTHIS(args, teal::timespec_wrapper).seconds(); });
+            rt->add_method("timespec_wrapper", "fseconds", TEALFUN(args) { return TEALTHIS(args, teal::timespec_wrapper).fseconds(); });
+            rt->add_method("timespec_wrapper", "to_string", TEALFUN(args) {
                 std::size_t prec{static_cast<std::size_t>(9)};
                 if(args.size() > 1) { prec = args[1].cast_num_to_num<std::size_t>(); }
-                return SCFXTHIS(args, scfx::timespec_wrapper).as_iso_8601_str(prec);
+                return TEALTHIS(args, teal::timespec_wrapper).as_iso_8601_str(prec);
             });
-            rt->add_method("timespec_wrapper", "as_iso_8601", SCFXFUN(args) {
+            rt->add_method("timespec_wrapper", "as_iso_8601", TEALFUN(args) {
                 std::size_t prec{static_cast<std::size_t>(9)};
                 if(args.size() > 1) { prec = args[1].cast_num_to_num<std::size_t>(); }
-                return SCFXTHIS(args, scfx::timespec_wrapper).as_iso_8601_str(prec);
+                return TEALTHIS(args, teal::timespec_wrapper).as_iso_8601_str(prec);
             });
-            rt->add_method("timespec_wrapper", "as_gmt_iso_8601", SCFXFUN(args) {
+            rt->add_method("timespec_wrapper", "as_gmt_iso_8601", TEALFUN(args) {
                 std::size_t prec{static_cast<std::size_t>(9)};
                 if(args.size() > 1) { prec = args[1].cast_num_to_num<std::size_t>(); }
-                return SCFXTHIS(args, scfx::timespec_wrapper).as_gmt_iso_8601_str(prec);
+                return TEALTHIS(args, teal::timespec_wrapper).as_gmt_iso_8601_str(prec);
             });
-            rt->add_method("timespec_wrapper", "from_string", SCFXFUN(args) {
+            rt->add_method("timespec_wrapper", "from_string", TEALFUN(args) {
                 std::string s{}; if(args.size() > 1) { s = args[1].cast_to_string(); }
-                SCFXTHIS(args, scfx::timespec_wrapper).from_iso_8601(s);
+                TEALTHIS(args, teal::timespec_wrapper).from_iso_8601(s);
                 return args[0];
             });
-            rt->add_function("steady_clock", SCFXFUN() {
+            rt->add_function("steady_clock", TEALFUN() {
                 return static_cast<long double>(std::chrono::steady_clock::now().time_since_epoch().count()) / 1e9L;
             });
-            rt->add_function("time", SCFXFUN() {
-                return scfx::timespec_wrapper::now().fseconds();
+            rt->add_function("time", TEALFUN() {
+                return teal::timespec_wrapper::now().fseconds();
             });
-            rt->add_function("gmtime", SCFXFUN() {
-                return scfx::timespec_wrapper::gmtnow().fseconds();
+            rt->add_function("gmtime", TEALFUN() {
+                return teal::timespec_wrapper::gmtnow().fseconds();
             });
         }
 

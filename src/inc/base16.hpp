@@ -4,7 +4,7 @@
 #include "str_util.hpp"
 #include "bit_util.hpp"
 
-namespace scfx {
+namespace teal {
 
     static std::string data_to_hex_str(const void *data, int data_size) {
         static std::array<char, 16> constexpr hex_digits{

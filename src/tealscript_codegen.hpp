@@ -4,18 +4,18 @@
 #include "inc/str_util.hpp"
 #include "inc/json.hpp"
 
-#include "scaflux_util.hpp"
-#include "scaflux_token.hpp"
-#include "scaflux_expr.hpp"
-#include "scaflux_statement.hpp"
-#include "scaflux_cells.hpp"
+#include "tealscript_util.hpp"
+#include "tealscript_token.hpp"
+#include "tealscript_expr.hpp"
+#include "tealscript_statement.hpp"
+#include "tealscript_cells.hpp"
 
-namespace scfx {
+namespace teal {
 
     class code_generator {
     public:
         void chop(
-            scfx::json const &ast,
+            teal::json const &ast,
             str_map_t<input_cell> &input_cells,
             str_map_t<std::string> &input_names_to_instances_mapping,
             str_map_t<worker_cell_definition_info> &worker_cells_templates,
@@ -25,9 +25,9 @@ namespace scfx {
             str_map_t<valbox> const &global_functions_dictionary
         ) {
             for(std::size_t i = 0; i < ast.size(); ++i) {
-                scfx::json const &cur{ast[i]};
+                teal::json const &cur{ast[i]};
                 if(cur["subtype"].as_string() == "cell_definition") {
-                    scfx::json const &cur_cnt{cur["content"]};
+                    teal::json const &cur_cnt{cur["content"]};
                     if(worker_cells_templates.find(cur_cnt["cell_name"].as_string()) != worker_cells_templates.end()) {
                         throw compilation_error{
                             cur["loc"]["line"].try_as_number(),
@@ -46,7 +46,7 @@ namespace scfx {
                     worker_bodies[wc.type_name()] = cb;
                     worker_cells_templates[wc.type_name()] = wc;
                 } else if(cur["subtype"].as_string() == "cell_inst") {
-                    scfx::json const &cur_cnt{cur["content"]};
+                    teal::json const &cur_cnt{cur["content"]};
                     if(array_contains_str(cur_cnt["cell_flags"], "input")) {
                         std::string cnm{cur_cnt["cell_name"].as_string()};
                         std::string inm{cur_cnt["input_name"].as_string()};
@@ -77,7 +77,7 @@ namespace scfx {
                         wci.set_type_name(cur_cnt["cell_type"].as_string());
                         if(cur_cnt["args"].key_exists("content")) {
                             for(std::size_t ai = 0; ai < cur_cnt["args"]["content"].size(); ++ai) {
-                                scfx::json const &arg_cnt{cur_cnt["args"]["content"][ai]};
+                                teal::json const &arg_cnt{cur_cnt["args"]["content"][ai]};
                                 if(arg_cnt["subtype"].as_string() == "identifier") {
                                     wci.set_act_arg_source(ai, arg_cnt["content"].as_string());
                                 } else {
@@ -90,7 +90,7 @@ namespace scfx {
                         }
                     }
                 } else if(cur["subtype"].as_string() == "function_definition") {
-                    scfx::json const &cur_cnt{cur["content"]};
+                    teal::json const &cur_cnt{cur["content"]};
                     std::string func_name{cur_cnt["function_name"].as_string()};
                     if(is_keyword(str_util::from_utf8(func_name))) {
                         throw compilation_error{
@@ -123,7 +123,7 @@ namespace scfx {
         }
 
     private:
-        static bool array_contains_str(scfx::json const &arr, std::string const &s) {
+        static bool array_contains_str(teal::json const &arr, std::string const &s) {
             if(!arr.is_array()) {
                 return false;
             }
@@ -135,7 +135,7 @@ namespace scfx {
             return false;
         }
 
-        statement_ptr chop_statement(scfx::json const &ast) {
+        statement_ptr chop_statement(teal::json const &ast) {
             statement_ptr res{};
             if(
                 ast.is_object() &&
@@ -196,7 +196,7 @@ namespace scfx {
             return res;
         }
 
-        statement_ptr chop_compound_statement(scfx::json const &ast) {
+        statement_ptr chop_compound_statement(teal::json const &ast) {
             statement_ptr res{std::make_shared<statement_compound>()};
             res->set_loc(ast["loc"]["line"].try_as_number(), ast["loc"]["col"].try_as_number());
             for(std::size_t i = 0; i < ast["content"].size(); ++i) {
@@ -212,13 +212,13 @@ namespace scfx {
             return res;
         }
 
-        statement_ptr chop_expression_statement(scfx::json const &ast) {
+        statement_ptr chop_expression_statement(teal::json const &ast) {
             auto res {std::make_shared<statement_expr>(chop_expression(ast["content"]))};
             res->set_loc(ast["loc"]["line"].try_as_number(), ast["loc"]["col"].try_as_number());
             return res;
         }
 
-        expr_ptr chop_expression(scfx::json const &ast) {
+        expr_ptr chop_expression(teal::json const &ast) {
             static std::unordered_set<std::string> const hobi{"hex", "oct", "bin", "int"};
 
             struct frame {
@@ -240,7 +240,7 @@ namespace scfx {
                     continue;
                 }
                 if((*stack.back().ast)["subtype"].as_string() == "binop") {
-                    scfx::json const &cnt{(*stack.back().ast)["content"]};
+                    teal::json const &cnt{(*stack.back().ast)["content"]};
                     if(stack.back().phase == 0) {
                         if(cnt["left"].is_null() || cnt["right"].is_null()) {
                             throw compilation_error{(*stack.back().ast)["loc"]["line"].try_as_number(), (*stack.back().ast)["loc"]["col"].try_as_number(),
@@ -269,7 +269,7 @@ namespace scfx {
                         stack.pop_back();
                     }
                 } else if((*stack.back().ast)["subtype"].as_string() == "ternop") {
-                    scfx::json const &cnt{(*stack.back().ast)["content"]};
+                    teal::json const &cnt{(*stack.back().ast)["content"]};
                     if(stack.back().phase == 0) {
                         if(
                             cnt["condition"].is_null() || cnt["true_expr"].is_null() || cnt["false_expr"].is_null() ||
@@ -308,7 +308,7 @@ namespace scfx {
                         stack.pop_back();
                     }
                 } else if((*stack.back().ast)["subtype"].as_string() == "prefix") {
-                    scfx::json const &cnt{(*stack.back().ast)["content"]};
+                    teal::json const &cnt{(*stack.back().ast)["content"]};
                     if(stack.back().phase == 0) {
                         if(cnt["operand"].is_null() || cnt["oper_enum"].is_null()) {
                             throw compilation_error{
@@ -333,7 +333,7 @@ namespace scfx {
                         stack.pop_back();
                     }
                 } else if((*stack.back().ast)["subtype"].as_string() == "postfix") {
-                    scfx::json const &cnt{(*stack.back().ast)["content"]};
+                    teal::json const &cnt{(*stack.back().ast)["content"]};
                     if(stack.back().phase == 0) {
                         if(cnt["operand"].is_null() || cnt["oper_enum"].is_null()) {
                             throw compilation_error{
@@ -358,13 +358,13 @@ namespace scfx {
                         stack.pop_back();
                     }
                 } else if((*stack.back().ast)["subtype"].as_string() == "identifier") {
-                    scfx::json const &cnt{(*stack.back().ast)["content"]};
+                    teal::json const &cnt{(*stack.back().ast)["content"]};
                     stack.back().res = std::make_shared<sym_expression>(cnt.as_string());
                     stack.back().res->set_loc((*stack.back().ast)["loc"]["line"].try_as_number(), (*stack.back().ast)["loc"]["col"].try_as_number());
                     stack_res = std::move(stack.back());
                     stack.pop_back();
                 } else if((*stack.back().ast)["subtype"].as_string() == "literal") {
-                    scfx::json const &cnt{(*stack.back().ast)["content"]};
+                    teal::json const &cnt{(*stack.back().ast)["content"]};
                     if((*stack.back().ast)["literal"].as_string() == "flt") {
                         stack.back().res = std::make_shared<primary_expression>(cnt.as_longdouble());
                         stack.back().res->set_loc((*stack.back().ast)["loc"]["line"].try_as_number(), (*stack.back().ast)["loc"]["col"].try_as_number());
@@ -391,7 +391,7 @@ namespace scfx {
                         stack_res = std::move(stack.back());
                         stack.pop_back();
                     } else if((*stack.back().ast)["literal"].as_string() == "chr") {
-                        std::wstring chr_str{scfx::str_util::from_utf8(cnt.as_string())};
+                        std::wstring chr_str{teal::str_util::from_utf8(cnt.as_string())};
                         if(chr_str.size() == 1) {
                             if(chr_str[0] < 256) {
                                 stack.back().res = std::make_shared<primary_expression>((char)chr_str[0]);
@@ -419,7 +419,7 @@ namespace scfx {
                         stack.pop_back();
                     }
                 } else if((*stack.back().ast)["subtype"].as_string() == "func_call") {
-                    scfx::json const &cnt{(*stack.back().ast)["content"]};
+                    teal::json const &cnt{(*stack.back().ast)["content"]};
                     if(stack.back().phase == 0) {
                         if(cnt["func"].is_null()) {
                             throw compilation_error{
@@ -448,7 +448,7 @@ namespace scfx {
             return stack_res.res;
         }
 
-        std::vector<expr_ptr> func_call_args(scfx::json const &ast) {
+        std::vector<expr_ptr> func_call_args(teal::json const &ast) {
             std::vector<expr_ptr> res{};
             for(std::size_t i = 0; i < ast.size(); ++i) {
                 res.push_back(chop_expression(ast[i]));

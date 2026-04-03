@@ -1,6 +1,6 @@
-# Welcome to SCAFlux
+# Welcome to TealScript
 
-SCAFlux is a dynamically typed, embedded, extensible from the host code scripting language in the Data-flow Graph Paradigm intended to make the process of creation a complex control systems extremely easy.
+TealScript is a dynamically typed, embedded, extensible from the host code scripting language in the Data-flow Graph Paradigm intended to make the process of creation a complex control systems extremely easy.
 
 ## Why?
 
@@ -14,7 +14,7 @@ The Data-flow Graph paradigm (discrete time, clocked synchronous, modular, data-
 
 The library is implemented as an execution tree interpreter, without dependencies on third-party software for source code translation (lexical analyze, parsing, code generation), and therefore has an extremely small memory footprint. Moreover, since the source code is converted not into machine code but into an execution tree, the library is not tied to any hardware architecture, being portable.
 
-SCAFlux language breaks the functional purity of DFG paradigm being partialy statelful in favor of convenience while resolving many tasks. Every compute node (cell, element) is an instance of the "template" - a data transforming object that looks like a function but is an "object" type and is able to keep state between calls in form of instance's variables available through "this" keyword.
+TealScript language breaks the functional purity of DFG paradigm being partialy statelful in favor of convenience while resolving many tasks. Every compute node (cell, element) is an instance of the "template" - a data transforming object that looks like a function but is an "object" type and is able to keep state between calls in form of instance's variables available through "this" keyword.
 
 The system can operate in a synchronous single threaded mode and in asynchronous multi threaded mode utilizing all the processor cores of the system on which it is running. In terms of performance, a program in the embedded language is similar to a program in Python; however, given the ability to work in multi-threaded mode, the overall resulting performance can be significantly higher.
 
@@ -30,8 +30,8 @@ Possible application for this engine may include:
 
 ## Usage
 
-To add support for SCAFlux into your C++ application, you need at least C++20 standard capable compiler. Include [header file](src/scaflux_runtime.hpp) from your C++ source file, then instantiate SCAFlux runtime object, load source code and extensions shared libraries into it and execute in single- or multi-threaded mode. To extend the scripting language with functions, variables and objects, you should add entities separately or in form of extension to this runtime object, using rules described in the document mentioned below, in "More information" section. You can explore the [interpreter](examples/interpreter/main.cpp) application source code and scripts [extending_example](examples/extending_example.scfx), [alu74181](examples/alu74181.scfx), [tbbt_2cola](examples/tbbt_2cola.scfx), [example](examples/example.scfx), [draft](examples/draft.scfx) as the examples of embedding a library and extending of the language's functionality. 
+To add support for TealScript into your C++ application, you need at least C++20 standard capable compiler. Include [header file](src/tealscript_runtime.hpp) from your C++ source file, then instantiate TealScript runtime object, load source code and extensions shared libraries into it and execute in single- or multi-threaded mode. To extend the scripting language with functions, variables and objects, you should add entities separately or in form of extension to this runtime object, using rules described in the document mentioned below, in "More information" section. You can explore the [interpreter](examples/interpreter/main.cpp) application source code and scripts [extending_example](examples/extending_example.teal), [alu74181](examples/alu74181.teal), [tbbt_2cola](examples/tbbt_2cola.teal), [example](examples/example.teal), [draft](examples/draft.teal) as the examples of embedding a library and extending of the language's functionality. 
 
 # More information
 
-For more information, read this [PDF document](doc/scaflux_overview.pdf)
+For more information, read this [PDF document](doc/tealscript_overview.pdf)

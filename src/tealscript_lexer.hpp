@@ -4,11 +4,11 @@
 #include "inc/file_util.hpp"
 #include "inc/str_util.hpp"
 
-#include "scaflux_util.hpp"
-#include "scaflux_token.hpp"
-#include "scaflux_util.hpp"
+#include "tealscript_util.hpp"
+#include "tealscript_token.hpp"
+#include "tealscript_util.hpp"
 
-namespace scfx {
+namespace teal {
 
     class lexer {
         static inline std::int64_t constexpr NEWL{'\n'};
@@ -85,8 +85,8 @@ namespace scfx {
                 space_with_new_line_ = false;
                 buff_.clear();
                 set_tok_pos_to_current();
-                if(scfx::str_util::fltr<std::wstring>::isdigit(c)) { buff_ += c; state_ = "int";
-                } else if(scfx::str_util::fltr<std::wstring>::isspace(c)) { buff_ += c; state_ = "space";
+                if(teal::str_util::fltr<std::wstring>::isdigit(c)) { buff_ += c; state_ = "int";
+                } else if(teal::str_util::fltr<std::wstring>::isspace(c)) { buff_ += c; state_ = "space";
                 } else if(c == '.') { buff_ += c; state_ = "dot";
                 } else if(is_ident_start(c)) { buff_ += c; state_ = "iden";
                 } else if(c == DQUO) {
@@ -198,15 +198,15 @@ namespace scfx {
         }
 
         bool is_ident_start(std::int64_t c) {
-            return scfx::str_util::fltr<std::wstring>::isalpha(c) || c == '_' || c == '$';
+            return teal::str_util::fltr<std::wstring>::isalpha(c) || c == '_' || c == '$';
         }
 
         bool is_ident_tail(std::int64_t c) {
-            return is_ident_start(c) || scfx::str_util::fltr<std::wstring>::isdigit(c);
+            return is_ident_start(c) || teal::str_util::fltr<std::wstring>::isdigit(c);
         }
 
         void num(std::int64_t c) {
-            if(scfx::str_util::fltr<std::wstring>::isdigit(c)) {
+            if(teal::str_util::fltr<std::wstring>::isdigit(c)) {
                 buff_ += c;
             } else if(c == '\'') {
                 if(!buff_.empty() && buff_[buff_.size() - 1] != '\'') {
@@ -257,7 +257,7 @@ namespace scfx {
         }
 
         void hex(std::int64_t c) {
-            if(scfx::str_util::ishex(c)) {
+            if(teal::str_util::ishex(c)) {
                 buff_ += c;
             } else if(c == '\'') {
                 buff_ += c;
@@ -287,7 +287,7 @@ namespace scfx {
         }
 
         void dot(std::int64_t c) {
-            if(scfx::str_util::fltr<std::wstring>::isdigit(c)) {
+            if(teal::str_util::fltr<std::wstring>::isdigit(c)) {
                 state_ = "float";
                 float_phase_ = ".";
                 buff_ += c;
@@ -297,12 +297,12 @@ namespace scfx {
         }
 
         void flt(std::int64_t c) {
-            if(scfx::str_util::fltr<std::wstring>::isdigit(c)) {
+            if(teal::str_util::fltr<std::wstring>::isdigit(c)) {
                 buff_ += c;
                 if(float_phase_ == "e" || float_phase_ == "es") {
                     float_phase_ = "ed";
                 }
-            } else if(scfx::str_util::fltr<std::wstring>::tolower(c) == 'e') {
+            } else if(teal::str_util::fltr<std::wstring>::tolower(c) == 'e') {
                 if(float_phase_ != ".") {
                     throw compilation_error{row_, col_, "floating point number syntax error"};
                 } else {
@@ -397,7 +397,7 @@ namespace scfx {
                                 if(c < '0' || c > '7') {
                                     throw compilation_error{row, col, "invalid octal number for single-byte sequence"};
                                 }
-                                std::int64_t chr{(std::int64_t)scfx::str_util::atoi(scfx::str_util::to_utf8(esc_buff_), 8)};
+                                std::int64_t chr{(std::int64_t)teal::str_util::atoi(teal::str_util::to_utf8(esc_buff_), 8)};
                                 if(esc_buff_.size() == 3) {
                                     string_buff_ += (decltype(string_buff_)::value_type)chr;
                                     stop_escaping();
@@ -405,10 +405,10 @@ namespace scfx {
                             }
                             break;
                         case str_num_escaping_t::hex: {
-                                if(!scfx::str_util::ishex(c)) {
+                                if(!teal::str_util::ishex(c)) {
                                     throw compilation_error{row, col, "invalid hex number for single-byte sequence"};
                                 }
-                                std::int64_t chr{(std::int64_t)scfx::str_util::atoi(scfx::str_util::to_utf8(esc_buff_), 16)};
+                                std::int64_t chr{(std::int64_t)teal::str_util::atoi(teal::str_util::to_utf8(esc_buff_), 16)};
                                 if(esc_buff_.size() == 2) {
                                     string_buff_ += (decltype(string_buff_)::value_type)chr;
                                     stop_escaping();
@@ -416,10 +416,10 @@ namespace scfx {
                             }
                             break;
                         case str_num_escaping_t::u4: {
-                                if(!scfx::str_util::ishex(c)) {
+                                if(!teal::str_util::ishex(c)) {
                                     throw compilation_error{row, col, "invalid hex number for 2-byte sequence"};
                                 }
-                                std::int64_t chr{(std::int64_t)scfx::str_util::atoi(scfx::str_util::to_utf8(esc_buff_), 16)};
+                                std::int64_t chr{(std::int64_t)teal::str_util::atoi(teal::str_util::to_utf8(esc_buff_), 16)};
                                 if(esc_buff_.size() == 4) {
                                     string_buff_ += (decltype(string_buff_)::value_type)chr;
                                     stop_escaping();
@@ -427,10 +427,10 @@ namespace scfx {
                             }
                             break;
                         case str_num_escaping_t::u8: {
-                                if(!scfx::str_util::ishex(c)) {
+                                if(!teal::str_util::ishex(c)) {
                                     throw compilation_error{row, col, "invalid hex number for 4-byte sequence"};
                                 }
-                                std::int64_t chr{(std::int64_t)scfx::str_util::atoi(scfx::str_util::to_utf8(esc_buff_), 16)};
+                                std::int64_t chr{(std::int64_t)teal::str_util::atoi(teal::str_util::to_utf8(esc_buff_), 16)};
                                 if(esc_buff_.size() == 8) {
                                     string_buff_ += (decltype(string_buff_)::value_type)chr;
                                     stop_escaping();
@@ -476,7 +476,7 @@ namespace scfx {
         }
 
         void space(std::int64_t c) {
-            if(!scfx::str_util::fltr<std::wstring>::isspace(c)) {
+            if(!teal::str_util::fltr<std::wstring>::isspace(c)) {
                 buff_ += ' ';
                 report_token(token::type::SPACE, c);
             }

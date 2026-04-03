@@ -4,11 +4,11 @@
 #include "../inc/sequence_generator.hpp"
 #include "../inc/str_util.hpp"
 
-#include "../scaflux_value.hpp"
-#include "../scaflux_util.hpp"
-#include "../scaflux_interfaces.hpp"
+#include "../tealscript_value.hpp"
+#include "../tealscript_util.hpp"
+#include "../tealscript_interfaces.hpp"
 
-namespace scfx {
+namespace teal {
 
     class file_ext: public extension_interface {
     public:
@@ -30,125 +30,125 @@ namespace scfx {
             if(rt_ == nullptr) {
                 return;
             }
-            rt->add_function("file", SCFXFUN(args) {
+            rt->add_function("file", TEALFUN(args) {
                 if(args.size() == 1) {
-                    return scfx::valbox{std::make_shared<scfx_file>(args[0].cast_to_string()), "file"};
+                    return teal::valbox{std::make_shared<teal_file>(args[0].cast_to_string()), "file"};
                 } else if(args.size() == 2) {
-                    return scfx::valbox{std::make_shared<scfx_file>(args[0].cast_to_string(), args[1].cast_to_bool()), "file"};
+                    return teal::valbox{std::make_shared<teal_file>(args[0].cast_to_string(), args[1].cast_to_bool()), "file"};
                 } else if(args.size() == 3) {
-                    return scfx::valbox{std::make_shared<scfx_file>(args[0].cast_to_string(), args[1].cast_to_bool(), args[2].cast_to_bool()), "file"};
+                    return teal::valbox{std::make_shared<teal_file>(args[0].cast_to_string(), args[1].cast_to_bool(), args[2].cast_to_bool()), "file"};
                 } else if(args.size() == 4) {
-                    return scfx::valbox{std::make_shared<scfx_file>(args[0].cast_to_string(), args[1].cast_to_bool(), args[2].cast_to_bool(), args[3].cast_to_bool()), "file"};
+                    return teal::valbox{std::make_shared<teal_file>(args[0].cast_to_string(), args[1].cast_to_bool(), args[2].cast_to_bool(), args[3].cast_to_bool()), "file"};
                 }
-                return scfx::valbox{std::make_shared<scfx_file>(), "file"};
+                return teal::valbox{std::make_shared<teal_file>(), "file"};
             });
-            rt->add_method("file", "open", SCFXFUN(args) {
+            rt->add_method("file", "open", TEALFUN(args) {
                 if(args.size() == 2) {
-                    return SCFXTHIS(args, std::shared_ptr<scfx_file>)->open(args[1].cast_to_string());
+                    return TEALTHIS(args, std::shared_ptr<teal_file>)->open(args[1].cast_to_string());
                 } else if(args.size() == 3) {
-                    return SCFXTHIS(args, std::shared_ptr<scfx_file>)->open(args[1].cast_to_string(), args[2].cast_to_bool());
+                    return TEALTHIS(args, std::shared_ptr<teal_file>)->open(args[1].cast_to_string(), args[2].cast_to_bool());
                 } else if(args.size() == 4) {
-                    return SCFXTHIS(args, std::shared_ptr<scfx_file>)->open(args[1].cast_to_string(), args[2].cast_to_bool(), args[3].cast_to_bool());
+                    return TEALTHIS(args, std::shared_ptr<teal_file>)->open(args[1].cast_to_string(), args[2].cast_to_bool(), args[3].cast_to_bool());
                 } else if(args.size() == 5) {
-                    return SCFXTHIS(args, std::shared_ptr<scfx_file>)->open(args[1].cast_to_string(), args[2].cast_to_bool(), args[3].cast_to_bool(), args[4].cast_to_bool());
+                    return TEALTHIS(args, std::shared_ptr<teal_file>)->open(args[1].cast_to_string(), args[2].cast_to_bool(), args[3].cast_to_bool(), args[4].cast_to_bool());
                 }
                 return false;
             });
-            rt->add_method("file", "to_string", SCFXFUN(args) {
+            rt->add_method("file", "to_string", TEALFUN(args) {
                 return std::string{"class \"file\", instance 0x"} +
-                        scfx::str_util::utoa<std::string>(reinterpret_cast<std::uintptr_t>(SCFXTHIS(args, std::shared_ptr<scfx_file>).get()), 16) +
-                        ", status: " + (SCFXTHIS(args, std::shared_ptr<scfx_file>)->is_open() ? "opened" : "closed");
+                        teal::str_util::utoa<std::string>(reinterpret_cast<std::uintptr_t>(TEALTHIS(args, std::shared_ptr<teal_file>).get()), 16) +
+                        ", status: " + (TEALTHIS(args, std::shared_ptr<teal_file>)->is_open() ? "opened" : "closed");
             });
-            rt->add_method("file", "ok", SCFXFUN(args) {
-                return SCFXTHIS(args, std::shared_ptr<scfx_file>)->is_open();
+            rt->add_method("file", "ok", TEALFUN(args) {
+                return TEALTHIS(args, std::shared_ptr<teal_file>)->is_open();
             });
-            rt->add_method("file", "read", SCFXFUN(args) {
+            rt->add_method("file", "read", TEALFUN(args) {
                 if(args.size() == 2) {
-                    std::vector<std::uint8_t> rdres{SCFXTHIS(args, std::shared_ptr<scfx_file>)->read(args[1].cast_to_u64())};
+                    std::vector<std::uint8_t> rdres{TEALTHIS(args, std::shared_ptr<teal_file>)->read(args[1].cast_to_u64())};
                     return std::string{rdres.begin(), rdres.end()};
                 }
                 return std::string{};
             });
-            rt->add_method("file", "write", SCFXFUN(args) {
+            rt->add_method("file", "write", TEALFUN(args) {
                 if(args.size() == 2) {
-                    return SCFXTHIS(args, std::shared_ptr<scfx_file>)->write(args[1].cast_to_byte_array());
+                    return TEALTHIS(args, std::shared_ptr<teal_file>)->write(args[1].cast_to_byte_array());
                 }
                 return -1LL;
             });
-            rt->add_method("file", "close", SCFXFUN(args) {
+            rt->add_method("file", "close", TEALFUN(args) {
                 if(args.size() == 1) {
-                    return SCFXTHIS(args, std::shared_ptr<scfx_file>)->close();
+                    return TEALTHIS(args, std::shared_ptr<teal_file>)->close();
                 }
                 return false;
             });
-            rt->add_method("file", "seekr", SCFXFUN(args) {
+            rt->add_method("file", "seekr", TEALFUN(args) {
                 if(args.size() == 2) {
-                    return SCFXTHIS(args, std::shared_ptr<scfx_file>)->seek_rd(args[1].cast_to_s64());
+                    return TEALTHIS(args, std::shared_ptr<teal_file>)->seek_rd(args[1].cast_to_s64());
                 }
                 return false;
             });
-            rt->add_method("file", "seekw", SCFXFUN(args) {
+            rt->add_method("file", "seekw", TEALFUN(args) {
                 if(args.size() == 2) {
-                    return SCFXTHIS(args, std::shared_ptr<scfx_file>)->seek_wr(args[1].cast_to_s64());
+                    return TEALTHIS(args, std::shared_ptr<teal_file>)->seek_wr(args[1].cast_to_s64());
                 }
                 return false;
             });
-            rt->add_method("file", "seekr_end", SCFXFUN(args) {
+            rt->add_method("file", "seekr_end", TEALFUN(args) {
                 if(args.size() == 2) {
-                    return SCFXTHIS(args, std::shared_ptr<scfx_file>)->seek_rd_from_end(args[1].cast_to_s64());
+                    return TEALTHIS(args, std::shared_ptr<teal_file>)->seek_rd_from_end(args[1].cast_to_s64());
                 }
                 return false;
             });
-            rt->add_method("file", "seekw_end", SCFXFUN(args) {
+            rt->add_method("file", "seekw_end", TEALFUN(args) {
                 if(args.size() == 2) {
-                    return SCFXTHIS(args, std::shared_ptr<scfx_file>)->seek_wr_from_end(args[1].cast_to_s64());
+                    return TEALTHIS(args, std::shared_ptr<teal_file>)->seek_wr_from_end(args[1].cast_to_s64());
                 }
                 return false;
             });
-            rt->add_method("file", "seekr_begin", SCFXFUN(args) {
+            rt->add_method("file", "seekr_begin", TEALFUN(args) {
                 if(args.size() == 2) {
-                    return SCFXTHIS(args, std::shared_ptr<scfx_file>)->seek_rd_from_begin(args[1].cast_to_s64());
+                    return TEALTHIS(args, std::shared_ptr<teal_file>)->seek_rd_from_begin(args[1].cast_to_s64());
                 }
                 return false;
             });
-            rt->add_method("file", "seekw_begin", SCFXFUN(args) {
+            rt->add_method("file", "seekw_begin", TEALFUN(args) {
                 if(args.size() == 2) {
-                    return SCFXTHIS(args, std::shared_ptr<scfx_file>)->seek_wr_from_begin(args[1].cast_to_s64());
+                    return TEALTHIS(args, std::shared_ptr<teal_file>)->seek_wr_from_begin(args[1].cast_to_s64());
                 }
                 return false;
             });
-            rt->add_method("file", "seekr_cur", SCFXFUN(args) {
+            rt->add_method("file", "seekr_cur", TEALFUN(args) {
                 if(args.size() == 2) {
-                    return SCFXTHIS(args, std::shared_ptr<scfx_file>)->seek_rd_from_curr(args[1].cast_to_s64());
+                    return TEALTHIS(args, std::shared_ptr<teal_file>)->seek_rd_from_curr(args[1].cast_to_s64());
                 }
                 return false;
             });
-            rt->add_method("file", "seekw_cur", SCFXFUN(args) {
+            rt->add_method("file", "seekw_cur", TEALFUN(args) {
                 if(args.size() == 2) {
-                    return SCFXTHIS(args, std::shared_ptr<scfx_file>)->seek_wr_from_curr(args[1].cast_to_s64());
+                    return TEALTHIS(args, std::shared_ptr<teal_file>)->seek_wr_from_curr(args[1].cast_to_s64());
                 }
                 return false;
             });
-            rt->add_method("file", "tellr", SCFXFUN(args) {
+            rt->add_method("file", "tellr", TEALFUN(args) {
                 if(args.size() == 1) {
-                    auto res{SCFXTHIS(args, std::shared_ptr<scfx_file>)->tell_rd()};
+                    auto res{TEALTHIS(args, std::shared_ptr<teal_file>)->tell_rd()};
                     return (std::int64_t)res;
                 }
                 return -1LL;
             });
-            rt->add_method("file", "tellw", SCFXFUN(args) {
+            rt->add_method("file", "tellw", TEALFUN(args) {
                 if(args.size() == 1) {
-                    auto res{SCFXTHIS(args, std::shared_ptr<scfx_file>)->tell_wr()};
+                    auto res{TEALTHIS(args, std::shared_ptr<teal_file>)->tell_wr()};
                     return (std::int64_t)res;
                 }
                 return -1LL;
             });
-            rt->add_method("file", "size", SCFXFUN(args) {
+            rt->add_method("file", "size", TEALFUN(args) {
                 if(args.size() == 1) {
-                    auto org_pos{SCFXTHIS(args, std::shared_ptr<scfx_file>)->tell_rd()};
-                    SCFXTHIS(args, std::shared_ptr<scfx_file>)->seek_rd_from_end(0);
-                    auto res{SCFXTHIS(args, std::shared_ptr<scfx_file>)->tell_rd()};
-                    SCFXTHIS(args, std::shared_ptr<scfx_file>)->seek_rd(org_pos);
+                    auto org_pos{TEALTHIS(args, std::shared_ptr<teal_file>)->tell_rd()};
+                    TEALTHIS(args, std::shared_ptr<teal_file>)->seek_rd_from_end(0);
+                    auto res{TEALTHIS(args, std::shared_ptr<teal_file>)->tell_rd()};
+                    TEALTHIS(args, std::shared_ptr<teal_file>)->seek_rd(org_pos);
                     return (std::int64_t)res;
                 }
                 return static_cast<std::int64_t>(0);
@@ -181,16 +181,16 @@ namespace scfx {
         }
 
     private:
-        class scfx_file {
+        class teal_file {
         public:
-            scfx_file() = default;
-            scfx_file(scfx_file const &) = delete;
-            scfx_file(scfx_file &&) = default;
-            scfx_file &operator=(scfx_file const &) = delete;
-            scfx_file &operator=(scfx_file &&) = default;
-            ~scfx_file() = default;
+            teal_file() = default;
+            teal_file(teal_file const &) = delete;
+            teal_file(teal_file &&) = default;
+            teal_file &operator=(teal_file const &) = delete;
+            teal_file &operator=(teal_file &&) = default;
+            ~teal_file() = default;
 
-            scfx_file(std::string const &path, bool for_write = false, bool create_if_ne = false, bool truncate_on_open = false) {
+            teal_file(std::string const &path, bool for_write = false, bool create_if_ne = false, bool truncate_on_open = false) {
                 open(path, for_write, create_if_ne, truncate_on_open);
             }
 

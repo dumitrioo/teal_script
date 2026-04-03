@@ -3,12 +3,13 @@
 #include "commondefs.hpp"
 #include "emhash/hash_table8.hpp"
 #include "emhash/hash_set8.hpp"
+#include "hash/hash.hpp"
 #include "fsm_tokenizer.hpp"
 #include "serialization.hpp"
 #include "str_util.hpp"
 #include "base64.hpp"
 
-namespace scfx {
+namespace teal {
 
     using std::any;
     using std::any_cast;
@@ -111,9 +112,9 @@ namespace scfx {
         static bool is_ident(std::wstring const &v) {
             if(v.size() == 0) { return false; }
             auto c0{v[0]};
-            if(!(c0 == '_' || c0 == '$' || scfx::str_util::fltr<std::wstring>::isalpha(c0))) { return false; }
-            for(auto &&c: v) { if(!(c == '_' || c == '$' || scfx::str_util::fltr<std::wstring>::isalnum(c))) { return false; } }
-            static emhash8::HashSet<std::wstring> const rsvd{
+            if(!(c0 == '_' || c0 == '$' || teal::str_util::fltr<std::wstring>::isalpha(c0))) { return false; }
+            for(auto &&c: v) { if(!(c == '_' || c == '$' || teal::str_util::fltr<std::wstring>::isalnum(c))) { return false; } }
+            static emhash8::HashSet<std::wstring, str_crc<std::wstring>> const rsvd{
                 L"false",      L"true",     L"null",
                 L"break",      L"do",       L"instanceof", L"typeof",
                 L"case",       L"else",     L"new",        L"var",
@@ -162,7 +163,7 @@ namespace scfx {
                 return std::move(top().obj);
             }
 
-            void accept_token(scfx::fsm_tokenizer<std::wstring>::token const &o) {
+            void accept_token(teal::fsm_tokenizer<std::wstring>::token const &o) {
                 auto t = o.type;
                 if(t != L"spc") {
                     auto k = o.value;
@@ -179,10 +180,10 @@ namespace scfx {
                 }
                 if(
                     what_next_ == expected::none
-                    || (what_next_ == expected::listed && !nxt_lst_->contains(scfx::str_util::to_utf8(tt)))
+                    || (what_next_ == expected::listed && !nxt_lst_->contains(teal::str_util::to_utf8(tt)))
                     || (stack_.size() == 1 && top().closed)
                 ) {
-                    static const emhash8::HashMap<std::string, std::string> exp_map {
+                    static const emhash8::HashMap<std::string, std::string, str_crc<std::string>> exp_map {
                         {"str" , "<string>" },
                         {"sts" , "<single-quoted string>" },
                         {"sgn" , "<sign>" },
@@ -217,7 +218,7 @@ namespace scfx {
                     } else {
                         ss << "<Unknown>";
                     }
-                    ss << ", got: \"" << scfx::str_util::to_utf8(tk) << "\" (" << exp_map.at(scfx::str_util::to_utf8(tt)) << ")";
+                    ss << ", got: \"" << teal::str_util::to_utf8(tk) << "\" (" << exp_map.at(teal::str_util::to_utf8(tt)) << ")";
                     throw json_error{ss.str()};
                 }
 
@@ -229,12 +230,12 @@ namespace scfx {
                         nxt_lst_ = &next_list_str_a_;
                     } else if(top().obj.is_object()) {
                         push();
-                        top().name = scfx::str_util::to_utf8(detail::wunescape(tk));
+                        top().name = teal::str_util::to_utf8(detail::wunescape(tk));
                         ++top().obj_itm_phase;
                         what_next_ = expected::listed;
                         nxt_lst_ = &next_list_str_o_;
                     } else if(top().obj_itm_phase == 2) {
-                        top().obj = scfx::str_util::to_utf8(detail::wunescape(tk));
+                        top().obj = teal::str_util::to_utf8(detail::wunescape(tk));
                         ++top().obj_itm_phase;
                         what_next_ = expected::listed;
                         nxt_lst_ = &next_list_str_ip2_;
@@ -247,12 +248,12 @@ namespace scfx {
                 } else if(tt == L"idr") {
                     num_expect();
                     push();
-                    top().name = scfx::str_util::to_utf8(detail::wunescape(tk));
+                    top().name = teal::str_util::to_utf8(detail::wunescape(tk));
                     ++top().obj_itm_phase;
                     what_next_ = expected::listed;
                     nxt_lst_ = &next_list_str_o_;
                 } else if(tt == L"int") {
-                    std::int64_t v{scfx::str_util::atoi(tk)};
+                    std::int64_t v{teal::str_util::atoi(tk)};
                     if(neg_accordingly_sgn_stack()) { v = -v; }
                     if(top().obj.is_array()) {
                         top().obj.push_back(v);
@@ -270,7 +271,7 @@ namespace scfx {
                         top().closed = true;
                     }
                 } else if(tt == L"hex") {
-                    std::int64_t v{scfx::str_util::atoi(tk.substr(2), 16)};
+                    std::int64_t v{teal::str_util::atoi(tk.substr(2), 16)};
                     if(neg_accordingly_sgn_stack()) { v = -v; }
                     if(top().obj.is_array()) {
                         top().obj.push_back(v);
@@ -446,7 +447,7 @@ namespace scfx {
                     what_next_ = expected::listed;
                     nxt_lst_ = &next_list_sgn_;
                 } else {
-                    throw json_error{std::string{"json error: invalid token: \""} + scfx::str_util::to_utf8(tk) + "\""};
+                    throw json_error{std::string{"json error: invalid token: \""} + teal::str_util::to_utf8(tk) + "\""};
                 }
                 collapse_top_down();
             }
@@ -564,11 +565,10 @@ namespace scfx {
         using ssize_type = std::int64_t;
 
     private:
-#ifdef SCFX_DEBUGGING
+#ifdef TEAL_DEBUGGING
         using o_t = std::map<std::string, json>;
 #else
-        using o_t = emhash8::HashMap<std::string, json>;
-        // using o_t = std::unordered_map<std::string, json>;
+        using o_t = emhash8::HashMap<std::string, json, str_crc<std::string>>;
 #endif
         using a_t = std::vector<json>;
 
@@ -584,9 +584,9 @@ namespace scfx {
         json(std::string const &v): v_{(v)}, t_{jo_string} {}
         json(std::string &&v) noexcept(std::is_nothrow_move_constructible<std::string>::value): v_{std::move(v)}, t_{jo_string} {}
         json(std::string_view v): v_{(std::string{v})}, t_{jo_string} {}
-        json(wchar_t const *v): v_{scfx::str_util::to_utf8(v)}, t_{jo_string} {}
-        json(std::wstring const &v): v_{scfx::str_util::to_utf8(v)}, t_{jo_string} {}
-        json(std::wstring_view v): v_{scfx::str_util::to_utf8((std::wstring{v}))}, t_{jo_string} {}
+        json(wchar_t const *v): v_{teal::str_util::to_utf8(v)}, t_{jo_string} {}
+        json(std::wstring const &v): v_{teal::str_util::to_utf8(v)}, t_{jo_string} {}
+        json(std::wstring_view v): v_{teal::str_util::to_utf8((std::wstring{v}))}, t_{jo_string} {}
         json(std::int64_t v): v_{v}, t_{jo_int} {}
         json(std::uint64_t v): v_{static_cast<std::int64_t>(v)}, t_{jo_int} {}
         json(std::int32_t v): v_{static_cast<std::int64_t>(v)}, t_{jo_int} {}
@@ -763,9 +763,9 @@ namespace scfx {
             return t_ == jo_null;
         }
 
-        scfx::bytevec as_bytevec() const {
+        teal::bytevec as_bytevec() const {
             if(is_string()) {
-                return scfx::base64_str_to_data(as<std::string>());
+                return teal::base64_str_to_data(as<std::string>());
             } else {
                 throw json_error{"json error: invalid source type: string needed"};
             }
@@ -911,9 +911,9 @@ namespace scfx {
                 } catch(...) {
                 }
                 std::string s{as<std::string>()};
-                if(scfx::str_util::fltr<std::string>::strtolower(s) == "true") {
+                if(teal::str_util::fltr<std::string>::strtolower(s) == "true") {
                     return true;
-                } else if(scfx::str_util::fltr<std::string>::strtolower(s) == "false") {
+                } else if(teal::str_util::fltr<std::string>::strtolower(s) == "false") {
                     return false;
                 } else {
                     return s.size() != 0;
@@ -976,7 +976,7 @@ namespace scfx {
         }
 
         std::wstring as_wstring() const {
-            return scfx::str_util::from_utf8(as_string());
+            return teal::str_util::from_utf8(as_string());
         }
 
         size_type size() const {
@@ -1010,7 +1010,7 @@ namespace scfx {
             } else if(t_ == jo_array || t_ == jo_object) {
                 return size();
             } else if(t_ == jo_string) {
-                return scfx::str_util::atof(as<std::string>());
+                return teal::str_util::atof(as<std::string>());
             }
             throw json_error{"json error: invalid json state"};
         }
@@ -1027,7 +1027,7 @@ namespace scfx {
             } else if(t_ == jo_array || t_ == jo_object) {
                 return size();
             } else if(t_ == jo_string) {
-                return scfx::str_util::atof(as<std::string>());
+                return teal::str_util::atof(as<std::string>());
             }
             throw json_error{"json error: invalid json state"};
         }
@@ -1044,7 +1044,7 @@ namespace scfx {
             } else if(t_ == jo_array || t_ == jo_object) {
                 return size();
             } else if(t_ == jo_string) {
-                return scfx::str_util::atof(as<std::string>());
+                return teal::str_util::atof(as<std::string>());
             }
             throw json_error{"json error: invalid json state"};
         }
@@ -1396,7 +1396,7 @@ namespace scfx {
             return *this;
         }
 
-        static json deserialize(scfx::bytevec const &s) {
+        static json deserialize(teal::bytevec const &s) {
             return deserialize(std::string{s.begin(), s.end()});
         }
 
@@ -1406,13 +1406,13 @@ namespace scfx {
 
         static json deserialize(std::string const &s) {
             detail::json_deserializer<json> d{};
-            scfx::fsm_tokenizer<std::wstring> t{
+            teal::fsm_tokenizer<std::wstring> t{
                 parse_rules_5,
-                [&](scfx::fsm_tokenizer<std::wstring>::token const &a) { d.accept_token(a); }
+                [&](teal::fsm_tokenizer<std::wstring>::token const &a) { d.accept_token(a); }
             };
             for(size_t pos{0}; pos < s.size();) {
                 int increment{};
-                std::int64_t uc{scfx::str_util::utf8_to_ucs(s.data() + pos, &increment)};
+                std::int64_t uc{teal::str_util::utf8_to_ucs(s.data() + pos, &increment)};
                 if(uc < 0) {
                     ++pos;
                     uc = '?';
@@ -1427,9 +1427,9 @@ namespace scfx {
 
         static json deserialize(std::wstring const &s) {
             detail::json_deserializer<json> d{};
-            scfx::fsm_tokenizer<std::wstring> t{
+            teal::fsm_tokenizer<std::wstring> t{
                 parse_rules_5,
-                [&](scfx::fsm_tokenizer<std::wstring>::token const &a) { d.accept_token(a); }
+                [&](teal::fsm_tokenizer<std::wstring>::token const &a) { d.accept_token(a); }
             };
             t.accept_string(s.data(), s.size());
             t.finalize();
@@ -1468,13 +1468,13 @@ namespace scfx {
         }
 
         std::vector<std::uint8_t> bserialize() const {
-            scfx::serializer ser{};
+            teal::serializer ser{};
             bserialize_actual(ser);
             return ser.take_vec();
         }
 
         static json bdeserialize(std::vector<std::uint8_t> const &vk) {
-            scfx::serial_reader sr{vk.data(), vk.size()};
+            teal::serial_reader sr{vk.data(), vk.size()};
             auto iter{sr.begin()};
             return bdeserialize_actual(iter);
         }
@@ -1828,7 +1828,7 @@ namespace scfx {
             return stack_res.result_.str();
         }
 
-        void bserialize_actual(scfx::serializer &ser) const {
+        void bserialize_actual(teal::serializer &ser) const {
             if(!type_valid()) {
                 throw json_error{"json error: invalid state"};
             }
@@ -1858,7 +1858,7 @@ namespace scfx {
             }
         }
 
-        static json bdeserialize_actual(scfx::serial_reader::const_iterator &iter) {
+        static json bdeserialize_actual(teal::serial_reader::const_iterator &iter) {
             json res{};
             type t{(type)iter->as_unumber()};
             if(!type_valid(t)) {

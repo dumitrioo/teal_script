@@ -18,7 +18,7 @@
 #include <netinet/tcp.h>
 #endif
 
-namespace scfx::net {
+namespace teal::net {
 
     DEFINE_RUNTIME_ERROR_CLASS(socket_error)
 
@@ -82,15 +82,15 @@ namespace scfx::net {
             if(ok()) {
                 if(sock_type_ == address_family::inet4) {
                     common_addr_.sock_addr_.sin_family = AF_INET;
-                    common_addr_.sock_addr_.sin_port = scfx::bit_util::hnswap<std::uint16_t>{static_cast<std::uint16_t>(port)}.val;
-                    common_addr_.sock_addr_.sin_addr = scfx::net::pton(address);
+                    common_addr_.sock_addr_.sin_port = teal::bit_util::hnswap<std::uint16_t>{static_cast<std::uint16_t>(port)}.val;
+                    common_addr_.sock_addr_.sin_addr = teal::net::pton(address);
                     if(::bind(sock_fd_, (struct sockaddr *)&common_addr_.sock_addr_, sizeof(struct sockaddr)) == 0) {
                         return true;
                     }
                 } else if(sock_type_ == address_family::inet6) {
                     common_addr_.sock_addr6_.sin6_family = AF_INET6;
-                    common_addr_.sock_addr6_.sin6_port = scfx::bit_util::hnswap<std::uint16_t>{static_cast<std::uint16_t>(port)}.val;
-                    common_addr_.sock_addr6_.sin6_addr = scfx::net::pton6(address);
+                    common_addr_.sock_addr6_.sin6_port = teal::bit_util::hnswap<std::uint16_t>{static_cast<std::uint16_t>(port)}.val;
+                    common_addr_.sock_addr6_.sin6_addr = teal::net::pton6(address);
                     if(::bind(sock_fd_, (struct sockaddr *)&common_addr_.sock_addr6_, sizeof(struct sockaddr)) == 0) {
                         return true;
                     }
@@ -145,7 +145,7 @@ namespace scfx::net {
                 }
                 if(client_sock.sock_fd_ == -1) {
                     client_sock.sock_type_ = address_family::unspecified;
-                    throw socket_error{scfx::sys_util::error_str(scfx::sys_util::last_error())};
+                    throw socket_error{teal::sys_util::error_str(teal::sys_util::last_error())};
                 }
             } else {
                 throw socket_error{"socket::accept() call on uninitialized socket"};
@@ -166,7 +166,7 @@ namespace scfx::net {
                         }
                         struct sockaddr_in sock_addr;
                         sock_addr.sin_family = AF_INET;
-                        sock_addr.sin_port = scfx::bit_util::hnswap<std::uint16_t>{static_cast<std::uint16_t>(port)}.val;
+                        sock_addr.sin_port = teal::bit_util::hnswap<std::uint16_t>{static_cast<std::uint16_t>(port)}.val;
                         sock_addr.sin_addr.s_addr = inet_addr(add.c_str());
                         int conn_res{::connect(sock_fd_, (struct sockaddr *)&sock_addr, sizeof(struct sockaddr))};
                         if(conn_res == 0) {
@@ -186,8 +186,8 @@ namespace scfx::net {
                         }
                         struct sockaddr_in6 sock_addr;
                         sock_addr.sin6_family = AF_INET6;
-                        sock_addr.sin6_port = scfx::bit_util::hnswap<std::uint16_t>{static_cast<std::uint16_t>(port)}.val;
-                        sock_addr.sin6_addr = scfx::net::pton6(add);
+                        sock_addr.sin6_port = teal::bit_util::hnswap<std::uint16_t>{static_cast<std::uint16_t>(port)}.val;
+                        sock_addr.sin6_addr = teal::net::pton6(add);
                         int conn_res{::connect(sock_fd_, (struct sockaddr *)&sock_addr, sizeof(struct sockaddr))};
                         if(conn_res == 0) {
                             return true;
@@ -224,7 +224,7 @@ namespace scfx::net {
                 if(rd >= 0) {
                     if(rd != len) { result.resize(rd); }
                 } else {
-                    throw socket_error{scfx::sys_util::error_str(scfx::sys_util::last_error())};
+                    throw socket_error{teal::sys_util::error_str(teal::sys_util::last_error())};
                 }
             } else {
                 throw socket_error("socket::receive(): socket not ready");
@@ -450,14 +450,14 @@ namespace scfx::net {
             }
             return val;
         }
-        bool set_rcv_timeout(scfx::timespec_wrapper const &to, scfx::timespec_wrapper &orig_to) {
+        bool set_rcv_timeout(teal::timespec_wrapper const &to, teal::timespec_wrapper &orig_to) {
             bool result{false};
             if(sock_fd_ != -1) {
 #if defined(PLATFORM_LINUX) || defined(PLATFOM_APPLE) || defined(PLATFORM_ANDROID)
                 struct timeval org_tv{};
                 socklen_t org_tv_len{sizeof(org_tv)};
                 if(::getsockopt(sock_fd_, SOL_SOCKET, SO_RCVTIMEO, &org_tv, &org_tv_len) == 0) {
-                    orig_to = scfx::timespec_wrapper{(long double)org_tv.tv_sec + (long double)org_tv.tv_usec / 1'000'000.0L};
+                    orig_to = teal::timespec_wrapper{(long double)org_tv.tv_sec + (long double)org_tv.tv_usec / 1'000'000.0L};
                     struct timeval tv{(time_t)to.seconds(), (long)((to.fseconds() - to.seconds()) * 1000000)};
                     if(::setsockopt(sock_fd_, SOL_SOCKET, SO_RCVTIMEO, (char const *)&tv, sizeof(tv)) == 0) {
                         result = true;
@@ -529,16 +529,16 @@ namespace scfx::net {
         int send_message(const void *data, std::uint32_t data_size) {
             int res{};
             if(data && data_size > 0) {
-                std::uint32_t net_size = scfx::bit_util::hnswap<std::uint32_t>{data_size}.val;
+                std::uint32_t net_size = teal::bit_util::hnswap<std::uint32_t>{data_size}.val;
                 std::uint32_t total_size = sizeof(std::uint32_t);
                 std::uint32_t total_sent = 0;
                 const char *curr_buff = reinterpret_cast<const char *>(&net_size);
                 do {
-                    int wrote_count = scfx::net::socket::send(curr_buff + total_sent, total_size - total_sent);
+                    int wrote_count = teal::net::socket::send(curr_buff + total_sent, total_size - total_sent);
                     if(wrote_count < 0) {
                         int e{errno};
                         while(e == EAGAIN) {
-                            wrote_count = scfx::net::socket::send(curr_buff + total_sent, total_size - total_sent);
+                            wrote_count = teal::net::socket::send(curr_buff + total_sent, total_size - total_sent);
                             if(wrote_count < 0) {
                                 e = errno;
                             } else {
@@ -546,7 +546,7 @@ namespace scfx::net {
                             }
                         }
                         if(e != 0) {
-                            throw socket_error{scfx::sys_util::error_str(scfx::sys_util::last_error())};
+                            throw socket_error{teal::sys_util::error_str(teal::sys_util::last_error())};
                         }
                     }
                     total_sent += wrote_count;
@@ -555,11 +555,11 @@ namespace scfx::net {
                 total_sent = 0;
                 curr_buff = reinterpret_cast<const char *>(data);
                 do {
-                    int wrote_count = scfx::net::socket::send(curr_buff + total_sent, total_size - total_sent);
+                    int wrote_count = teal::net::socket::send(curr_buff + total_sent, total_size - total_sent);
                     if(wrote_count < 0) {
                         int e{errno};
                         while(e == EAGAIN) {
-                            wrote_count = scfx::net::socket::send(curr_buff + total_sent, total_size - total_sent);
+                            wrote_count = teal::net::socket::send(curr_buff + total_sent, total_size - total_sent);
                             if(wrote_count < 0) {
                                 e = errno;
                             } else {
@@ -567,7 +567,7 @@ namespace scfx::net {
                             }
                         }
                         if(e != 0) {
-                            throw socket_error{scfx::sys_util::error_str(scfx::sys_util::last_error())};
+                            throw socket_error{teal::sys_util::error_str(teal::sys_util::last_error())};
                         }
                     }
                     total_sent += wrote_count;
@@ -589,10 +589,10 @@ namespace scfx::net {
                 }
             }
             if(msg_size_vec.size() == sizeof(std::uint32_t)) {
-                std::uint32_t msg_size{scfx::bit_util::from_net_bytes<std::uint32_t>(msg_size_vec.data())};
-                std::uint32_t msg_size_host{scfx::bit_util::hnswap{msg_size}.val};
-                for(result = scfx::net::socket::receive(msg_size_host); result.size() < msg_size_host; ) {
-                    std::vector<std::uint8_t> data_partial_vec{scfx::net::socket::receive(msg_size_host - result.size())};
+                std::uint32_t msg_size{teal::bit_util::from_net_bytes<std::uint32_t>(msg_size_vec.data())};
+                std::uint32_t msg_size_host{teal::bit_util::hnswap{msg_size}.val};
+                for(result = teal::net::socket::receive(msg_size_host); result.size() < msg_size_host; ) {
+                    std::vector<std::uint8_t> data_partial_vec{teal::net::socket::receive(msg_size_host - result.size())};
                     if(data_partial_vec.size() > 0) {
                         result.insert(result.end(), data_partial_vec.begin(), data_partial_vec.end());
                     }

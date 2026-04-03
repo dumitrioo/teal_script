@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.10.2)
 message(STATUS "CMake version: ${CMAKE_VERSION}")
 
 #project(
-#    scaflux
+#    tealscript
 #    VERSION 1.0.1
 #    LANGUAGES CXX C
 #)
@@ -27,17 +27,17 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -ftree-vectorize -mavx2 -f
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -falign-loops -fstrict-aliasing -Wall -Wextra -fPIC -Wl,-rpath,.")
 
 ###############################################################################
-#add_definitions(-DSCFX_USE_ASYNC_CONSOLE)
+#add_definitions(-DTEAL_USE_ASYNC_CONSOLE)
 ###############################################################################
 
 ###############################################################################
-#add_definitions(-DSCFX_USE_CUSTOM_MUTEX)
+#add_definitions(-DTEAL_USE_CUSTOM_MUTEX)
 add_definitions(-DMUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
 add_definitions(-DMUTEX_ATOMIC_SM_SLEEP_NANOS=100000)
 ###############################################################################
 
 ###############################################################################
-#add_definitions(-DSCFX_USE_CUSTOM_SHARED_MUTEX)
+#add_definitions(-DTEAL_USE_CUSTOM_SHARED_MUTEX)
 add_definitions(-DRW_MUTEX_PRIORITIES)
 #add_definitions(-DRW_MUTEX_UPGRADEABLE)
 add_definitions(-DRW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
@@ -45,7 +45,7 @@ add_definitions(-DRW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
 ###############################################################################
 
 ###############################################################################
-add_definitions(-DSCFX_USE_EMHASH8_MAP)
+add_definitions(-DTEAL_USE_EMHASH8_MAP)
 ###############################################################################
 
 ###############################################################################

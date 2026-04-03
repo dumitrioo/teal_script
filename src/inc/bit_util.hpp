@@ -3,7 +3,7 @@
 #include "commondefs.hpp"
 #include "sys_util.hpp"
 
-namespace scfx::bit_util {
+namespace teal::bit_util {
 
     static std::uint8_t byte_flip(std::uint8_t n) {
         constexpr std::uint64_t ta{17848844570815808640ULL};
@@ -68,7 +68,7 @@ namespace scfx::bit_util {
     struct swap_on_le {
         T val;
         swap_on_le(T v): val{v} {
-            if constexpr (scfx::sys_util::little_endian()) {
+            if constexpr (teal::sys_util::little_endian()) {
                 val = byteswap<T>(val);
             }
         }
@@ -82,7 +82,7 @@ namespace scfx::bit_util {
     struct swap_on_be {
         T val;
         swap_on_be(T v): val{v} {
-            if constexpr (scfx::sys_util::big_endian()) {
+            if constexpr (teal::sys_util::big_endian()) {
                 val = byteswap<T>(val);
             }
         }

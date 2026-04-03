@@ -65,7 +65,7 @@
 //cSHAKE padding byte
 #define KECCAK_CSHAKE_PAD 0x04
 
-namespace scfx {
+namespace teal {
 
     namespace crypt {
 

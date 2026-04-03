@@ -249,7 +249,7 @@ TYPE const &NAME() const { \
         FIELD = f; \
 }
 
-namespace scfx {
+namespace teal {
 
     using int64_t = std::int64_t;
     using uint64_t = std::uint64_t;
