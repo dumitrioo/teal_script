@@ -4,7 +4,7 @@ TealScript is a high‑throughput signal processing platform: ingest sensor data
 
 This is a "sense → compute → act" system that combines reliable telemetry ingestion, preprocessing, and configurable decision engines. Its architecture is built for parallel processing and high throughput: streaming pipelines, optimized filters, and an asynchronous parallel dispatcher for output commands ensure performance in demanding real-world environments. 
 
-The platform supports flexible input formats, allowing integration with virtually any data source, extended analysis (filtering, event detection, ML inference), and ьгдешзду output channels for driving actuators and networked controllers. TealScript integrates easily at source code level becoming a part of telemetry, remote monitoring and controlling workflows.
+The platform supports flexible input formats, allowing integration with virtually any data source, extended analysis (filtering, event detection, ML inference), and multiple output channels for driving actuators and networked controllers. TealScript integrates easily at source code level becoming a part of telemetry, remote monitoring and controlling workflows.
 
 
 ## Why?
