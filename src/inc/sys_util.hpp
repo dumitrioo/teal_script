@@ -4,7 +4,6 @@
 #include "file_util.hpp"
 #include "str_util.hpp"
 
-#include "file_util.hpp"
 #include "str_util.hpp"
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
 #include <mntent.h>
@@ -75,13 +74,13 @@ namespace teal::sys_util {
     template<typename S_T>
     static S_T check_dir_slash(const S_T &path) {
         if (path.size()) {
-            if (path[path.size() - 1] != file_util::native_path_separator<S_T>()[0]) {
-                return path + file_util::native_path_separator<S_T>();
+            if (path[path.size() - 1] != file_util::native_path_separator<S_T>{}.sym()) {
+                return path + file_util::native_path_separator<S_T>{}.val();
             } else {
                 return path;
             }
         }
-        return file_util::native_path_separator<S_T>();
+        return file_util::native_path_separator<S_T>{}.val();
     }
 
     static int64_t last_error() {
@@ -131,7 +130,7 @@ namespace teal::sys_util {
         HKEY key;
         LONG status = RegOpenKeyEx(hk, path.c_str(), 0, sam, &key);
         if(status == ERROR_SUCCESS) {
-            tstring path_st = check_dir_slash(path);
+            str_util::tstring path_st = check_dir_slash(path);
 
             if(values) {
                 std::vector<TCHAR> val_name(8192);
@@ -172,12 +171,12 @@ namespace teal::sys_util {
             }
 
             if(max_nesting) {
-                std::vector<tstring> subkeys;
+                std::vector<str_util::tstring> subkeys;
 
                 std::vector<TCHAR> subkey_name(255);
                 DWORD index = 0;
                 for(LONG status = RegEnumKey(key, index++, &subkey_name[0], subkey_name.size()); status == ERROR_SUCCESS; status = RegEnumKey(key, index++, &subkey_name[0], subkey_name.size())) {
-                    tstring apply_fn = path_st + subkey_name.data();
+                    str_util::tstring apply_fn = path_st + subkey_name.data();
                     for_reg_key(hk, apply_fn, apply, sam, max_nesting - 1, values);
                     subkeys.push_back(subkey_name.data());
                 }

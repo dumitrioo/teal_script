@@ -37,7 +37,7 @@ DEFINES += TEAL_USE_EMHASH8_MAP
 ###############################################################################
 
 ###############################################################################
-# DEFINES += STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
+DEFINES += STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
 ###############################################################################
 
 INCLUDEPATH += ../../src
@@ -107,9 +107,7 @@ HEADERS += \
     ../../src/tealscript_statement.hpp \
     ../../src/tealscript_token.hpp \
     ../../src/tealscript_util.hpp \
-    ../../src/tealscript_value.hpp \
-    optext/ray_ext.hpp \
-    optext/zmq_ext.hpp
+    ../../src/tealscript_value.hpp
 
 QMAKE_CXXFLAGS += -std=c++20 -march=native -Wno-unused-parameter -Wno-unused-function -Wl,-rpath,.
 QMAKE_CXXFLAGS += -ftree-vectorize -mavx2 -ftree-vectorizer-verbose=5

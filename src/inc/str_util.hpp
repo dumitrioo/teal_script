@@ -12,6 +12,61 @@
 
 namespace teal::str_util {
 
+#if defined(UNICODE) || defined(_UNICODE)
+
+#define tchar_t wchar_t
+    typedef std::wstring tstring;
+#define tcout std::wcout
+#define tcin std::wcin
+
+#ifndef __T
+#define __T(x)      L ## x
+#endif
+
+#define totupper     str_util::towupper
+#define totlower	 str_util::towlower
+#define istlower	 str_util::iswlower
+#define istalpha	 str_util::iswalpha
+#define istalnum	 str_util::iswalnum
+#define istgraph	 str_util::iswgraph
+#define istdigit	 str_util::iswdigit
+#define istprint	 str_util::iswprint
+#define istascii	 str_util::iswascii_
+#define istcntrl	 str_util::iswcntrl
+#define istpunct	 str_util::iswpunct
+#define istspace	 str_util::iswspace
+#define tstrtolower	 str_util::wstrtolower
+#define tstrtoupper	 str_util::wstrtoupper
+
+#else
+
+#ifndef __T
+#define __T(x)      x
+#endif
+
+#define tchar_t char
+    typedef std::string tstring;
+#define tcout std::cout
+#define tcin std::cin
+
+#define totupper     str_util::toupper
+#define totlower	 str_util::tolower
+#define istlower	 str_util::islower
+#define istalpha	 str_util::isalpha
+#define istalnum	 str_util::isalnum
+#define istgraph	 str_util::isgraph
+#define istdigit	 str_util::isdigit
+#define istprint	 str_util::isprint
+#define istascii	 str_util::isascii_
+#define istcntrl	 str_util::iscntrl
+#define istpunct	 str_util::ispunct
+#define istspace	 str_util::isspace
+#define tstrtolower	 str_util::strtolower
+#define tstrtoupper	 str_util::strtoupper
+
+#endif
+
+
     template<typename T, std::size_t N, typename U>
 #if (__cplusplus >= 202000L)
         requires(N < 256)

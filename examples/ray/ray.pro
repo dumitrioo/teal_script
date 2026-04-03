@@ -28,7 +28,7 @@ DEFINES += TEAL_USE_EMHASH8_MAP
 ###############################################################################
 
 ###############################################################################
-#DEFINES += STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
+DEFINES += STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
 ###############################################################################
 
 QMAKE_CXXFLAGS += -std=c++20 -fPIC -Wno-unused-function
