@@ -1582,19 +1582,6 @@ namespace teal {
                     }
                     curr_cell.set_type_info(type_it->second.num_args(), type_it->second.arg_names());
                 }
-
-                // std::string const &curr_cell_type_name{curr_cell.type_name()};
-
-                // if(!curr_cell.type_info_transferred()) {
-                //     auto type_it{worker_cells_templates_.find(curr_cell_type_name)};
-                //     if(type_it != worker_cells_templates_.end()) {
-                //         if(curr_cell.actual_args_info().size() != static_cast<size_t>(type_it->second.num_args())) {
-                //             throw runtime_error{curr_cell.line(), curr_cell.col(), "actual arguments count for the cell mismatch"};
-                //         }
-                //         curr_cell.set_type_info(type_it->second.num_args(), type_it->second.arg_names());
-                //     }
-                // }
-
             }
         }
 
@@ -1839,9 +1826,10 @@ namespace teal {
                     }
                 }
                 exctx_.clear_all_jumps_request();
-            }
-            if(sleep_between_cycles_nanoseconds_ > 0) {
-                std::this_thread::sleep_for(std::chrono::nanoseconds(sleep_between_cycles_nanoseconds_));
+
+                if(sleep_between_cycles_nanoseconds_ > 0) {
+                    std::this_thread::sleep_for(std::chrono::nanoseconds(sleep_between_cycles_nanoseconds_));
+                }
             }
         }
 
@@ -1936,7 +1924,9 @@ namespace teal {
                             bool have_locked{false};
                             for(auto &&wrkcl: worker_cells_) {
                                 worker_cell_instance &curr_cell{wrkcl.second};
+                                bool cell_executed{false};
                                 if(curr_cell.try_lock()) {
+                                    cell_executed = true;
                                     have_locked = true;
                                     teal::shut_on_destroy sod{[&]() { curr_cell.unlock(); }};
                                     std::string const &curr_cell_type_name{curr_cell.type_name()};
@@ -2054,12 +2044,12 @@ namespace teal {
                                     }
                                     exctx_ptr->clear_all_jumps_request();
                                 }
+                                if(cell_executed && sleep_between_cycles_nanoseconds_ > 0) {
+                                    std::this_thread::sleep_for(std::chrono::nanoseconds(sleep_between_cycles_nanoseconds_));
+                                }
                             }
                             if(!have_locked) {
                                 std::this_thread::sleep_for(std::chrono::nanoseconds(sleep_inactive_thread_nanoseconds_));
-                            }
-                            if(sleep_between_cycles_nanoseconds_ > 0) {
-                                std::this_thread::sleep_for(std::chrono::nanoseconds(sleep_between_cycles_nanoseconds_));
                             }
                         }
 #ifndef TEAL_DEBUGGING
