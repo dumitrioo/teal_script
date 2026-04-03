@@ -130,6 +130,7 @@ DISTFILES += \
     ../example.teal \
     ../extending_example.teal \
     ../one_second_limit.teal \
+    ../perf_limit.teal \
     ../pid_regulator.teal \
     ../quad_eq.teal \
     ../sockets_server.teal \
