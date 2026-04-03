@@ -217,14 +217,3 @@ draw_bool dr_c_out(ray, alu_57, 200, 160, sfctr, "outC", clr_c);
 draw_bool dr_p(ray, alu_42, 20, 200, sfctr, " P", clr_pgeq);
 draw_bool dr_g(ray, alu_53, 60, 200, sfctr, " G", clr_pgeq);
 draw_bool dr_AeB(ray, alu_62, 120, 200, sfctr, "EQ", clr_pgeq);
-
-
-///////////////////////// speed moderation
-global_init() {
-    if(this.initialized == undefined) {
-        this.initialized = true;
-        set_cycle_nanosleep(100'000'000);
-        set_inactive_nanosleep(100'000'000);
-    }
-}
-global_init glbl_ini();

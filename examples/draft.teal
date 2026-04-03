@@ -1,10 +1,3 @@
-global_init() {
-    set_cycle_nanosleep(1'000'000);
-    set_inactive_nanosleep(1'000'000);
-}
-global_init glbl_ini();
-
-
 function undef_test() {
     println("undef_test()");
     return 0;

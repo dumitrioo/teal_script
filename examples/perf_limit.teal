@@ -1,0 +1,9 @@
+performance_limiter() {
+    if(this.initialized == undefined) {
+        this.initialized = true;
+        set_cycle_nanosleep(1'000'000);
+        set_inactive_nanosleep(100'000'000);
+    }
+}
+
+performance_limiter performance_limiter_inst();

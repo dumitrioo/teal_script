@@ -319,14 +319,7 @@ example2() {
     return this.a;
 }
 
-example2 ex2_1();
-example2 ex2_2();
-example2 ex2_3();
-example2 ex2_4();
-example2 ex2_5();
-example2 ex2_6();
-example2 ex2_7();
-example2 ex2_8();
+example2 ex2();
 
 
 example1() {

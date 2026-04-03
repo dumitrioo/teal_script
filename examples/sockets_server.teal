@@ -1,12 +1,3 @@
-global_init() {
-    if(this.initialized == undefined) {
-        this.initialized = true;
-        set_cycle_nanosleep(1000000);
-    }
-}
-global_init glbl_ini();
-
-
 net_server() {
     // initialization
     if(this.lsk == undefined) {
