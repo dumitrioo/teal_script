@@ -14,7 +14,7 @@ In short, to expand the capabilities of C++. The advantage of C++ is that it can
 
 ## The Data-flow Graph Paradigm
 
-The data-flow graph paradigm (discrete-time, clocked, modular, data-centric) is a declarative, purely functional approach. Unlike imperative languages, programs in this paradigm has no single entry point. Instead, the developer describes a set of compute elements (also called "cells" or "nodes") wired together into a computation network according to a logical schema that represents the solution to a given problem. Each compute element runs independently - possibly concurrently in multi-threaded mode - and whenever an element finishes it re-executes (with updated inputs which are outputs from other elements). This cycle continues until the system is stopped. Good examples of the data-flow graph paradigm are artificial neural networks and Unreal Engine Blueprints.
+The data-flow graph paradigm (discrete-time, clocked, modular, data-centric) is a declarative, purely functional approach. Unlike imperative languages, programs in this paradigm has no single entry point. Instead, the developer describes a set of compute elements (also called "cells" or "nodes") wired together into a computation network according to a logical schema that represents the solution to a given problem. Each compute element runs independently - possibly concurrently in multi-threaded mode - and whenever an element finishes it re-executes (with updated inputs which are outputs from other elements). This cycle continues until the system is stopped. Good examples of some of the data-flow graph paradigm concepts adoptions are artificial neural networks and Unreal Engine Blueprints.
 
 
 ## Implementation
