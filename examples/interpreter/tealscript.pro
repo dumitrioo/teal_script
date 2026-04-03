@@ -6,7 +6,7 @@ CONFIG   -= app_bundle
 TEMPLATE = app
 
 ###############################################################################
-# DEFINES += SINGLE_THREADED_TEAL
+# DEFINES += TEAL_SINGLE_THREADED
 # DEFINES += TEAL_DEBUGGING
 ###############################################################################
 

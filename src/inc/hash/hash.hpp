@@ -7,13 +7,15 @@
 namespace teal {
 
     template<typename T>
-    struct num_hash {
+        requires(std::is_integral_v<T> || std::is_enum_v<T>)
+    struct num_cast_hash {
         std::size_t operator()(T n) const noexcept {
             return static_cast<std::size_t>(n);
         }
     };
 
     template<typename STR_T>
+        requires(std::is_fundamental_v<typename STR_T::value_type>)
     struct str_hash {
         std::size_t operator()(STR_T const &s) const noexcept {
             using char_type = uintn_t<sizeof(typename STR_T::value_type)>;
@@ -36,6 +38,7 @@ namespace teal {
     };
 
     template<typename STR_T>
+        requires(std::is_fundamental_v<typename STR_T::value_type>)
     struct str_crc {
         std::size_t operator()(STR_T const &s) const noexcept {
             return crc_.calculate(s.data(), s.size() * sizeof(typename STR_T::value_type));

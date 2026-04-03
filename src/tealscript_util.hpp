@@ -100,7 +100,7 @@ namespace teal {
 #else
     #ifdef TEAL_USE_EMHASH8_MAP
     template<typename K_T, typename V_T>
-    using num_map_t = emhash8::HashMap<K_T, V_T, num_hash<K_T>>;
+    using num_map_t = emhash8::HashMap<K_T, V_T, num_cast_hash<K_T>>;
     template<typename V_T>
     using str_map_t = emhash8::HashMap<std::string, V_T, str_crc<std::string>>;
     #else

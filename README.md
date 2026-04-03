@@ -4,7 +4,7 @@ TealScript is a dynamically typed, embedded, extensible from the host code scrip
 
 ## Why?
 
-The advantage of C++ is that it can solve many of the development tasks. And this is also its problem. C++ programmers typically use it for absolutely everything in their work, ignoring the fact that object-oriented and imperative approaches are unsuitable for certain tasks. There is a class of tasks that are much easier to solve using specialized tools. One such tool and a description of the tasks it can solve are presented here...
+The advantage of C++ is that it can solve many of the development tasks. And this is also its problem. C++ programmers typically use it for absolutely everything in their work, ignoring the fact that object-oriented and imperative approaches are not so good for certain tasks. There is a class of tasks that are much easier to solve using specialized tools. One such tool and a description of the tasks it can solve are presented here...
 
 ## The Data-flow Graph Paradigm
 
@@ -31,6 +31,10 @@ Possible application for this engine may include:
 ## Usage
 
 To add support for TealScript into your C++ application, you need at least C++20 standard capable compiler. Include [header file](src/tealscript_runtime.hpp) from your C++ source file, then instantiate TealScript runtime object, load source code and extensions shared libraries into it and execute in single- or multi-threaded mode. To extend the scripting language with functions, variables and objects, you should add entities separately or in form of extension to this runtime object, using rules described in the document mentioned below, in "More information" section. You can explore the [interpreter](examples/interpreter/main.cpp) application source code and scripts [extending_example](examples/extending_example.teal), [alu74181](examples/alu74181.teal), [tbbt_2cola](examples/tbbt_2cola.teal), [example](examples/example.teal), [draft](examples/draft.teal) as the examples of embedding a library and extending of the language's functionality. 
+
+## Demos and Examples
+
+To build example application, CMake script is provided. In addition, for Linux users there is a Shell scripts for building and running some of the examples...
 
 # More information
 

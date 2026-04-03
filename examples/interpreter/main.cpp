@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
             throw std::runtime_error{"nothing to do - no working elements"};
         }
 
-#ifdef SINGLE_THREADED_TEAL
+#ifdef TEAL_SINGLE_THREADED
         while(!rt.termination_requested()) {
             rt.run_cycle();
         }
