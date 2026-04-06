@@ -31,6 +31,17 @@ namespace teal {
         virtual void remove_var(std::string const &) = 0;
         virtual void add_method(std::string const &/*class_name*/, std::string const &/*method_name*/, std::function<valbox(std::vector<valbox> &)>) = 0;
         virtual void remove_method(std::string const &/*class_name*/, std::string const &/*method_name*/) = 0;
+
+        // expose values to network directly
+        virtual void start_net_server(std::string const &/*bind_addr*/, std::uint16_t /*port*/, std::size_t /*num_threads*/) = 0;
+        virtual void stop_net_server() = 0;
+        virtual bool net_server_running() const = 0;
+
+        // virtual void start_net_client(std::string const &/*server_addr*/, std::uint16_t /*port*/) = 0;
+        virtual void start_net_client() = 0;
+
+        // connect to a common network for exchange=ing values (alternative to the above)
+        virtual void net_hub_connect(std::string const &/*unique_net_name*/) = 0;
     };
 
     class extension_interface {

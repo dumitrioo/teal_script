@@ -83,7 +83,7 @@ namespace teal {
             static void thr_proc(cpu_pc *this_, std::promise<bool> prom) {
                 prom.set_value(true);
                 while(!this_->termination_) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                    std::this_thread::sleep_for(std::chrono::milliseconds{100});
                     this_->actualize_all_cpu_value();
                     this_->actualize_curr_cpu_value();
                 }
@@ -102,7 +102,7 @@ namespace teal {
                         cpu_usage_thread_ = std::thread{[&]() {
                             prom.set_value(true);
                             while(!termination_) {
-                                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                                std::this_thread::sleep_for(std::chrono::milliseconds{100});
                                 actualize_all_cpu_value();
                                 actualize_curr_cpu_value();
                             }

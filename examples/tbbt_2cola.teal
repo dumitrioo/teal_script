@@ -56,7 +56,7 @@ tbbt2cola(sg) {
         }
     }
     outstr += "The character to take a drink is \"" + a[0].name + "\"\n";
-    // outstr += "Current queue state: " + serialize_tbbt_array(a) + "\n";
+    outstr += "Current queue state: " + serialize_tbbt_array(a) + "\n";
     outstr += "Current RLE-optimized queue state: " + a.to_string() + "\n";
     outstr += "----------------------------------------------------------------";
     console.print(outstr);

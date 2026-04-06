@@ -31,7 +31,17 @@ function Q_rsqrt(x) {
     return y;
 }
 
-my_drafts() {
+simple_value() { sleep(0.1); return 32.4; }
+simple_value smpl_val();
+
+extern 'pp://127.0.0.1:43987/smpl_val' ext_value;
+
+my_drafts(exv) {
+    exv.println();
+    sleep(1);
+    return 0;
+    // exit();
+
     println(false, " && ", false, " = ", false && false);
     println(false, " && ", true, " = ", false && true);
     println(true, " && ", false, " = ", true && false);
@@ -207,7 +217,8 @@ my_drafts() {
             break;
         }
     }
-    exit();
+    // exit();
+    sleep(0.1);
 }
 
-my_drafts drf();
+my_drafts drf(ext_value);

@@ -11,6 +11,10 @@ TEMPLATE = app
 ###############################################################################
 
 ###############################################################################
+DEFINES += TEAL_USE_EXTERNAL_VALUES
+###############################################################################
+
+###############################################################################
 # DEFINES += TEAL_USE_ASYNC_CONSOLE
 ###############################################################################
 
@@ -29,7 +33,7 @@ DEFINES += RW_MUTEX_ATOMIC_SM_SLEEP_NANOS=100000
 ###############################################################################
 
 ###############################################################################
-DEFINES += USE_FILE_MAGIC
+# DEFINES += USE_FILE_MAGIC
 ###############################################################################
 
 ###############################################################################
@@ -37,7 +41,7 @@ DEFINES += TEAL_USE_EMHASH8_MAP
 ###############################################################################
 
 ###############################################################################
-DEFINES += STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
+# DEFINES += STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
 ###############################################################################
 
 INCLUDEPATH += ../../src
@@ -52,7 +56,9 @@ HEADERS += \
     ../../src/inc/base64.hpp \
     ../../src/inc/base85.hpp \
     ../../src/inc/bit_util.hpp \
+    ../../src/inc/command_queue.hpp \
     ../../src/inc/commondefs.hpp \
+    ../../src/inc/containers/buffer_queue.hpp \
     ../../src/inc/containers/circular_buffer.hpp \
     ../../src/inc/containers/static_buffer.hpp \
     ../../src/inc/crypto/keccak.hpp \
@@ -83,11 +89,16 @@ HEADERS += \
     ../../src/inc/net/net_utils.hpp \
     ../../src/inc/net/socket_poller.hpp \
     ../../src/inc/net/socket_wrapper.hpp \
+    ../../src/inc/net/tcp_client.hpp \
+    ../../src/inc/net/tcp_server.hpp \
+    ../../src/inc/net/url.hpp \
     ../../src/inc/sequence_generator.hpp \
     ../../src/inc/serialization.hpp \
     ../../src/inc/so.hpp \
     ../../src/inc/str_util.hpp \
     ../../src/inc/sys_util.hpp \
+    ../../src/inc/terminable.hpp \
+    ../../src/inc/threaded_queue_processing_base.hpp \
     ../../src/inc/timespec_wrapper.hpp \
     ../../src/inc/unicode_operations.hpp \
     ../../src/ext/cpu_ext.hpp \
@@ -97,6 +108,7 @@ HEADERS += \
     ../../src/ext/rand_ext.hpp \
     ../../src/ext/time_ext.hpp \
     ../../src/tealscript_cells.hpp \
+    ../../src/tealscript_net.hpp \
     ../../src/tealscript_codegen.hpp \
     ../../src/tealscript_exec_ctx.hpp \
     ../../src/tealscript_expr.hpp \
@@ -117,8 +129,7 @@ QMAKE_CFLAGS_RELEASE -= -O2
 QMAKE_CFLAGS_RELEASE += -O3
 
 LIBS += -lpthread -ldl
-LIBS += -lz
-LIBS += -lmagic
+# LIBS += -lmagic
 
 DISTFILES += \
     ../alu74181.teal \

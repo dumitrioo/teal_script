@@ -15,14 +15,17 @@ namespace teal {
     class code_generator {
     public:
         void chop(
-            teal::json const &ast,
-            str_map_t<input_cell> &input_cells,
-            str_map_t<std::string> &input_names_to_instances_mapping,
-            str_map_t<worker_cell_definition_info> &worker_cells_templates,
-            str_map_t<worker_cell_instance> &worker_cells,
-            str_map_t<statement_ptr> &worker_bodies,
-            str_map_t<function_definition> &user_functions,
-            str_map_t<valbox> const &global_functions_dictionary
+            teal::json const &ast
+            , str_map_t<std::shared_ptr<input_cell>> &input_cells
+            , str_map_t<std::string> &input_names_to_instances_mapping
+            , str_map_t<worker_cell_definition_info> &worker_cells_templates
+            , str_map_t<std::shared_ptr<worker_cell_instance>> &worker_cells
+            , str_map_t<statement_ptr> &worker_bodies
+            , str_map_t<function_definition> &user_functions
+            , str_map_t<valbox> const &global_functions_dictionary
+#ifdef TEAL_USE_EXTERNAL_VALUES
+            , str_map_t<std::shared_ptr<extern_cell>> &extern_cells
+#endif
         ) {
             for(std::size_t i = 0; i < ast.size(); ++i) {
                 teal::json const &cur{ast[i]};
@@ -50,44 +53,89 @@ namespace teal {
                     if(array_contains_str(cur_cnt["cell_flags"], "input")) {
                         std::string cnm{cur_cnt["cell_name"].as_string()};
                         std::string inm{cur_cnt["input_name"].as_string()};
-                        if(worker_cells.find(cnm) != worker_cells.end() || input_cells.find(cnm) != input_cells.end()) {
+                        if(
+                            worker_cells.find(cnm) != worker_cells.end() ||
+                            input_cells.find(cnm) != input_cells.end()
+#ifdef TEAL_USE_EXTERNAL_VALUES
+                            ||
+                            extern_cells.find(cnm) != extern_cells.end()
+#endif
+                        ) {
                             throw compilation_error{
                                 cur["loc"]["line"].try_as_number(),
                                 cur["loc"]["col"].try_as_number(),
                                 cnm + ": duplicated cell identifier"
                             };
                         }
-                        input_cell &ic{input_cells[cnm]};
-                        ic.set_input_name(inm);
-                        ic.set_inst_name(cnm);
+                        std::shared_ptr<input_cell> ic_ptr{std::make_shared<input_cell>()};
+                        input_cells[cnm] = ic_ptr;
+                        ic_ptr->set_input_name(inm);
+                        ic_ptr->set_inst_name(cnm);
                         input_names_to_instances_mapping[inm] = cnm;
-                        ic.set_loc(cur["loc"]["line"].try_as_number(), cur["loc"]["col"].try_as_number());
-                    } else if(array_contains_str(cur_cnt["cell_flags"], "regular")) {
+                        ic_ptr->set_loc(cur["loc"]["line"].try_as_number(), cur["loc"]["col"].try_as_number());
+                    }
+#ifdef TEAL_USE_EXTERNAL_VALUES
+                    else if(array_contains_str(cur_cnt["cell_flags"], "extern")) {
                         std::string cnm{cur_cnt["cell_name"].as_string()};
-                        if(worker_cells.find(cnm) != worker_cells.end() || input_cells.find(cnm) != input_cells.end()) {
+                        std::string rnm{cur_cnt["remote_name"].as_string()};
+                        if(
+                            worker_cells.find(cnm) != worker_cells.end() ||
+                            input_cells.find(cnm) != input_cells.end() ||
+                            extern_cells.find(cnm) != extern_cells.end()
+                        ) {
                             throw compilation_error{
                                 cur["loc"]["line"].try_as_number(),
                                 cur["loc"]["col"].try_as_number(),
                                 cnm + ": duplicated cell identifier"
                             };
                         }
-                        worker_cell_instance &wci{worker_cells[cnm]};
-                        wci.set_loc(cur["loc"]["line"].try_as_number(), cur["loc"]["col"].try_as_number());
-                        wci.set_inst_name(cnm);
-                        wci.set_type_name(cur_cnt["cell_type"].as_string());
+                        std::shared_ptr<extern_cell> ec_ptr{std::make_shared<extern_cell>()};
+                        extern_cells[cnm] = ec_ptr;
+                        ec_ptr->set_remote_name(rnm);
+                        ec_ptr->set_inst_name(cnm);
+                        ec_ptr->set_loc(cur["loc"]["line"].try_as_number(), cur["loc"]["col"].try_as_number());
+                    }
+#endif
+                    else if(array_contains_str(cur_cnt["cell_flags"], "regular")) {
+                        std::string cnm{cur_cnt["cell_name"].as_string()};
+                        if(
+                            worker_cells.find(cnm) != worker_cells.end() ||
+                            input_cells.find(cnm) != input_cells.end()
+#ifdef TEAL_USE_EXTERNAL_VALUES
+                            ||
+                            extern_cells.find(cnm) != extern_cells.end()
+#endif
+                        ) {
+                            throw compilation_error{
+                                cur["loc"]["line"].try_as_number(),
+                                cur["loc"]["col"].try_as_number(),
+                                cnm + ": duplicated cell identifier"
+                            };
+                        }
+                        std::shared_ptr<worker_cell_instance> wc_ptr{std::make_shared<worker_cell_instance>()};
+                        worker_cells[cnm] = wc_ptr;
+                        wc_ptr->set_loc(cur["loc"]["line"].try_as_number(), cur["loc"]["col"].try_as_number());
+                        wc_ptr->set_inst_name(cnm);
+                        wc_ptr->set_type_name(cur_cnt["cell_type"].as_string());
                         if(cur_cnt["args"].key_exists("content")) {
                             for(std::size_t ai = 0; ai < cur_cnt["args"]["content"].size(); ++ai) {
                                 teal::json const &arg_cnt{cur_cnt["args"]["content"][ai]};
                                 if(arg_cnt["subtype"].as_string() == "identifier") {
-                                    wci.set_act_arg_source(ai, arg_cnt["content"].as_string());
+                                    wc_ptr->set_act_arg_source(ai, arg_cnt["content"].as_string());
                                 } else {
-                                    wci.set_act_arg_expr(ai, chop_expression(arg_cnt));
+                                    wc_ptr->set_act_arg_expr(ai, chop_expression(arg_cnt));
                                 }
                             }
                         }
                         if(array_contains_str(cur_cnt["cell_flags"], "output")) {
-                            wci.set_output_name(cur_cnt["output_name"].as_string());
+                            wc_ptr->set_output_name(cur_cnt["output_name"].as_string());
                         }
+                    } else {
+                        throw compilation_error{
+                            cur["loc"]["line"].try_as_number(),
+                            cur["loc"]["col"].try_as_number(),
+                            "invalid cell instantiation"
+                        };
                     }
                 } else if(cur["subtype"].as_string() == "function_definition") {
                     teal::json const &cur_cnt{cur["content"]};

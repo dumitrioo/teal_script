@@ -101,6 +101,12 @@ namespace teal::net {
             ~poll_wrapper_impl() {
                 close();
             }
+            bool create() {
+                std::lock_guard lck{events_mtp_};
+                events_map_.clear();
+                last_error_ = 0;
+                return true;
+            }
             bool add_event(int fd, int ev_flags, void * /*sock_attached_data*/ = nullptr) {
                 struct pollfd pfd{fd, 0, 0};
                 if (ev_flags & POLL_EVENT_PRI) { pfd.events |= POLLPRI; }
@@ -168,8 +174,8 @@ namespace teal::net {
                             }
                         }
                     } else if(poll_res < 0) {
-                        last_error_ = errno;
-                        throw_errno(errno);
+                        last_error_ = teal::sys_util::last_error();
+                        throw poll_error{teal::sys_util::error_str(last_error_)};
                     }
                 }
                 return result;
@@ -201,6 +207,13 @@ namespace teal::net {
             ~poll_wrapper_impl() {
                 this->close();
             }
+            bool create() {
+                if(epfd_ == -1) {
+                    epfd_ = ::epoll_create1(0);
+                    return epfd_ != -1;
+                }
+                return true;
+            }
             bool add_event(int fd, int ev_flags, void *sock_attached_data = nullptr) {
                 epoll_event evt;
                 std::memset(&evt, 0, sizeof(evt));
@@ -211,12 +224,12 @@ namespace teal::net {
                 }
                 evt.events = ev_flags;
                 int err_code = ::epoll_ctl(epfd_, EPOLL_CTL_ADD, fd, &evt);
-                last_error_ = errno;
+                last_error_ = teal::sys_util::last_error();
                 return err_code == 0;
             }
             bool del_event(int fd) {
                 int err_code = ::epoll_ctl(epfd_, EPOLL_CTL_DEL, fd, nullptr);
-                last_error_ = errno;
+                last_error_ = teal::sys_util::last_error();
                 return err_code == 0;
             }
             bool re_enable(int fd, uint32_t mod) {
@@ -224,13 +237,13 @@ namespace teal::net {
                 evnt.data.fd = fd;
                 evnt.events = mod;
                 int err_code = ::epoll_ctl(epfd_, EPOLL_CTL_MOD, fd, &evnt);
-                last_error_ = errno;
+                last_error_ = teal::sys_util::last_error();
                 return err_code == 0;
             }
             void close() {
                 if(epfd_ != -1) {
                     ::close(epfd_);
-                    last_error_ = errno;
+                    last_error_ = teal::sys_util::last_error();
                     epfd_ = -1;
                 }
             }
@@ -239,23 +252,22 @@ namespace teal::net {
                     throw poll_error("bad arguments for epoll wait()");
                 }
 
-                if(events_buf_.size() < maxcount) {
-                    events_buf_.resize(maxcount);
-                }
-
-                int wait_result = ::epoll_wait(epfd_, &events_buf_[0], maxcount, timeout == teal::eternity ? -1 : timeout.milliseconds());
+                std::vector<epoll_event> events_buf{};
+                events_buf.resize(maxcount);
+                int wait_result = ::epoll_wait(epfd_, &events_buf[0], maxcount, timeout == teal::eternity ? -1 : timeout.milliseconds());
                 if(wait_result > 0) {
-                    std::vector<poll_event> events(wait_result);
+                    std::vector<poll_event> res{};
+                    res.resize(wait_result);
                     for(int i = 0; i < wait_result; i++) {
-                        events[i].data.fd = events_buf_[i].data.fd;
-                        events[i].data.u32 = events_buf_[i].data.u32;
-                        events[i].data.u64 = events_buf_[i].data.u64;
-                        events[i].data.ptr = events_buf_[i].data.ptr;
-                        events[i].events = events_buf_[i].events;
+                        res[i].data.fd = events_buf[i].data.fd;
+                        res[i].data.u32 = events_buf[i].data.u32;
+                        res[i].data.u64 = events_buf[i].data.u64;
+                        res[i].data.ptr = events_buf[i].data.ptr;
+                        res[i].events = events_buf[i].events;
                     }
-                    return events;
+                    return res;
                 } else if(wait_result < 0) {
-                    last_error_ = errno;
+                    last_error_ = teal::sys_util::last_error();
                     throw poll_error{teal::sys_util::error_str(teal::sys_util::last_error())};
                 }
 
@@ -266,7 +278,6 @@ namespace teal::net {
             }
 
         private:
-            std::vector<epoll_event> events_buf_{};
             int epfd_{-1};
             int last_error_{0};
         };
@@ -276,6 +287,11 @@ namespace teal::net {
         public:
             poll_wrapper_impl() = default;
             ~poll_wrapper_impl() = default;
+            bool create() {
+                std::unique_lock l_buf(events_buf_mtp_);
+                events_buf_.clear();
+                return true;
+            }
             bool add_event(int fd, int ev_flags, void * /*sock_attached_data*/ = nullptr) {
                 WSAPOLLFD evt;
                 memset(&evt, 0, sizeof(evt));
@@ -375,6 +391,9 @@ namespace teal::net {
         socket_poller() {}
         ~socket_poller() {
             impl_.close();
+        }
+        bool create() {
+            return impl_.create();
         }
         bool add_event(int fd, int ev_flags = POLL_EVENT_IN
 #ifndef PLATFORM_APPLE

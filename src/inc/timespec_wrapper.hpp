@@ -8,6 +8,18 @@
 
 namespace teal {
 
+    static /*(nanoseconds)*/inline std::uint64_t curr_timestamp_ns() noexcept {
+        return static_cast<std::uint64_t>(std::chrono::steady_clock::now().time_since_epoch().count());
+    }
+
+    static /*(useconds)*/inline std::uint64_t curr_timestamp() noexcept {
+        return static_cast<std::uint64_t>(std::chrono::steady_clock::now().time_since_epoch().count()) / 1'000ULL;
+    }
+
+    static /*(seconds)*/inline long double curr_timestamp_seconds() noexcept {
+        return static_cast<long double>(std::chrono::steady_clock::now().time_since_epoch().count()) / 1'000'000'000.0L;
+    }
+
     class timespec_wrapper final {
     public:
         timespec_wrapper() = default;

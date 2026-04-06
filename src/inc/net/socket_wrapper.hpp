@@ -3,6 +3,7 @@
 #include "../commondefs.hpp"
 #include "../timespec_wrapper.hpp"
 #include "../bit_util.hpp"
+#include "../sys_util.hpp"
 #include "net_utils.hpp"
 #ifndef PLATFORM_WINDOWS
 #include <sys/socket.h>
@@ -288,8 +289,6 @@ namespace teal::net {
                     SHUT_RDWR
 #endif
                 ) == 0;
-            } else {
-                throw socket_error("socket::shutdown(): socket not ready");
             }
             return false;
         }
@@ -492,6 +491,9 @@ namespace teal::net {
                 )
             ;
         }
+        operator bool() const noexcept {
+            return ok();
+        }
         bool still_engaged() const noexcept {
             if(ok()) {
                 try {
@@ -536,11 +538,11 @@ namespace teal::net {
                 do {
                     int wrote_count = teal::net::socket::send(curr_buff + total_sent, total_size - total_sent);
                     if(wrote_count < 0) {
-                        int e{errno};
+                        int e{static_cast<int>(teal::sys_util::last_error())};
                         while(e == EAGAIN) {
                             wrote_count = teal::net::socket::send(curr_buff + total_sent, total_size - total_sent);
                             if(wrote_count < 0) {
-                                e = errno;
+                                e = teal::sys_util::last_error();
                             } else {
                                 e = 0;
                             }
@@ -557,11 +559,11 @@ namespace teal::net {
                 do {
                     int wrote_count = teal::net::socket::send(curr_buff + total_sent, total_size - total_sent);
                     if(wrote_count < 0) {
-                        int e{errno};
+                        int e{static_cast<int>(sys_util::last_error())};
                         while(e == EAGAIN) {
                             wrote_count = teal::net::socket::send(curr_buff + total_sent, total_size - total_sent);
                             if(wrote_count < 0) {
-                                e = errno;
+                                e = sys_util::last_error();
                             } else {
                                 e = 0;
                             }

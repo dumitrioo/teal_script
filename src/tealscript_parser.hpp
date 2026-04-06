@@ -191,12 +191,12 @@ namespace teal {
                 res["loc"]["col"] = get_token(0).col();
                 auto ct{get_token(0).lexem()};
                 auto cn{get_token(1).lexem()};
-                increment_pos(2);
                 res["type"] = "statement";
                 res["subtype"] = "cell_inst";
                 res["content"]["cell_flags"].push_back("regular");
                 res["content"]["cell_type"] = ct;
                 res["content"]["cell_name"] = cn;
+                increment_pos(2);
                 res["content"]["args"] =  get_cell_instance_args_list();
                 check_eof();
                 if(get_token(0).type_is(token::type::CHAR_LITERAL)) {
@@ -213,17 +213,45 @@ namespace teal {
                     };
                 }
                 increment_pos();
-            } else if(get_token(0).type_is(token::type::CHAR_LITERAL) && get_token(1).is_id()) {
+            }
+#ifdef TEAL_USE_EXTERNAL_VALUES
+            else if(
+                get_token(0).is_id() && get_token(0).lexem() == L"extern" &&
+                get_token(1).type_is(token::type::CHAR_LITERAL) &&
+                get_token(2).is_id()
+            ) {
+                res["loc"]["line"] = get_token(0).line();
+                res["loc"]["col"] = get_token(0).col();
+                auto rn{get_token(1).lexem()};
+                auto cn{get_token(2).lexem()};
+                res["type"] = "statement";
+                res["subtype"] = "cell_inst";
+                res["content"]["cell_flags"].push_back("extern");
+                res["content"]["remote_name"] = rn;
+                res["content"]["cell_name"] = cn;
+                increment_pos(3);
+                check_eof();
+                if(get_token(0).type_is_not(token::type::SEMICOLON)) {
+                    throw compilation_error{
+                        get_token(0).line(),
+                        get_token(0).col(),
+                        "\";\" expected"
+                    };
+                }
+                increment_pos();
+            }
+#endif
+            else if(get_token(0).type_is(token::type::CHAR_LITERAL) && get_token(1).is_id()) {
                 res["loc"]["line"] = get_token(0).line();
                 res["loc"]["col"] = get_token(0).col();
                 auto in{get_token(0).lexem()};
                 auto cn{get_token(1).lexem()};
-                increment_pos(2);
                 res["type"] = "statement";
                 res["subtype"] = "cell_inst";
                 res["content"]["cell_flags"].push_back("input");
                 res["content"]["input_name"] = in;
                 res["content"]["cell_name"] = cn;
+                increment_pos(2);
                 check_eof();
                 if(get_token(0).type_is_not(token::type::SEMICOLON)) {
                     throw compilation_error{

@@ -5,6 +5,11 @@
 #include <iostream>
 
 #include <tealscript_runtime.hpp>
+#include <tealscript_net.hpp>
+#include "../src/inc/commondefs.hpp"
+#include "../src/inc/net/url.hpp"
+#include "../src/inc/net/net_utils.hpp"
+#include "../src/inc/net/net_data_transfer.hpp"
 
 // Just a regular C++ class to be added as an <<object type>> to the scripting runtime
 class example_object {
@@ -26,12 +31,18 @@ int main(int argc, char **argv) {
         return 0;
     }
 
+#if defined(SIGPIPE)
+    std::signal(SIGPIPE, SIG_IGN);
+#endif
+
     // The runtime
     teal::runtime rt{};
 
+    // -----------------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------------
     // The host part of scripting language possibilities extending example.
     // For usage, see script "examples/extending_example.teal".
-
     // -----------------------------------------------------------------------------------
     // Example of adding function to the runtime
     rt.add_function("hello_from_cpp",
@@ -43,12 +54,10 @@ int main(int argc, char **argv) {
             return args.size();
         }
     );
-    // -----------------------------------------------------------------------------------
 
     // -----------------------------------------------------------------------------------
     // Example of adding named value to the runtime
     rt.add_var("The_Answer_to_the_Ultimate_Question_of_Life_the_Universe_and_Everything", 42);
-    // -----------------------------------------------------------------------------------
 
     // -----------------------------------------------------------------------------------
     // Example of adding object type to the runtime
@@ -75,6 +84,8 @@ int main(int argc, char **argv) {
         return TEALTHIS(args, example_object).get_val();
     });
     // -----------------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------------
 
 #ifndef TEAL_DEBUGGING
     try {
@@ -98,13 +109,18 @@ int main(int argc, char **argv) {
             throw std::runtime_error{"nothing to do - no working elements"};
         }
 
+        rt.start_net_server("0.0.0.0", 43987, 4);
+        rt.start_net_client();
+
 #ifdef TEAL_SINGLE_THREADED
         while(!rt.termination_requested()) {
             rt.run_cycle();
         }
 #else
         rt.run_mt(std::thread::hardware_concurrency());
-        while(!rt.wait(0.1)) {}
+        while(!rt.wait(0.1)) {
+            // rt.set_input();
+        }
         if(rt.failure()) { throw std::runtime_error{rt.failure_description()}; }
 #endif
 

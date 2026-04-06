@@ -12,73 +12,50 @@
 
 namespace teal {
 
-    class input_cell {
+    class cell_base {
     public:
-        void set_input_name(std::string const &name) {
-            in_name_ = name;
-        }
-
-        void exec(execution_context *ctx) {
-#if defined(TEAL_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
-            std::unique_lock l{val_mtp_};
-#else
-            std::unique_lock l{*val_mtp_};
-#endif
-            val_ = ctx->get_input(in_name_);
-        }
-
-        void set_value(valbox const &val) {
-#if defined(TEAL_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
-            std::unique_lock l{val_mtp_};
-#else
-            std::unique_lock l{*val_mtp_};
-#endif
-            val_ = val;
-        }
-
-        valbox curr_value() const {
-#if defined(TEAL_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
-            std::shared_lock l{val_mtp_};
-#else
-            std::shared_lock l{*val_mtp_};
-#endif
-            return val_;
-        }
-
-        void set_inst_name(std::string const &name) {
-            inst_name_ = name;
-        }
-
-        std::string const &inst_name() const & {
-            return inst_name_;
-        }
-
-        void set_loc(std::int64_t l, std::int64_t c) {
-            line_ = l;
-            col_ = c;
-        }
-
-        std::int64_t line() const {
-            return line_;
-        }
-
-        std::int64_t col() const {
-            return col_;
-        }
+        virtual ~cell_base() {}
+        virtual void exec(execution_context *) {}
+        virtual void set_value(valbox const &val) { std::unique_lock l{val_mtp_}; val_ = val; }
+        virtual valbox value() const { std::shared_lock l{val_mtp_}; return val_; }
+        virtual void set_inst_name(std::string const &name) { inst_name_ = name; }
+        virtual std::string const &inst_name() const & { return inst_name_; }
+        virtual void set_loc(std::int64_t l, std::int64_t c) { line_ = l; col_ = c; }
+        virtual std::int64_t line() const { return line_; }
+        virtual std::int64_t col() const { return col_; }
 
     private:
         std::int64_t line_{};
         std::int64_t col_{};
-#if defined(TEAL_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
         mutable shared_mutex val_mtp_{};
-#else
-        mutable std::unique_ptr<shared_mutex> val_mtp_{std::make_unique<shared_mutex>()};
-#endif
         valbox val_{};
-        std::string in_name_{};
         std::string inst_name_{};
     };
 
+
+    class input_cell: public cell_base {
+    public:
+        void set_input_name(std::string const &name) { input_name_ = name; }
+        std::string const &input_name() const { return input_name_; }
+
+    private:
+        std::string input_name_{};
+    };
+
+
+#ifdef TEAL_USE_EXTERNAL_VALUES
+    class extern_cell: public cell_base {
+    public:
+        virtual void exec(execution_context *) {
+        }
+
+        void set_remote_name(std::string const &name) { remote_name_ = name; }
+        std::string const &remote_name() const { return remote_name_; }
+
+    private:
+        std::string remote_name_{};
+    };
+#endif
 
     class worker_cell_definition_info {
     public:
@@ -158,16 +135,15 @@ namespace teal {
     };
 
 
-    class worker_cell_instance {
+    class worker_cell_instance: public cell_base {
     public:
         struct arg_info {
             std::string argname{};
-            bool cell{false};
+            bool is_cell{false};
             std::string cell_name{};
             expr_ptr expr{nullptr};
-            valbox expr_val{};
-            worker_cell_instance *w_cell_ptr{nullptr};
-            input_cell *in_cell_ptr{nullptr};
+            valbox expr_val{valbox_no_initialize::dont_do_it};
+            cell_base *cell_ptr{nullptr};
         };
 
         void set_type_info(
@@ -191,7 +167,7 @@ namespace teal {
         void set_act_arg_source(std::size_t indx, std::string const &cell_name) {
             if(args_info_.size() <= indx) {
                 args_info_.resize(indx + 1);
-                args_info_[indx].cell = true;
+                args_info_[indx].is_cell = true;
                 args_info_[indx].cell_name = cell_name;
             }
         }
@@ -199,7 +175,7 @@ namespace teal {
         void set_act_arg_expr(std::size_t indx, expr_ptr ex) {
             if(args_info_.size() <= indx) {
                 args_info_.resize(indx + 1);
-                args_info_[indx].cell = false;
+                args_info_[indx].is_cell = false;
                 args_info_[indx].expr = ex;
             }
         }
@@ -212,14 +188,6 @@ namespace teal {
             return args_info_;
         }
 
-        void set_inst_name(std::string const &name) {
-            inst_name_ = name;
-        }
-
-        std::string const &inst_name() const & {
-            return inst_name_;
-        }
-
         void set_type_name(std::string const &name) {
             type_name_ = name;
         }
@@ -228,47 +196,16 @@ namespace teal {
             return type_name_;
         }
 
-        void set_curr_value(valbox const &v) {
-#if defined(TEAL_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
-            std::unique_lock l{val_mtp_};
-#else
-            std::unique_lock l{*val_mtp_};
-#endif
-            val_ = v;
-        }
-
-        valbox curr_value() const {
-#if defined(TEAL_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
-            std::shared_lock l{val_mtp_};
-#else
-            std::shared_lock l{*val_mtp_};
-#endif
-            return val_;
-        }
-
         void set_output_name(std::string const &name) {
-            out_name_ = name;
+            output_name_ = name;
         }
 
-        std::string const &out_name() const & {
-            return out_name_;
+        std::string const &output_name() const & {
+            return output_name_;
         }
 
         str_map_t<valbox> *cell_self_values_ptr() & {
             return &cell_self_values_;
-        }
-
-        void set_loc(std::int64_t l, std::int64_t c) {
-            line_ = l;
-            col_ = c;
-        }
-
-        std::int64_t line() const {
-            return line_;
-        }
-
-        std::int64_t col() const {
-            return col_;
         }
 
         bool try_lock() {
@@ -297,19 +234,10 @@ namespace teal {
 
     private:
         statement_ptr body_ptr_{};
-        std::int64_t line_{};
-        std::int64_t col_{};
         std::string type_name_{};
-        std::string inst_name_{};
         str_map_t<valbox> cell_self_values_{};
         std::vector<arg_info> args_info_{};
-#if defined(TEAL_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
-        mutable shared_mutex val_mtp_{};
-#else
-        mutable std::unique_ptr<shared_mutex> val_mtp_{std::make_unique<shared_mutex>()};
-#endif
-        valbox val_{};
-        std::string out_name_{};
+        std::string output_name_{};
         std::uint64_t type_info_transferred_{0};
 #if defined(TEAL_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
         mutable shared_mutex locker_{};

@@ -3,14 +3,14 @@
 #include "inc/commondefs.hpp"
 #include "inc/file_util.hpp"
 #include "inc/str_util.hpp"
+#include "inc/containers/concurrentqueue.h"
+#include "inc/net/url.hpp"
+#include "inc/net/net_utils.hpp"
 #include "inc/sys_util.hpp"
 #include "inc/base16.hpp"
 #include "inc/base64.hpp"
 #include "inc/base85.hpp"
 #include "inc/so.hpp"
-#if defined(TEAL_USE_ASYNC_CONSOLE)
-#include "inc/containers/concurrentqueue.h"
-#endif
 #include "tealscript_util.hpp"
 #include "tealscript_token.hpp"
 #include "tealscript_lexer.hpp"
@@ -22,6 +22,7 @@
 #include "tealscript_codegen.hpp"
 #include "tealscript_exec_ctx.hpp"
 #include "tealscript_interfaces.hpp"
+#include "tealscript_net.hpp"
 
 #include "ext/array_buffer_ext.hpp"
 #include "ext/containers_ext.hpp"
@@ -101,26 +102,26 @@ namespace teal {
                 if(out_thread_.joinable()) { out_thread_.join(); }
             }
 
-            void print(std::vector<teal::valbox> const &args) {
+            void print(std::vector<valbox> const &args) {
                 cout_out((terminal_colours_ ? "\033[32mprint\033[0m" : "print"), args);
             }
-            void info(std::vector<teal::valbox> const &args) {
+            void info(std::vector<valbox> const &args) {
                 cout_out((terminal_colours_ ? "\033[34minfo\033[0m" : "info"), args);
             }
-            void log(std::vector<teal::valbox> const &args) {
+            void log(std::vector<valbox> const &args) {
                 cout_out((terminal_colours_ ? "\033[32mlog\033[0m" : "log"), args);
             }
-            void warn(std::vector<teal::valbox> const &args) {
+            void warn(std::vector<valbox> const &args) {
                 cout_out((terminal_colours_ ? "\033[35mwarning\033[0m" : "warning"), args);
             }
-            void debug(std::vector<teal::valbox> const &args) {
+            void debug(std::vector<valbox> const &args) {
                 cout_out((terminal_colours_ ? "\033[93mdebug\033[0m" : "debug"), args);
             }
-            void error(std::vector<teal::valbox> const &args) {
+            void error(std::vector<valbox> const &args) {
                 cout_out((terminal_colours_ ? "\033[91merror\033[0m" : "error"), args);
             }
 
-            void rawprint(std::vector<teal::valbox> const &args) {
+            void rawprint(std::vector<valbox> const &args) {
                 std::stringstream out{};
                 if(setfill_) { out << std::setfill(fill_char_); }
                 if(setw_) { out << std::setw(w_); }
@@ -137,7 +138,7 @@ namespace teal {
                 put_string_to_buffer(out.str(), false);
             }
 
-            void println(std::vector<teal::valbox> const &args) {
+            void println(std::vector<valbox> const &args) {
                 std::stringstream out{};
                 if(setfill_) { out << std::setfill(fill_char_); }
                 if(setw_) { out << std::setw(w_); }
@@ -170,7 +171,7 @@ namespace teal {
             bool setsync(bool v) const { return std::ios::sync_with_stdio(v); }
 
         private:
-            void cerr_out(std::string const &type, std::vector<teal::valbox> const &args) {
+            void cerr_out(std::string const &type, std::vector<valbox> const &args) {
                 std::stringstream out{};
                 if(setfill_) { out << std::setfill(fill_char_); }
                 if(setw_) { out << std::setw(w_); }
@@ -183,7 +184,7 @@ namespace teal {
                     default: out << std::defaultfloat; break;
                     }
                 }
-                out << teal::str_util::from_utf8(teal::timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
+                out << str_util::from_utf8(timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
                 for(auto &&v: args) {
                     out << v;
                 }
@@ -191,7 +192,7 @@ namespace teal {
                 put_string_to_buffer(out.str(), true);
             }
 
-            void cout_out(std::string const &type, std::vector<teal::valbox> const &args) {
+            void cout_out(std::string const &type, std::vector<valbox> const &args) {
                 std::stringstream out{};
                 if(setfill_) { out << std::setfill(fill_char_); }
                 if(setw_) { out << std::setw(w_); }
@@ -204,7 +205,7 @@ namespace teal {
                         default: out << std::defaultfloat; break;
                     }
                 }
-                out << teal::str_util::from_utf8(teal::timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
+                out << str_util::from_utf8(timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
                 for(auto &&v: args) {
                     out << v;
                 }
@@ -289,26 +290,26 @@ namespace teal {
 #else
         class console {
         public:
-            void print(std::vector<teal::valbox> const &args) {
+            void print(std::vector<valbox> const &args) {
                 cout_out((terminal_colours_ ? "\033[32mprint\033[0m" : "print"), args);
             }
-            void info(std::vector<teal::valbox> const &args) {
+            void info(std::vector<valbox> const &args) {
                 cout_out((terminal_colours_ ? "\033[34minfo\033[0m" : "info"), args);
             }
-            void log(std::vector<teal::valbox> const &args) {
+            void log(std::vector<valbox> const &args) {
                 cout_out((terminal_colours_ ? "\033[32mlog\033[0m" : "log"), args);
             }
-            void warn(std::vector<teal::valbox> const &args) {
+            void warn(std::vector<valbox> const &args) {
                 cout_out((terminal_colours_ ? "\033[35mwarning\033[0m" : "warning"), args);
             }
-            void debug(std::vector<teal::valbox> const &args) {
+            void debug(std::vector<valbox> const &args) {
                 cout_out((terminal_colours_ ? "\033[93mdebug\033[0m" : "debug"), args);
             }
-            void error(std::vector<teal::valbox> const &args) {
+            void error(std::vector<valbox> const &args) {
                 cout_out((terminal_colours_ ? "\033[91merror\033[0m" : "error"), args);
             }
 
-            void rawprint(std::vector<teal::valbox> const &args) {
+            void rawprint(std::vector<valbox> const &args) {
                 std::stringstream out{};
                 if(setfill_) { out << std::setfill(fill_char_); }
                 if(setw_) { out << std::setw(w_); }
@@ -326,7 +327,7 @@ namespace teal {
                 std::cout << out.str() << std::flush;
             }
 
-            void println(std::vector<teal::valbox> const &args) {
+            void println(std::vector<valbox> const &args) {
                 std::stringstream out{};
                 if(setfill_) { out << std::setfill(fill_char_); }
                 if(setw_) { out << std::setw(w_); }
@@ -362,7 +363,7 @@ namespace teal {
             bool setsync(bool v) const { return std::ios::sync_with_stdio(v); }
 
         private:
-            void cerr_out(std::string const &type, std::vector<teal::valbox> const &args) {
+            void cerr_out(std::string const &type, std::vector<valbox> const &args) {
                 std::stringstream out{};
                 if(setfill_) { out << std::setfill(fill_char_); }
                 if(setw_) { out << std::setw(w_); }
@@ -375,7 +376,7 @@ namespace teal {
                     default: out << std::defaultfloat; break;
                     }
                 }
-                out << teal::str_util::from_utf8(teal::timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
+                out << str_util::from_utf8(timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
                 for(auto &&v: args) {
                     out << v;
                 }
@@ -383,7 +384,7 @@ namespace teal {
                 std::cerr << out.str() << std::endl;
             }
 
-            void cout_out(std::string const &type, std::vector<teal::valbox> const &args) {
+            void cout_out(std::string const &type, std::vector<valbox> const &args) {
                 std::stringstream out{};
                 if(setfill_) { out << std::setfill(fill_char_); }
                 if(setw_) { out << std::setw(w_); }
@@ -396,7 +397,7 @@ namespace teal {
                         default: out << std::defaultfloat; break;
                     }
                 }
-                out << teal::str_util::from_utf8(teal::timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
+                out << str_util::from_utf8(timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
                 for(auto &&v: args) {
                     out << v;
                 }
@@ -488,37 +489,37 @@ namespace teal {
             });
             add_function("load_from_file", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                auto fd{teal::file_util::load_from_file(args[0].cast_to_string())};
+                auto fd{file_util::load_from_file(args[0].cast_to_string())};
                 return std::string{fd.begin(), fd.end()};
             });
             add_function("save_to_file", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                return teal::file_util::save_to_file(args[0].cast_to_string(), args[1].cast_to_string());
+                return file_util::save_to_file(args[0].cast_to_string(), args[1].cast_to_string());
             });
             add_function("delete_filesystem_entry", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                return teal::file_util::delete_fs_entry(args[0].cast_to_string());
+                return file_util::delete_fs_entry(args[0].cast_to_string());
             });
             add_function("extract_file_dir", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                return teal::file_util::extract_file_dir(args[0].cast_to_string());
+                return file_util::extract_file_dir(args[0].cast_to_string());
             });
             add_function("extract_file_name", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                return teal::file_util::extract_file_name(args[0].cast_to_string());
+                return file_util::extract_file_name(args[0].cast_to_string());
             });
             add_function("extract_file_ext", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                return teal::file_util::extract_file_ext(args[0].cast_to_string());
+                return file_util::extract_file_ext(args[0].cast_to_string());
             });
 
             add_function("file_exists", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                return teal::file_util::file_exists(args[0].cast_to_string());
+                return file_util::file_exists(args[0].cast_to_string());
             });
             add_function("dir_exists", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                return teal::file_util::dir_exists(args[0].cast_to_string());
+                return file_util::dir_exists(args[0].cast_to_string());
             });
 
             add_function("native_path_seperator", TEALFUN() {
@@ -541,9 +542,9 @@ namespace teal {
                 }
                 valbox names{valbox_no_initialize::dont_do_it};
                 names.become_array();
-                teal::file_util::for_dir_tree(
+                file_util::for_dir_tree(
                     args[0].cast_to_string(),
-                    [&](teal::file_util::dir_entry const &de) {
+                    [&](file_util::dir_entry const &de) {
                         names.as_array().push_back(de.full_path());
                         return true;
                     },
@@ -558,15 +559,15 @@ namespace teal {
                 std::string res{};
                 if(args[0].is_string_ref()) {
                     if(args.size() == 1) {
-                        res = teal::file_util::data_type(args[0].as_string());
+                        res = file_util::data_type(args[0].as_string());
                     } else {
-                        res = teal::file_util::data_type(args[0].as_string(), args[1].cast_to_s32());
+                        res = file_util::data_type(args[0].as_string(), args[1].cast_to_s32());
                     }
                 } else if(args[0].is_array_ref()) {
                     if(args.size() == 1) {
-                        res = teal::file_util::data_type(args[0].cast_to_string());
+                        res = file_util::data_type(args[0].cast_to_string());
                     } else {
-                        res = teal::file_util::data_type(args[0].cast_to_string(), args[1].cast_to_s32());
+                        res = file_util::data_type(args[0].cast_to_string(), args[1].cast_to_s32());
                     }
                 }
                 return res;
@@ -574,9 +575,9 @@ namespace teal {
             add_function("file_type", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2);
                 if(args.size() == 1) {
-                    return teal::file_util::file_type(args[0].cast_to_string());
+                    return file_util::file_type(args[0].cast_to_string());
                 } else {
-                    return teal::file_util::file_type(args[0].cast_to_string(), args[1].cast_to_s32());
+                    return file_util::file_type(args[0].cast_to_string(), args[1].cast_to_s32());
                 }
             });
             add_var("MAGIC_NONE", MAGIC_NONE);
@@ -595,8 +596,13 @@ namespace teal {
             add_var("MAGIC_APPLE", MAGIC_APPLE);
             add_var("MAGIC_EXTENSION", MAGIC_EXTENSION);
 #endif
-            add_function("errno", TEALFUN() { return errno; });
-            add_function("err_to_str", TEALFUN(args) { return std::string{strerror(args[0].cast_num_to_num<int>())}; });
+            add_function("errno", TEALFUN() { return sys_util::last_error(); });
+            add_function("strerror", TEALFUN(args) {
+                if(args.size() > 0) {
+                    return std::string{strerror(args[0].cast_num_to_num<int>())};
+                }
+                return std::string{strerror(sys_util::last_error())};
+            });
 
             array_buffer_ext_.register_runtime(this);
             math_ext_.register_runtime(this);
@@ -608,29 +614,29 @@ namespace teal {
             sockext_.register_runtime(this);
             dict_ext_.register_runtime(this);
 
-            add_var("console", teal::valbox{&con_, "console"});
+            add_var("console", valbox{&con_, "console"});
             add_method("console", "info", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1)
-                std::vector<teal::valbox> args1{args.begin() + 1, args.end()};
+                std::vector<valbox> args1{args.begin() + 1, args.end()};
                 TEALTHIS(args, detail::console *)->info(args1);
                 return {valbox_no_initialize::dont_do_it};
             });
-            add_method("console", "log", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<teal::valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, detail::console *)->log(args1); return {valbox_no_initialize::dont_do_it}; });
-            add_method("console", "warn", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<teal::valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, detail::console *)->warn(args1); return {valbox_no_initialize::dont_do_it}; });
-            add_method("console", "debug", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<teal::valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, detail::console *)->debug(args1); return {valbox_no_initialize::dont_do_it}; });
-            add_method("console", "error", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<teal::valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, detail::console *)->error(args1); return {valbox_no_initialize::dont_do_it}; });
-            add_method("console", "print", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<teal::valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, detail::console *)->print(args1); return {valbox_no_initialize::dont_do_it}; });
-            add_method("console", "flush", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, detail::console *)->flush(); return teal::valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "fixed", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, detail::console *)->fixed(); return teal::valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "scientific", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, detail::console *)->scientific(); return teal::valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "hexfloat", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, detail::console *)->hexfloat(); return teal::valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "defaultfloat", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, detail::console *)->defaultfloat(); return teal::valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "setprecision", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) TEALTHIS(args, detail::console *)->setprecision(args[1].cast_to_u64()); return teal::valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "log", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, detail::console *)->log(args1); return {valbox_no_initialize::dont_do_it}; });
+            add_method("console", "warn", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, detail::console *)->warn(args1); return {valbox_no_initialize::dont_do_it}; });
+            add_method("console", "debug", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, detail::console *)->debug(args1); return {valbox_no_initialize::dont_do_it}; });
+            add_method("console", "error", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, detail::console *)->error(args1); return {valbox_no_initialize::dont_do_it}; });
+            add_method("console", "print", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, detail::console *)->print(args1); return {valbox_no_initialize::dont_do_it}; });
+            add_method("console", "flush", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, detail::console *)->flush(); return valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "fixed", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, detail::console *)->fixed(); return valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "scientific", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, detail::console *)->scientific(); return valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "hexfloat", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, detail::console *)->hexfloat(); return valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "defaultfloat", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, detail::console *)->defaultfloat(); return valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "setprecision", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) TEALTHIS(args, detail::console *)->setprecision(args[1].cast_to_u64()); return valbox{valbox_no_initialize::dont_do_it}; });
             add_method("console", "precision", TEALFUN(args) { return TEALTHIS(args, detail::console *)->precision(); });
-            add_method("console", "setw", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) TEALTHIS(args, detail::console *)->setw(args[1].cast_to_u64()); return teal::valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "setfill", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) TEALTHIS(args, detail::console *)->setfill(args[1].cast_to_char()); return teal::valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "setw", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) TEALTHIS(args, detail::console *)->setw(args[1].cast_to_u64()); return valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "setfill", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) TEALTHIS(args, detail::console *)->setfill(args[1].cast_to_char()); return valbox{valbox_no_initialize::dont_do_it}; });
             add_method("console", "fill", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return TEALTHIS(args, detail::console *)->fill(); });
-            add_method("console", "enable_colors", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) TEALTHIS(args, detail::console *)->enable_colors(args[1].cast_to_bool()); return teal::valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "enable_colors", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) TEALTHIS(args, detail::console *)->enable_colors(args[1].cast_to_bool()); return valbox{valbox_no_initialize::dont_do_it}; });
             add_method("console", "colors_enabled", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return TEALTHIS(args, detail::console *)->colors_enabled(); });
             add_method("console", "sync_stdio", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) return TEALTHIS(args, detail::console *)->setsync(args[1].cast_to_bool()); });
             add_function("print", TEALFUN(args) { con_.rawprint(args); return {valbox_no_initialize::dont_do_it}; });
@@ -845,16 +851,16 @@ namespace teal {
                 valbox res{valbox_no_initialize::dont_do_it};
                 res.become_object();
                 if(args[0].is_string_ref()) {
-                    res.from_json(teal::json::deserialize(args[0].as_string()));
+                    res.from_json(json::deserialize(args[0].as_string()));
                     return res;
                 } else if(args[0].is_wstring_ref()) {
-                    return teal::json::deserialize(args[0].as_wstring());
+                    return json::deserialize(args[0].as_wstring());
                 } else if(args[0].is_any_int_number()) {
-                    return teal::json{args[0].cast_num_to_num<int64_t>()};
+                    return json{args[0].cast_num_to_num<int64_t>()};
                 } else if(args[0].is_any_fp_number()) {
-                    return teal::json{args[0].cast_num_to_num<long double>()};
+                    return json{args[0].cast_num_to_num<long double>()};
                 } else if(args[0].is_bool_ref()) {
-                    return teal::json{args[0].cast_num_to_num<long double>()};
+                    return json{args[0].cast_num_to_num<long double>()};
                 }
                 return res;
             });
@@ -862,10 +868,10 @@ namespace teal {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 valbox res{valbox_no_initialize::dont_do_it};
                 if(args[0].is_string_ref()) {
-                    res.from_json(teal::json::deserialize(args[0].as_string()));
+                    res.from_json(json::deserialize(args[0].as_string()));
                     return res;
                 } else if(args[0].is_wstring_ref()) {
-                    res.from_json(teal::json::deserialize(args[0].as_wstring()));
+                    res.from_json(json::deserialize(args[0].as_wstring()));
                 }
                 return res;
             });
@@ -1013,12 +1019,12 @@ namespace teal {
             add_function("replace_substr", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 2, 3)
                 if(args.size() == 2) {
-                    return teal::str_util::to_utf8(teal::str_util::replace_substring<std::wstring>(
+                    return str_util::to_utf8(str_util::replace_substring<std::wstring>(
                         args[0].cast_to_wstring(), args[1].cast_to_wstring(), std::wstring{}
                     ));
                 }
                 if(args.size() == 3) {
-                    return teal::str_util::to_utf8(teal::str_util::replace_substring<std::wstring>(
+                    return str_util::to_utf8(str_util::replace_substring<std::wstring>(
                         args[0].cast_to_wstring(), args[1].cast_to_wstring(), args[2].cast_to_wstring()
                     ));
                 }
@@ -1101,12 +1107,12 @@ namespace teal {
                 valbox res{valbox_no_initialize::dont_do_it};
                 res.become_array();
                 if(args[0].is_string_ref()) {
-                    std::vector<std::string> sv{teal::str_util::str_tok(args[0].cast_to_string(), args[1].cast_to_string())};
+                    std::vector<std::string> sv{str_util::str_tok(args[0].cast_to_string(), args[1].cast_to_string())};
                     for(auto &&s: sv) {
                         res.as_array().push_back(s);
                     }
                 } else if(args[0].is_wstring_ref()) {
-                    std::vector<std::wstring> sv{teal::str_util::str_tok(args[0].cast_to_wstring(), args[1].cast_to_wstring())};
+                    std::vector<std::wstring> sv{str_util::str_tok(args[0].cast_to_wstring(), args[1].cast_to_wstring())};
                     for(auto &&s: sv) {
                         res.as_array().push_back(s);
                     }
@@ -1117,9 +1123,9 @@ namespace teal {
             add_function("ltrim", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 if(args[0].is_string_ref()) {
-                    return teal::str_util::ltrim<std::string>(args[0].as_string());
+                    return str_util::ltrim<std::string>(args[0].as_string());
                 } else if(args[0].is_wstring_ref()) {
-                    return teal::str_util::ltrim<std::wstring>(args[0].as_wstring());
+                    return str_util::ltrim<std::wstring>(args[0].as_wstring());
                 } else {
                     return args[0];
                 }
@@ -1128,9 +1134,9 @@ namespace teal {
             add_function("rtrim", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 if(args[0].is_string_ref()) {
-                    return teal::str_util::rtrim<std::string>(args[0].as_string());
+                    return str_util::rtrim<std::string>(args[0].as_string());
                 } else if(args[0].is_wstring_ref()) {
-                    return teal::str_util::rtrim<std::wstring>(args[0].as_wstring());
+                    return str_util::rtrim<std::wstring>(args[0].as_wstring());
                 } else {
                     return args[0];
                 }
@@ -1138,9 +1144,9 @@ namespace teal {
             add_function("trim", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 if(args[0].is_string_ref()) {
-                    return teal::str_util::trim<std::string>(args[0].as_string());
+                    return str_util::trim<std::string>(args[0].as_string());
                 } else if(args[0].is_wstring_ref()) {
-                    return teal::str_util::trim<std::wstring>(args[0].as_wstring());
+                    return str_util::trim<std::wstring>(args[0].as_wstring());
                 } else {
                     return args[0];
                 }
@@ -1173,20 +1179,20 @@ namespace teal {
             add_function("hexdump", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 4)
                 if(args.size() == 1) {
-                    return teal::str_util::hexdump(args[0].cast_to_byte_array());
+                    return str_util::hexdump(args[0].cast_to_byte_array());
                 } else if(args.size() == 2) {
-                    return teal::str_util::hexdump(
+                    return str_util::hexdump(
                         args[0].cast_to_byte_array(),
                         args[1].cast_to_u64()
                     );
                 } else if(args.size() == 3) {
-                    return teal::str_util::hexdump(
+                    return str_util::hexdump(
                         args[0].cast_to_byte_array(),
                         args[1].cast_to_u64(),
                         args[2].cast_to_string()
                     );
                 } else if(args.size() == 4) {
-                    return teal::str_util::hexdump(
+                    return str_util::hexdump(
                         args[0].cast_to_byte_array(),
                         args[1].cast_to_u64(),
                         args[2].cast_to_string(),
@@ -1199,39 +1205,39 @@ namespace teal {
             add_function("data_to_base85_str", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 1)
                 auto src{args[0].cast_to_byte_array()};
-                return teal::data_to_base85_str(src);
+                return data_to_base85_str(src);
             });
 
             add_function("base85_str_to_data", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 1)
                 auto src{args[0].cast_to_string()};
-                auto d{teal::base85_str_to_data(src)};
+                auto d{base85_str_to_data(src)};
                 return std::string{d.begin(), d.end()};
             });
 
             add_function("data_to_base64_str", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 1)
                 auto src{args[0].cast_to_byte_array()};
-                return teal::data_to_base64_str(src);
+                return data_to_base64_str(src);
             });
 
             add_function("base64_str_to_data", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 1)
                 auto src{args[0].cast_to_string()};
-                auto d{teal::base64_str_to_data(src)};
+                auto d{base64_str_to_data(src)};
                 return std::string{d.begin(), d.end()};
             });
 
             add_function("data_to_hex_str", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 1)
                 auto src{args[0].cast_to_byte_array()};
-                return teal::data_to_hex_str(src);
+                return data_to_hex_str(src);
             });
 
             add_function("hex_str_to_data", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 1)
                 auto src{args[0].cast_to_string()};
-                auto d{teal::hex_str_to_data(src)};
+                auto d{hex_str_to_data(src)};
                 return std::string{d.begin(), d.end()};
             });
 
@@ -1247,11 +1253,11 @@ namespace teal {
             add_function("atoi", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 3)
                 if(args.size() == 1) {
-                    return teal::str_util::atoi(args[0].cast_to_string());
+                    return str_util::atoi(args[0].cast_to_string());
                 } else if(args.size() == 2) {
-                    return teal::str_util::atoi(args[0].cast_to_string(), args[1].cast_to_u64());
+                    return str_util::atoi(args[0].cast_to_string(), args[1].cast_to_u64());
                 } else if(args.size() == 3) {
-                    return teal::str_util::atoi(args[0].cast_to_string(), args[1].cast_to_u64(), args[2].cast_to_bool());
+                    return str_util::atoi(args[0].cast_to_string(), args[1].cast_to_u64(), args[2].cast_to_bool());
                 }
                 return std::int64_t{0};
             });
@@ -1259,16 +1265,16 @@ namespace teal {
             add_function("atoui", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2)
                 if(args.size() == 1) {
-                    return teal::str_util::atoui(args[0].cast_to_string());
+                    return str_util::atoui(args[0].cast_to_string());
                 } else if(args.size() == 2) {
-                    return teal::str_util::atoui(args[0].cast_to_string(), args[1].cast_to_u64());
+                    return str_util::atoui(args[0].cast_to_string(), args[1].cast_to_u64());
                 }
                 return std::uint64_t{0};
             });
 
             add_function("atof", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                return teal::str_util::atof(args[0].cast_to_string());
+                return str_util::atof(args[0].cast_to_string());
             });
 
             add_function("itoa", TEALFUN(args) {
@@ -1276,15 +1282,15 @@ namespace teal {
                     if(args.size() > 1) {
                         if(args.size() > 2) {
                             if(args.size() > 3) {
-                                return teal::str_util::itoa<std::string>(args[0].cast_to_s64(), args[1].cast_to_s64(), args[2].cast_to_s64(), args[3].cast_to_bool());
+                                return str_util::itoa<std::string>(args[0].cast_to_s64(), args[1].cast_to_s64(), args[2].cast_to_s64(), args[3].cast_to_bool());
                             } else {
-                                return teal::str_util::itoa<std::string>(args[0].cast_to_s64(), args[1].cast_to_s64(), args[2].cast_to_s64());
+                                return str_util::itoa<std::string>(args[0].cast_to_s64(), args[1].cast_to_s64(), args[2].cast_to_s64());
                             }
                         } else {
-                            return teal::str_util::itoa<std::string>(args[0].cast_to_s64(), args[1].cast_to_s64());
+                            return str_util::itoa<std::string>(args[0].cast_to_s64(), args[1].cast_to_s64());
                         }
                     } else {
-                        return teal::str_util::itoa<std::string>(args[0].cast_to_s64());
+                        return str_util::itoa<std::string>(args[0].cast_to_s64());
                     }
                 }
                 return std::string{};
@@ -1295,15 +1301,15 @@ namespace teal {
                     if(args.size() > 1) {
                         if(args.size() > 2) {
                             if(args.size() > 3) {
-                                return teal::str_util::utoa<std::string>(args[0].cast_to_u64(), args[1].cast_to_s64(), args[2].cast_to_s64(), args[3].cast_to_bool());
+                                return str_util::utoa<std::string>(args[0].cast_to_u64(), args[1].cast_to_s64(), args[2].cast_to_s64(), args[3].cast_to_bool());
                             } else {
-                                return teal::str_util::utoa<std::string>(args[0].cast_to_u64(), args[1].cast_to_s64(), args[2].cast_to_s64());
+                                return str_util::utoa<std::string>(args[0].cast_to_u64(), args[1].cast_to_s64(), args[2].cast_to_s64());
                             }
                         } else {
-                            return teal::str_util::utoa<std::string>(args[0].cast_to_u64(), args[1].cast_to_s64());
+                            return str_util::utoa<std::string>(args[0].cast_to_u64(), args[1].cast_to_s64());
                         }
                     } else {
-                        return teal::str_util::utoa<std::string>(args[0].cast_to_u64());
+                        return str_util::utoa<std::string>(args[0].cast_to_u64());
                     }
                 }
                 return std::string{};
@@ -1312,9 +1318,9 @@ namespace teal {
             add_function("ftoa", TEALFUN(args) {
                 if(args.size() > 0) {
                     if(args.size() > 1) {
-                        return teal::str_util::ftoa(args[0].cast_to_long_double(), args[1].cast_to_u64());
+                        return str_util::ftoa(args[0].cast_to_long_double(), args[1].cast_to_u64());
                     } else {
-                        return teal::str_util::ftoa(args[0].cast_to_long_double());
+                        return str_util::ftoa(args[0].cast_to_long_double());
                     }
                 }
                 return std::string{"0.0"};
@@ -1323,26 +1329,26 @@ namespace teal {
             add_function("toupper", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 if(args[0].is_char_ref()) {
-                    return teal::str_util::toupper(args[0].as_char());
+                    return str_util::toupper(args[0].as_char());
                 } else {
-                    return teal::str_util::towupper(args[0].cast_to_u64());
+                    return str_util::towupper(args[0].cast_to_u64());
                 }
             });
             add_function("tolower", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 if(args[0].is_char_ref()) {
-                    return teal::str_util::tolower(args[0].as_char());
+                    return str_util::tolower(args[0].as_char());
                 } else {
-                    return teal::str_util::towlower(args[0].cast_to_u64());
+                    return str_util::towlower(args[0].cast_to_u64());
                 }
             });
 
             add_function("strtoupper", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 if(args[0].is_string_ref()) {
-                    return teal::str_util::fltr<std::string>::strtoupper(args[0].as_string());
+                    return str_util::fltr<std::string>::strtoupper(args[0].as_string());
                 } else if(args[0].is_wstring_ref()) {
-                    return teal::str_util::fltr<std::wstring>::strtoupper(args[0].as_wstring());
+                    return str_util::fltr<std::wstring>::strtoupper(args[0].as_wstring());
                 } else {
                     throw std::runtime_error{"invalid argument"};
                 }
@@ -1350,9 +1356,9 @@ namespace teal {
             add_function("strtolower", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 if(args[0].is_char_ref()) {
-                    return teal::str_util::tolower(args[0].as_char());
+                    return str_util::tolower(args[0].as_char());
                 } else {
-                    return teal::str_util::towlower(args[0].cast_to_u64());
+                    return str_util::towlower(args[0].cast_to_u64());
                 }
             });
 
@@ -1360,28 +1366,28 @@ namespace teal {
             add_function("get_bit_field", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 3)
                 if(args[0].is_u64_ref()) {
-                    teal::bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
+                    bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
                     return bf.get(args[1].cast_to_u64(), args[2].cast_to_u64());
                 } else if(args[0].is_s64_ref()) {
-                    teal::bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
+                    bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
                     return bf.get(args[1].cast_to_u64(), args[2].cast_to_u64());
                 } else if(args[0].is_u32_ref()) {
-                    teal::bit_util::bits<std::uint32_t> bf{args[0].cast_to_u32()};
+                    bit_util::bits<std::uint32_t> bf{args[0].cast_to_u32()};
                     return bf.get(args[1].cast_to_u64(), args[2].cast_to_u64());
                 } else if(args[0].is_s32_ref()) {
-                    teal::bit_util::bits<std::uint32_t> bf{args[0].cast_to_u32()};
+                    bit_util::bits<std::uint32_t> bf{args[0].cast_to_u32()};
                     return bf.get(args[1].cast_to_u64(), args[2].cast_to_u64());
                 } else if(args[0].is_u16_ref()) {
-                    teal::bit_util::bits<std::uint16_t> bf{args[0].cast_to_u16()};
+                    bit_util::bits<std::uint16_t> bf{args[0].cast_to_u16()};
                     return bf.get(args[1].cast_to_u64(), args[2].cast_to_u64());
                 } else if(args[0].is_s16_ref()) {
-                    teal::bit_util::bits<std::uint16_t> bf{args[0].cast_to_u16()};
+                    bit_util::bits<std::uint16_t> bf{args[0].cast_to_u16()};
                     return bf.get(args[1].cast_to_u64(), args[2].cast_to_u64());
                 } else if(args[0].is_u8_ref()) {
-                    teal::bit_util::bits<std::uint8_t> bf{args[0].cast_to_u8()};
+                    bit_util::bits<std::uint8_t> bf{args[0].cast_to_u8()};
                     return bf.get(args[1].cast_to_u64(), args[2].cast_to_u64());
                 } else if(args[0].is_s8_ref()) {
-                    teal::bit_util::bits<std::uint8_t> bf{args[0].cast_to_u8()};
+                    bit_util::bits<std::uint8_t> bf{args[0].cast_to_u8()};
                     return bf.get(args[1].cast_to_u64(), args[2].cast_to_u64());
                 }
                 return args[0];
@@ -1389,14 +1395,14 @@ namespace teal {
 
             add_function("get_bit", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                teal::bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
+                bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
                 auto bitpos{args[1].cast_to_u64()};
                 return bf.get(bitpos);
             });
 
             add_function("update_bit", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 3)
-                teal::bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
+                bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
                 auto bitpos{args[1].cast_to_u64()};
                 auto bitval{args[2].cast_to_u64()};
                 if(bitval != 0) {
@@ -1411,7 +1417,7 @@ namespace teal {
             });
             add_function("set_bit", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                teal::bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
+                bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
                 bf.set(args[1].cast_to_u64());
                 valbox res{valbox_no_initialize::dont_do_it};
                 res.become_same_type_as(args[0]);
@@ -1420,7 +1426,7 @@ namespace teal {
             });
             add_function("clear_bit", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                teal::bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
+                bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
                 bf.clr(args[1].cast_to_u64());
                 valbox res{valbox_no_initialize::dont_do_it};
                 res.become_same_type_as(args[0]);
@@ -1432,7 +1438,7 @@ namespace teal {
             add_function("sleep", TEALFUN(args) {
                 long double time_to_sleep{args[0].cast_to_long_double()};
                 if(time_to_sleep > 0) {
-                    std::this_thread::sleep_for(std::chrono::nanoseconds(static_cast<std::int64_t>(time_to_sleep * 1000000000.0L)));
+                    std::this_thread::sleep_for(std::chrono::nanoseconds{static_cast<std::uint64_t>(time_to_sleep * 1000000000.0L)});
                 }
                 return time_to_sleep;
             });
@@ -1521,7 +1527,9 @@ namespace teal {
         runtime &operator=(runtime const &) = delete;
         runtime &operator=(runtime &&) = delete;
         ~runtime() {
+            terminate();
             stop_mt();
+            stop_extcell_processing();
 
             worker_cells_templates_.clear();
             global_constants_dictionary_.clear();
@@ -1547,25 +1555,25 @@ namespace teal {
             array_buffer_ext_.unregister_runtime();
         }
 
-        teal::timespec_wrapper valbox_to_timestamp(std::vector<teal::valbox> const &args) const {
+        timespec_wrapper valbox_to_timestamp(std::vector<valbox> const &args) const {
             if(args.size() >= 1) {
                 if(args[0].is_string_ref()) {
-                    return teal::timespec_wrapper{args[0].as_string()};
+                    return timespec_wrapper{args[0].as_string()};
                 } else if(args[0].is_wstring_ref()) {
-                    return teal::timespec_wrapper{args[0].as_wstring()};
+                    return timespec_wrapper{args[0].as_wstring()};
                 } else if(args[0].is_any_fp_number()) {
-                    return teal::timespec_wrapper{args[0].cast_to_long_double()};
+                    return timespec_wrapper{args[0].cast_to_long_double()};
                 } else if(args[0].is_any_int_number()) {
-                    return teal::timespec_wrapper{args[0].cast_to_s64()}; // milliseconds
+                    return timespec_wrapper{args[0].cast_to_s64()}; // milliseconds
                 }
             }
-            return teal::timespec_wrapper::now();
+            return timespec_wrapper::now();
         }
 
         void load_file(std::string const &filename) {
             if(!load_library(filename)) {
-                if(teal::file_util::file_exists(filename)) {
-                    std::string src{teal::file_util::load_text_file(filename)};
+                if(file_util::file_exists(filename)) {
+                    std::string src{file_util::load_text_file(filename)};
                     load_source_string(src);
                 }
             }
@@ -1574,13 +1582,13 @@ namespace teal {
         void loading_complete() {
             std::unique_lock l{workers_mtp_};
             for(auto &&wcp: worker_cells_) {
-                worker_cell_instance &curr_cell{wcp.second};
-                auto type_it{worker_cells_templates_.find(curr_cell.type_name())};
+                std::shared_ptr<worker_cell_instance> curr_cell{wcp.second};
+                auto type_it{worker_cells_templates_.find(curr_cell->type_name())};
                 if(type_it != worker_cells_templates_.end()) {
-                    if(curr_cell.actual_args_info().size() != static_cast<size_t>(type_it->second.num_args())) {
-                        throw runtime_error{curr_cell.line(), curr_cell.col(), "actual arguments count for the cell mismatch"};
+                    if(curr_cell->actual_args_info().size() != static_cast<size_t>(type_it->second.num_args())) {
+                        throw runtime_error{curr_cell->line(), curr_cell->col(), "actual arguments count for the cell mismatch"};
                     }
-                    curr_cell.set_type_info(type_it->second.num_args(), type_it->second.arg_names());
+                    curr_cell->set_type_info(type_it->second.num_args(), type_it->second.arg_names());
                 }
             }
         }
@@ -1661,8 +1669,9 @@ namespace teal {
             std::shared_lock l{workers_mtp_};
             auto it{worker_cells_.find(name)};
             if(it != worker_cells_.end()) {
-                worker_cell_instance const &ci{it->second};
-                return ci.curr_value();
+                std::shared_ptr<worker_cell_instance> ci{it->second};
+                l.unlock();
+                return ci->value();
             }
             throw std::runtime_error{std::string{"node not found: \""} + name + "\""};
         }
@@ -1670,10 +1679,6 @@ namespace teal {
         size_t worker_cells_count() const {
             std::shared_lock l{workers_mtp_};
             return worker_cells_.size();
-        }
-
-        valbox get_external_value(std::string const &/*name*/) {
-            return {};
         }
 
         void set_single_thread_mode() {
@@ -1708,77 +1713,56 @@ namespace teal {
             }
             exctx_.clear_all_jumps_request();
             for(auto &&w: worker_cells_) {
-                worker_cell_instance &curr_cell{w.second};
-                std::string const &curr_cell_type_name{curr_cell.type_name()};
+                std::shared_ptr<worker_cell_instance> &curr_cell{w.second};
+                std::string const &curr_cell_type_name{curr_cell->type_name()};
 
-                if(!curr_cell.type_info_transferred()) {
+                if(!curr_cell->type_info_transferred()) {
                     auto type_it{worker_cells_templates_.find(curr_cell_type_name)};
                     if(type_it != worker_cells_templates_.end()) {
-                        if(curr_cell.actual_args_info().size() != static_cast<size_t>(type_it->second.num_args())) {
-                            throw runtime_error{curr_cell.line(), curr_cell.col(), "actual arguments count for the cell mismatch"};
+                        if(curr_cell->actual_args_info().size() != static_cast<size_t>(type_it->second.num_args())) {
+                            throw runtime_error{curr_cell->line(), curr_cell->col(), "actual arguments count for the cell mismatch"};
                         }
-                        curr_cell.set_type_info(
-                            type_it->second.num_args(),
-                            type_it->second.arg_names()
-                        );
+                        curr_cell->set_type_info(type_it->second.num_args(), type_it->second.arg_names());
                     }
                 }
 
-                exctx_.set_self_fields(curr_cell.cell_self_values_ptr());
+                exctx_.set_self_fields(curr_cell->cell_self_values_ptr());
 
                 exctx_.clear_stack_soft();
                 exctx_.new_stack_frame();
 
-#ifdef TEAL_DISABLE_UNDEFINED_CELL_ARGS
-                bool undefineds{false};
-#endif
-                auto &&args_info{curr_cell.actual_args_info()};
+                auto &&args_info{curr_cell->actual_args_info()};
                 for(std::size_t curr_arg_number{0}; curr_arg_number < args_info.size(); ++curr_arg_number) {
                     auto &&ai{args_info[curr_arg_number]};
                     std::string curr_arg_name{ai.argname};
-                    if(ai.cell) {
-                        if(ai.w_cell_ptr != nullptr) {
-                            exctx_.set_local_value(curr_arg_name, ai.w_cell_ptr->curr_value());
-                        } else if(ai.in_cell_ptr != nullptr) {
-                            exctx_.set_local_value(curr_arg_name, ai.in_cell_ptr->curr_value());
+                    if(ai.is_cell) {
+                        if(ai.cell_ptr != nullptr) {
+                            exctx_.set_local_value(curr_arg_name, ai.cell_ptr->value());
                         } else {
                             auto w_it{worker_cells_.find(ai.cell_name)};
                             if(w_it != worker_cells_.end()) {
-#ifdef TEAL_DISABLE_UNDEFINED_CELL_ARGS
-                                if(w_it->second.curr_value().is_undefined_ref()) {
-                                    undefineds = true;
-                                    break;
-                                }
-#endif
-                                ai.w_cell_ptr = &(w_it->second);
-                                exctx_.set_local_value(curr_arg_name, w_it->second.curr_value());
+                                ai.cell_ptr = w_it->second.get();
+                                exctx_.set_local_value(curr_arg_name, w_it->second->value());
                             } else {
                                 auto in_it{input_cells_.find(ai.cell_name)};
                                 if(in_it != input_cells_.end()) {
-#ifdef TEAL_DISABLE_UNDEFINED_CELL_ARGS
-                                    if(in_it->second.curr_value().is_undefined_ref()) {
-                                        undefineds = true;
-                                        break;
-                                    }
-#endif
-                                    ai.in_cell_ptr = &(in_it->second);
-                                    exctx_.set_local_value(curr_arg_name, in_it->second.curr_value());
+                                    ai.cell_ptr = in_it->second.get();
+                                    exctx_.set_local_value(curr_arg_name, in_it->second->value());
                                 } else {
 #ifdef TEAL_USE_EXTERNAL_VALUES
-                                    valbox val{get_external_value(curr_arg_name)};
-#ifdef TEAL_DISABLE_UNDEFINED_CELL_ARGS
-                                    if(val.is_undefined()) {
-                                        undefineds = true;
-                                        break;
-                                    }
+                                    auto ex_it{extern_cells_.find(ai.cell_name)};
+                                    if(ex_it != extern_cells_.end()) {
+                                        ai.cell_ptr = ex_it->second.get();
+                                        exctx_.set_local_value(curr_arg_name, ex_it->second->value());
+                                    } else {
 #endif
-                                    exctx_.set_local_value(curr_arg_name, val);
-#else
-                                    throw runtime_error{
-                                        curr_cell.line(), curr_cell.col(),
-                                        std::string{"input value not found for compute element \""} +
-                                            curr_cell.inst_name() + "\""
-                                    };
+                                        throw runtime_error{
+                                            curr_cell->line(), curr_cell->col(),
+                                            std::string{"input value not found for compute element \""} +
+                                                curr_cell->inst_name() + "\""
+                                        };
+#ifdef TEAL_USE_EXTERNAL_VALUES
+                                    }
 #endif
                                 }
                             }
@@ -1788,47 +1772,32 @@ namespace teal {
                             ai.expr_val = ai.expr->eval(&exctx_, eval_caller_type::no_matter, nullptr);
                         }
                         valbox vb{ai.expr_val};
-#ifdef TEAL_DISABLE_UNDEFINED_CELL_ARGS
-                        if(vb.is_undefined_ref()) {
-                            undefineds = true;
-                            break;
-                        }
-#endif
                         exctx_.set_local_value(curr_arg_name, vb);
                     }
                 }
 
-#ifdef TEAL_DISABLE_UNDEFINED_CELL_ARGS
-                if(undefineds) {
-                    curr_cell.set_curr_value(valbox{valbox_no_initialize::dont_do_it});
-                    if(!curr_cell.out_name().empty()) {
-                        exctx_.set_output(curr_cell.out_name(), valbox{valbox_no_initialize::dont_do_it});
-                    }
-                    continue;
-                }
-#endif
-                if(!curr_cell.body()) {
+                if(!curr_cell->body()) {
                     auto body_it{worker_bodies_.find(curr_cell_type_name)};
                     if(body_it == worker_bodies_.end()) {
-                        throw runtime_error{curr_cell.line(), curr_cell.col(), "cell not found"};
+                        throw runtime_error{curr_cell->line(), curr_cell->col(), "cell not found"};
                     }
-                    curr_cell.set_body(body_it->second);
+                    curr_cell->set_body(body_it->second);
                 }
-                curr_cell.body()->exec(&exctx_);
+                curr_cell->body()->exec(&exctx_);
 
                 if(termination_requested()) {
                     break;
                 }
                 if(exctx_.return_requested()) {
-                    curr_cell.set_curr_value(exctx_.return_result());
-                    if(!curr_cell.out_name().empty()) {
-                        exctx_.set_output(curr_cell.out_name(), exctx_.return_result());
+                    curr_cell->set_value(exctx_.return_result());
+                    if(!curr_cell->output_name().empty()) {
+                        exctx_.set_output(curr_cell->output_name(), exctx_.return_result());
                     }
                 }
                 exctx_.clear_all_jumps_request();
 
                 if(sleep_between_cycles_nanoseconds_ > 0) {
-                    std::this_thread::sleep_for(std::chrono::nanoseconds(sleep_between_cycles_nanoseconds_));
+                    std::this_thread::sleep_for(std::chrono::nanoseconds{sleep_between_cycles_nanoseconds_});
                 }
             }
         }
@@ -1923,79 +1892,61 @@ namespace teal {
                             exctx_ptr->clear_all_jumps_request();
                             bool have_locked{false};
                             for(auto &&wrkcl: worker_cells_) {
-                                worker_cell_instance &curr_cell{wrkcl.second};
+                                std::shared_ptr<worker_cell_instance> &curr_cell{wrkcl.second};
                                 bool cell_executed{false};
-                                if(curr_cell.try_lock()) {
+                                if(curr_cell->try_lock()) {
                                     cell_executed = true;
                                     have_locked = true;
-                                    teal::shut_on_destroy sod{[&]() { curr_cell.unlock(); }};
-                                    std::string const &curr_cell_type_name{curr_cell.type_name()};
+                                    shut_on_destroy sod{[&]() { curr_cell->unlock(); }};
+                                    std::string const &curr_cell_type_name{curr_cell->type_name()};
 
-                                    if(!curr_cell.type_info_transferred()) {
+                                    if(!curr_cell->type_info_transferred()) {
                                         auto type_it{worker_cells_templates_.find(curr_cell_type_name)};
                                         if(type_it != worker_cells_templates_.end()) {
-                                            if(curr_cell.actual_args_info().size() != static_cast<size_t>(type_it->second.num_args())) {
-                                                throw runtime_error{curr_cell.line(), curr_cell.col(), "actual arguments count for the cell mismatch"};
+                                            if(curr_cell->actual_args_info().size() != static_cast<size_t>(type_it->second.num_args())) {
+                                                throw runtime_error{curr_cell->line(), curr_cell->col(), "actual arguments count for the cell mismatch"};
                                             }
-                                            curr_cell.set_type_info(type_it->second.num_args(), type_it->second.arg_names());
+                                            curr_cell->set_type_info(type_it->second.num_args(), type_it->second.arg_names());
                                         }
                                     }
 
-                                    exctx_ptr->set_self_fields(curr_cell.cell_self_values_ptr());
+                                    exctx_ptr->set_self_fields(curr_cell->cell_self_values_ptr());
 
                                     exctx_ptr->clear_stack_soft();
                                     exctx_ptr->new_stack_frame();
 
-#ifdef TEAL_DISABLE_UNDEFINED_CELL_ARGS
-                                    bool undefineds{false};
-#endif
-                                    std::vector<worker_cell_instance::arg_info> &args_info{curr_cell.actual_args_info()};
+                                    std::vector<worker_cell_instance::arg_info> &args_info{curr_cell->actual_args_info()};
                                     for(std::size_t curr_arg_number{0}; curr_arg_number < args_info.size(); ++curr_arg_number) {
                                         worker_cell_instance::arg_info &ai{args_info[curr_arg_number]};
                                         std::string curr_arg_name{ai.argname};
-                                        if(ai.cell) {
-                                            if(ai.w_cell_ptr != nullptr) {
-                                                exctx_ptr->set_local_value(curr_arg_name, ai.w_cell_ptr->curr_value());
-                                            } else if(ai.in_cell_ptr != nullptr) {
-                                                exctx_ptr->set_local_value(curr_arg_name, ai.in_cell_ptr->curr_value());
+                                        if(ai.is_cell) {
+                                            if(ai.cell_ptr != nullptr) {
+                                                exctx_ptr->set_local_value(curr_arg_name, ai.cell_ptr->value());
                                             } else {
                                                 auto w_it{worker_cells_.find(ai.cell_name)};
                                                 if(w_it != worker_cells_.end()) {
-#ifdef TEAL_DISABLE_UNDEFINED_CELL_ARGS
-                                                    if(w_it->second.curr_value().is_undefined_ref()) {
-                                                        undefineds = true;
-                                                        break;
-                                                    }
-#endif
-                                                    ai.w_cell_ptr = &(w_it->second);
-                                                    exctx_ptr->set_local_value(curr_arg_name, ai.w_cell_ptr->curr_value());
+                                                    ai.cell_ptr = w_it->second.get();
+                                                    exctx_ptr->set_local_value(curr_arg_name, ai.cell_ptr->value());
                                                 } else {
                                                     auto in_it{input_cells_.find(ai.cell_name)};
                                                     if(in_it != input_cells_.end()) {
-#ifdef TEAL_DISABLE_UNDEFINED_CELL_ARGS
-                                                        if(in_it->second.curr_value().is_undefined_ref()) {
-                                                            undefineds = true;
-                                                            break;
-                                                        }
-#endif
-                                                        ai.in_cell_ptr = &(in_it->second);
-                                                        exctx_ptr->set_local_value(curr_arg_name, ai.in_cell_ptr->curr_value());
+                                                        ai.cell_ptr = in_it->second.get();
+                                                        exctx_ptr->set_local_value(curr_arg_name, ai.cell_ptr->value());
                                                     } else {
 #ifdef TEAL_USE_EXTERNAL_VALUES
-                                                        valbox val{get_external_value(curr_arg_name)};
-#ifdef TEAL_DISABLE_UNDEFINED_CELL_ARGS
-                                                        if(val.is_undefined()) {
-                                                            undefineds = true;
-                                                            break;
-                                                        }
+                                                        auto ex_it{extern_cells_.find(ai.cell_name)};
+                                                        if(ex_it != extern_cells_.end()) {
+                                                            ai.cell_ptr = ex_it->second.get();
+                                                            exctx_ptr->set_local_value(curr_arg_name, ai.cell_ptr->value());
+                                                        } else {
 #endif
-                                                        exctx_ptr->set_local_value(curr_arg_name, val);
-#else
-                                                        throw runtime_error{
-                                                            curr_cell.line(), curr_cell.col(),
-                                                            std::string{"input value not found for compute element \""} +
-                                                                curr_cell.inst_name() + "\""
-                                                        };
+                                                            throw runtime_error{
+                                                                curr_cell->line(), curr_cell->col(),
+                                                                std::string{"input value not found for compute element \""} +
+                                                                    curr_cell->inst_name() + "\""
+                                                            };
+#ifdef TEAL_USE_EXTERNAL_VALUES
+                                                        }
 #endif
                                                     }
                                                 }
@@ -2005,51 +1956,36 @@ namespace teal {
                                                 ai.expr_val = ai.expr->eval(exctx_ptr, eval_caller_type::no_matter, nullptr);
                                             }
                                             valbox vb{ai.expr_val};
-#ifdef TEAL_DISABLE_UNDEFINED_CELL_ARGS
-                                            if(vb.is_undefined_ref()) {
-                                                undefineds = true;
-                                                break;
-                                            }
-#endif
                                             exctx_ptr->set_local_value(curr_arg_name, vb);
                                         }
                                     }
 
-#ifdef TEAL_DISABLE_UNDEFINED_CELL_ARGS
-                                    if(undefineds) {
-                                        curr_cell.set_curr_value(valbox{valbox_no_initialize::dont_do_it});
-                                        if(!curr_cell.out_name().empty()) {
-                                            exctx_ptr->set_output(curr_cell.out_name(), valbox{valbox_no_initialize::dont_do_it});
-                                        }
-                                        continue;
-                                    }
-#endif
-                                    if(!curr_cell.body()) {
+                                    if(!curr_cell->body()) {
                                         auto body_it{worker_bodies_.find(curr_cell_type_name)};
                                         if(body_it == worker_bodies_.end()) {
-                                            throw runtime_error{curr_cell.line(), curr_cell.col(), "cell not found"};
+                                            throw runtime_error{curr_cell->line(), curr_cell->col(), "cell not found"};
                                         }
-                                        curr_cell.set_body(body_it->second);
+                                        curr_cell->set_body(body_it->second);
                                     }
-                                    curr_cell.body()->exec(exctx_ptr);
+                                    curr_cell->body()->exec(exctx_ptr);
 
                                     if(termination_requested() || failure()) {
                                         break;
                                     }
                                     if(exctx_ptr->return_requested()) {
-                                        curr_cell.set_curr_value(exctx_ptr->return_result());
-                                        if(!curr_cell.out_name().empty()) {
-                                            exctx_ptr->set_output(curr_cell.out_name(), exctx_ptr->return_result());
+                                        curr_cell->set_value(exctx_ptr->return_result());
+                                        if(!curr_cell->output_name().empty()) {
+                                            exctx_ptr->set_output(curr_cell->output_name(), exctx_ptr->return_result());
                                         }
                                     }
                                     exctx_ptr->clear_all_jumps_request();
                                 }
                                 if(cell_executed && sleep_between_cycles_nanoseconds_ > 0) {
-                                    std::this_thread::sleep_for(std::chrono::nanoseconds(sleep_between_cycles_nanoseconds_));
+                                    std::this_thread::sleep_for(std::chrono::nanoseconds{sleep_between_cycles_nanoseconds_});
                                 }
                             }
                             if(!have_locked) {
-                                std::this_thread::sleep_for(std::chrono::nanoseconds(sleep_inactive_thread_nanoseconds_));
+                                std::this_thread::sleep_for(std::chrono::nanoseconds{sleep_inactive_thread_nanoseconds_});
                             }
                         }
 #ifndef TEAL_DEBUGGING
@@ -2141,7 +2077,7 @@ namespace teal {
 
         valbox get_input(std::string const &name) override {
             std::shared_lock l{input_cells_mtp_};
-            return input_cells_[name].curr_value();
+            return input_cells_[name]->value();
         }
 
         valbox const &get_output(std::string const &name) override {
@@ -2155,7 +2091,7 @@ namespace teal {
             if(it == input_names_to_instances_mapping_.end()) {
                 throw std::runtime_error{name + ": input name not found"};
             }
-            input_cells_[it->second].set_value(val);
+            input_cells_[it->second]->set_value(val);
         }
 
         void set_output(std::string const &name, valbox const &val) override {
@@ -2165,7 +2101,7 @@ namespace teal {
 
         void clear_input(std::string const &name) override {
             std::unique_lock l{input_cells_mtp_};
-            input_cells_[name].set_value({});
+            input_cells_[name]->set_value({});
         }
 
         void clear_output(std::string const &name) override {
@@ -2183,6 +2119,68 @@ namespace teal {
             outputs_.clear();
         }
 
+        void start_net_server(std::string const &bind_addr, std::uint16_t port, std::size_t num_threads) override {
+            std::shared_lock l{ppserver_mtp_};
+            if(!ppserver_) {
+                l.unlock();
+                std::unique_lock l1{ppserver_mtp_};
+                if(!ppserver_) {
+                    ppserver_ = std::make_unique<pp_server>();
+                    ppserver_->set_on_data_arrived([this](conn_id_t conn_id, bytevec const &data) {
+                        std::string msg{data.begin(), data.end()};
+                        {
+                            auto it{input_cells_.find(msg)};
+                            if(it != input_cells_.end()) {
+                                valbox vb{it->second->value().deref()};
+                                json resp{}; resp["n"] = msg; resp["t"] = vb.type_to_str(vb.val_or_pointed_type()); resp["v"] = vb.dump();
+                                ppserver_->send(conn_id, resp.bserialize());
+                                return;
+                            }
+                        }
+                        {
+                            auto it{worker_cells_.find(msg)};
+                            if(it != worker_cells_.end()) {
+                                valbox vb{it->second->value().deref()};
+                                json resp{}; resp["n"] = msg; resp["t"] = vb.type_to_str(vb.val_or_pointed_type()); resp["v"] = vb.dump();
+                                ppserver_->send(conn_id, resp.bserialize());
+                                return;
+                            }
+                        }
+                        {
+                            auto it{extern_cells_.find(msg)};
+                            if(it != extern_cells_.end()) {
+                                valbox vb{it->second->value().deref()};
+                                json resp{}; resp["n"] = msg; resp["t"] = vb.type_to_str(vb.val_or_pointed_type()); resp["v"] = vb.dump();
+                                ppserver_->send(conn_id, resp.bserialize());
+                                return;
+                            }
+                        }
+                        ppserver_->send(conn_id, "<undefined>");
+                    });
+                }
+            }
+            if(!ppserver_->started()) {
+                ppserver_->start(bind_addr, port, num_threads);
+            }
+        }
+        void stop_net_server() override {
+            std::unique_lock l{ppserver_mtp_};
+            ppserver_.reset();
+        }
+        bool net_server_running() const override {
+            std::shared_lock l{ppserver_mtp_};
+            return ppserver_->started();
+        }
+
+        void start_net_client() override {
+#ifdef TEAL_USE_EXTERNAL_VALUES
+            start_extcell_processing();
+#endif
+        }
+
+        void net_hub_connect(std::string const &/*unique_net_name*/) override {
+        }
+
     private:
         void load_source_string(std::string const &src) {
             lexer lxr{};
@@ -2192,7 +2190,7 @@ namespace teal {
                     prs.add_token(tkn);
                 }
             });
-            for(auto &&c: teal::str_util::from_utf8(src)) {
+            for(auto &&c: str_util::from_utf8(src)) {
                 lxr.consume_char(c);
             }
             lxr.consume_eof();
@@ -2202,18 +2200,22 @@ namespace teal {
             lj.chop(
                 ast, input_cells_, input_names_to_instances_mapping_, worker_cells_templates_,
                 worker_cells_, worker_bodies_, user_functions_, global_functions_dictionary_
+#ifdef TEAL_USE_EXTERNAL_VALUES
+                ,
+                extern_cells_
+#endif
             );
         }
 
         bool load_library(std::string const &fname) {
             bool res{false};
             try {
-                std::shared_ptr<teal::so> dll_ptr{std::make_shared<teal::so>(fname)};
+                std::shared_ptr<so> dll_ptr{std::make_shared<so>(fname)};
                 if(dll_ptr->ok()) {
-                    auto ld_fn{dll_ptr->symbol<teal::extension_interface *(*)()>("create_teal_extension")};
-                    auto unld_fn{dll_ptr->symbol<void (*)(teal::extension_interface *)>("remove_teal_extension")};
+                    auto ld_fn{dll_ptr->symbol<extension_interface *(*)()>("create_teal_extension")};
+                    auto unld_fn{dll_ptr->symbol<void (*)(extension_interface *)>("remove_teal_extension")};
                     if(ld_fn && unld_fn) {
-                        teal::extension_interface *ext{ld_fn()};
+                        extension_interface *ext{ld_fn()};
                         if(ext) {
                             ext->register_runtime(this);
                             std::unique_lock l{loaded_extensions_mtp_};
@@ -2231,7 +2233,7 @@ namespace teal {
             std::unique_lock l{loaded_extensions_mtp_};
             for(auto &&ep: loaded_extensions_) {
                 ep.second->unregister_runtime();
-                ep.first->symbol<void (*)(teal::extension_interface *)>("remove_teal_extension")(ep.second);
+                ep.first->symbol<void (*)(extension_interface *)>("remove_teal_extension")(ep.second);
                 ep.first->close();
             }
             loaded_extensions_.clear();
@@ -2256,8 +2258,8 @@ namespace teal {
                     case valbox::type::FLOAT: return static_cast<std::size_t>(sizeof(float));
                     case valbox::type::DOUBLE: return static_cast<std::size_t>(sizeof(double));
                     case valbox::type::LONG_DOUBLE: return static_cast<std::size_t>(sizeof(long double));
-                    case valbox::type::VEC4: return static_cast<std::size_t>(sizeof(teal::math::vector4<long double>));
-                    case valbox::type::MAT4: return static_cast<std::size_t>(sizeof(teal::math::matrix4<long double>));
+                    case valbox::type::VEC4: return static_cast<std::size_t>(sizeof(math::vector4<long double>));
+                    case valbox::type::MAT4: return static_cast<std::size_t>(sizeof(math::matrix4<long double>));
                     case valbox::type::POINTER: return static_cast<std::size_t>(sizeof(void *));
                     case valbox::type::CLASS: return static_cast<std::size_t>(1);
                     case valbox::type::FUNC: return static_cast<std::size_t>(1);
@@ -2315,13 +2317,13 @@ namespace teal {
         str_map_t<valbox> global_functions_dictionary_{};
         str_map_t<str_map_t<valbox>> global_methods_dictionary_{};
         shared_mutex input_cells_mtp_{};
-        str_map_t<input_cell> input_cells_{};
+        str_map_t<std::shared_ptr<input_cell>> input_cells_{};
         str_map_t<std::string> input_names_to_instances_mapping_{};
         shared_mutex outputs_mtp_{};
         mutable str_map_t<valbox> outputs_{};
         mutable shared_mutex workers_mtp_{};
         str_map_t<worker_cell_definition_info> worker_cells_templates_{};
-        str_map_t<worker_cell_instance> worker_cells_{};
+        str_map_t<std::shared_ptr<worker_cell_instance>> worker_cells_{};
         str_map_t<statement_ptr> worker_bodies_{};
         str_map_t<function_definition> user_functions_{};
         std::function<bool(std::string)> user_functions_search_{
@@ -2343,10 +2345,10 @@ namespace teal {
                 function_definition const &fdef{it->second};
 
                 exctx->push_frame_ignore();
-                teal::shut_on_destroy leave_frame_ign{[exctx]() { exctx->pop_frame_ignore(); }};
+                shut_on_destroy leave_frame_ign{[exctx]() { exctx->pop_frame_ignore(); }};
 
                 exctx->new_stack_frame();
-                teal::shut_on_destroy leave_frame{[exctx]() {
+                shut_on_destroy leave_frame{[exctx]() {
                     exctx->clear_return_request();
                     exctx->del_stack_frame();
                 }};
@@ -2369,7 +2371,7 @@ namespace teal {
                 return valbox{valbox_no_initialize::dont_do_it};
             }
         };
-        int exit_status_{};
+        int64_t exit_status_{};
         std::size_t programmatic_termination_enabled_{1};
 
         math_ext math_ext_{};
@@ -2385,8 +2387,149 @@ namespace teal {
         shared_mutex loaded_extensions_mtp_{};
         std::list<std::pair<std::shared_ptr<so>, extension_interface *>> loaded_extensions_{};
         static std::size_t constexpr version_major_{1};
-        static std::size_t constexpr version_minor_{3};
-        static std::size_t constexpr version_patch_{9};
+        static std::size_t constexpr version_minor_{4};
+        static std::size_t constexpr version_patch_{0};
+
+#ifdef TEAL_USE_EXTERNAL_VALUES
+        std::string network_access_point_url_{};
+        std::string network_name_{};
+        mutable shared_mutex extern_cells_mtp_{};
+        str_map_t<std::shared_ptr<extern_cell>> extern_cells_{};
+        mutable shared_mutex ext_cells_processor_mtp_{};
+        bool ext_cells_processor_enabled_{true};
+        std::thread ext_cells_processor_{};
+
+        mutable shared_mutex pp_clients_mtp_{};
+        std::map<std::string, std::map<int, std::shared_ptr<pp_client>>> pp_clients_{};
+        std::shared_ptr<pp_client> get_connected_client(std::string const &remote_name) {
+            std::shared_ptr<pp_client> res{};
+            url u{remote_name};
+            std::string addr{teal::net::ntop(teal::net::resolve(u.host()))};
+            if(!addr.empty() && u.port() > 0) {
+                std::unique_lock l{pp_clients_mtp_};
+                res = pp_clients_[addr][*u.port()];
+                if(!res || !res->connected()) {
+                    res = std::make_shared<pp_client>();
+                    res->start(addr, *u.port());
+                    if(res->connected()) {
+                        pp_clients_[addr][*u.port()] = res;
+                    }
+                }
+            }
+            if(res->connected()) {
+                return res;
+            }
+            return {};
+        }
+
+        void start_extcell_processing() {
+            std::unique_lock l{ext_cells_processor_mtp_};
+            if(ext_cells_processor_.joinable()) {
+                return;
+            }
+            ext_cells_processor_enabled_ = true;
+            ext_cells_processor_ = std::thread{[this]() {
+                while(ext_cells_processor_enabled_) {
+                    {
+                        std::shared_lock l{extern_cells_mtp_};
+                        for(auto cp: extern_cells_) {
+                            if(auto con{get_connected_client(cp.second->remote_name())}) {
+                                url u{cp.second->remote_name()};
+                                std::string p{u.path()};
+                                while(!p.empty() && p[0] == '/') {
+                                    p = p.substr(1);
+                                }
+                                if(!p.empty()) {
+                                    con->send(p);
+                                    // std::cout << "client: sending value request " << p << std::endl;
+                                    if(auto rsp{con->receive()}) {
+                                        try {
+                                            json resp{json::bdeserialize(*rsp)};
+                                            // std::cout << "client: received response " << resp.serialize5(4) << std::endl;
+                                            valbox::type t{valbox::str_to_type(resp["t"].as_string())};
+                                            if(resp["n"].as_string() != p) {
+                                                auto it{extern_cells_.find(resp["n"].as_string())};
+                                                if(it != extern_cells_.end()) {
+                                                    switch(t) {
+                                                    case valbox::type::BOOL: it->second->set_value(resp["v"].as_string() == "true"); break;
+                                                    case valbox::type::CHAR: it->second->set_value(resp["v"].as_string()[0]); break;
+                                                    case valbox::type::S8: it->second->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
+                                                    case valbox::type::U8: it->second->set_value(str_util::atoui<std::string>(resp["v"].as_string())); break;
+                                                    case valbox::type::S16: it->second->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
+                                                    case valbox::type::U16: it->second->set_value(str_util::atoui<std::string>(resp["v"].as_string())); break;
+                                                    case valbox::type::WCHAR: it->second->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
+                                                    case valbox::type::S32: it->second->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
+                                                    case valbox::type::U32: it->second->set_value(str_util::atoui<std::string>(resp["v"].as_string())); break;
+                                                    case valbox::type::S64: it->second->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
+                                                    case valbox::type::U64: it->second->set_value(str_util::atoui<std::string>(resp["v"].as_string())); break;
+                                                    case valbox::type::FLOAT: it->second->set_value((float)str_util::atof(resp["v"].as_string())); break;
+                                                    case valbox::type::DOUBLE: it->second->set_value((double)str_util::atof(resp["v"].as_string())); break;
+                                                    case valbox::type::LONG_DOUBLE: it->second->set_value(str_util::atof(resp["v"].as_string())); break;
+                                                    case valbox::type::VEC4:    break; // throw std::runtime_error{"operation not applicable"};
+                                                    case valbox::type::MAT4:    break; // throw std::runtime_error{"operation not applicable"};
+                                                    case valbox::type::POINTER: break; // throw std::runtime_error{"operation not applicable"};
+                                                    case valbox::type::CLASS:   break; // throw std::runtime_error{"operation not applicable"};
+                                                    case valbox::type::FUNC:    break; // throw std::runtime_error{"operation not applicable"};
+                                                    case valbox::type::ARRAY:   break; // throw std::runtime_error{"operation not applicable"};
+                                                    case valbox::type::OBJECT:  break; // throw std::runtime_error{"operation not applicable"};
+                                                    case valbox::type::STRING: it->second->set_value(resp["v"].as_string()); break;
+                                                    case valbox::type::WSTRING: it->second->set_value(resp["v"].as_wstring()); break;
+                                                    case valbox::type::UNDEFINED: it->second->set_value(valbox{valbox_no_initialize::dont_do_it}); break;
+                                                    case valbox::type::VALBOX: break; // throw std::runtime_error{"operation not applicable"};
+                                                    default: break; // throw std::runtime_error{"operation not applicable"};
+                                                    }
+                                                }
+                                            } else {
+                                                switch(t) {
+                                                case valbox::type::BOOL: cp.second->set_value(resp["v"].as_string() == "true"); break;
+                                                case valbox::type::CHAR: cp.second->set_value(resp["v"].as_string()[0]); break;
+                                                case valbox::type::S8: cp.second->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
+                                                case valbox::type::U8: cp.second->set_value(str_util::atoui<std::string>(resp["v"].as_string())); break;
+                                                case valbox::type::S16: cp.second->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
+                                                case valbox::type::U16: cp.second->set_value(str_util::atoui<std::string>(resp["v"].as_string())); break;
+                                                case valbox::type::WCHAR: cp.second->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
+                                                case valbox::type::S32: cp.second->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
+                                                case valbox::type::U32: cp.second->set_value(str_util::atoui<std::string>(resp["v"].as_string())); break;
+                                                case valbox::type::S64: cp.second->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
+                                                case valbox::type::U64: cp.second->set_value(str_util::atoui<std::string>(resp["v"].as_string())); break;
+                                                case valbox::type::FLOAT: cp.second->set_value((float)str_util::atof(resp["v"].as_string())); break;
+                                                case valbox::type::DOUBLE: cp.second->set_value((double)str_util::atof(resp["v"].as_string())); break;
+                                                case valbox::type::LONG_DOUBLE: cp.second->set_value(str_util::atof(resp["v"].as_string())); break;
+                                                case valbox::type::VEC4:    break; // throw std::runtime_error{"operation not applicable"};
+                                                case valbox::type::MAT4:    break; // throw std::runtime_error{"operation not applicable"};
+                                                case valbox::type::POINTER: break; // throw std::runtime_error{"operation not applicable"};
+                                                case valbox::type::CLASS:   break; // throw std::runtime_error{"operation not applicable"};
+                                                case valbox::type::FUNC:    break; // throw std::runtime_error{"operation not applicable"};
+                                                case valbox::type::ARRAY:   break; // throw std::runtime_error{"operation not applicable"};
+                                                case valbox::type::OBJECT:  break; // throw std::runtime_error{"operation not applicable"};
+                                                case valbox::type::STRING: cp.second->set_value(resp["v"].as_string()); break;
+                                                case valbox::type::WSTRING: cp.second->set_value(resp["v"].as_wstring()); break;
+                                                case valbox::type::UNDEFINED: cp.second->set_value(valbox{valbox_no_initialize::dont_do_it}); break;
+                                                case valbox::type::VALBOX: break; // throw std::runtime_error{"operation not applicable"};
+                                                default: break; // throw std::runtime_error{"operation not applicable"};
+                                                }
+                                            }
+                                        } catch (...) {
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    std::this_thread::sleep_for(std::chrono::milliseconds{10});
+                }
+            }};
+        }
+        void stop_extcell_processing() {
+            std::unique_lock l{ext_cells_processor_mtp_};
+            ext_cells_processor_enabled_ = false;
+            if(ext_cells_processor_.joinable()) {
+                ext_cells_processor_.join();
+            }
+        }
+#endif
+        mutable shared_mutex ppserver_mtp_{};
+        std::unique_ptr<pp_server> ppserver_{nullptr};
     };
 
 }
