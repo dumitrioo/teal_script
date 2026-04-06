@@ -1500,6 +1500,24 @@ namespace teal {
             });
 
 
+            add_function("extern_update_interval", TEALFUN(args) {
+#ifdef TEAL_USE_EXTERNAL_VALUES
+                return external_cells_update_interval();
+#else
+                return -1.0L;
+#endif
+            });
+
+            add_function("set_extern_update_interval", TEALFUN(args) {
+#ifdef TEAL_USE_EXTERNAL_VALUES
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1);
+                set_external_cells_update_interval(args[0].cast_to_long_double());
+                return external_cells_update_interval();
+#else
+                return -1.0L;
+#endif
+            });
+
             add_function("size", TEALFUN(args) {
                 valbox &der{args[0].deref()};
                 switch(der.val_type()) {
@@ -2135,30 +2153,41 @@ namespace teal {
                 if(!ppserver_) {
                     ppserver_ = std::make_unique<pp_server>();
                     ppserver_->set_on_data_arrived([this](conn_id_t conn_id, bytevec const &data) {
-                        std::string msg{data.begin(), data.end()};
+                        json requ{json::bdeserialize(data)};
+                        auto nme{requ["n"].as_string()};
+                        auto ali{requ["a"].as_string()};
                         {
-                            auto it{input_cells_.find(msg)};
+                            auto it{input_cells_.find(nme)};
                             if(it != input_cells_.end()) {
                                 valbox vb{it->second->value().deref()};
-                                json resp{}; resp["n"] = msg; resp["t"] = vb.type_to_str(vb.val_or_pointed_type()); resp["v"] = vb.dump();
+                                json resp{};
+                                resp["n"] = ali;
+                                resp["t"] = vb.type_to_str(vb.val_or_pointed_type());
+                                resp["v"] = vb.dump();
                                 ppserver_->send(conn_id, resp.bserialize());
                                 return;
                             }
                         }
                         {
-                            auto it{worker_cells_.find(msg)};
+                            auto it{worker_cells_.find(nme)};
                             if(it != worker_cells_.end()) {
                                 valbox vb{it->second->value().deref()};
-                                json resp{}; resp["n"] = msg; resp["t"] = vb.type_to_str(vb.val_or_pointed_type()); resp["v"] = vb.dump();
+                                json resp{};
+                                resp["n"] = ali;
+                                resp["t"] = vb.type_to_str(vb.val_or_pointed_type());
+                                resp["v"] = vb.dump();
                                 ppserver_->send(conn_id, resp.bserialize());
                                 return;
                             }
                         }
                         {
-                            auto it{extern_cells_.find(msg)};
+                            auto it{extern_cells_.find(nme)};
                             if(it != extern_cells_.end()) {
                                 valbox vb{it->second->value().deref()};
-                                json resp{}; resp["n"] = msg; resp["t"] = vb.type_to_str(vb.val_or_pointed_type()); resp["v"] = vb.dump();
+                                json resp{};
+                                resp["n"] = ali;
+                                resp["t"] = vb.type_to_str(vb.val_or_pointed_type());
+                                resp["v"] = vb.dump();
                                 ppserver_->send(conn_id, resp.bserialize());
                                 return;
                             }
@@ -2185,6 +2214,10 @@ namespace teal {
 #ifdef TEAL_USE_EXTERNAL_VALUES
         void set_external_cells_update_interval(long double seconds) override {
             ext_cells_refresh_interval_nanos_ = seconds * 1'000'000'000.0L;
+        }
+
+        long double external_cells_update_interval() const override {
+            return static_cast<long double>(ext_cells_refresh_interval_nanos_) / 1'000'000'000.0L;
         }
 
         // TODO: implement this and the standalone distributed service
@@ -2414,6 +2447,7 @@ namespace teal {
         uint64_t ext_cells_refresh_interval_nanos_{0};
         mutable shared_mutex pp_clients_mtp_{};
         std::map<std::string, std::map<int, std::shared_ptr<pp_client>>> pp_clients_{};
+
         std::shared_ptr<pp_client> get_connected_client(extern_cell const *ecp) {
             std::shared_ptr<pp_client> res{};
             std::shared_lock l{pp_clients_mtp_};
@@ -2430,6 +2464,19 @@ namespace teal {
                 res = pp_clients_[ecp->remote_host()][*ecp->remote_url().port()];
                 if(!res || !res->connected()) {
                     res = std::make_shared<pp_client>();
+                    res->set_on_data_arrived([this](pp_client *con) {
+                        if(auto rsp{con->receive(0.05)}) {
+                            try {
+                                json resp{json::bdeserialize(*rsp)};
+                                auto nme{resp["n"].as_string()};
+                                auto it{extern_cells_.find(nme)};
+                                if(it != extern_cells_.end()) {
+                                    update_vbox(it->second.get(), resp);
+                                }
+                            } catch (...) {
+                            }
+                        }
+                    });
                     res->start(ecp->remote_host(), *ecp->remote_url().port());
                     if(res->connected()) {
                         pp_clients_[ecp->remote_host()][*ecp->remote_url().port()] = res;
@@ -2473,10 +2520,12 @@ namespace teal {
                 default: break; // throw std::runtime_error{"operation not applicable"};
             }
         }
+
         bool extcell_processing_started() const {
             // std::shared_lock l{ext_cells_processor_mtp_};
             return ext_cells_processor_started_.load(std::memory_order_acquire);
         }
+
         void start_extcell_processing() {
             if(ext_cells_processor_started_.load(std::memory_order_acquire)) {
                 return;
@@ -2497,22 +2546,10 @@ namespace teal {
                             std::shared_lock l{extern_cells_mtp_};
                             for(auto cp: extern_cells_) {
                                 if(auto con{get_connected_client(cp.second.get())}) {
-                                    std::string p{cp.second->remote_var_name()};
-                                    con->send(p);
-                                    if(auto rsp{con->receive(0.05)}) {
-                                        try {
-                                            json resp{json::bdeserialize(*rsp)};
-                                            if(resp["n"].as_string() != p) {
-                                                auto it{extern_cells_.find(resp["n"].as_string())};
-                                                if(it != extern_cells_.end()) {
-                                                    update_vbox(it->second.get(), resp);
-                                                }
-                                            } else {
-                                                update_vbox(cp.second.get(), resp);
-                                            }
-                                        } catch (...) {
-                                        }
-                                    }
+                                    json requ{};
+                                    requ["n"] = cp.second->remote_var_name();
+                                    requ["a"] = cp.second->inst_name();
+                                    con->send(requ.bserialize());
                                 }
                             }
                         }
@@ -2527,6 +2564,7 @@ namespace teal {
             }};
             ext_cells_processor_started_ = true;
         }
+
         void stop_extcell_processing() {
             {
                 std::unique_lock l{ext_cells_processor_mtp_};
@@ -2542,6 +2580,7 @@ namespace teal {
             }
         }
 #endif
+
         mutable shared_mutex ppserver_mtp_{};
         std::unique_ptr<pp_server> ppserver_{nullptr};
     };

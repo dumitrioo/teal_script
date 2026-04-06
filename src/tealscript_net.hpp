@@ -24,6 +24,11 @@ namespace teal {
         struct multiplexing;
 
     public:
+        pp_server() = default;
+        pp_server(pp_server const &) = delete;
+        pp_server &operator=(pp_server const &) = delete;
+        pp_server(pp_server &&) = delete;
+        pp_server &operator=(pp_server &&) = delete;
         ~pp_server() {
             stop();
         }
@@ -39,8 +44,10 @@ namespace teal {
 
         void start(const std::string &address, std::uint16_t port, std::size_t num_work_threads) {
             if(tns_.started()) { return; }
-            tns_.set_on_new_connection([this](conn_id_t conn_id) {
+#if 0
+            tns_.set_on_new_connection([](conn_id_t conn_id) {
             });
+#endif
             tns_.set_on_data_arrived([this](conn_id_t conn_id) {
                 auto d{tns_.get_conn_data(conn_id)};
                 if(d) {
@@ -142,14 +149,36 @@ namespace teal {
 
     class pp_client {
     public:
+        pp_client() = default;
+        pp_client(pp_client const &) = delete;
+        pp_client &operator=(pp_client const &) = delete;
+        pp_client(pp_client &&) = delete;
+        pp_client &operator=(pp_client &&) = delete;
+        ~pp_client() {
+            try {
+                stop();
+            } catch (...) {
+            }
+        }
+
+        void set_on_data_arrived(std::function<void(pp_client *)> const &fun) {
+            std::unique_lock cl{callback_mtp_};
+            on_data_arrived_ = fun;
+        }
+
+        void set_on_data_arrived(std::function<void(pp_client *)> &&fun) {
+            std::unique_lock cl{callback_mtp_};
+            on_data_arrived_ = std::move(fun);
+        }
+
         void start(std::string host, std::uint16_t port) {
             connect_ = true;
             host_ = host;
             port_ = port;
             // tnc_.set_on_conn_established([&]() {});
-            // tnc_.set_on_data_arrived([&]() {
-            //     /* auto d{tnc_.receive()}; */
-            // });
+            tnc_.set_on_data_arrived([&]() {
+                notify_on_data_arrived();
+            });
             // tnc_.set_on_conn_closed([]() {});
             tnc_.connect(host, port);
         }
@@ -157,7 +186,7 @@ namespace teal {
         void stop() {
             tnc_.disconnect();
             // tnc_.set_on_conn_established(nullptr);
-            // tnc_.set_on_data_arrived(nullptr);
+            tnc_.set_on_data_arrived(nullptr);
             // tnc_.set_on_conn_closed(nullptr);
         }
 
@@ -203,7 +232,18 @@ namespace teal {
         }
 
     private:
+        void notify_on_data_arrived() {
+            std::shared_lock cl{callback_mtp_};
+            if(on_data_arrived_) on_data_arrived_(this);
+        }
+
+    private:
         teal_net_client tnc_{};
+
+        std::shared_mutex callback_mtp_{};
+        // std::function<void()> on_conn_established_{nullptr};
+        // std::function<void()> on_conn_closed_{nullptr};
+        std::function<void(pp_client *)> on_data_arrived_{nullptr};
 
         net::sized_packets_exchanger mux_bottom_layer_{};
         net::packets_muxer<std::uint32_t> muxer_{1400};

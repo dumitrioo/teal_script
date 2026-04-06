@@ -15,6 +15,11 @@ namespace teal {
 
     class teal_net_client: public terminable {
     public:
+        teal_net_client() = default;
+        teal_net_client(teal_net_client const &) = delete;
+        teal_net_client &operator=(teal_net_client const &) = delete;
+        teal_net_client(teal_net_client &&) = delete;
+        teal_net_client &operator=(teal_net_client &&) = delete;
         ~teal_net_client() {
             try {
                 disconnect();

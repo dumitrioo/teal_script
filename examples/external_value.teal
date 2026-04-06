@@ -1,17 +1,27 @@
+setup_cell() {
+    if(!this.set_up) { set_extern_update_interval(0.001); this.set_up = true; }
+}
+setup_cell setup();
+
 random_value() {
     sleep(0.1);
     res = rand();
     console.print("local value: ", res);
     return res;
 }
-// just a regular cell, no fancy...
+
+// just a regular cell, no fancy things...
 // and this cell's value is accessed by the network below
-random_value sample_val();
+random_value just_a_regular_cell();
 
 
-// using url to localhost and the value above
-// providing value obtained over network under "sample_val_from_net" identifier
-extern 'dvqp://127.0.0.1:43987/sample_val' sample_val_from_net;
+// providing, under the identifier "sample_val_from_net", a value
+// obtained over the network, using for testing purposes url to a localhost
+// and the name of the value above exposed by the embedded local server
+//
+// in other words, using locally-accessible stuff over the networking
+// facilities, for testing and demo purposes
+extern 'dvqp://127.0.0.1:43987/just_a_regular_cell' sample_val_from_net;
 
 ext_value_use(exv) {
     if(exv != this.exv) {

@@ -18,6 +18,14 @@ namespace teal {
 
     class teal_net_server: public terminable {
     public:
+        teal_net_server() = default;
+        teal_net_server(teal_net_server const &) = delete;
+        teal_net_server &operator=(teal_net_server const &) = delete;
+        teal_net_server(teal_net_server &&) = delete;
+        teal_net_server &operator=(teal_net_server &&) = delete;
+        ~teal_net_server() {
+            stop();
+        }
         void set_on_data_arrived(std::function<void(conn_id_t)> const &on_data_arrived) {
             std::unique_lock l{on_data_arrived_mtp_};
             on_data_arrived_ = on_data_arrived;

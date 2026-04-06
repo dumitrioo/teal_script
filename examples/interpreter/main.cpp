@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
             throw std::runtime_error{"nothing to do - no working elements"};
         }
 
-        rt.start_net_server("0.0.0.0", 43987, 1);
+        rt.start_net_server("0.0.0.0", 43987, 4);
 #ifdef TEAL_USE_EXTERNAL_VALUES
         rt.set_external_cells_update_interval(0.01L);
 #endif

@@ -1479,6 +1479,12 @@ namespace teal {
             return bdeserialize_actual(iter);
         }
 
+        static json bdeserialize(std::string const &vk) {
+            teal::serial_reader sr{vk.data(), vk.size()};
+            auto iter{sr.begin()};
+            return bdeserialize_actual(iter);
+        }
+
         friend std::ostream &operator<<(std::ostream &os, json const &o) {
             os << o.serialize(4);
             return os;
