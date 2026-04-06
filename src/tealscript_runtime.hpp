@@ -1529,6 +1529,7 @@ namespace teal {
         ~runtime() {
             terminate();
             stop_mt();
+            stop_net_server();
             stop_extcell_processing();
 
             worker_cells_templates_.clear();
@@ -1711,6 +1712,9 @@ namespace teal {
                     throw std::runtime_error{"set single thread mode first"};
                 }
             }
+#ifdef TEAL_USE_EXTERNAL_VALUES
+            start_extcell_processing();
+#endif
             exctx_.clear_all_jumps_request();
             for(auto &&w: worker_cells_) {
                 std::shared_ptr<worker_cell_instance> &curr_cell{w.second};
@@ -1875,6 +1879,10 @@ namespace teal {
                 failure_.store(0, std::memory_order_release);
             }
             termination_requested_.store(0, std::memory_order_release);
+
+#ifdef TEAL_USE_EXTERNAL_VALUES
+            start_extcell_processing();
+#endif
             for(int i{0}; i < thrd_cnt; ++i) {
                 threads_.emplace_back([this]() {
                     bool excepted{false};
@@ -2163,23 +2171,26 @@ namespace teal {
                 ppserver_->start(bind_addr, port, num_threads);
             }
         }
+
         void stop_net_server() override {
             std::unique_lock l{ppserver_mtp_};
             ppserver_.reset();
         }
+
         bool net_server_running() const override {
             std::shared_lock l{ppserver_mtp_};
             return ppserver_->started();
         }
 
-        void start_net_client() override {
 #ifdef TEAL_USE_EXTERNAL_VALUES
-            start_extcell_processing();
-#endif
+        void set_external_cells_update_interval(long double seconds) override {
+            ext_cells_refresh_interval_nanos_ = seconds * 1'000'000'000.0L;
         }
 
-        void net_hub_connect(std::string const &/*unique_net_name*/) override {
+        // TODO: implement this and the standalone distributed service
+        void net_hub_connect(std::string const &/*host_addr*/, std::uint16_t /*port*/, std::string const &/*unique_net_name*/) override {
         }
+#endif
 
     private:
         void load_source_string(std::string const &src) {
@@ -2388,7 +2399,7 @@ namespace teal {
         std::list<std::pair<std::shared_ptr<so>, extension_interface *>> loaded_extensions_{};
         static std::size_t constexpr version_major_{1};
         static std::size_t constexpr version_minor_{4};
-        static std::size_t constexpr version_patch_{0};
+        static std::size_t constexpr version_patch_{1};
 
 #ifdef TEAL_USE_EXTERNAL_VALUES
         std::string network_access_point_url_{};
@@ -2396,118 +2407,108 @@ namespace teal {
         mutable shared_mutex extern_cells_mtp_{};
         str_map_t<std::shared_ptr<extern_cell>> extern_cells_{};
         mutable shared_mutex ext_cells_processor_mtp_{};
+        std::atomic_bool ext_cells_processor_started_{false};
         bool ext_cells_processor_enabled_{true};
         std::thread ext_cells_processor_{};
 
+        uint64_t ext_cells_refresh_interval_nanos_{0};
         mutable shared_mutex pp_clients_mtp_{};
         std::map<std::string, std::map<int, std::shared_ptr<pp_client>>> pp_clients_{};
-        std::shared_ptr<pp_client> get_connected_client(std::string const &remote_name) {
+        std::shared_ptr<pp_client> get_connected_client(extern_cell const *ecp) {
             std::shared_ptr<pp_client> res{};
-            url u{remote_name};
-            std::string addr{teal::net::ntop(teal::net::resolve(u.host()))};
-            if(!addr.empty() && u.port() > 0) {
-                std::unique_lock l{pp_clients_mtp_};
-                res = pp_clients_[addr][*u.port()];
+            std::shared_lock l{pp_clients_mtp_};
+            auto hit{pp_clients_.find(ecp->remote_host())};
+            if(hit != pp_clients_.end()) {
+                auto pit{hit->second.find(*ecp->remote_url().port())};
+                if(pit != hit->second.end()) {
+                    res = pit->second;
+                }
+            }
+            if(!res || !res->connected()) {
+                l.unlock();
+                std::unique_lock l1{pp_clients_mtp_};
+                res = pp_clients_[ecp->remote_host()][*ecp->remote_url().port()];
                 if(!res || !res->connected()) {
                     res = std::make_shared<pp_client>();
-                    res->start(addr, *u.port());
+                    res->start(ecp->remote_host(), *ecp->remote_url().port());
                     if(res->connected()) {
-                        pp_clients_[addr][*u.port()] = res;
+                        pp_clients_[ecp->remote_host()][*ecp->remote_url().port()] = res;
                     }
                 }
             }
-            if(res->connected()) {
+            if(res && res->connected()) {
                 return res;
             }
             return {};
         }
 
+        void update_vbox(extern_cell *v, json const &resp) {
+            valbox::type t{valbox::str_to_type(resp["t"].as_string())};
+            switch(t) {
+                case valbox::type::BOOL: v->set_value(resp["v"].as_string() == "true"); break;
+                case valbox::type::CHAR: v->set_value(resp["v"].as_string()[0]); break;
+                case valbox::type::S8: v->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
+                case valbox::type::U8: v->set_value(str_util::atoui<std::string>(resp["v"].as_string())); break;
+                case valbox::type::S16: v->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
+                case valbox::type::U16: v->set_value(str_util::atoui<std::string>(resp["v"].as_string())); break;
+                case valbox::type::WCHAR: v->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
+                case valbox::type::S32: v->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
+                case valbox::type::U32: v->set_value(str_util::atoui<std::string>(resp["v"].as_string())); break;
+                case valbox::type::S64: v->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
+                case valbox::type::U64: v->set_value(str_util::atoui<std::string>(resp["v"].as_string())); break;
+                case valbox::type::FLOAT: v->set_value((float)str_util::atof(resp["v"].as_string())); break;
+                case valbox::type::DOUBLE: v->set_value((double)str_util::atof(resp["v"].as_string())); break;
+                case valbox::type::LONG_DOUBLE: v->set_value(str_util::atof(resp["v"].as_string())); break;
+                case valbox::type::VEC4:    break;
+                case valbox::type::MAT4:    break;
+                case valbox::type::POINTER: break;
+                case valbox::type::CLASS:   break;
+                case valbox::type::FUNC:    break;
+                case valbox::type::ARRAY:   break;
+                case valbox::type::OBJECT:  break;
+                case valbox::type::STRING: v->set_value(resp["v"].as_string()); break;
+                case valbox::type::WSTRING: v->set_value(resp["v"].as_wstring()); break;
+                case valbox::type::UNDEFINED: v->set_value(valbox{valbox_no_initialize::dont_do_it}); break;
+                case valbox::type::VALBOX: break;
+                default: break; // throw std::runtime_error{"operation not applicable"};
+            }
+        }
+        bool extcell_processing_started() const {
+            // std::shared_lock l{ext_cells_processor_mtp_};
+            return ext_cells_processor_started_.load(std::memory_order_acquire);
+        }
         void start_extcell_processing() {
-            std::unique_lock l{ext_cells_processor_mtp_};
-            if(ext_cells_processor_.joinable()) {
+            if(ext_cells_processor_started_.load(std::memory_order_acquire)) {
                 return;
             }
+
+            std::unique_lock l{ext_cells_processor_mtp_};
+
+            ext_cells_processor_enabled_ = false;
+            if(ext_cells_processor_.joinable()) {
+                ext_cells_processor_.join();
+            }
+
             ext_cells_processor_enabled_ = true;
             ext_cells_processor_ = std::thread{[this]() {
                 while(ext_cells_processor_enabled_) {
-                    {
-                        std::shared_lock l{extern_cells_mtp_};
-                        for(auto cp: extern_cells_) {
-                            if(auto con{get_connected_client(cp.second->remote_name())}) {
-                                url u{cp.second->remote_name()};
-                                std::string p{u.path()};
-                                while(!p.empty() && p[0] == '/') {
-                                    p = p.substr(1);
-                                }
-                                if(!p.empty()) {
+                    if(!extern_cells_.empty()) {
+                        {
+                            std::shared_lock l{extern_cells_mtp_};
+                            for(auto cp: extern_cells_) {
+                                if(auto con{get_connected_client(cp.second.get())}) {
+                                    std::string p{cp.second->remote_var_name()};
                                     con->send(p);
-                                    // std::cout << "client: sending value request " << p << std::endl;
-                                    if(auto rsp{con->receive()}) {
+                                    if(auto rsp{con->receive(0.05)}) {
                                         try {
                                             json resp{json::bdeserialize(*rsp)};
-                                            // std::cout << "client: received response " << resp.serialize5(4) << std::endl;
-                                            valbox::type t{valbox::str_to_type(resp["t"].as_string())};
                                             if(resp["n"].as_string() != p) {
                                                 auto it{extern_cells_.find(resp["n"].as_string())};
                                                 if(it != extern_cells_.end()) {
-                                                    switch(t) {
-                                                    case valbox::type::BOOL: it->second->set_value(resp["v"].as_string() == "true"); break;
-                                                    case valbox::type::CHAR: it->second->set_value(resp["v"].as_string()[0]); break;
-                                                    case valbox::type::S8: it->second->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
-                                                    case valbox::type::U8: it->second->set_value(str_util::atoui<std::string>(resp["v"].as_string())); break;
-                                                    case valbox::type::S16: it->second->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
-                                                    case valbox::type::U16: it->second->set_value(str_util::atoui<std::string>(resp["v"].as_string())); break;
-                                                    case valbox::type::WCHAR: it->second->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
-                                                    case valbox::type::S32: it->second->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
-                                                    case valbox::type::U32: it->second->set_value(str_util::atoui<std::string>(resp["v"].as_string())); break;
-                                                    case valbox::type::S64: it->second->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
-                                                    case valbox::type::U64: it->second->set_value(str_util::atoui<std::string>(resp["v"].as_string())); break;
-                                                    case valbox::type::FLOAT: it->second->set_value((float)str_util::atof(resp["v"].as_string())); break;
-                                                    case valbox::type::DOUBLE: it->second->set_value((double)str_util::atof(resp["v"].as_string())); break;
-                                                    case valbox::type::LONG_DOUBLE: it->second->set_value(str_util::atof(resp["v"].as_string())); break;
-                                                    case valbox::type::VEC4:    break; // throw std::runtime_error{"operation not applicable"};
-                                                    case valbox::type::MAT4:    break; // throw std::runtime_error{"operation not applicable"};
-                                                    case valbox::type::POINTER: break; // throw std::runtime_error{"operation not applicable"};
-                                                    case valbox::type::CLASS:   break; // throw std::runtime_error{"operation not applicable"};
-                                                    case valbox::type::FUNC:    break; // throw std::runtime_error{"operation not applicable"};
-                                                    case valbox::type::ARRAY:   break; // throw std::runtime_error{"operation not applicable"};
-                                                    case valbox::type::OBJECT:  break; // throw std::runtime_error{"operation not applicable"};
-                                                    case valbox::type::STRING: it->second->set_value(resp["v"].as_string()); break;
-                                                    case valbox::type::WSTRING: it->second->set_value(resp["v"].as_wstring()); break;
-                                                    case valbox::type::UNDEFINED: it->second->set_value(valbox{valbox_no_initialize::dont_do_it}); break;
-                                                    case valbox::type::VALBOX: break; // throw std::runtime_error{"operation not applicable"};
-                                                    default: break; // throw std::runtime_error{"operation not applicable"};
-                                                    }
+                                                    update_vbox(it->second.get(), resp);
                                                 }
                                             } else {
-                                                switch(t) {
-                                                case valbox::type::BOOL: cp.second->set_value(resp["v"].as_string() == "true"); break;
-                                                case valbox::type::CHAR: cp.second->set_value(resp["v"].as_string()[0]); break;
-                                                case valbox::type::S8: cp.second->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
-                                                case valbox::type::U8: cp.second->set_value(str_util::atoui<std::string>(resp["v"].as_string())); break;
-                                                case valbox::type::S16: cp.second->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
-                                                case valbox::type::U16: cp.second->set_value(str_util::atoui<std::string>(resp["v"].as_string())); break;
-                                                case valbox::type::WCHAR: cp.second->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
-                                                case valbox::type::S32: cp.second->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
-                                                case valbox::type::U32: cp.second->set_value(str_util::atoui<std::string>(resp["v"].as_string())); break;
-                                                case valbox::type::S64: cp.second->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
-                                                case valbox::type::U64: cp.second->set_value(str_util::atoui<std::string>(resp["v"].as_string())); break;
-                                                case valbox::type::FLOAT: cp.second->set_value((float)str_util::atof(resp["v"].as_string())); break;
-                                                case valbox::type::DOUBLE: cp.second->set_value((double)str_util::atof(resp["v"].as_string())); break;
-                                                case valbox::type::LONG_DOUBLE: cp.second->set_value(str_util::atof(resp["v"].as_string())); break;
-                                                case valbox::type::VEC4:    break; // throw std::runtime_error{"operation not applicable"};
-                                                case valbox::type::MAT4:    break; // throw std::runtime_error{"operation not applicable"};
-                                                case valbox::type::POINTER: break; // throw std::runtime_error{"operation not applicable"};
-                                                case valbox::type::CLASS:   break; // throw std::runtime_error{"operation not applicable"};
-                                                case valbox::type::FUNC:    break; // throw std::runtime_error{"operation not applicable"};
-                                                case valbox::type::ARRAY:   break; // throw std::runtime_error{"operation not applicable"};
-                                                case valbox::type::OBJECT:  break; // throw std::runtime_error{"operation not applicable"};
-                                                case valbox::type::STRING: cp.second->set_value(resp["v"].as_string()); break;
-                                                case valbox::type::WSTRING: cp.second->set_value(resp["v"].as_wstring()); break;
-                                                case valbox::type::UNDEFINED: cp.second->set_value(valbox{valbox_no_initialize::dont_do_it}); break;
-                                                case valbox::type::VALBOX: break; // throw std::runtime_error{"operation not applicable"};
-                                                default: break; // throw std::runtime_error{"operation not applicable"};
-                                                }
+                                                update_vbox(cp.second.get(), resp);
                                             }
                                         } catch (...) {
                                         }
@@ -2515,16 +2516,29 @@ namespace teal {
                                 }
                             }
                         }
+                        if(ext_cells_refresh_interval_nanos_ > 0) {
+                            std::this_thread::sleep_for(std::chrono::nanoseconds{ext_cells_refresh_interval_nanos_});
+                        }
+                    } else {
+                        std::this_thread::sleep_for(std::chrono::milliseconds{100});
                     }
-                    std::this_thread::sleep_for(std::chrono::milliseconds{10});
                 }
+                ext_cells_processor_started_ = false;
             }};
+            ext_cells_processor_started_ = true;
         }
         void stop_extcell_processing() {
-            std::unique_lock l{ext_cells_processor_mtp_};
-            ext_cells_processor_enabled_ = false;
-            if(ext_cells_processor_.joinable()) {
-                ext_cells_processor_.join();
+            {
+                std::unique_lock l{ext_cells_processor_mtp_};
+                ext_cells_processor_enabled_ = false;
+                if(ext_cells_processor_.joinable()) {
+                    ext_cells_processor_.join();
+                }
+                ext_cells_processor_started_ = false;
+            }
+            {
+                std::unique_lock l1{pp_clients_mtp_};
+                pp_clients_.clear();
             }
         }
 #endif

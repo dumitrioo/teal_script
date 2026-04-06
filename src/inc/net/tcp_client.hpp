@@ -49,6 +49,7 @@ namespace teal {
                     sckt_.create() &&
                     sckt_.connect(host, port) &&
                     sckt_.make_nosigpipe() &&
+                    sckt_.make_nonblocking() &&
                     sckt_.make_nodelay() &&
                     sckt_.set_keepalive(true)
                     &&                                                                                                                                         sckt_.ok() &&
@@ -60,37 +61,29 @@ namespace teal {
                 ) {
                     thr_ = std::thread{
                         [this]() {
-                            while(!termination()) {
+                            while(!termination() && !conn_broken_.load(std::memory_order_acquire)) {
                                 try {
                                     std::vector<net::poll_event> evs{};
                                     {
                                         std::unique_lock l{poller_close_mtp_};
-                                        // try {
-                                            evs = poller_.wait(1, timespec_wrapper{0.1});
-                                        // } catch (...) {
-                                        // }
+                                        evs = poller_.wait(1, timespec_wrapper{0.1});
                                     }
                                     if(!evs.empty()) {
                                         if((evs[0].events & net::POLL_EVENT_IN) == net::POLL_EVENT_IN) {
-                                            size_t total_received{0};
-                                            while(true) {
-                                                auto dv{net_receive(4 * 1024)};
+                                            int bavl{sckt_.bytes_available()};
+                                            if(bavl < 0) {
+                                                conn_broken_ = true;
+                                            } else {
+                                                auto dv{net_receive(std::max<int>(bavl, 2 * 1024))};
                                                 if(dv) {
                                                     if(!dv->empty()) {
-                                                        total_received += dv->size();
                                                         push_buff_data(std::move(*dv));
                                                         notify_on_data_arrived();
                                                     } else {
-                                                        if(total_received == 0) {
-                                                            conn_broken_ = true;
-                                                        }
-                                                        break;
-                                                    }
-                                                } else {
-                                                    if(total_received == 0) {
                                                         conn_broken_ = true;
                                                     }
-                                                    break;
+                                                } else {
+                                                    conn_broken_ = true;
                                                 }
                                             }
                                         } else {
@@ -151,24 +144,44 @@ namespace teal {
         }
 
         std::optional<bytevec> receive(long double timeout = 0) {
-            std::optional<bytevec> opt_data{fetch_buf_data()};
+            // std::optional<bytevec> opt_data{fetch_buf_data()};
+            // if(opt_data) {
+            //     return opt_data;
+            // }
+            // if(timeout > 0) {
+            //     std::unique_lock l{chunks_buffer_mtp_};
+            //     std::optional<bytevec> opt_data{fetch_buf_data()};
+            //     if(opt_data) {
+            //         return opt_data;
+            //     }
+            //     chunks_buffer_cvar_.wait_for(l,
+            //         std::chrono::nanoseconds{
+            //             static_cast<int64_t>(timeout * 1'000'000'000.0L)
+            //         }
+            //     );
+            // }
+            // return fetch_buf_data();
+
+            std::unique_lock l{chunks_buffer_mtp_};
+            std::optional<bytevec> opt_data{fetch_buf_data_unlocked()};
             if(opt_data) {
                 return opt_data;
             }
             if(timeout > 0) {
-                std::unique_lock l{chunks_buffer_mtp_};
-                std::optional<bytevec> opt_data{fetch_buf_data()};
-                if(opt_data) {
-                    return opt_data;
+                std::cv_status cvs{
+                    chunks_buffer_cvar_.wait_for(
+                        l,
+                        std::chrono::nanoseconds{
+                            static_cast<int64_t>(timeout * 1'000'000'000.0L)
+                        }
+                    )
+                };
+                if(cvs != std::cv_status::timeout) {
+                    return fetch_buf_data_unlocked();
                 }
-                chunks_buffer_cvar_.wait_for(l,
-                    std::chrono::nanoseconds{
-                        static_cast<int64_t>(timeout * 1'000'000'000.0L)
-                    }
-                );
-                return fetch_buf_data();
             }
-            return fetch_buf_data();
+            return {};
+
         }
 
     private:
@@ -192,52 +205,60 @@ namespace teal {
             if(!conn_broken_ && !termination() && sckt_.ok()) {
                 try {
                     return sckt_.receive(len);
+                } catch (std::exception const &e) {
+                    std::cerr << e.what();
                 } catch (...) {
+                    std::cerr << "error in net_receive()";
                 }
             }
             return {};
         }
 
-        std::optional<bytevec> fetch_buf_data() {
+        std::optional<bytevec> fetch_buf_data_unlocked() {
+            // std::unique_lock l{chunks_buffer_mtp_};
             bytevec res{};
             bytevec buf{};
-            while(chunks_buffer_.try_dequeue(buf)) {
+            while(!chunks_buffer_.empty()) {
+                buf = std::move(chunks_buffer_.front());
+                chunks_buffer_.pop_front();
                 res.insert(res.end(), buf.begin(), buf.end());
             }
-            if(res.empty()) {
-                return std::optional<bytevec>{};
+            if(!res.empty()) {
+                return res;
             }
-            return res;
+            return {};
         }
 
         void push_buff_data(bytevec const &buf) {
             std::unique_lock l{chunks_buffer_mtp_};
-            chunks_buffer_.enqueue(buf);
+            chunks_buffer_.push_back(buf);
             chunks_buffer_cvar_.notify_all();
         }
 
         void push_buff_data(bytevec &&buf) {
             std::unique_lock l{chunks_buffer_mtp_};
-            chunks_buffer_.enqueue(std::move(buf));
+            chunks_buffer_.push_back(std::move(buf));
             chunks_buffer_cvar_.notify_all();
         }
 
         bool has_buff_data() const {
-            return chunks_buffer_.size_approx() > 0;
+            std::unique_lock l{chunks_buffer_mtp_};
+            return !chunks_buffer_.empty();
         }
 
         bool pop_buff_data(bytevec &bv) {
-            if(chunks_buffer_.try_dequeue(bv)) {
+            std::unique_lock l{chunks_buffer_mtp_};
+            if(!chunks_buffer_.empty()) {
+                bv = chunks_buffer_.front();
+                chunks_buffer_.pop_front();
                 return true;
             }
             return false;
         }
 
         void discard_buff_data() {
-            while(chunks_buffer_.size_approx() > 0) {
-                bytevec bv;
-                chunks_buffer_.try_dequeue(bv);
-            }
+            std::unique_lock l{chunks_buffer_mtp_};
+            chunks_buffer_.clear();
         }
 
     private:
@@ -252,7 +273,8 @@ namespace teal {
 
         mutable std::mutex chunks_buffer_mtp_{};
         std::condition_variable chunks_buffer_cvar_{};
-        moodycamel::ConcurrentQueue<bytevec> chunks_buffer_{};
+        // moodycamel::ConcurrentQueue<bytevec> chunks_buffer_{};
+        std::list<bytevec> chunks_buffer_{};
 
         std::thread thr_{};
         teal::net::socket sckt_{};

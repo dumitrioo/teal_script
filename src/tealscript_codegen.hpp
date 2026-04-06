@@ -2,6 +2,8 @@
 
 #include "inc/commondefs.hpp"
 #include "inc/str_util.hpp"
+#include "inc/net/net_utils.hpp"
+#include "inc/net/url.hpp"
 #include "inc/json.hpp"
 
 #include "tealscript_util.hpp"
@@ -11,6 +13,25 @@
 #include "tealscript_cells.hpp"
 
 namespace teal {
+
+    namespace detail {
+
+        static bool is_ident_start(std::int64_t c) {
+            return teal::str_util::fltr<std::wstring>::isalpha(c) || c == '_' || c == '$';
+        }
+
+        static bool is_ident_tail(std::int64_t c) {
+            return is_ident_start(c) || teal::str_util::fltr<std::wstring>::isdigit(c);
+        }
+
+        static bool is_valid_dentifier(std::string const &id) {
+            if(id.empty()) { return false; }
+            if(!is_ident_start(id[0])) { return false; }
+            for(size_t i{1}; i < id.size(); ++i) { if(!is_ident_tail(id[i])) { return false; } }
+            return true;
+        }
+
+    }
 
     class code_generator {
     public:
@@ -78,6 +99,30 @@ namespace teal {
                     else if(array_contains_str(cur_cnt["cell_flags"], "extern")) {
                         std::string cnm{cur_cnt["cell_name"].as_string()};
                         std::string rnm{cur_cnt["remote_name"].as_string()};
+
+                        url u{rnm};
+                        if(!u.valid()) {
+                            throw compilation_error{cur["loc"]["line"].try_as_number(), cur["loc"]["col"].try_as_number(),
+                                rnm + ": external name should be a valid URL"};
+                        }
+
+                        std::string p{u.path()};
+                        while(!p.empty() && p[0] == '/') { p = p.substr(1); }
+                        if(!detail::is_valid_dentifier(p)) {
+                            throw compilation_error{cur["loc"]["line"].try_as_number(), cur["loc"]["col"].try_as_number(),
+                                                    rnm + ": path must be a valid identifier after \"/\""};
+                        }
+
+                        if(u.scheme() != "dvqp") {
+                            throw compilation_error{cur["loc"]["line"].try_as_number(), cur["loc"]["col"].try_as_number(),
+                                                    u.scheme() + ": URL scheme must be \"dvqp\""};
+                        }
+                        std::string remote_host{teal::net::ntop(teal::net::resolve(u.host()))};
+                        if(remote_host.empty() || !u.port()) {
+                            throw compilation_error{cur["loc"]["line"].try_as_number(), cur["loc"]["col"].try_as_number(),
+                                rnm + ": host and port must present in URL"};
+                        }                        
+
                         if(
                             worker_cells.find(cnm) != worker_cells.end() ||
                             input_cells.find(cnm) != input_cells.end() ||
@@ -91,7 +136,9 @@ namespace teal {
                         }
                         std::shared_ptr<extern_cell> ec_ptr{std::make_shared<extern_cell>()};
                         extern_cells[cnm] = ec_ptr;
-                        ec_ptr->set_remote_name(rnm);
+                        ec_ptr->set_remote_var_name(p);
+                        ec_ptr->set_remote_host(remote_host);
+                        ec_ptr->set_url(u);
                         ec_ptr->set_inst_name(cnm);
                         ec_ptr->set_loc(cur["loc"]["line"].try_as_number(), cur["loc"]["col"].try_as_number());
                     }

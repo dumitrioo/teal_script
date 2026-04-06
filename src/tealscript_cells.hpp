@@ -3,6 +3,7 @@
 #include "inc/commondefs.hpp"
 #include "inc/file_util.hpp"
 #include "inc/str_util.hpp"
+#include "inc/net/url.hpp"
 
 #include "tealscript_util.hpp"
 #include "tealscript_token.hpp"
@@ -49,11 +50,19 @@ namespace teal {
         virtual void exec(execution_context *) {
         }
 
-        void set_remote_name(std::string const &name) { remote_name_ = name; }
-        std::string const &remote_name() const { return remote_name_; }
+        void set_remote_var_name(std::string const &name) { remote_name_ = name; }
+        std::string const &remote_var_name() const { return remote_name_; }
+
+        void set_url(url const &u) { url_ = u; }
+        url const &remote_url() const { return url_; }
+
+        void set_remote_host(std::string const &v) { remote_host_ = v; }
+        std::string const &remote_host() const { return remote_host_; }
 
     private:
+        url url_{};
         std::string remote_name_{};
+        std::string remote_host_{};
     };
 #endif
 

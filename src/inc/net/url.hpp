@@ -10,15 +10,15 @@ namespace teal {
     public:
         url() = default;
 
-        url(std::string const &s) {
+        explicit url(std::string const &s) {
             parse(s);
         }
 
-        url(std::string_view s) {
+        explicit url(std::string_view s) {
             parse(std::string{s});
         }
 
-        url(char const * s) {
+        explicit url(char const * s) {
             parse(std::string{s});
         }
 

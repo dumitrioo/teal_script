@@ -214,6 +214,20 @@ namespace teal::net {
             }
             return false;
         }
+        int bytes_available() const {
+            int res{-1};
+#if defined(PLATFORM_LINUX)
+            if(ioctl(sock_fd_, FIONREAD, &res) == -1) {
+                res = -1;
+            }
+#elif defined(PLATFORM_WINDOWS)
+            u_long rdavl = 0;
+            if(ioctlsocket(sock_fd_, FIONREAD, &rdavl) == NO_ERROR) {
+                res = rdavl;
+            }
+#endif
+            return res;
+        }
         std::vector<std::uint8_t> receive(int len) {
             std::vector<std::uint8_t> result{};
             if(ok()) {

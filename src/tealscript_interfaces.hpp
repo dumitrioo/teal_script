@@ -37,11 +37,12 @@ namespace teal {
         virtual void stop_net_server() = 0;
         virtual bool net_server_running() const = 0;
 
-        // virtual void start_net_client(std::string const &/*server_addr*/, std::uint16_t /*port*/) = 0;
-        virtual void start_net_client() = 0;
+#ifdef TEAL_USE_EXTERNAL_VALUES
+        virtual void set_external_cells_update_interval(long double /*seconds*/) = 0;
 
-        // connect to a common network for exchange=ing values (alternative to the above)
-        virtual void net_hub_connect(std::string const &/*unique_net_name*/) = 0;
+        // connect to a common network for exchanging values (alternative to the above)
+        virtual void net_hub_connect(std::string const &/*host_addr*/, std::uint16_t /*port*/, std::string const &/*unique_net_name*/) = 0;
+#endif
     };
 
     class extension_interface {

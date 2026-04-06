@@ -146,19 +146,19 @@ namespace teal {
             connect_ = true;
             host_ = host;
             port_ = port;
-            tnc_.set_on_conn_established([&]() {});
-            tnc_.set_on_data_arrived([&]() {
-                /* auto d{tnc_.receive()}; */
-            });
-            tnc_.set_on_conn_closed([]() {});
+            // tnc_.set_on_conn_established([&]() {});
+            // tnc_.set_on_data_arrived([&]() {
+            //     /* auto d{tnc_.receive()}; */
+            // });
+            // tnc_.set_on_conn_closed([]() {});
             tnc_.connect(host, port);
         }
 
         void stop() {
             tnc_.disconnect();
-            tnc_.set_on_conn_established(nullptr);
-            tnc_.set_on_data_arrived(nullptr);
-            tnc_.set_on_conn_closed(nullptr);
+            // tnc_.set_on_conn_established(nullptr);
+            // tnc_.set_on_data_arrived(nullptr);
+            // tnc_.set_on_conn_closed(nullptr);
         }
 
         bool connected() const {
@@ -192,6 +192,14 @@ namespace teal {
                 }
             }
             return {};
+        }
+
+        std::string const &host() const {
+            return host_;
+        }
+
+        std::uint16_t port() const {
+            return port_;
         }
 
     private:

@@ -140,6 +140,7 @@ DISTFILES += \
     ../alu74181.png \
     ../example.teal \
     ../extending_example.teal \
+    ../external_value.teal \
     ../one_second_limit.teal \
     ../perf_limit.teal \
     ../pid_regulator.teal \

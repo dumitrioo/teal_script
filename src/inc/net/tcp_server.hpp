@@ -63,7 +63,7 @@ namespace teal {
                     lsk_.make_nonblocking() &&
                     lsk_.bind(address, port) &&
                     lsk_.listen() &&
-                    poller_.add_event(lsk_.handle(), net::POLL_EVENT_IN | net::POLL_EVENT_ONESHOT)
+                    poller_.add_event(lsk_.handle(), net::POLL_EVENT_IN/* | net::POLL_EVENT_ONESHOT*/)
                 ) {
                     for(size_t i{}; i < num_work_threads; ++i) {
                         jobs_buffer_workers_.emplace_back(
@@ -124,10 +124,6 @@ namespace teal {
             clear_conns();
             terminate();
             {
-                std::unique_lock l2{jobs_buffer_mtp_};
-                jobs_buffer_cvar_.notify_all();
-            }
-            {
                 std::unique_lock l1{mt_mtp_};
                 if(thr_.joinable()) { thr_.join(); }
                 for(auto &&t: jobs_buffer_workers_) {
@@ -136,10 +132,9 @@ namespace teal {
                 jobs_buffer_workers_.clear();
             }
             {
-                while(jobs_buffer_.size_approx() > 0) {
-                    std::function<void()> fn{};
-                    jobs_buffer_.try_dequeue(fn);
-                }
+                std::unique_lock l2{jobs_buffer_mtp_};
+                jobs_buffer_.clear();
+                jobs_buffer_cvar_.notify_all();
             }
             conn_id_gen_.reset(1);
             {
@@ -209,7 +204,7 @@ namespace teal {
                     } catch(...) {
                         accept_failed = true;
                     }
-                    poller_.re_enable(lsk_.handle(), net::POLL_EVENT_IN | net::POLL_EVENT_ONESHOT);
+                    // poller_.re_enable(lsk_.handle(), net::POLL_EVENT_IN | net::POLL_EVENT_ONESHOT);
                     if(accept_failed || !new_conn->sckt_.ok()) {
                         new_conn.reset();
                     }
@@ -255,24 +250,21 @@ namespace teal {
             if(curr_conn) {
                 bool need_to_rm_sock{false};
                 if((curr_evt.events & net::POLL_EVENT_IN) == net::POLL_EVENT_IN) {
-                    size_t total_received{0};
-                    while(true) {
-                        auto dv{curr_conn->receive(4 * 1024)};
+                    int bavl{curr_conn->bytes_available()};
+                    if(bavl <= 0) {
+                        need_to_rm_sock = true;
+                    } else {
+                        auto dv{curr_conn->receive(std::max<int>(bavl, 2 * 1024))};
                         if(dv) {
                             if(!dv->empty()) {
-                                total_received += dv->size();
                                 curr_conn->push_buff_data(std::move(*dv));
+                                notify_on_data_arrived(curr_conn->conn_id_);
                             } else {
-                                if(total_received == 0) { need_to_rm_sock = true; }
-                                break;
+                                need_to_rm_sock = true;
                             }
                         } else {
-                            if(total_received == 0) { need_to_rm_sock = true; }
-                            break;
+                            need_to_rm_sock = true;
                         }
-                    }
-                    if(total_received > 0) {
-                        notify_on_data_arrived(curr_conn->conn_id_);
                     }
                 } else {
                     need_to_rm_sock = true;
@@ -349,6 +341,10 @@ namespace teal {
 
             int send(std::string const &data) {
                 return send(data.data(), data.size());
+            }
+
+            int bytes_available() const {
+                return sckt_.ok() ? sckt_.bytes_available() : -1;
             }
 
             std::optional<bytevec> receive(int len) {
@@ -464,12 +460,16 @@ namespace teal {
     private:
         bool fetch_job(std::function<void()> &fn) {
             std::unique_lock l{jobs_buffer_mtp_};
-            if(jobs_buffer_.try_dequeue(fn)) {
+            if(!jobs_buffer_.empty()) {
+                fn = std::move(jobs_buffer_.front());
+                jobs_buffer_.pop_front();
                 return true;
             }
             std::cv_status waitstatus{jobs_buffer_cvar_.wait_for(l, std::chrono::milliseconds{100})};
             if(waitstatus == std::cv_status::no_timeout) {
-                if(jobs_buffer_.try_dequeue(fn)) {
+                if(!jobs_buffer_.empty()) {
+                    fn = std::move(jobs_buffer_.front());
+                    jobs_buffer_.pop_front();
                     return true;
                 }
             }
@@ -479,7 +479,7 @@ namespace teal {
         bool insert_job(std::function<void()> &&fn) {
             if(termination()) { return false; }
             std::unique_lock l{jobs_buffer_mtp_};
-            jobs_buffer_.enqueue(std::move(fn));
+            jobs_buffer_.push_back(std::move(fn));
             jobs_buffer_cvar_.notify_all();
             return true;
         }
@@ -487,7 +487,7 @@ namespace teal {
         bool insert_job(std::function<void()> const &fn) {
             if(termination()) { return false; }
             std::unique_lock l{jobs_buffer_mtp_};
-            jobs_buffer_.enqueue(fn);
+            jobs_buffer_.push_back(fn);
             jobs_buffer_cvar_.notify_all();
             return true;
         }
@@ -503,7 +503,8 @@ namespace teal {
         mutable std::mutex jobs_buffer_mtp_{};
         std::condition_variable jobs_buffer_cvar_{};
         std::list<std::thread> jobs_buffer_workers_{};
-        moodycamel::ConcurrentQueue<std::function<void()>> jobs_buffer_{};
+        //moodycamel::ConcurrentQueue<std::function<void()>> jobs_buffer_{};
+        std::list<std::function<void()>> jobs_buffer_{};
 
         mutable std::shared_mutex connections_mtp_{};
         emhash8::HashMap<int, std::shared_ptr<connection>, num_cast_hash<int>> skfd_to_conn_{};

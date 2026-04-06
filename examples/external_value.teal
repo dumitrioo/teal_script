@@ -1,0 +1,24 @@
+random_value() {
+    sleep(0.1);
+    res = rand();
+    console.print("local value: ", res);
+    return res;
+}
+// just a regular cell, no fancy...
+// and this cell's value is accessed by the network below
+random_value sample_val();
+
+
+// using url to localhost and the value above
+// providing value obtained over network under "sample_val_from_net" identifier
+extern 'dvqp://127.0.0.1:43987/sample_val' sample_val_from_net;
+
+ext_value_use(exv) {
+    if(exv != this.exv) {
+        this.exv = exv;
+        console.print("remote value: ", exv);
+    }
+    return 0;
+}
+
+ext_value_use use(sample_val_from_net);
