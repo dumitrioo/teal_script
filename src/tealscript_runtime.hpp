@@ -1684,6 +1684,33 @@ namespace teal {
             }
         }
 
+        void add_object_serializer(
+            std::string const &class_name,
+            std::function<std::optional<std::string>(valbox const &)> const &fun
+        ) override {
+            std::unique_lock l{obj_ser_mtp_};
+            obj_ser_[class_name] = fun;
+        }
+
+        void remove_object_serializer(std::string const &class_name) override {
+            std::unique_lock l{obj_ser_mtp_};
+            obj_ser_.erase(class_name);
+        }
+
+        void add_object_deserializer(
+            std::string const &class_name,
+            std::function<valbox(std::string const &, std::string const &)> const &fun
+        ) override {
+            std::unique_lock l{obj_deser_mtp_};
+            obj_deser_[class_name] = fun;
+        }
+
+        void remove_object_deserializer(std::string const &class_name) override {
+            std::unique_lock l{obj_deser_mtp_};
+            obj_deser_.erase(class_name);
+        }
+
+
         valbox get_node_val(std::string const &name) {
             std::shared_lock l{workers_mtp_};
             auto it{worker_cells_.find(name)};
@@ -2175,7 +2202,23 @@ namespace teal {
                                 json resp{};
                                 resp["n"] = ali;
                                 resp["t"] = vb.type_to_str(vb.val_or_pointed_type());
-                                resp["v"] = vb.dump();
+                                if(vb.is_class_ref()) {
+                                    std::shared_lock l{obj_ser_mtp_};
+                                    if(obj_ser_.contains(vb.class_name())) {
+                                        auto s{obj_ser_[vb.class_name()](vb)};
+                                        l.unlock();
+                                        if(s) {
+                                            resp["v"]["c"] = vb.class_name();
+                                            resp["v"]["s"] = *s;
+                                        } else {
+                                            resp["v"] = vb.class_name();
+                                        }
+                                    } else {
+                                        resp["v"] = vb.class_name();
+                                    }
+                                } else {
+                                    resp["v"] = vb.dump();
+                                }
                                 ppserver_->send(conn_id, resp.bserialize());
                                 return;
                             }
@@ -2428,6 +2471,11 @@ namespace teal {
         socket_ext sockext_{};
         containers_ext dict_ext_{};
 
+        mutable shared_mutex obj_ser_mtp_{};
+        std::map<std::string, std::function<std::optional<std::string>(valbox const &)>> obj_ser_{};
+        mutable shared_mutex obj_deser_mtp_{};
+        std::map<std::string, std::function<valbox(std::string const &, std::string const &)>> obj_deser_{};
+
         shared_mutex loaded_extensions_mtp_{};
         std::list<std::pair<std::shared_ptr<so>, extension_interface *>> loaded_extensions_{};
         static std::size_t constexpr version_major_{1};
@@ -2435,6 +2483,7 @@ namespace teal {
         static std::size_t constexpr version_patch_{10};
 
 #ifdef TEAL_USE_EXTERNAL_VALUES
+
         std::string network_access_point_url_{};
         std::string network_name_{};
         mutable shared_mutex extern_cells_mtp_{};
@@ -2492,13 +2541,23 @@ namespace teal {
                 case valbox::type::FLOAT: v->set_value((float)str_util::atof(resp["v"].as_string())); break;
                 case valbox::type::DOUBLE: v->set_value((double)str_util::atof(resp["v"].as_string())); break;
                 case valbox::type::LONG_DOUBLE: v->set_value(str_util::atof(resp["v"].as_string())); break;
-                case valbox::type::VEC4:    break;
-                case valbox::type::MAT4:    break;
+                case valbox::type::VEC4: break;
+                case valbox::type::MAT4: break;
                 case valbox::type::POINTER: break;
-                case valbox::type::CLASS:   break;
-                case valbox::type::FUNC:    break;
-                case valbox::type::ARRAY:   break;
-                case valbox::type::OBJECT:  break;
+                case valbox::type::CLASS:
+                    if(resp["v"].is_object()) {
+                        std::shared_lock l{obj_deser_mtp_};
+                        v->set_value(obj_deser_[resp["v"]["c"].as_string()](
+                            resp["v"]["c"].as_string(),
+                            resp["v"]["s"].as_string())
+                        );
+                    } else {
+                        v->set_value(resp["v"].as_string());
+                    }
+                    break;
+                case valbox::type::FUNC: break;
+                case valbox::type::ARRAY: break;
+                case valbox::type::OBJECT: break;
                 case valbox::type::STRING: v->set_value(resp["v"].as_string()); break;
                 case valbox::type::WSTRING: v->set_value(resp["v"].as_wstring()); break;
                 case valbox::type::UNDEFINED: v->set_value(valbox{valbox_no_initialize::dont_do_it}); break;

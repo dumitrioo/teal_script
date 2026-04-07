@@ -40,6 +40,25 @@ namespace teal {
                 }
                 return teal::valbox{teal::timespec_wrapper::now(), "timespec_wrapper"};
             });
+
+            rt->add_object_serializer("timespec_wrapper",
+                [](valbox const &vb) -> std::optional<std::string> {
+                    if(vb.is_class_ref() && vb.class_name() == "timespec_wrapper") {
+                        return vb.as_class<teal::timespec_wrapper>().as_iso_8601_str();
+                    }
+                    return {};
+                }
+            );
+
+            rt->add_object_deserializer("timespec_wrapper",
+                [](std::string const &class_name, std::string const &serial_form) -> valbox {
+                    if(class_name == "timespec_wrapper") {
+                        return teal::valbox{teal::timespec_wrapper{serial_form}, "timespec_wrapper"};
+                    }
+                    return teal::valbox{valbox_no_initialize::dont_do_it};
+                }
+            );
+
             rt->add_function("gmtimestamp", TEALFUN() { return teal::valbox{teal::timespec_wrapper::gmtnow(), "timespec_wrapper"}; });
             rt->add_method("timespec_wrapper", "year", TEALFUN(args) { return TEALTHIS(args, teal::timespec_wrapper).year(); });
             rt->add_method("timespec_wrapper", "month", TEALFUN(args) { return TEALTHIS(args, teal::timespec_wrapper).month(); });

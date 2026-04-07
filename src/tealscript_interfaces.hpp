@@ -25,6 +25,17 @@ namespace teal {
         virtual void clear_inputs() = 0;
         virtual void clear_outputs() = 0;
 
+
+        virtual void add_object_serializer(
+            std::string const &,
+            std::function<std::optional<std::string>(valbox const &)> const &
+        ) = 0;
+        virtual void remove_object_serializer(std::string const &) = 0;
+        virtual void add_object_deserializer(
+            std::string const &,
+            std::function<valbox(std::string const &, std::string const &)> const &
+        ) = 0;
+        virtual void remove_object_deserializer(std::string const &) = 0;
         virtual void add_function(
             std::string const &,
             std::function<valbox(std::vector<valbox> &)>

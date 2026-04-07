@@ -37,9 +37,19 @@ random_value() {
 }
 random_value sample_val();
 
-extern 'dvqp://127.0.0.1:43987/sample_val' sample_val_from_net;
+timestamp_value() {
+    return timestamp();
+}
+timestamp_value current_time();
 
-my_drafts(exv) {
+extern 'dvqp://127.0.0.1:43987/sample_val' sample_val_from_net;
+extern 'dvqp://127.0.0.1:43987/current_time' time_from_net;
+
+my_drafts(exv, ts) {
+    ts.to_string().println();
+    sleep(0.098);
+    return 0;
+
     if(exv != this.exv) {
         this.exv = exv;
         console.print("remote value: ", exv);
@@ -224,4 +234,4 @@ my_drafts(exv) {
     exit();
 }
 
-my_drafts drf(sample_val_from_net);
+my_drafts drf(sample_val_from_net, time_from_net);
