@@ -9,7 +9,7 @@ The platform supports flexible input formats, allowing integration with virtuall
 
 ## Why?
 
-In short, to expand the capabilities of C++. The advantage of C++ is that it can solve all of the development tasks. C++ programmers typically use their favorite language for everything in their work, ignoring the fact that object-oriented and imperative approaches are not so good for certain tasks. There is a class of tasks that are much easier to solve using specialized tools and approaches. One such tool and a description of the tasks it can solve are presented here...
+In short, to expand the capabilities of C++. The advantage of C++ is that it can solve all of the development tasks. But object-oriented and imperative approaches are not equally good for everything. There are many classes of computational problems that are much easier to solve using specialized tools, approaches, paradigms. One such tool and a description of the tasks it can solve are presented here...
 
 
 ## The Data-flow Graph Paradigm
