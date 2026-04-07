@@ -132,6 +132,7 @@ LIBS += -lpthread -ldl
 # LIBS += -lmagic
 
 DISTFILES += \
+    ../../README.md \
     ../alu74181.teal \
     ../array_buffer_test.teal \
     ../draft.teal \
