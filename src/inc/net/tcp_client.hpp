@@ -103,24 +103,21 @@ namespace teal {
         }
 
         bool connected() const {
-            return /*!conn_broken_ && */!termination() && sckt_.ok() && thr_.joinable();
+            return !conn_broken_ && !termination() && sckt_.ok() && thr_.joinable();
         }
 
         void disconnect() {
             std::unique_lock cl{cnn_mtp_};
             terminate();
             if(thr_.joinable()) { thr_.join(); }
-            {
-                // std::unique_lock l{poller_mtp_};
-                poller_.close();
-            }
+            poller_.close();
             if(sckt_) {
                 std::unique_lock lw{write_mtp_};
                 std::unique_lock lr{read_mtp_};
                 sckt_.close();
             }
             std::unique_lock l{chunks_buffer_mtp_};
-            discard_buff_data();
+            discard_buff_data_unlocked();
             chunks_buffer_cvar_.notify_all();
         }
 
@@ -194,7 +191,6 @@ namespace teal {
         }
 
         std::optional<bytevec> fetch_buf_data_unlocked() {
-            // std::unique_lock l{chunks_buffer_mtp_};
             bytevec res{};
             bytevec buf{};
             while(!chunks_buffer_.empty()) {
@@ -235,8 +231,7 @@ namespace teal {
             return false;
         }
 
-        void discard_buff_data() {
-            std::unique_lock l{chunks_buffer_mtp_};
+        void discard_buff_data_unlocked() {
             chunks_buffer_.clear();
         }
 
@@ -252,12 +247,10 @@ namespace teal {
 
         mutable std::mutex chunks_buffer_mtp_{};
         std::condition_variable chunks_buffer_cvar_{};
-        // moodycamel::ConcurrentQueue<bytevec> chunks_buffer_{};
         std::list<bytevec> chunks_buffer_{};
 
         std::thread thr_{};
         teal::net::socket sckt_{};
-        // mutable std::mutex poller_mtp_{};
         net::socket_poller poller_{};
 
         std::atomic_bool conn_broken_{false};

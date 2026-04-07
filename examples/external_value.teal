@@ -1,7 +1,7 @@
 setup_cell() {
     if(!this.set_up) {
-        // 41.65 milliseconds
-        set_extern_update_nanointerval(41'650'000);
+        // 50 milliseconds (to avoid the network overloading)
+        set_extern_update_nanointerval(50'000'000);
         // 10 milliseconds
         set_cycle_nanosleep(10'000'000);
         // 10 milliseconds
@@ -33,10 +33,14 @@ random_value just_a_regular_cell();
 // in other words, locally-accessible cell "just_a_regular_cell" accessed
 // over the network for testing and demo purposes
 extern 'dvqp://127.0.0.1:43987/just_a_regular_cell' sample_val_from_net;
+
+// the following extern value is an example of network access to the above
+// “sample_val_from_net” which is also an extern value. this way you can
+// use a value from another host, which in turn accesses a third host.
 extern 'dvqp://127.0.0.1:43987/sample_val_from_net' sample_val_from_net_copy;
 
 ext_value_use(exv1, exv2) {
-    sleep(0.001);
+    sleep(0.01);
     if(exv1 != this.exv1) {
         this.exv1 = exv1;
         console.print("remote value1: ", exv1);
@@ -47,5 +51,4 @@ ext_value_use(exv1, exv2) {
     }
     return 0;
 }
-
 ext_value_use use(sample_val_from_net, sample_val_from_net_copy);

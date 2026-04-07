@@ -29,23 +29,21 @@ function Q_rsqrt(x) {
 }
 
 random_value() {
-    sleep(0.1);
-    res = rand();
-    console.print("local value: ", res);
-    return res;
+    if(!this.res) {
+        this.res = rand();
+        console.print("local value: ", this.res);
+    }
+    return this.res;
 }
 random_value sample_val();
 
 extern 'dvqp://127.0.0.1:43987/sample_val' sample_val_from_net;
 
 my_drafts(exv) {
-
     if(exv != this.exv) {
         this.exv = exv;
         console.print("remote value: ", exv);
     }
-
-    return 0;
 
     println(false, " && ", false, " = ", false && false);
     println(false, " && ", true, " = ", false && true);
@@ -222,8 +220,8 @@ my_drafts(exv) {
             break;
         }
     }
-    // exit();
-    sleep(0.1);
+
+    exit();
 }
 
 my_drafts drf(sample_val_from_net);
