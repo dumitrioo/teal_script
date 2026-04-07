@@ -181,10 +181,7 @@ namespace teal {
             if(!conn_broken_ && !termination() && sckt_.ok()) {
                 try {
                     return sckt_.receive(len);
-                } catch (std::exception const &e) {
-                    std::cerr << e.what();
                 } catch (...) {
-                    std::cerr << "error in net_receive()";
                 }
             }
             return {};

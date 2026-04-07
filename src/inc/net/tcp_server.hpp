@@ -112,7 +112,6 @@ namespace teal {
                                     conn_broken_ = true;
                                 }
                                 if(conn_broken_) {
-                                    std::cout << "tcp server thread exits" << std::endl; ///////////////////////////////////
                                     break;
                                 }
                             }
@@ -205,13 +204,9 @@ namespace teal {
                     bool accept_failed{false};
                     try {
                         lsk_.accept(new_conn->sckt_);
-                    } catch(std::exception const &e) {
-                        // std::cerr << e.what() << std::endl;
-                        accept_failed = true;
                     } catch(...) {
                         accept_failed = true;
                     }
-                    // poller_.re_enable(lsk_.handle(), net::POLL_EVENT_IN | net::POLL_EVENT_ONESHOT);
                     if(accept_failed || !new_conn->sckt_.ok()) {
                         new_conn.reset();
                     }
@@ -230,7 +225,6 @@ namespace teal {
                         ins_conn(new_conn);
                         bool pol_add_res{false};
                         {
-                            // std::unique_lock l{poller_mtp_};
                             pol_add_res = poller_.add_event(new_conn->sckt_.handle(), net::POLL_EVENT_IN | net::POLL_EVENT_ONESHOT);
                         }
                         if(!pol_add_res) {
@@ -241,10 +235,7 @@ namespace teal {
                         }
                     }
                 }
-            } catch(std::exception const &e) {
-                // std::cerr << "error: " << e.what() << std::endl;
             } catch(...) {
-                // std::cerr << "error accepting socket" << std::endl;
             }
         }
 
@@ -321,17 +312,13 @@ namespace teal {
             void close() {
                 std::unique_lock l{transport_mtp_};
                 doomed_ = true;
-                {
-                    // std::unique_lock l{owner_->poller_mtp_};
-                    owner_->poller_.del_event(sckt_.handle());
-                }
+                owner_->poller_.del_event(sckt_.handle());
                 sckt_.close();
             }
 
             int send(const void *data, std::int32_t data_size) {
                 int res{-1};
-                // std::shared_lock l{transport_mtp_};
-                std::unique_lock l{transport_mtp_}; //////!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                std::shared_lock l{transport_mtp_};
                 if(doomed_) {
                     return -1;
                 }
@@ -361,8 +348,7 @@ namespace teal {
             std::optional<bytevec> receive(int len) {
                 std::optional<bytevec> res{};
                 if(len) {
-                    // std::shared_lock l{transport_mtp_};
-                    std::unique_lock l{transport_mtp_}; //////!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    std::shared_lock l{transport_mtp_};
                     if(!doomed_) {
                         if(sckt_.ok()) {
                             try {
@@ -517,12 +503,10 @@ namespace teal {
         mutable std::shared_mutex mt_mtp_{};
         std::thread thr_{};
         net::socket lsk_{};
-        // mutable std::mutex poller_mtp_{};
         net::socket_poller poller_{};
         mutable std::mutex jobs_buffer_mtp_{};
         std::condition_variable jobs_buffer_cvar_{};
         std::list<std::thread> jobs_buffer_workers_{};
-        //moodycamel::ConcurrentQueue<std::function<void()>> jobs_buffer_{};
         std::list<std::function<void()>> jobs_buffer_{};
 
         mutable std::shared_mutex connections_mtp_{};

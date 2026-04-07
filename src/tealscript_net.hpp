@@ -152,8 +152,7 @@ namespace teal {
             net::packets_demuxer demuxer_{};
         };
         mutable std::shared_mutex muxers_mtp_{};
-        //emhash8::HashMap<conn_id_t, std::shared_ptr<multiplexing>> muxers_{};
-        std::map<conn_id_t, std::shared_ptr<multiplexing>> muxers_{};
+        emhash8::HashMap<conn_id_t, std::shared_ptr<multiplexing>> muxers_{};
     };
 
     class pp_client {
@@ -184,19 +183,15 @@ namespace teal {
             connect_ = true;
             host_ = host;
             port_ = port;
-            // tnc_.set_on_conn_established([&]() {});
             tnc_.set_on_data_arrived([&]() {
                 notify_on_data_arrived();
             });
-            // tnc_.set_on_conn_closed([]() {});
             tnc_.connect(host, port);
         }
 
         void stop() {
             tnc_.disconnect();
-            // tnc_.set_on_conn_established(nullptr);
             tnc_.set_on_data_arrived(nullptr);
-            // tnc_.set_on_conn_closed(nullptr);
         }
 
         bool connected() const {
