@@ -1838,7 +1838,7 @@ namespace teal {
             if(!type_valid()) {
                 throw json_error{"json error: invalid state"};
             }
-            ser << (std::uint8_t)t_;
+            ser << static_cast<std::uint8_t>(t_);
             if(t_ == jo_null) {
             } else if(t_ == jo_int) {
                 ser << str_util::itoa<std::string>(as<std::int64_t>());
@@ -1866,7 +1866,7 @@ namespace teal {
 
         static json bdeserialize_actual(teal::serial_reader::const_iterator &iter) {
             json res{};
-            type t{(type)iter->as_unumber()};
+            type t{static_cast<type>(iter->as_unumber())};
             if(!type_valid(t)) {
                 throw json_error{"json error: invalid type"};
             }
@@ -1987,45 +1987,95 @@ namespace teal {
         type t_{jo_null};
 
         static inline std::wstring const parse_rules_5{
-LR"(#rd|'\"'>>str;str|'\"'>><str|'\\'>>stre|$df>>str;stre|$df>>str;
-#rd|'\''>>sts;sts|$df>>sts|'\''>><sts|'\\'>>stse;stse|$df>>sts;
+LR"(
+#rd|'\"'>>str;
+str|'\"'>><str|'\\'>>stre|$df>>str;
+stre|$df>>str;
+#rd|'\''>>sts;
+sts|$df>>sts|'\''>><sts|'\\'>>stse;
+stse|$df>>sts;
 
-#rd|[$_:alpha:]>>id;#rd|'\\'>>id_ue;id_ue|'u'>>id_u;id_u|[:hex:]>>id_u1;id_u1|[:hex:]>>id_u2;id_u2|[:hex:]>>id_u3;
-id_u3|[:hex:]>>id;id|'\\'>>id_ue|[$_:alnum:]>>id|$df>>^idr;id_ue|'u'>>id_u;id_u|[:hex:]>>id_u1;id_u1|[:hex:]>>id_u2;
-id_u2|[:hex:]>>id_u3;id_u3|[:hex:]>>id;
+#rd|[$_:alpha:]>>id;
+#rd|'\\'>>id_ue;
+id_ue|'u'>>id_u;
+id_u|[:hex:]>>id_u1;
+id_u1|[:hex:]>>id_u2;
+id_u2|[:hex:]>>id_u3;
+id_u3|[:hex:]>>id;
+id|'\\'>>id_ue|[$_:alnum:]>>id|$df>>^idr;
+id_ue|'u'>>id_u;
+id_u|[:hex:]>>id_u1;
+id_u1|[:hex:]>>id_u2;
+id_u2|[:hex:]>>id_u3;
+id_u3|[:hex:]>>id;
 
-#rd|'/'>>cst;cst|'*'>>mlc|'/'>>slc;mlc|'*'>>mlcs|$df>>mlc;slc|[\r\n]>>^cmt|$df>>slc|$ef>>^cmt;
+#rd|'/'>>cst;
+cst|'*'>>mlc|'/'>>slc;
+mlc|'*'>>mlcs|$df>>mlc;
+slc|[\r\n]>>^cmt|$df>>slc|$ef>>^cmt;
 mlcs|'*'>>mlcs|'/'>><cmt|$df>>mlc;
 
-#rd|' '>>spc|'\t'>>spc|'\r'>>spc|'\n'>>spc|'\f'>>spc|'\v'>>spc|[:space:]>>spc|[:cntrl:]>>spc;
-spc|' '>>spc|'\t'>>spc|'\r'>>spc|'\n'>>spc|'\f'>>spc|'\v'>>spc|[:space:]>>spc|[:cntrl:]>>spc|$df>>^spc;
+#rd|' '>>spc|'\t'>>spc|'\r'>>spc|'\n'>>spc|'\f'>>spc|'\v'>>spc|[:space:]>>spc;
+spc|' '>>spc|'\t'>>spc|'\r'>>spc|'\n'>>spc|'\f'>>spc|'\v'>>spc|[:space:]>>spc|$df>>^spc;
 
 #rd|[+-]>>^sgn;
 
-#rd|[123456789]>>int;int|[:digit:]>>int|'.'>>fpd|[:punct::space::cntrl:]>>^int|[eE]>>fpe1|$ef>>^int;
-#rd|'0'>>mbhex;mbhex|[xX]>>hex|'.'>>fpd|[eE]>>fpe1|[:digit:]>>int|$df>>^int|$ef>>^int;
-hex|[:hex:]>>hex|$df>>^hex|$ef>>^hex;#rd|'.'>>mbfp;mbfp|[:digit:]>>fp;fpd|[:digit:]>>fp|[eE]>>fpe1|$df>>^fpl;
-fp|[:punct::space::cntrl:]>>^fpl|[:digit:]>>fp|[eE]>>fpe1|$ef>>^fpl;fpe1|[-+]>>fpes|[:digit:]>>fpe2;
-fpes|[:digit:]>>fpe2|'.'>>fpesd;fpesd|[:digit:]>>fpesd|[:punct::space::cntrl:]>>^fpl|$ef>>^fpl;
+#rd|[123456789]>>int;
+int|[:digit:]>>int|'.'>>fpd|[:punct::space::cntrl:]>>^int|[eE]>>fpe1|$ef>>^int;
+#rd|'0'>>mbhex;
+mbhex|[xX]>>hex|'.'>>fpd|[eE]>>fpe1|[:digit:]>>int|$df>>^int|$ef>>^int;
+hex|[:hex:]>>hex|$df>>^hex|$ef>>^hex;
+#rd|'.'>>mbfp;
+mbfp|[:digit:]>>fp;
+fpd|[:digit:]>>fp|[eE]>>fpe1|$df>>^fpl;
+fp|[:punct::space::cntrl:]>>^fpl|[:digit:]>>fp|[eE]>>fpe1|$ef>>^fpl;
+fpe1|[-+]>>fpes|[:digit:]>>fpe2;
+fpes|[:digit:]>>fpe2|'.'>>fpesd;
+fpesd|[:digit:]>>fpesd|[:punct::space::cntrl:]>>^fpl|$ef>>^fpl;
 fpe2|[:digit:]>>fpe2|'.'>>fpe2d|[:punct::space:]>>^fpl|$ef>>^fpl;
 fpe2d|[:digit:]>>fpe2d|[:punct::space::cntrl:]>>^fpl|$ef>>^fpl;
 
-#rd|'I'>>I;I|'n'>>In|[$_:alnum:]>>id|$ef>>^id;In|'f'>>Inf|[$_:alnum:]>>id|$ef>>^id;Inf|'i'>>Infi|[$_:alnum:]>>id|$ef>>^id;
-Infi|'n'>>Infin|[$_:alnum:]>>id|$ef>>^id;Infin|'i'>>Infini|[$_:alnum:]>>id|$ef>>^id;Infini|'t'>>Infinit|[$_:alnum:]>>id|$ef>>^id;
-Infinit|'y'>>Infinity|[$_:alnum:]>>id|$ef>>^id;Infinity|[$_:alnum:]>>id|$df>>^inf|$ef>>^inf;
+#rd|'I'>>I;
+I|'n'>>In|[$_:alnum:]>>id|$ef>>^id|$df>>^idr;
+In|'f'>>Inf|[$_:alnum:]>>id|$ef>>^id|$df>>^idr;
+Inf|'i'>>Infi|[$_:alnum:]>>id|$ef>>^id|$df>>^idr;
+Infi|'n'>>Infin|[$_:alnum:]>>id|$ef>>^id|$df>>^idr;
+Infin|'i'>>Infini|[$_:alnum:]>>id|$ef>>^id|$df>>^idr;
+Infini|'t'>>Infinit|[$_:alnum:]>>id|$ef>>^id|$df>>^idr;
+Infinit|'y'>>Infinity|[$_:alnum:]>>id|$ef>>^id|$df>>^idr;
+Infinity|[$_:alnum:]>>id|$df>>^inf|$ef>>^inf;
 
-#rd|'N'>>N;N|'a'>>Na|[$_:alnum:]>>id|$ef>>^id;Na|'N'>>NaN|[$_:alnum:]>>id|$ef>>^id;NaN|$df>>^nan|[$_:alnum:]>>id|$ef>>^nan;
+#rd|'N'>>N;
+N|'a'>>Na|[$_:alnum:]>>id|$ef>>^id|$df>>^idr;
+Na|'N'>>NaN|[$_:alnum:]>>id|$ef>>^id|$df>>^idr;
+NaN|$df>>^nan|[$_:alnum:]>>id|$ef>>^nan;
 
-#rd|'n'>>n;n|'u'>>nu|[$_:alnum:]>>id|$ef>>^id;nu|'l'>>nul|[$_:alnum:]>>id|$ef>>^id;nul|'l'>>null|[$_:alnum:]>>id|$ef>>^id;
+#rd|'n'>>n;
+n|'u'>>nu|[$_:alnum:]>>id|$ef>>^id|$df>>^idr;
+nu|'l'>>nul|[$_:alnum:]>>id|$ef>>^id|$df>>^idr;
+nul|'l'>>null|[$_:alnum:]>>id|$ef>>^id|$df>>^idr;
 null|$df>>^nul|[$_:alnum:]>>id|$ef>>^nul;
 
-#rd|'t'>>t;t|'r'>>tr|[$_:alnum:]>>id|$ef>>^id;tr|'u'>>tru|[$_:alnum:]>>id|$ef>>^id;tru|'e'>>true|[$_:alnum:]>>id|$ef>>^id;
+#rd|'t'>>t;
+t|'r'>>tr|[$_:alnum:]>>id|$ef>>^id|$df>>^idr;
+tr|'u'>>tru|[$_:alnum:]>>id|$ef>>^id|$df>>^idr;
+tru|'e'>>true|[$_:alnum:]>>id|$ef>>^id|$df>>^idr;
 true|$df>>^tru|[$_:alnum:]>>id|$ef>>^tru;
 
-#rd|'f'>>f;f|'a'>>fa|[$_:alnum:]>>id|$ef>>^id;fa|'l'>>fal|[$_:alnum:]>>id|$ef>>^id;fal|'s'>>fals|[$_:alnum:]>>id|$ef>>^id;
-fals|'e'>>false|[$_:alnum:]>>id|$ef>>^id;false|$df>>^fal|[$_:alnum:]>>id|$ef>>^fal;
+#rd|'f'>>f;
+f|'a'>>fa|[$_:alnum:]>>id|$ef>>^id|$df>>^idr;
+fa|'l'>>fal|[$_:alnum:]>>id|$ef>>^id|$df>>^idr;
+fal|'s'>>fals|[$_:alnum:]>>id|$ef>>^id|$df>>^idr;
+fals|'e'>>false|[$_:alnum:]>>id|$ef>>^id|$df>>^idr;
+false|$df>>^fal|[$_:alnum:]>>id|$ef>>^fal;
 
-#rd|','>><,;#rd|':'>><:;#rd|'['>><[;#rd|']'>><];#rd|'{'>><{;#rd|'}'>><};)"
+#rd|','>><,;
+#rd|':'>><:;
+#rd|'['>><[;
+#rd|']'>><];
+#rd|'{'>><{;
+#rd|'}'>><};
+)"
         };
 
         bool type_valid() const {

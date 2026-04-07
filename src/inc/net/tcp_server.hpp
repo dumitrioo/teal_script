@@ -71,7 +71,7 @@ namespace teal {
                     lsk_.make_nonblocking() &&
                     lsk_.bind(address, port) &&
                     lsk_.listen() &&
-                    poller_.add_event(lsk_.handle(), net::POLL_EVENT_IN/* | net::POLL_EVENT_ONESHOT*/)
+                    poller_.add_event(lsk_.handle(), net::POLL_EVENT_IN)
                 ) {
                     for(size_t i{}; i < num_work_threads; ++i) {
                         jobs_buffer_workers_.emplace_back(
@@ -91,7 +91,7 @@ namespace teal {
                                 try {
                                     std::vector<net::poll_event> events{};
                                     {
-                                        std::unique_lock l{poller_close_mtp_};
+                                        // std::unique_lock l{poller_mtp_};
                                         events = poller_.wait(128, timespec_wrapper{0.1});
                                     }
                                     std::size_t evts_size{events.size()};
@@ -112,6 +112,7 @@ namespace teal {
                                     conn_broken_ = true;
                                 }
                                 if(conn_broken_) {
+                                    std::cout << "tcp server thread exits" << std::endl; ///////////////////////////////////
                                     break;
                                 }
                             }
@@ -129,8 +130,8 @@ namespace teal {
 
         void stop() {
             stop_accept_ = true;
-            clear_conns();
             terminate();
+            clear_conns();
             {
                 std::unique_lock l1{mt_mtp_};
                 if(thr_.joinable()) { thr_.join(); }
@@ -146,7 +147,7 @@ namespace teal {
             }
             conn_id_gen_.reset(1);
             {
-                std::unique_lock l{poller_close_mtp_};
+                // std::unique_lock l{poller_mtp_};
                 poller_.close();
             }
             lsk_.close();
@@ -185,10 +186,8 @@ namespace teal {
         }
 
         std::optional<bytevec> get_conn_data(conn_id_t id) {
-            bytevec buff{};
-            std::shared_ptr<connection> conn{get_conn_by_id(id)};
-            if(conn && conn->pop_buff_data(buff)) {
-                return buff;
+            if(std::shared_ptr<connection> conn{get_conn_by_id(id)}) {
+                return conn->pop_buff_data();
             }
             return {};
         }
@@ -229,13 +228,12 @@ namespace teal {
                     if(new_conn) {
                         new_conn->conn_id_ = conn_id_gen_();
                         ins_conn(new_conn);
-                        if(
-                            !poller_.add_event(
-                                new_conn->sckt_.handle(),
-                                net::POLL_EVENT_IN | net::POLL_EVENT_RDHUP |
-                                net::POLL_EVENT_HUP | net::POLL_EVENT_ET
-                            )
-                        ) {
+                        bool pol_add_res{false};
+                        {
+                            // std::unique_lock l{poller_mtp_};
+                            pol_add_res = poller_.add_event(new_conn->sckt_.handle(), net::POLL_EVENT_IN | net::POLL_EVENT_ONESHOT);
+                        }
+                        if(!pol_add_res) {
                             rm_conn(new_conn);
                             new_conn.reset();
                         } else {
@@ -262,10 +260,11 @@ namespace teal {
                     if(bavl <= 0) {
                         need_to_rm_sock = true;
                     } else {
-                        auto dv{curr_conn->receive(std::max<int>(bavl, 2 * 1024))};
+                        auto dv{curr_conn->receive(std::max<int>(bavl, 4 * 1024))};
                         if(dv) {
                             if(!dv->empty()) {
                                 curr_conn->push_buff_data(std::move(*dv));
+                                poller_.re_enable(curr_evt.data.fd, net::POLL_EVENT_IN | net::POLL_EVENT_ONESHOT);
                                 notify_on_data_arrived(curr_conn->conn_id_);
                             } else {
                                 need_to_rm_sock = true;
@@ -322,13 +321,17 @@ namespace teal {
             void close() {
                 std::unique_lock l{transport_mtp_};
                 doomed_ = true;
-                owner_->poller_.del_event(sckt_.handle());
+                {
+                    // std::unique_lock l{owner_->poller_mtp_};
+                    owner_->poller_.del_event(sckt_.handle());
+                }
                 sckt_.close();
             }
 
             int send(const void *data, std::int32_t data_size) {
                 int res{-1};
-                std::shared_lock l{transport_mtp_};
+                // std::shared_lock l{transport_mtp_};
+                std::unique_lock l{transport_mtp_}; //////!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 if(doomed_) {
                     return -1;
                 }
@@ -352,13 +355,14 @@ namespace teal {
             }
 
             int bytes_available() const {
-                return sckt_.ok() ? sckt_.bytes_available() : -1;
+                return sckt_.bytes_available();
             }
 
             std::optional<bytevec> receive(int len) {
                 std::optional<bytevec> res{};
                 if(len) {
-                    std::shared_lock l{transport_mtp_};
+                    // std::shared_lock l{transport_mtp_};
+                    std::unique_lock l{transport_mtp_}; //////!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     if(!doomed_) {
                         if(sckt_.ok()) {
                             try {
@@ -378,28 +382,35 @@ namespace teal {
             }
 
             void push_buff_data(bytevec const &buf) {
+                std::unique_lock l{chunks_buffer_mtp_};
                 chunks_buffer_.enqueue(buf);
             }
 
             void push_buff_data(bytevec &&buf) {
+                std::unique_lock l{chunks_buffer_mtp_};
                 chunks_buffer_.enqueue(std::move(buf));
             }
 
             bool has_buff_data() const {
+                std::shared_lock l{chunks_buffer_mtp_};
                 return chunks_buffer_.size_approx() > 0;
             }
 
-            bool pop_buff_data(bytevec &bv) {
-                bool res{false};
+            std::optional<bytevec> pop_buff_data() {
                 bytevec b;
+                bytevec bv{};
+                std::unique_lock l{chunks_buffer_mtp_};
                 while(chunks_buffer_.try_dequeue(b)) {
-                    res = true;
                     bv.insert(bv.end(), b.begin(), b.end());
                 }
-                return res;
+                if(!bv.empty()) {
+                    return bv;
+                }
+                return {};
             }
 
             teal_net_server *owner_{nullptr};
+            mutable std::shared_mutex chunks_buffer_mtp_{};
             moodycamel::ConcurrentQueue<bytevec> chunks_buffer_{};
             conn_id_t conn_id_{0};
             std::shared_mutex transport_mtp_{};
@@ -506,7 +517,7 @@ namespace teal {
         mutable std::shared_mutex mt_mtp_{};
         std::thread thr_{};
         net::socket lsk_{};
-        mutable std::mutex poller_close_mtp_{};
+        // mutable std::mutex poller_mtp_{};
         net::socket_poller poller_{};
         mutable std::mutex jobs_buffer_mtp_{};
         std::condition_variable jobs_buffer_cvar_{};

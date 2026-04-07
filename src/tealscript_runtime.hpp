@@ -1500,21 +1500,21 @@ namespace teal {
             });
 
 
-            add_function("extern_update_interval", TEALFUN(args) {
+            add_function("extern_update_nanointerval", TEALFUN(args) {
 #ifdef TEAL_USE_EXTERNAL_VALUES
-                return external_cells_update_interval();
+                return ext_cells_refresh_interval_nanos_;
 #else
-                return -1.0L;
+                return uint64_t{};
 #endif
             });
 
-            add_function("set_extern_update_interval", TEALFUN(args) {
+            add_function("set_extern_update_nanointerval", TEALFUN(args) {
 #ifdef TEAL_USE_EXTERNAL_VALUES
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1);
-                set_external_cells_update_interval(args[0].cast_to_long_double());
-                return external_cells_update_interval();
+                ext_cells_refresh_interval_nanos_ = args[0].cast_to_u64();
+                return ext_cells_refresh_interval_nanos_;
 #else
-                return -1.0L;
+                return uint64_t{};
 #endif
             });
 
@@ -2449,44 +2449,30 @@ namespace teal {
         std::map<std::string, std::map<int, std::shared_ptr<pp_client>>> pp_clients_{};
 
         std::shared_ptr<pp_client> get_connected_client(extern_cell const *ecp) {
-            std::shared_ptr<pp_client> res{};
-            std::shared_lock l{pp_clients_mtp_};
-            auto hit{pp_clients_.find(ecp->remote_host())};
-            if(hit != pp_clients_.end()) {
-                auto pit{hit->second.find(*ecp->remote_url().port())};
-                if(pit != hit->second.end()) {
-                    res = pit->second;
-                }
-            }
+            std::unique_lock l{pp_clients_mtp_};
+            std::shared_ptr<pp_client> res{pp_clients_[ecp->remote_host()][*ecp->remote_url().port()]};
             if(!res || !res->connected()) {
-                l.unlock();
-                std::unique_lock l1{pp_clients_mtp_};
-                res = pp_clients_[ecp->remote_host()][*ecp->remote_url().port()];
-                if(!res || !res->connected()) {
-                    res = std::make_shared<pp_client>();
-                    res->set_on_data_arrived([this](pp_client *con) {
-                        if(auto rsp{con->receive(0.05)}) {
-                            try {
-                                json resp{json::bdeserialize(*rsp)};
-                                auto nme{resp["n"].as_string()};
-                                auto it{extern_cells_.find(nme)};
-                                if(it != extern_cells_.end()) {
-                                    update_vbox(it->second.get(), resp);
-                                }
-                            } catch (...) {
+                res = std::make_shared<pp_client>();
+                res->set_on_data_arrived([this](pp_client *con) {
+                    if(auto rsp{con->receive(0.05)}) {
+                        try {
+                            json resp{json::bdeserialize(*rsp)};
+                            auto nme{resp["n"].as_string()};
+                            auto it{extern_cells_.find(nme)};
+                            if(it != extern_cells_.end()) {
+                                update_vbox(it->second.get(), resp);
                             }
+                        } catch (...) {
                         }
-                    });
-                    res->start(ecp->remote_host(), *ecp->remote_url().port());
-                    if(res->connected()) {
-                        pp_clients_[ecp->remote_host()][*ecp->remote_url().port()] = res;
                     }
+                });
+                res->start(ecp->remote_host(), *ecp->remote_url().port());
+                if(!res->connected()) {
+                    res.reset();
                 }
+                pp_clients_[ecp->remote_host()][*ecp->remote_url().port()] = res;
             }
-            if(res && res->connected()) {
-                return res;
-            }
-            return {};
+            return res;
         }
 
         void update_vbox(extern_cell *v, json const &resp) {
@@ -2545,10 +2531,10 @@ namespace teal {
                         {
                             std::shared_lock l{extern_cells_mtp_};
                             for(auto cp: extern_cells_) {
+                                json requ{};
+                                requ["n"] = cp.second->remote_var_name();
+                                requ["a"] = cp.second->inst_name();
                                 if(auto con{get_connected_client(cp.second.get())}) {
-                                    json requ{};
-                                    requ["n"] = cp.second->remote_var_name();
-                                    requ["a"] = cp.second->inst_name();
                                     con->send(requ.bserialize());
                                 }
                             }

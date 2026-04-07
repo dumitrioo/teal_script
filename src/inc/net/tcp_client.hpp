@@ -40,9 +40,6 @@ namespace teal {
         }
 
         bool connect(std::string host, std::uint16_t port) {
-            if(conn_broken_) {
-                disconnect();
-            }
             std::unique_lock cl{cnn_mtp_};
             if(connected()) {
                 return true;
@@ -56,13 +53,8 @@ namespace teal {
                     sckt_.make_nosigpipe() &&
                     sckt_.make_nonblocking() &&
                     sckt_.make_nodelay() &&
-                    sckt_.set_keepalive(true)
-                    &&                                                                                                                                         sckt_.ok() &&
-                    poller_.add_event(
-                        sckt_.handle(),
-                        net::POLL_EVENT_IN | net::POLL_EVENT_RDHUP |
-                            net::POLL_EVENT_HUP | net::POLL_EVENT_ET
-                    )
+                    sckt_.set_keepalive(true) &&                                                                                                                                         sckt_.ok() &&
+                    poller_.add_event(sckt_.handle(), net::POLL_EVENT_IN | net::POLL_EVENT_ET)
                 ) {
                     thr_ = std::thread{
                         [this]() {
@@ -70,16 +62,16 @@ namespace teal {
                                 try {
                                     std::vector<net::poll_event> evs{};
                                     {
-                                        std::unique_lock l{poller_close_mtp_};
-                                        evs = poller_.wait(1, timespec_wrapper{0.1});
+                                        // std::unique_lock l{poller_mtp_};
+                                        evs = poller_.wait(10, timespec_wrapper{0.1});
                                     }
                                     if(!evs.empty()) {
                                         if((evs[0].events & net::POLL_EVENT_IN) == net::POLL_EVENT_IN) {
                                             int bavl{sckt_.bytes_available()};
                                             if(bavl < 0) {
                                                 conn_broken_ = true;
-                                            } else {
-                                                auto dv{net_receive(std::max<int>(bavl, 2 * 1024))};
+                                            } else if(bavl > 0) {
+                                                auto dv{net_receive(std::max<int>(bavl, 4 * 1024))};
                                                 if(dv) {
                                                     if(!dv->empty()) {
                                                         push_buff_data(std::move(*dv));
@@ -111,7 +103,7 @@ namespace teal {
         }
 
         bool connected() const {
-            return !conn_broken_ && !termination() && sckt_.ok() && thr_.joinable();
+            return /*!conn_broken_ && */!termination() && sckt_.ok() && thr_.joinable();
         }
 
         void disconnect() {
@@ -119,7 +111,7 @@ namespace teal {
             terminate();
             if(thr_.joinable()) { thr_.join(); }
             {
-                std::unique_lock l{poller_close_mtp_};
+                // std::unique_lock l{poller_mtp_};
                 poller_.close();
             }
             if(sckt_) {
@@ -149,24 +141,6 @@ namespace teal {
         }
 
         std::optional<bytevec> receive(long double timeout = 0) {
-            // std::optional<bytevec> opt_data{fetch_buf_data()};
-            // if(opt_data) {
-            //     return opt_data;
-            // }
-            // if(timeout > 0) {
-            //     std::unique_lock l{chunks_buffer_mtp_};
-            //     std::optional<bytevec> opt_data{fetch_buf_data()};
-            //     if(opt_data) {
-            //         return opt_data;
-            //     }
-            //     chunks_buffer_cvar_.wait_for(l,
-            //         std::chrono::nanoseconds{
-            //             static_cast<int64_t>(timeout * 1'000'000'000.0L)
-            //         }
-            //     );
-            // }
-            // return fetch_buf_data();
-
             std::unique_lock l{chunks_buffer_mtp_};
             std::optional<bytevec> opt_data{fetch_buf_data_unlocked()};
             if(opt_data) {
@@ -283,7 +257,7 @@ namespace teal {
 
         std::thread thr_{};
         teal::net::socket sckt_{};
-        mutable std::mutex poller_close_mtp_{};
+        // mutable std::mutex poller_mtp_{};
         net::socket_poller poller_{};
 
         std::atomic_bool conn_broken_{false};

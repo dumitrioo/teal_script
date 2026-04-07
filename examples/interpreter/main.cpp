@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
             throw std::runtime_error{"nothing to do - no working elements"};
         }
 
-        rt.start_net_server("0.0.0.0", 43987, 4);
+        rt.start_net_server("0.0.0.0", 43987, 2);
 #ifdef TEAL_USE_EXTERNAL_VALUES
         rt.set_external_cells_update_interval(0.01L);
 #endif
@@ -121,7 +121,6 @@ int main(int argc, char **argv) {
 #else
         rt.run_mt(std::thread::hardware_concurrency());
         while(!rt.wait(0.1)) {
-            // rt.set_input();
         }
         if(rt.failure()) { throw std::runtime_error{rt.failure_description()}; }
 #endif

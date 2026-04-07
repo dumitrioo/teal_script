@@ -107,19 +107,27 @@ namespace teal {
         }
 
         std::shared_ptr<multiplexing> get_or_create_muxerset(conn_id_t conn_id) {
-            std::shared_lock l{muxers_mtp_};
+            // std::shared_lock l{muxers_mtp_};
+            // std::shared_ptr<multiplexing> res{};
+            // auto it{muxers_.find(conn_id)};
+            // if(it != muxers_.end()) {
+            //     res = it->second;
+            // } else {
+            //     l.unlock();
+            //     std::unique_lock l1{muxers_mtp_};
+            //     res = muxers_[conn_id];
+            //     if(!res) {
+            //         res = std::make_shared<multiplexing>();
+            //         muxers_[conn_id] = res;
+            //     }
+            // }
+            // return res;
             std::shared_ptr<multiplexing> res{};
-            auto it{muxers_.find(conn_id)};
-            if(it != muxers_.end()) {
-                res = it->second;
-            } else {
-                l.unlock();
-                std::unique_lock l1{muxers_mtp_};
-                res = muxers_[conn_id];
-                if(!res) {
-                    res = std::make_shared<multiplexing>();
-                    muxers_[conn_id] = res;
-                }
+            std::unique_lock l{muxers_mtp_};
+            res = muxers_[conn_id];
+            if(!res) {
+                res = std::make_shared<multiplexing>();
+                muxers_[conn_id] = res;
             }
             return res;
         }
@@ -144,7 +152,8 @@ namespace teal {
             net::packets_demuxer demuxer_{};
         };
         mutable std::shared_mutex muxers_mtp_{};
-        emhash8::HashMap<conn_id_t, std::shared_ptr<multiplexing>> muxers_{};
+        //emhash8::HashMap<conn_id_t, std::shared_ptr<multiplexing>> muxers_{};
+        std::map<conn_id_t, std::shared_ptr<multiplexing>> muxers_{};
     };
 
     class pp_client {
@@ -196,6 +205,7 @@ namespace teal {
 
         int send(const void *data, size_t data_size) {
             int res{};
+            std::unique_lock l{muxing_mtp_};
             muxer_.add_message(data, data_size);
             while(auto ochnk{muxer_.fetch_out_chunk()}) {
                 bytevec pkt{mux_bottom_layer_.output_data_to_network_frame(*ochnk)};
@@ -215,6 +225,7 @@ namespace teal {
         std::optional<bytevec> receive(long double timeout = 0) {
             std::optional<bytevec> in{tnc_.receive(timeout)};
             if(in) {
+                std::unique_lock l{muxing_mtp_};
                 demux_bottom_layer_.set_network_input(*in);
                 if(auto ofid{demux_bottom_layer_.fetch_in_data()}) {
                     return demuxer_.add_data(*ofid);
@@ -245,6 +256,7 @@ namespace teal {
         // std::function<void()> on_conn_closed_{nullptr};
         std::function<void(pp_client *)> on_data_arrived_{nullptr};
 
+        std::shared_mutex muxing_mtp_{};
         net::sized_packets_exchanger mux_bottom_layer_{};
         net::packets_muxer<std::uint32_t> muxer_{1400};
         net::sized_packets_exchanger demux_bottom_layer_{};
