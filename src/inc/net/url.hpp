@@ -32,8 +32,8 @@ namespace teal {
             if(scheme.empty()) return;
             scheme_ = scheme;
             // "//" authority?
-            size_t i = pos+1;
-            if(urll.size() > i + 1 && urll[i] == '/' && urll[i+1] == '/') {
+            size_t i = pos + 1;
+            if(urll.size() > i + 1 && urll[i] == '/' && urll[i + 1] == '/') {
                 i += 2;
                 // authority is up to next '/' or '?' or '#'
                 size_t auth_end = urll.find_first_of("/?#", i);
@@ -49,9 +49,9 @@ namespace teal {
                 if(!hostport.empty() && hostport.front() == '[') {
                     size_t rb = hostport.find(']');
                     if(rb==std::string::npos) return;
-                    host_ = hostport.substr(0, rb+1); // include brackets
-                    if(rb + 1 < hostport.size() && hostport[rb+1] == ':') {
-                        std::string portstr = hostport.substr(rb+2);
+                    host_ = hostport.substr(0, rb + 1); // include brackets
+                    if(rb + 1 < hostport.size() && hostport[rb + 1] == ':') {
+                        std::string portstr = hostport.substr(rb + 2);
                         try{
                             port_ = str_util::atoui(portstr);
                         } catch(...) {
@@ -79,7 +79,6 @@ namespace teal {
             size_t path_end = std::min(qpos == std::string::npos ? urll.size() : qpos, hpos == std::string::npos ? urll.size() : hpos);
             if(path_end > path_start) {
                 path_ = urll.substr(path_start, path_end - path_start);
-
             } else {
                 path_.clear();
             }
@@ -95,7 +94,7 @@ namespace teal {
             // fragment
             if(hpos != std::string::npos) {
                 if(hpos + 1 < urll.size()) {
-                    fragment_ = urll.substr(hpos+1);
+                    fragment_ = urll.substr(hpos + 1);
                 } else {
                     fragment_ = std::string{};
                 }
@@ -183,8 +182,8 @@ namespace teal {
                 char c = s[i];
                 if(c == '%') {
                     if(i + 2 >= s.size()) throw std::invalid_argument("Incomplete percent-encoding");
-                    int hi = hex_value(s[i+1]);
-                    int lo = hex_value(s[i+2]);
+                    int hi = hex_value(s[i + 1]);
+                    int lo = hex_value(s[i + 2]);
                     if(hi == -1 || lo == -1) throw std::invalid_argument("Invalid hex digits in percent-encoding");
                     unsigned char byte = (unsigned char)((hi << 4) | lo);
                     out.push_back((char)byte);

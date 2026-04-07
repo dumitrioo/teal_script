@@ -99,20 +99,17 @@ namespace teal {
                     else if(array_contains_str(cur_cnt["cell_flags"], "extern")) {
                         std::string cnm{cur_cnt["cell_name"].as_string()};
                         std::string rnm{cur_cnt["remote_name"].as_string()};
-
                         url u{rnm};
                         if(!u.valid()) {
                             throw compilation_error{cur["loc"]["line"].try_as_number(), cur["loc"]["col"].try_as_number(),
                                 rnm + ": external name should be a valid URL"};
                         }
-
                         std::string p{u.path()};
                         while(!p.empty() && p[0] == '/') { p = p.substr(1); }
                         if(!detail::is_valid_dentifier(p)) {
                             throw compilation_error{cur["loc"]["line"].try_as_number(), cur["loc"]["col"].try_as_number(),
                                                     rnm + ": path must be a valid identifier after \"/\""};
                         }
-
                         if(u.scheme() != "dvqp") {
                             throw compilation_error{cur["loc"]["line"].try_as_number(), cur["loc"]["col"].try_as_number(),
                                                     u.scheme() + ": URL scheme must be \"dvqp\""};
@@ -122,7 +119,6 @@ namespace teal {
                             throw compilation_error{cur["loc"]["line"].try_as_number(), cur["loc"]["col"].try_as_number(),
                                 rnm + ": host and port must present in URL"};
                         }                        
-
                         if(
                             worker_cells.find(cnm) != worker_cells.end() ||
                             input_cells.find(cnm) != input_cells.end() ||
@@ -140,7 +136,10 @@ namespace teal {
                         ec_ptr->set_remote_host(remote_host);
                         ec_ptr->set_url(u);
                         ec_ptr->set_inst_name(cnm);
-                        ec_ptr->set_loc(cur["loc"]["line"].try_as_number(), cur["loc"]["col"].try_as_number());
+                        ec_ptr->set_loc(
+                            cur["loc"]["line"].try_as_number(),
+                            cur["loc"]["col"].try_as_number()
+                        );
                     }
 #endif
                     else if(array_contains_str(cur_cnt["cell_flags"], "regular")) {
@@ -159,9 +158,14 @@ namespace teal {
                                 cnm + ": duplicated cell identifier"
                             };
                         }
-                        std::shared_ptr<worker_cell_instance> wc_ptr{std::make_shared<worker_cell_instance>()};
+                        std::shared_ptr<worker_cell_instance> wc_ptr{
+                            std::make_shared<worker_cell_instance>()
+                        };
                         worker_cells[cnm] = wc_ptr;
-                        wc_ptr->set_loc(cur["loc"]["line"].try_as_number(), cur["loc"]["col"].try_as_number());
+                        wc_ptr->set_loc(
+                            cur["loc"]["line"].try_as_number(),
+                            cur["loc"]["col"].try_as_number()
+                        );
                         wc_ptr->set_inst_name(cnm);
                         wc_ptr->set_type_name(cur_cnt["cell_type"].as_string());
                         if(cur_cnt["args"].key_exists("content")) {
@@ -338,7 +342,9 @@ namespace teal {
                     teal::json const &cnt{(*stack.back().ast)["content"]};
                     if(stack.back().phase == 0) {
                         if(cnt["left"].is_null() || cnt["right"].is_null()) {
-                            throw compilation_error{(*stack.back().ast)["loc"]["line"].try_as_number(), (*stack.back().ast)["loc"]["col"].try_as_number(),
+                            throw compilation_error{
+                                (*stack.back().ast)["loc"]["line"].try_as_number(),
+                                (*stack.back().ast)["loc"]["col"].try_as_number(),
                                 std::string{"invalid expression"}
                             };
                         }
@@ -367,7 +373,9 @@ namespace teal {
                     teal::json const &cnt{(*stack.back().ast)["content"]};
                     if(stack.back().phase == 0) {
                         if(
-                            cnt["condition"].is_null() || cnt["true_expr"].is_null() || cnt["false_expr"].is_null() ||
+                            cnt["condition"].is_null() ||
+                            cnt["true_expr"].is_null() ||
+                            cnt["false_expr"].is_null() ||
                             static_cast<token::type>(cnt["oper_enum"].as_int(-1)) != token::type::QUESTION
                         ) {
                             throw compilation_error{
@@ -455,34 +463,54 @@ namespace teal {
                 } else if((*stack.back().ast)["subtype"].as_string() == "identifier") {
                     teal::json const &cnt{(*stack.back().ast)["content"]};
                     stack.back().res = std::make_shared<sym_expression>(cnt.as_string());
-                    stack.back().res->set_loc((*stack.back().ast)["loc"]["line"].try_as_number(), (*stack.back().ast)["loc"]["col"].try_as_number());
+                    stack.back().res->set_loc(
+                        (*stack.back().ast)["loc"]["line"].try_as_number(),
+                        (*stack.back().ast)["loc"]["col"].try_as_number()
+                    );
                     stack_res = std::move(stack.back());
                     stack.pop_back();
                 } else if((*stack.back().ast)["subtype"].as_string() == "literal") {
                     teal::json const &cnt{(*stack.back().ast)["content"]};
                     if((*stack.back().ast)["literal"].as_string() == "flt") {
                         stack.back().res = std::make_shared<primary_expression>(cnt.as_longdouble());
-                        stack.back().res->set_loc((*stack.back().ast)["loc"]["line"].try_as_number(), (*stack.back().ast)["loc"]["col"].try_as_number());
+                        stack.back().res->set_loc(
+                            (*stack.back().ast)["loc"]["line"].try_as_number(),
+                            (*stack.back().ast)["loc"]["col"].try_as_number()
+                        );
                         stack_res = std::move(stack.back());
                         stack.pop_back();
                     } else if(hobi.find((*stack.back().ast)["literal"].as_string()) != hobi.end()) {
                         stack.back().res = std::make_shared<primary_expression>(cnt.as_number());
-                        stack.back().res->set_loc((*stack.back().ast)["loc"]["line"].try_as_number(), (*stack.back().ast)["loc"]["col"].try_as_number());
+                        stack.back().res->set_loc(
+                            (*stack.back().ast)["loc"]["line"].try_as_number(),
+                            (*stack.back().ast)["loc"]["col"].try_as_number()
+                        );
                         stack_res = std::move(stack.back());
                         stack.pop_back();
                     } else if((*stack.back().ast)["literal"].as_string() == "bool") {
                         stack.back().res = std::make_shared<primary_expression>(cnt.as_boolean());
-                        stack.back().res->set_loc((*stack.back().ast)["loc"]["line"].try_as_number(), (*stack.back().ast)["loc"]["col"].try_as_number());
+                        stack.back().res->set_loc(
+                            (*stack.back().ast)["loc"]["line"].try_as_number(),
+                            (*stack.back().ast)["loc"]["col"].try_as_number()
+                        );
                         stack_res = std::move(stack.back());
                         stack.pop_back();
                     } else if((*stack.back().ast)["literal"].as_string() == "undefined") {
-                        stack.back().res = std::make_shared<primary_expression>(valbox{valbox_no_initialize::dont_do_it});
-                        stack.back().res->set_loc((*stack.back().ast)["loc"]["line"].try_as_number(), (*stack.back().ast)["loc"]["col"].try_as_number());
+                        stack.back().res = std::make_shared<primary_expression>(
+                            valbox{valbox_no_initialize::dont_do_it}
+                        );
+                        stack.back().res->set_loc(
+                            (*stack.back().ast)["loc"]["line"].try_as_number(),
+                            (*stack.back().ast)["loc"]["col"].try_as_number()
+                        );
                         stack_res = std::move(stack.back());
                         stack.pop_back();
                     } else if((*stack.back().ast)["literal"].as_string() == "str") {
                         stack.back().res = std::make_shared<primary_expression>(cnt.as_string());
-                        stack.back().res->set_loc((*stack.back().ast)["loc"]["line"].try_as_number(), (*stack.back().ast)["loc"]["col"].try_as_number());
+                        stack.back().res->set_loc(
+                            (*stack.back().ast)["loc"]["line"].try_as_number(),
+                            (*stack.back().ast)["loc"]["col"].try_as_number()
+                        );
                         stack_res = std::move(stack.back());
                         stack.pop_back();
                     } else if((*stack.back().ast)["literal"].as_string() == "chr") {
@@ -509,7 +537,10 @@ namespace teal {
                                 "invalid character"
                             };
                         }
-                        stack.back().res->set_loc((*stack.back().ast)["loc"]["line"].try_as_number(), (*stack.back().ast)["loc"]["col"].try_as_number());
+                        stack.back().res->set_loc(
+                            (*stack.back().ast)["loc"]["line"].try_as_number(),
+                            (*stack.back().ast)["loc"]["col"].try_as_number()
+                        );
                         stack_res = std::move(stack.back());
                         stack.pop_back();
                     }

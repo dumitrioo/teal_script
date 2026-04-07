@@ -395,9 +395,18 @@ namespace teal {
                     switch(str_num_escape_mode_) {
                         case str_num_escaping_t::oct: {
                                 if(c < '0' || c > '7') {
-                                    throw compilation_error{row, col, "invalid octal number for single-byte sequence"};
+                                    throw compilation_error{
+                                        row,
+                                        col,
+                                        "invalid octal number for single-byte sequence"
+                                    };
                                 }
-                                std::int64_t chr{(std::int64_t)teal::str_util::atoi(teal::str_util::to_utf8(esc_buff_), 8)};
+                                std::int64_t chr{
+                                    (std::int64_t)teal::str_util::atoi(
+                                        teal::str_util::to_utf8(esc_buff_),
+                                        8
+                                    )
+                                };
                                 if(esc_buff_.size() == 3) {
                                     string_buff_ += (decltype(string_buff_)::value_type)chr;
                                     stop_escaping();
@@ -406,9 +415,18 @@ namespace teal {
                             break;
                         case str_num_escaping_t::hex: {
                                 if(!teal::str_util::ishex(c)) {
-                                    throw compilation_error{row, col, "invalid hex number for single-byte sequence"};
+                                    throw compilation_error{
+                                        row,
+                                        col,
+                                        "invalid hex number for single-byte sequence"
+                                    };
                                 }
-                                std::int64_t chr{(std::int64_t)teal::str_util::atoi(teal::str_util::to_utf8(esc_buff_), 16)};
+                                std::int64_t chr{
+                                    (std::int64_t)teal::str_util::atoi(
+                                        teal::str_util::to_utf8(esc_buff_),
+                                        16
+                                    )
+                                };
                                 if(esc_buff_.size() == 2) {
                                     string_buff_ += (decltype(string_buff_)::value_type)chr;
                                     stop_escaping();
@@ -417,9 +435,18 @@ namespace teal {
                             break;
                         case str_num_escaping_t::u4: {
                                 if(!teal::str_util::ishex(c)) {
-                                    throw compilation_error{row, col, "invalid hex number for 2-byte sequence"};
+                                    throw compilation_error{
+                                        row,
+                                        col,
+                                        "invalid hex number for 2-byte sequence"
+                                    };
                                 }
-                                std::int64_t chr{(std::int64_t)teal::str_util::atoi(teal::str_util::to_utf8(esc_buff_), 16)};
+                                std::int64_t chr{
+                                    (std::int64_t)teal::str_util::atoi(
+                                        teal::str_util::to_utf8(esc_buff_),
+                                        16
+                                    )
+                                };
                                 if(esc_buff_.size() == 4) {
                                     string_buff_ += (decltype(string_buff_)::value_type)chr;
                                     stop_escaping();
@@ -430,7 +457,12 @@ namespace teal {
                                 if(!teal::str_util::ishex(c)) {
                                     throw compilation_error{row, col, "invalid hex number for 4-byte sequence"};
                                 }
-                                std::int64_t chr{(std::int64_t)teal::str_util::atoi(teal::str_util::to_utf8(esc_buff_), 16)};
+                                std::int64_t chr{
+                                    (std::int64_t)teal::str_util::atoi(
+                                        teal::str_util::to_utf8(esc_buff_),
+                                        16
+                                    )
+                                };
                                 if(esc_buff_.size() == 8) {
                                     string_buff_ += (decltype(string_buff_)::value_type)chr;
                                     stop_escaping();
@@ -693,14 +725,30 @@ namespace teal {
                 if(tt == token::type::STRING_LITERAL) {
                     string_buff_present_ = true;
                 } else if(tt == token::type::CHAR_LITERAL) {
-                    on_token_(token{str_token_row_, str_token_col_, token::type::CHAR_LITERAL, string_buff_}, space_with_new_line_);
+                    on_token_(
+                        token{
+                            str_token_row_,
+                            str_token_col_,
+                            token::type::CHAR_LITERAL,
+                            string_buff_
+                        },
+                        space_with_new_line_
+                    );
                     string_buff_.clear();
                     str_token_row_ = -1;
                     str_token_col_ = -1;
                 } else {
                     if(string_buff_present_) {
                         if(state_ != "space") {
-                            on_token_(token{str_token_row_, str_token_col_, token::type::STRING_LITERAL, string_buff_}, space_with_new_line_);
+                            on_token_(
+                                token{
+                                    str_token_row_,
+                                    str_token_col_,
+                                    token::type::STRING_LITERAL,
+                                    string_buff_
+                                },
+                                space_with_new_line_
+                            );
                             string_buff_.clear();
                             string_buff_present_ = false;
                             str_token_row_ = -1;
@@ -711,7 +759,10 @@ namespace teal {
                             return;
                         }
                     }
-                    on_token_(token{token_row_, token_col_, tt, buff_}, space_with_new_line_);
+                    on_token_(
+                        token{token_row_, token_col_, tt, buff_},
+                        space_with_new_line_
+                    );
                 }
             } else {
                 string_buff_.clear();

@@ -12,17 +12,23 @@ namespace teal {
 
     class teal_function_not_found: public runtime_error {
     public:
-        teal_function_not_found(std::int64_t l, std::int64_t c, const std::string &msg): runtime_error{l, c, msg} {
+        teal_function_not_found(std::int64_t l, std::int64_t c, const std::string &msg):
+            runtime_error{l, c, msg}
+        {
         }
     };
     class teal_identifier_not_found: public runtime_error {
     public:
-        teal_identifier_not_found(std::int64_t l, std::int64_t c, const std::string &msg): runtime_error{l, c, msg} {
+        teal_identifier_not_found(std::int64_t l, std::int64_t c, const std::string &msg):
+            runtime_error{l, c, msg}
+        {
         }
     };
     class teal_global_identifier_exists: public runtime_error {
     public:
-        teal_global_identifier_exists(std::int64_t l, std::int64_t c, const std::string &msg): runtime_error{l, c, msg} {
+        teal_global_identifier_exists(std::int64_t l, std::int64_t c, const std::string &msg):
+            runtime_error{l, c, msg}
+        {
         }
     };
 

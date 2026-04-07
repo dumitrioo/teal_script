@@ -60,11 +60,7 @@ namespace teal {
                         [this]() {
                             while(!termination() && !conn_broken_.load(std::memory_order_acquire)) {
                                 try {
-                                    std::vector<net::poll_event> evs{};
-                                    {
-                                        // std::unique_lock l{poller_mtp_};
-                                        evs = poller_.wait(10, timespec_wrapper{0.1});
-                                    }
+                                    std::vector<net::poll_event> evs{poller_.wait(10, timespec_wrapper{0.1})};
                                     if(!evs.empty()) {
                                         if((evs[0].events & net::POLL_EVENT_IN) == net::POLL_EVENT_IN) {
                                             int bavl{sckt_.bytes_available()};
@@ -157,7 +153,6 @@ namespace teal {
                 }
             }
             return {};
-
         }
 
     private:

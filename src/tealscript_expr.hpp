@@ -127,7 +127,11 @@ namespace teal {
     };
 
     class prefix_unop_expression: public expression {
-        struct enum_hash { std::size_t operator()(token::type tkn) const { return static_cast<std::size_t>(tkn); } };
+        struct enum_hash {
+            std::size_t operator()(token::type tkn) const {
+                return static_cast<std::size_t>(tkn);
+            }
+        };
 
     public:
         prefix_unop_expression(token::type opcode, expr_ptr val):

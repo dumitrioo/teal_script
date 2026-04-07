@@ -1,6 +1,6 @@
 setup_cell() {
     if(!this.set_up) {
-        // 50 milliseconds (to avoid the network overloading)
+        // 50 milliseconds (avoiding network overloading)
         set_extern_update_nanointerval(50'000'000);
         // 10 milliseconds
         set_cycle_nanosleep(10'000'000);
@@ -26,29 +26,30 @@ random_value() {
 // and this cell's value is accessed below over the network (TCP/IP)
 random_value just_a_regular_cell();
 
-// value obtained over the network by URL with name "sample_val_from_net".
+// value obtained over the network by URL with name "value_from_net".
 // in real scenario, localhost will be changed to real host name or IP addr.
 // and the name of the value above is mentioned in path part of this URL
 //
 // in other words, locally-accessible cell "just_a_regular_cell" accessed
 // over the network for testing and demo purposes
-extern 'dvqp://127.0.0.1:43987/just_a_regular_cell' sample_val_from_net;
+extern 'dvqp://127.0.0.1:43987/just_a_regular_cell' value_from_net;
 
-// the following extern value is an example of network access to the above
-// “sample_val_from_net” which is also an extern value. this way you can
-// use a value from another host, which in turn accesses a third host.
-extern 'dvqp://127.0.0.1:43987/sample_val_from_net' sample_val_from_net_copy;
+// the following extern value is an example of network access to the other
+// external value resided on other host in the network which is also could
+// be an extern value and so on. this way you can create a chain of values
+// network alues. this may be used to create network values hubs.
+extern 'dvqp://127.0.0.1:43987/value_from_net' value_from_net_copy;
 
-ext_value_use(exv1, exv2) {
+ext_value_use(ext_v1, ext_v2) {
     sleep(0.01);
-    if(exv1 != this.exv1) {
-        this.exv1 = exv1;
-        console.print("remote value1: ", exv1);
+    if(ext_v1 != this.ext_v1) {
+        this.ext_v1 = ext_v1;
+        console.print("remote value 1: ", ext_v1);
     }
-    if(exv2 != this.exv2) {
-        this.exv2 = exv2;
-        console.print("remote value2: ", exv2);
+    if(ext_v2 != this.ext_v2) {
+        this.ext_v2 = ext_v2;
+        console.print("remote value 2: ", ext_v2);
     }
     return 0;
 }
-ext_value_use use(sample_val_from_net, sample_val_from_net_copy);
+ext_value_use use(value_from_net, value_from_net_copy);

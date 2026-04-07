@@ -89,11 +89,7 @@ namespace teal {
                         [this]() {
                             while(!termination()) {
                                 try {
-                                    std::vector<net::poll_event> events{};
-                                    {
-                                        // std::unique_lock l{poller_mtp_};
-                                        events = poller_.wait(128, timespec_wrapper{0.1});
-                                    }
+                                    std::vector<net::poll_event> events{poller_.wait(128, timespec_wrapper{0.1})};
                                     std::size_t evts_size{events.size()};
                                     for(std::size_t curr_evt_indx{0}; curr_evt_indx < evts_size; ++curr_evt_indx) {
                                         if(termination()) {
@@ -145,10 +141,7 @@ namespace teal {
                 jobs_buffer_cvar_.notify_all();
             }
             conn_id_gen_.reset(1);
-            {
-                // std::unique_lock l{poller_mtp_};
-                poller_.close();
-            }
+            poller_.close();
             lsk_.close();
         }
 
@@ -223,10 +216,7 @@ namespace teal {
                     if(new_conn) {
                         new_conn->conn_id_ = conn_id_gen_();
                         ins_conn(new_conn);
-                        bool pol_add_res{false};
-                        {
-                            pol_add_res = poller_.add_event(new_conn->sckt_.handle(), net::POLL_EVENT_IN | net::POLL_EVENT_ONESHOT);
-                        }
+                        bool pol_add_res{poller_.add_event(new_conn->sckt_.handle(), net::POLL_EVENT_IN | net::POLL_EVENT_ONESHOT)};
                         if(!pol_add_res) {
                             rm_conn(new_conn);
                             new_conn.reset();

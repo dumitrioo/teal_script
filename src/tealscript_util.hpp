@@ -280,7 +280,10 @@ namespace teal {
             return map_;
         }
 
-        map_array subarray(std::size_t start_index, std::size_t count = std::numeric_limits<std::size_t>::max()) const {
+        map_array subarray(
+            std::size_t start_index,
+            std::size_t count = std::numeric_limits<std::size_t>::max()
+        ) const {
             map_array res{};
             res.resize(std::min(count, size() - start_index));
             for(auto it{map_.lower_bound(start_index)}; it != map_.end(); ++ it) {
@@ -296,7 +299,11 @@ namespace teal {
             return indx < size_ && map_.find(indx) != map_.end();
         }
 
-        void traverse_full(std::function<void(size_t, T const &)> fun, size_t start = 0, size_t count = std::numeric_limits<std::size_t>::max()) const {
+        void traverse_full(
+            std::function<void(size_t, T const &)> fun,
+            size_t start = 0,
+            size_t count = std::numeric_limits<std::size_t>::max()
+        ) const {
             auto it{map_.lower_bound(start)};
             for(size_t i{start}; i < size_ && i < start + count; ++i) {
                 if(it != map_.end() && i == it->first) {
@@ -308,8 +315,16 @@ namespace teal {
             }
         }
 
-        void traverse_real(std::function<void(size_t, T const &)> fun, size_t start = 0, size_t count = std::numeric_limits<std::size_t>::max()) const {
-            for(auto it{map_.lower_bound(start)}; it != map_.end() && it->first < start + count; ++it) {
+        void traverse_real(
+            std::function<void(size_t, T const &)> fun,
+            size_t start = 0,
+            size_t count = std::numeric_limits<std::size_t>::max()
+        ) const {
+            for(
+                auto it{map_.lower_bound(start)};
+                it != map_.end() && it->first < start + count;
+                ++it
+            ) {
                 fun(it->first, it->second);
             }
         }
