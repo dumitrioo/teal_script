@@ -19,7 +19,7 @@ The data-flow graph paradigm (discrete-time, clocked, modular, data-centric) is 
 
 ## Implementation
 
-The engine is implemented as an execution tree interpreter and does not rely on third-party tools for lexical analysis, parsing, or code generation, giving it a very small memory footprint. Because source code is compiled into an execution tree rather than machine code, the library is hardware-agnostic and portable to any system with a C++17 or higher compiler.
+The engine is implemented as an execution tree interpreter and does not rely on third-party tools for lexical analysis, parsing, or code generation, giving it a very small memory footprint. Because source code is compiled into an execution tree rather than machine code, the library is hardware-agnostic and portable to any system with a C++17 (but C++20 is preferable).
 
 TealScript, while based on the data-flow graph paradigm, departs from strict functional purity being partialy statelful for convenience of solving many tasks. Each compute node (cell or element) is an instance of object that syntactically resembles a function definition but can retain state between execution cycles via instance's variables accessible through the "this" keyword.
 
