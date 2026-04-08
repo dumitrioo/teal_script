@@ -472,7 +472,9 @@ namespace teal {
             std::size_t size() const noexcept { return buf_.size(); }
 
             template<typename T>
+#if (__cplusplus >= 202000L)
                 requires(std::is_fundamental_v<T>)
+#endif
             void assign_from_value(T v) {
                 buf_.resize(sizeof(T));
                 std::copy(
@@ -494,7 +496,9 @@ namespace teal {
             }
 
             template<typename T>
+#if (__cplusplus >= 202000L)
                 requires(std::is_fundamental_v<T>)
+#endif
             void assign(T val) {
                 std::uint8_t const *val_ptr{reinterpret_cast<std::uint8_t const *>(&val)};
                 buf_.assign(val_ptr, val_ptr + sizeof(val));
@@ -523,7 +527,9 @@ namespace teal {
             }
 
             template<typename T>
+#if (__cplusplus >= 202000L)
                 requires(std::is_fundamental_v<T>)
+#endif
             void append(T val) {
                 std::uint8_t const *val_ptr{reinterpret_cast<std::uint8_t const *>(&val)};
                 for(std::size_t i{}; i < sizeof(T); ++i) {
@@ -554,7 +560,9 @@ namespace teal {
             }
 
             template<typename T>
+#if (__cplusplus >= 202000L)
                 requires(std::is_fundamental_v<T>)
+#endif
             void put_at(T val, std::size_t at) {
                 std::uint8_t const *valptr{reinterpret_cast<std::uint8_t const *>(&val)};
                 while(buf_.size() < at) { buf_.push_back(0); }
@@ -568,9 +576,20 @@ namespace teal {
             }
 
             template<typename T>
+#if (__cplusplus >= 202000L)
                 requires(std::is_fundamental_v<std::remove_cvref_t<T>>)
-            std::remove_cvref_t<T> get_at(std::size_t at) const {
-                using res_t = std::remove_cvref_t<T>;
+            std::remove_cvref_t<T>
+#else
+            std::remove_cv_t<T>
+#endif
+            get_at(std::size_t at) const {
+                using res_t =
+#if (__cplusplus >= 202000L)
+                    std::remove_cvref_t<T>
+#else
+                    std::remove_cv_t<T>
+#endif
+                ;
                 if(buf_.size() < at + sizeof(res_t)) {
                     throw std::runtime_error{"requested data is out of buffer bounds"};
                 }
@@ -581,12 +600,26 @@ namespace teal {
             }
 
             template<typename T>
+#if (__cplusplus >= 202000L)
                 requires(std::is_fundamental_v<std::remove_cvref_t<T>>)
+#endif
             valbox ref_at(std::size_t at) {
-                if(buf_.size() < at + sizeof(std::remove_cvref_t<T>)) {
+                if(buf_.size() < at + sizeof(
+#if (__cplusplus >= 202000L)
+                                      std::remove_cvref_t<T>
+#else
+                                      std::remove_cv_t<T>
+#endif
+                                      )) {
                     throw std::runtime_error{"requested data is out of buffer bounds"};
                 }
-                return valbox{reinterpret_cast<std::remove_cvref_t<T> *>(&buf_[at])};
+                return valbox{reinterpret_cast<
+#if (__cplusplus >= 202000L)
+                    std::remove_cvref_t<T>
+#else
+                    std::remove_cv_t<T>
+#endif
+                    *>(&buf_[at])};
             }
 
             std::string to_string() const {

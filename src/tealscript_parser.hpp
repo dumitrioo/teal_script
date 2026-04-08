@@ -23,8 +23,8 @@ namespace teal {
             tokens_pos_ = -1;
         }
 
-        teal::json parse() {
-            teal::json res{};
+        json parse() {
+            json res{};
             tokens_pos_ = tokens_.empty() ? -1 : 0;
             while(!get_token(0).is_eof()) {
                 auto s{get_top_level_statement()};
@@ -37,8 +37,8 @@ namespace teal {
     private:
         std::list<std::string> loops_nesting_{};
 
-        teal::json get_top_level_statement() {
-            teal::json res{};
+        json get_top_level_statement() {
+            json res{};
             res = get_func_def_statement();
             if(res.is_object()) { return res; }
             res = get_cell_def_statement();
@@ -52,8 +52,8 @@ namespace teal {
             };
         }
 
-        teal::json get_statement() {
-            teal::json res{};
+        json get_statement() {
+            json res{};
             res = get_empty_statement();
             if(res.is_object()) { return res; }
             res = get_if_else_statement();
@@ -83,8 +83,8 @@ namespace teal {
             };
         }
 
-        teal::json get_func_def_statement() {
-            teal::json res{};
+        json get_func_def_statement() {
+            json res{};
             if(
                 get_token(0).lexem() == L"function" &&
                 get_token(1).is_id() &&
@@ -102,8 +102,8 @@ namespace teal {
             return res;
         }
 
-        teal::json get_function_def_args_list() {
-            teal::json res{};
+        json get_function_def_args_list() {
+            json res{};
             if(get_token(0).type_is(token::type::LPAREN)) {
                 check_eof();
                 increment_pos();
@@ -132,8 +132,8 @@ namespace teal {
             return res;
         }
 
-        teal::json get_cell_def_statement() {
-            teal::json res{};
+        json get_cell_def_statement() {
+            json res{};
             if(
                 get_token(0).is_id() && get_token(1).type_is(token::type::LPAREN)
             ) {
@@ -149,8 +149,8 @@ namespace teal {
             return res;
         }
 
-        teal::json get_cell_def_args_list() {
-            teal::json res{};
+        json get_cell_def_args_list() {
+            json res{};
             if(get_token(0).type_is(token::type::LPAREN)) {
                 increment_pos();
                 res["type"] = "cell_arguments_names";
@@ -176,12 +176,12 @@ namespace teal {
             return res;
         }
 
-        teal::json get_cell_def_body() {
+        json get_cell_def_body() {
             return get_statement();
         }
 
-        teal::json get_cell_instantiation_statement() {
-            teal::json res{};
+        json get_cell_instantiation_statement() {
+            json res{};
             if(
                 get_token(0).is_id() &&
                 get_token(1).is_id() &&
@@ -271,8 +271,8 @@ namespace teal {
             }
         }
 
-        teal::json get_cell_instance_args_list() {
-            teal::json res{};
+        json get_cell_instance_args_list() {
+            json res{};
             check_eof();
             if(get_token(0).type_is(token::type::LPAREN)) {
                 res["type"] = "cell_actual_arguments";
@@ -298,8 +298,8 @@ namespace teal {
             return res;
         }
 
-        teal::json get_compound_statement() {
-            teal::json res{};
+        json get_compound_statement() {
+            json res{};
             if(get_token(0).type_is(token::type::LCURLY)) {
                 res["loc"]["line"] = get_token(0).line();
                 res["loc"]["col"] = get_token(0).col();
@@ -329,13 +329,13 @@ namespace teal {
             return res;
         }
 
-        teal::json get_try_block_statement() {
-            teal::json res{};
+        json get_try_block_statement() {
+            json res{};
             if(get_token(0).is_id() && get_token(0).lexem() == L"try") {
                 res["loc"]["line"] = get_token(0).line();
                 res["loc"]["col"] = get_token(0).col();
                 increment_pos();
-                teal::json trystat{get_statement()};
+                json trystat{get_statement()};
                 if(trystat.is_object()) {
                     check_eof();
                     if(get_token(0).is_id() && get_token(0).lexem() == L"catch") {
@@ -344,7 +344,7 @@ namespace teal {
                         if(get_token(0).lexem() == L"(") {
                             increment_pos();
                             check_eof();
-                            teal::json catchexpr{};
+                            json catchexpr{};
                             if(get_token(0).is_id()) {
                                 catchexpr = get_expr();
                                 if(
@@ -377,7 +377,7 @@ namespace teal {
                                     "invalid \"try\": identifier expected"
                                 };
                             }
-                            teal::json catchstat{get_statement()};
+                            json catchstat{get_statement()};
                             if(catchstat.is_object()) {
                                 res["type"] = "statement";
                                 res["subtype"] = "try";
@@ -416,16 +416,16 @@ namespace teal {
             return res;
         }
 
-        teal::json get_if_else_statement() {
-            teal::json res{};
+        json get_if_else_statement() {
+            json res{};
             if(get_token(0).is_id() && get_token(0).lexem() == L"if") {
                 res["loc"]["line"] = get_token(0).line();
                 res["loc"]["col"] = get_token(0).col();
                 increment_pos();
-                teal::json ifexpr{get_expr()};
+                json ifexpr{get_expr()};
                 if(ifexpr.is_object()) {
-                    teal::json ifstat{get_statement()};
-                    teal::json elsestat{};
+                    json ifstat{get_statement()};
+                    json elsestat{};
                     if(ifstat.is_object()) {
                         check_eof();
                         if(get_token(0).is_id() && get_token(0).lexem() == L"else") {
@@ -455,8 +455,8 @@ namespace teal {
             return res;
         }
 
-        teal::json get_while_statement() {
-            teal::json res{};
+        json get_while_statement() {
+            json res{};
             if(get_token(0).is_id() && get_token(0).lexem() == L"while") {
                 res["loc"]["line"] = get_token(0).line();
                 res["loc"]["col"] = get_token(0).col();
@@ -468,7 +468,7 @@ namespace teal {
                 check_eof();
                 if(get_token(0).type_is(token::type::LPAREN)) {
                     increment_pos();
-                    teal::json expr{get_expr()};
+                    json expr{get_expr()};
                     if(expr.is_object()) {
                         check_eof();
                         if(get_token(0).type_is(token::type::RPAREN)) {
@@ -511,8 +511,8 @@ namespace teal {
             return res;
         }
 
-        teal::json get_for_statement() {
-            teal::json res{};
+        json get_for_statement() {
+            json res{};
             if(get_token(0).is_id() && get_token(0).lexem() == L"for") {
                 res["loc"]["line"] = get_token(0).line();
                 res["loc"]["col"] = get_token(0).col();
@@ -524,7 +524,7 @@ namespace teal {
                 check_eof();
                 if(get_token(0).type_is(token::type::LPAREN)) {
                     increment_pos();
-                    teal::json init_expr{};
+                    json init_expr{};
                     check_eof();
                     if(get_token(0).type_is(token::type::SEMICOLON)) {
                         init_expr["type"] = "expression";
@@ -540,7 +540,7 @@ namespace teal {
                         check_eof();
                         if(get_token(0).type_is(token::type::SEMICOLON)) {
                             increment_pos();
-                            teal::json cond_expr{};
+                            json cond_expr{};
                             check_eof();
                             if(get_token(0).type_is(token::type::SEMICOLON)) {
                                 cond_expr["type"] = "expression";
@@ -556,7 +556,7 @@ namespace teal {
                                 check_eof();
                                 if(get_token(0).type_is(token::type::SEMICOLON)) {
                                     increment_pos();
-                                    teal::json incr_expr{};
+                                    json incr_expr{};
                                     check_eof();
                                     if(get_token(0).type_is(token::type::SEMICOLON)) {
                                         incr_expr["type"] = "expression";
@@ -640,8 +640,8 @@ namespace teal {
             return res;
         }
 
-        teal::json get_return_statement() {
-            teal::json res{};
+        json get_return_statement() {
+            json res{};
             if(get_token(0).is_id() && get_token(0).lexem() == L"return") {
                 res["loc"]["line"] = get_token(0).line();
                 res["loc"]["col"] = get_token(0).col();
@@ -662,15 +662,15 @@ namespace teal {
             return res;
         }
 
-        teal::json get_throw_statement() {
-            teal::json res{};
+        json get_throw_statement() {
+            json res{};
             if(get_token(0).is_id() && get_token(0).lexem() == L"throw") {
                 res["loc"]["line"] = get_token(0).line();
                 res["loc"]["col"] = get_token(0).col();
                 increment_pos();
                 res["type"] = "statement";
                 res["subtype"] = "throw";
-                teal::json ct{get_expr()};
+                json ct{get_expr()};
                 if(ct.is_null()) {
                     throw compilation_error{
                         get_token(0).line(),
@@ -692,8 +692,8 @@ namespace teal {
             return res;
         }
 
-        teal::json get_continue_statement() {
-            teal::json res{};
+        json get_continue_statement() {
+            json res{};
             if(get_token(0).is_id() && get_token(0).lexem() == L"continue") {
                 res["loc"]["line"] = get_token(0).line();
                 res["loc"]["col"] = get_token(0).col();
@@ -720,8 +720,8 @@ namespace teal {
             return res;
         }
 
-        teal::json get_break_statement() {
-            teal::json res{};
+        json get_break_statement() {
+            json res{};
             if(get_token(0).is_id() && get_token(0).lexem() == L"break") {
                 res["loc"]["line"] = get_token(0).line();
                 res["loc"]["col"] = get_token(0).col();
@@ -748,8 +748,8 @@ namespace teal {
             return res;
         }
 
-        teal::json get_expression_statement() {
-            teal::json res{};
+        json get_expression_statement() {
+            json res{};
             std::int64_t l{get_token(0).line()};
             std::int64_t c{get_token(0).col()};
             auto expr{get_expr()};
@@ -776,8 +776,8 @@ namespace teal {
             return res;
         }
 
-        teal::json get_empty_statement() {
-            teal::json res{};
+        json get_empty_statement() {
+            json res{};
             if(get_token(0).type_is(token::type::SEMICOLON)) {
                 res["loc"]["line"] = get_token(0).line();
                 res["loc"]["col"] = get_token(0).col();
@@ -788,16 +788,16 @@ namespace teal {
             return res;
         }
 
-        teal::json get_expr() {
+        json get_expr() {
             return get_prio_17();
         }
 
-        teal::json get_prio_17() {
+        json get_prio_17() {
             return get_prio_16();
         }
 
-        teal::json get_prio_16() {
-            teal::json res{get_prio_15()};
+        json get_prio_16() {
+            json res{get_prio_15()};
             token const &tk{get_token(0)};
             if(
                 tk.type_is(token::type::ASSIGN) ||
@@ -812,7 +812,7 @@ namespace teal {
                 tk.type_is(token::type::BITORASSIGN) ||
                 tk.type_is(token::type::XORASSIGN)
             ) {
-                teal::json over_res{};
+                json over_res{};
                 over_res["loc"]["line"] = get_token(0).line();
                 over_res["loc"]["col"] = get_token(0).col();
                 increment_pos();
@@ -824,7 +824,7 @@ namespace teal {
                 res = std::move(over_res);
                 res["content"]["right"] = get_prio_16();
             } else if(tk.type_is(token::type::QUESTION)) {
-                teal::json over_res{};
+                json over_res{};
                 over_res["loc"]["line"] = get_token(0).line();
                 over_res["loc"]["col"] = get_token(0).col();
                 increment_pos();
@@ -848,12 +848,12 @@ namespace teal {
             return res;
         }
 
-        teal::json get_prio_15() {
-            teal::json res{get_prio_14()};
+        json get_prio_15() {
+            json res{get_prio_14()};
             while(true) {
                 token const &tk{get_token(0)};
                 if(tk.type_is(token::type::OR)) {
-                    teal::json over_res{};
+                    json over_res{};
                     over_res["loc"]["line"] = get_token(0).line();
                     over_res["loc"]["col"] = get_token(0).col();
                     increment_pos();
@@ -871,12 +871,12 @@ namespace teal {
             return res;
         }
 
-        teal::json get_prio_14() {
-            teal::json res{get_prio_13()};
+        json get_prio_14() {
+            json res{get_prio_13()};
             while(true) {
                 token const &tk{get_token(0)};
                 if(tk.type_is(token::type::AND)) {
-                    teal::json over_res{};
+                    json over_res{};
                     over_res["loc"]["line"] = get_token(0).line();
                     over_res["loc"]["col"] = get_token(0).col();
                     over_res["type"] = "expression";
@@ -894,12 +894,12 @@ namespace teal {
             return res;
         }
 
-        teal::json get_prio_13() {
-            teal::json res{get_prio_12()};
+        json get_prio_13() {
+            json res{get_prio_12()};
             while(true) {
                 token const &tk{get_token(0)};
                 if(tk.type_is(token::type::BITOR)) {
-                    teal::json over_res{};
+                    json over_res{};
                     over_res["loc"]["line"] = get_token(0).line();
                     over_res["loc"]["col"] = get_token(0).col();
                     increment_pos();
@@ -917,12 +917,12 @@ namespace teal {
             return res;
         }
 
-        teal::json get_prio_12() {
-            teal::json res{get_prio_11()};
+        json get_prio_12() {
+            json res{get_prio_11()};
             while(true) {
                 token const &tk{get_token(0)};
                 if(tk.type_is(token::type::XOR)) {
-                    teal::json over_res{};
+                    json over_res{};
                     over_res["loc"]["line"] = get_token(0).line();
                     over_res["loc"]["col"] = get_token(0).col();
                     increment_pos();
@@ -940,12 +940,12 @@ namespace teal {
             return res;
         }
 
-        teal::json get_prio_11() {
-            teal::json res{get_prio_10()};
+        json get_prio_11() {
+            json res{get_prio_10()};
             while(true) {
                 token const &tk{get_token(0)};
                 if(tk.type_is(token::type::BITAND)) {
-                    teal::json over_res{};
+                    json over_res{};
                     over_res["loc"]["line"] = get_token(0).line();
                     over_res["loc"]["col"] = get_token(0).col();
                     increment_pos();
@@ -963,12 +963,12 @@ namespace teal {
             return res;
         }
 
-        teal::json get_prio_10() {
-            teal::json res{get_prio_9()};
+        json get_prio_10() {
+            json res{get_prio_9()};
             while(true) {
                 token const &tk{get_token(0)};
                 if(tk.type_is(token::type::EQUAL) || tk.type_is(token::type::NOTEQUAL)) {
-                    teal::json over_res{};
+                    json over_res{};
                     over_res["loc"]["line"] = get_token(0).line();
                     over_res["loc"]["col"] = get_token(0).col();
                     over_res["type"] = "expression";
@@ -986,8 +986,8 @@ namespace teal {
             return res;
         }
 
-        teal::json get_prio_9() {
-            teal::json res{get_prio_8()};
+        json get_prio_9() {
+            json res{get_prio_8()};
             while(true) {
                 token const &tk{get_token(0)};
                 if(
@@ -996,7 +996,7 @@ namespace teal {
                     tk.type_is(token::type::GREATER) ||
                     tk.type_is(token::type::GREATEREQUAL)
                 ) {
-                    teal::json over_res{};
+                    json over_res{};
                     over_res["loc"]["line"] = get_token(0).line();
                     over_res["loc"]["col"] = get_token(0).col();
                     over_res["type"] = "expression";
@@ -1014,12 +1014,12 @@ namespace teal {
             return res;
         }
 
-        teal::json get_prio_8() {
-            teal::json res{get_prio_7()};
+        json get_prio_8() {
+            json res{get_prio_7()};
             while(true) {
                 token const &tk{get_token(0)};
                 if(tk.type_is(token::type::SPACESHIP)) {
-                    teal::json over_res{};
+                    json over_res{};
                     over_res["loc"]["line"] = get_token(0).line();
                     over_res["loc"]["col"] = get_token(0).col();
                     over_res["type"] = "expression";
@@ -1037,12 +1037,12 @@ namespace teal {
             return res;
         }
 
-        teal::json get_prio_7() {
-            teal::json res{get_prio_6()};
+        json get_prio_7() {
+            json res{get_prio_6()};
             while(true) {
                 token const &tk{get_token(0)};
                 if(tk.type_is(token::type::LSHIFT) || tk.type_is(token::type::RSHIFT)) {
-                    teal::json over_res{};
+                    json over_res{};
                     over_res["loc"]["line"] = get_token(0).line();
                     over_res["loc"]["col"] = get_token(0).col();
                     over_res["type"] = "expression";
@@ -1060,12 +1060,12 @@ namespace teal {
             return res;
         }
 
-        teal::json get_prio_6() {
-            teal::json res{get_prio_5()};
+        json get_prio_6() {
+            json res{get_prio_5()};
             while(true) {
                 token const &tk{get_token(0)};
                 if(tk.type_is(token::type::PLUS) || tk.type_is(token::type::MINUS)) {
-                    teal::json over_res{};
+                    json over_res{};
                     over_res["loc"]["line"] = get_token(0).line();
                     over_res["loc"]["col"] = get_token(0).col();
                     over_res["type"] = "expression";
@@ -1083,8 +1083,8 @@ namespace teal {
             return res;
         }
 
-        teal::json get_prio_5() {
-            teal::json res{get_prio_4()};
+        json get_prio_5() {
+            json res{get_prio_4()};
             while(true) {
                 token const &tk{get_token(0)};
                 if(
@@ -1092,7 +1092,7 @@ namespace teal {
                     tk.type_is(token::type::SLASH) ||
                     tk.type_is(token::type::MOD)
                 ) {
-                    teal::json over_res{};
+                    json over_res{};
                     over_res["loc"]["line"] = get_token(0).line();
                     over_res["loc"]["col"] = get_token(0).col();
                     over_res["type"] = "expression";
@@ -1110,13 +1110,13 @@ namespace teal {
             return res;
         }
 
-        teal::json get_prio_4() {
+        json get_prio_4() {
             return get_prio_3();
         }
 
-        teal::json get_prio_3() {
+        json get_prio_3() {
             token const &tk{get_token(0)};
-            teal::json res{};
+            json res{};
             if(
                 tk.type_is(token::type::MINUS) ||
                 tk.type_is(token::type::PLUS) ||
@@ -1139,8 +1139,8 @@ namespace teal {
             return res;
         }
 
-        teal::json get_prio_2() {
-            teal::json res{get_prio_1()};
+        json get_prio_2() {
+            json res{get_prio_1()};
             bool cont{true};
             while(cont) {
                 cont = false;
@@ -1150,7 +1150,7 @@ namespace teal {
                     tk.type_is(token::type::INCREMENT) ||
                     tk.type_is(token::type::DECREMENT)
                 ) {
-                    teal::json over_res{};
+                    json over_res{};
                     over_res["loc"]["line"] = get_token(0).line();
                     over_res["loc"]["col"] = get_token(0).col();
                     over_res["type"] = "expression";
@@ -1163,13 +1163,13 @@ namespace teal {
                 } else if(tk.type_is(token::type::LPAREN)) {
                     cont = true;
 
-                    teal::json args{};
+                    json args{};
                     increment_pos();
                     if(get_token(0).type_is(token::type::RPAREN)) {
                         increment_pos();
                     } else {
                         while(true) {
-                            teal::json exptr{get_expr()};
+                            json exptr{get_expr()};
                             if(exptr.is_object()) {
                                 args.push_back(std::move(exptr));
                                 if(get_token(0).type_is(token::type::RPAREN)) {
@@ -1187,7 +1187,7 @@ namespace teal {
                             }
                         }
                     }
-                    teal::json over_res{};
+                    json over_res{};
                     over_res["loc"]["line"] = tk.line();
                     over_res["loc"]["col"] = tk.col();
                     over_res["type"] = "expression";
@@ -1199,7 +1199,7 @@ namespace teal {
                     cont = true;
                     token const &tk{get_token(0)};
                     increment_pos();
-                    teal::json indx_expr{get_expr()};
+                    json indx_expr{get_expr()};
                     if(indx_expr.is_object()) {
                         if(get_token(0).type_is(token::type::RBRACKET)) {
                             increment_pos();
@@ -1209,7 +1209,7 @@ namespace teal {
                     } else {
                         throw compilation_error{get_token(0).line(), get_token(0).col(), "invalid indirection"};
                     }
-                    teal::json over_res{};
+                    json over_res{};
                     over_res["loc"]["line"] = tk.line();
                     over_res["loc"]["col"] = tk.col();
                     over_res["type"] = "expression";
@@ -1225,7 +1225,7 @@ namespace teal {
                     cont = true;
                     token const &tk{get_token(0)};
                     increment_pos();
-                    teal::json over_res{};
+                    json over_res{};
                     over_res["loc"]["line"] = tk.line();
                     over_res["loc"]["col"] = tk.col();
                     over_res["type"] = "expression";
@@ -1240,14 +1240,14 @@ namespace teal {
             return res;
         }
 
-        teal::json get_prio_1() {
+        json get_prio_1() {
             return get_primary();
         }
 
-        teal::json get_primary() {
+        json get_primary() {
             token const &tk{get_token(0)};
             if(tk.type_is(token::type::FP_LITERAL) || tk.type_is(token::type::FP_EXP_LITERAL)) {
-                teal::json res{};
+                json res{};
                 increment_pos();
                 res["loc"]["line"] = tk.line();
                 res["loc"]["col"] = tk.col();
@@ -1258,7 +1258,7 @@ namespace teal {
                 return res;
             } else if(tk.type_is(token::type::INT_LITERAL)) {
                 increment_pos();
-                teal::json res{};
+                json res{};
                 res["loc"]["line"] = tk.line();
                 res["loc"]["col"] = tk.col();
                 res["type"] = "expression";
@@ -1278,7 +1278,7 @@ namespace teal {
                 return res;
             } else if(tk.type_is(token::type::HEX_LITERAL)) {
                 increment_pos();
-                teal::json res{};
+                json res{};
                 res["loc"]["line"] = tk.line();
                 res["loc"]["col"] = tk.col();
                 res["type"] = "expression";
@@ -1298,7 +1298,7 @@ namespace teal {
                 return res;
             } else if(tk.type_is(token::type::OCT_LITERAL)) {
                 increment_pos();
-                teal::json res{};
+                json res{};
                 res["loc"]["line"] = tk.line();
                 res["loc"]["col"] = tk.col();
                 res["type"] = "expression";
@@ -1318,7 +1318,7 @@ namespace teal {
                 return res;
             } else if(tk.type_is(token::type::BIN_LITERAL)) {
                 increment_pos();
-                teal::json res{};
+                json res{};
                 res["loc"]["line"] = tk.line();
                 res["loc"]["col"] = tk.col();
                 res["type"] = "expression";
@@ -1338,7 +1338,7 @@ namespace teal {
                 return res;
             } else if(tk.type_is(token::type::STRING_LITERAL)) {
                 increment_pos();
-                teal::json res{};
+                json res{};
                 res["loc"]["line"] = tk.line();
                 res["loc"]["col"] = tk.col();
                 res["type"] = "expression";
@@ -1348,7 +1348,7 @@ namespace teal {
                 return res;
             } else if(tk.type_is(token::type::CHAR_LITERAL)) {
                 increment_pos();
-                teal::json res{};
+                json res{};
                 res["loc"]["line"] = tk.line();
                 res["loc"]["col"] = tk.col();
                 res["type"] = "expression";
@@ -1369,7 +1369,7 @@ namespace teal {
 
                 increment_pos();
                 if(tk.lexem() == L"true") {
-                    teal::json res{};
+                    json res{};
                     res["loc"]["line"] = tk.line();
                     res["loc"]["col"] = tk.col();
                     res["type"] = "expression";
@@ -1378,7 +1378,7 @@ namespace teal {
                     res["content"] = true;
                     return res;
                 } else if(tk.lexem() == L"false") {
-                    teal::json res{};
+                    json res{};
                     res["loc"]["line"] = tk.line();
                     res["loc"]["col"] = tk.col();
                     res["type"] = "expression";
@@ -1387,7 +1387,7 @@ namespace teal {
                     res["content"] = false;
                     return res;
                 } else if(tk.lexem() == L"undefined") {
-                    teal::json res{};
+                    json res{};
                     res["loc"]["line"] = tk.line();
                     res["loc"]["col"] = tk.col();
                     res["type"] = "expression";
@@ -1396,7 +1396,7 @@ namespace teal {
                     res["content"].clear();
                     return res;
                 } else {
-                    teal::json res{};
+                    json res{};
                     res["loc"]["line"] = tk.line();
                     res["loc"]["col"] = tk.col();
                     res["type"] = "expression";
@@ -1406,7 +1406,7 @@ namespace teal {
                 }
             } else if(tk.type_is(token::type::LPAREN)) {
                 increment_pos();
-                teal::json res{get_expr()};
+                json res{get_expr()};
                 if(get_token(0).type_is_not(token::type::RPAREN)) {
                     throw compilation_error{get_token(0).line(), get_token(0).col(), "expected parentesis"};
                 }

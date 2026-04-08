@@ -77,19 +77,19 @@ namespace teal {
             }
             valbox res{valbox_no_initialize::dont_do_it};
             if(fun_ref()) {
-                execution_context::obj_type objtyp{objtyp_.load(std::memory_order::acquire)};
+                execution_context::obj_type objtyp{objtyp_.load(std::memory_order_acquire)};
                 res = ctx->find_func(name_, objtyp);
                 if(!res.is_func_ref()) {
                     res = ctx->find_val_by_sym_name(name_, line(), col(), objtyp);
                 }
-                objtyp_.store(objtyp, std::memory_order::release);
+                objtyp_.store(objtyp, std::memory_order_release);
             } else {
                 bool excepted{false};
                 runtime_error er{{}, {}, {}};
                 try {
-                    execution_context::obj_type objtyp{objtyp_.load(std::memory_order::acquire)};
+                    execution_context::obj_type objtyp{objtyp_.load(std::memory_order_acquire)};
                     res = ctx->find_val_by_sym_name(name_, line(), col(), objtyp);
-                    objtyp_.store(objtyp, std::memory_order::release);
+                    objtyp_.store(objtyp, std::memory_order_release);
                     if(objtyp == execution_context::obj_type::global_var) {
                         std::unique_lock l{primary_val_mtp_};
                         primary_val_ = res;
@@ -824,6 +824,7 @@ namespace teal {
                     return res;
                 },
                 /* SPACESHIP */
+#if (__cplusplus >= 202000L)
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
@@ -847,7 +848,11 @@ namespace teal {
                         throw er;
                     }
                     return res;
-                },
+                }
+#else
+                nullptr
+#endif
+                ,
                 /* ASSIGN */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};

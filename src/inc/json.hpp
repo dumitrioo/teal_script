@@ -180,8 +180,17 @@ namespace teal {
                 }
                 if(
                     what_next_ == expected::none
-                    || (what_next_ == expected::listed && !nxt_lst_->contains(teal::str_util::to_utf8(tt)))
-                    || (stack_.size() == 1 && top().closed)
+                    ||
+                    (
+                        what_next_ == expected::listed &&
+#if (__cplusplus >= 202000L)
+                        !nxt_lst_->contains(teal::str_util::to_utf8(tt))
+#else
+                        nxt_lst_->find(teal::str_util::to_utf8(tt)) == nxt_lst_->end()
+#endif
+                    )
+                    ||
+                    (stack_.size() == 1 && top().closed)
                 ) {
                     static const emhash8::HashMap<std::string, std::string, str_crc<std::string>> exp_map {
                         {"str" , "<string>" },
@@ -1913,6 +1922,8 @@ namespace teal {
     private:
         void cleanup() {
             struct frame {
+                frame(json *j = nullptr, bool cleaned = false): j_{j}, cleaned_{cleaned} {}
+
                 json *j_{nullptr};
                 bool cleaned_{false};
             };

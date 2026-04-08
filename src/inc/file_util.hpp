@@ -153,7 +153,7 @@ namespace teal::file_util {
 #endif
         }
 
-        std::string error_str(int64_t e) {
+        static std::string error_str(int64_t e) {
 #if defined(PLATFORM_WINDOWS)
             DWORD errorMessageID{(DWORD)e};
             if(errorMessageID == 0) {
@@ -219,7 +219,7 @@ namespace teal::file_util {
 #endif
     }
 
-    timespec_wrapper get_file_creation_time(std::string const &file_path) {
+    static timespec_wrapper get_file_creation_time(std::string const &file_path) {
 #if defined(PLATFORM_WINDOWS)
         struct _stat attrib;
         if (_stat(file_path.c_str(), &attrib) == 0) {
@@ -246,7 +246,7 @@ namespace teal::file_util {
 #endif
     }
 
-    timespec_wrapper get_file_access_time(std::string const &file_path) {
+    static timespec_wrapper get_file_access_time(std::string const &file_path) {
 #if defined(PLATFORM_WINDOWS)
         struct _stat attrib;
         if (_stat(file_path.c_str(), &attrib) == 0) {
@@ -273,7 +273,7 @@ namespace teal::file_util {
 #endif
     }
 
-    timespec_wrapper get_file_modification_time(std::string const &file_path) {
+    static timespec_wrapper get_file_modification_time(std::string const &file_path) {
 #if defined(PLATFORM_WINDOWS)
         struct _stat attrib;
         if(_stat(file_path.c_str(), &attrib) == 0) {
@@ -693,9 +693,13 @@ namespace teal::file_util {
         if(recursive) {
             for(auto const &entry: std::filesystem::recursive_directory_iterator{p}) {
                 auto tt{entry.last_write_time()};
+#if (__cplusplus >= 202000L)
                 std::stringstream ss{};
                 ss << tt << "+0";
                 teal::timespec_wrapper mt{ss.str()};
+#else
+                teal::timespec_wrapper mt{(static_cast<long double>(tt.time_since_epoch().count()) / 1'000'000'000.0L) + 6437664000.0L};
+#endif
                 if(entry.is_regular_file()) {
                     if(!apply(dir_entry{entry.path().string(), entry.file_size(), dir_entry::kind::file, mt})) {
                         break;
@@ -709,9 +713,13 @@ namespace teal::file_util {
         } else {
             for(auto const &entry: std::filesystem::directory_iterator{p}) {
                 auto tt{entry.last_write_time()};
+#if (__cplusplus >= 202000L)
                 std::stringstream ss{};
                 ss << tt << "+0";
                 teal::timespec_wrapper mt{ss.str()};
+#else
+                teal::timespec_wrapper mt{(static_cast<long double>(tt.time_since_epoch().count()) / 1'000'000'000.0L) + 6437664000.0L};
+#endif
                 if(entry.is_regular_file()) {
                     if(!apply(dir_entry{entry.path().string(), entry.file_size(), dir_entry::kind::file, mt})) {
                         break;

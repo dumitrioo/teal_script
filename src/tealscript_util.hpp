@@ -179,7 +179,7 @@ namespace teal {
     }
 
     template<typename T>
-    teal::math::vector4<T> vec4_from_json(teal::json const &j) {
+    teal::math::vector4<T> vec4_from_json(json const &j) {
         teal::math::vector4<T> res{};
         try {
             if(j.is_array()) {
@@ -202,7 +202,7 @@ namespace teal {
     teal::math::vector4<T> vec4_from_str(std::string const &s) {
         teal::math::vector4<T> res{};
         try {
-            teal::json j{teal::json::deserialize(s)};
+            json j{json::deserialize(s)};
             res = vec4_from_json<T>(j);
         } catch(...) {
             res = teal::math::vector4<T>{};
@@ -214,7 +214,7 @@ namespace teal {
     teal::math::vector4<T> vec4_from_str(std::wstring const &s) {
         teal::math::vector4<T> res{};
         try {
-            teal::json j{teal::json::deserialize(teal::str_util::to_utf8(s))};
+            json j{json::deserialize(teal::str_util::to_utf8(s))};
             res = vec4_from_json<T>(j);
         } catch(...) {
             res = teal::math::vector4<T>{};
@@ -223,7 +223,7 @@ namespace teal {
     }
 
     template<typename T>
-    teal::math::matrix4<T> mat4_from_json(teal::json const &j) {
+    teal::math::matrix4<T> mat4_from_json(json const &j) {
         teal::math::matrix4<T> res{};
         try {
             if(j.is_array()) {

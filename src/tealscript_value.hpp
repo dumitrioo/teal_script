@@ -241,7 +241,7 @@ namespace teal {
         valbox(long long *v): box_{std::make_shared<box_data>((void *)v, type::POINTER, type::S64)} {}
         valbox(unsigned long long v): box_{std::make_shared<box_data>((std::uint64_t)v, type::U64)} {}
         valbox(unsigned long long *v): box_{std::make_shared<box_data>((void *)v, type::POINTER, type::U64)} {}
-        valbox(teal::json const &v): box_{std::make_shared<box_data>(value_t{}, type::UNDEFINED)} { from_json(v); }
+        valbox(json const &v): box_{std::make_shared<box_data>(value_t{}, type::UNDEFINED)} { from_json(v); }
         valbox(object_t const &v): box_{std::make_shared<box_data>(v, type::OBJECT)} {}
         valbox(void *v, type pointed_type = type::POINTER): box_{std::make_shared<box_data>(v, type::POINTER, pointed_type)} {}
         valbox(valbox *v): box_{std::make_shared<box_data>((void *)v, type::POINTER, type::VALBOX)} {}
@@ -2952,6 +2952,7 @@ namespace teal {
             return !(lr < rr);
         }
 
+#if (__cplusplus >= 202000L)
         friend int operator<=>(valbox const &l, valbox const &r) {
             auto lr{l.deref()};
             auto rr{r.deref()};
@@ -3165,6 +3166,7 @@ namespace teal {
             }
             throw std::runtime_error{"operation not applicable"};
         }
+#endif
 
         friend bool operator!=(valbox const &l, valbox const &r) {
             auto lr{l.deref()};
@@ -6085,10 +6087,10 @@ namespace teal {
                         case type::CLASS: throw std::runtime_error{"inappropriate value"};
                         case type::FUNC: throw std::runtime_error{"inappropriate value"};
                         case type::STRING:
-                            thisref.from_json(teal::json::deserialize(thatref.as_string()));
+                            thisref.from_json(json::deserialize(thatref.as_string()));
                             break;
                         case type::WSTRING:
-                            thisref.from_json(teal::json::deserialize(thatref.as_wstring()));
+                            thisref.from_json(json::deserialize(thatref.as_wstring()));
                             break;
                         case type::UNDEFINED: thisref.as_object().clear(); break;
                         case type::VALBOX: throw std::runtime_error{"inappropriate value"};
@@ -6835,14 +6837,14 @@ namespace teal {
                     break;
                 case type::STRING: {
                     try {
-                            res = valbox{teal::json::deserialize(as_string())}.as_object();
+                            res = valbox{json::deserialize(as_string())}.as_object();
                         } catch(...) {
                         }
                     }
                     break;
                 case type::WSTRING: {
                         try {
-                            res = valbox{teal::json::deserialize(cast_to_string())}.as_object();
+                            res = valbox{json::deserialize(cast_to_string())}.as_object();
                         } catch(...) {
                         }
                     }
@@ -6853,34 +6855,34 @@ namespace teal {
             return res;
         }
 
-        teal::json to_json() const {
+        json to_json() const {
             if(is_undefined_ref()) {
-                return teal::json{};
+                return json{};
             } else if(is_string_ref()) {
-                return teal::json{as_string()};
+                return json{as_string()};
             } else if(is_bool_ref()) {
-                return teal::json{as_bool()};
+                return json{as_bool()};
             } else if(is_char_ref()) {
                 std::string s{}; s += as_char();
-                return teal::json{s};
+                return json{s};
             } else if(is_wchar_ref()) {
                 std::wstring s{}; s += as_wchar();
-                return teal::json{s};
+                return json{s};
             } else if(is_wstring_ref()) {
-                return teal::json{as_wstring()};
+                return json{as_wstring()};
             } else if(is_any_int_number()) {
-                return teal::json{cast_num_to_num<std::int64_t>()};
+                return json{cast_num_to_num<std::int64_t>()};
             } else if(is_any_fp_number()) {
-                return teal::json{cast_num_to_num<long double>()};
+                return json{cast_num_to_num<long double>()};
             } else if(is_array_ref()) {
-                teal::json res{};
+                json res{};
                 res.become_array();
                 for(auto &&v: as_array()) {
                     res.push_back(v.to_json());
                 }
                 return res;
             } else if(is_object_ref()) {
-                teal::json res{};
+                json res{};
                 res.become_object();
                 object_t const &o{as_object()};
                 for(auto &&p: o) {
@@ -6893,7 +6895,7 @@ namespace teal {
             return {};
         }
 
-        valbox &from_json(teal::json const &v) {
+        valbox &from_json(json const &v) {
             valbox &vr{deref()};
             vr.pointed_box_.reset();
             if(v.is_float()) {
@@ -6973,7 +6975,7 @@ namespace teal {
                     vr.box_->user_func_ = false;
                 }
                 vr.pointed_box_.reset();
-                v.traverse_object([&](std::string const &key, teal::json const &val) {
+                v.traverse_object([&](std::string const &key, json const &val) {
                     vr.as_object()[key].from_json(val);
                 });
             } else if(v.is_null()) {

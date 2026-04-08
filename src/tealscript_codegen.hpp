@@ -36,7 +36,7 @@ namespace teal {
     class code_generator {
     public:
         void chop(
-            teal::json const &ast
+            json const &ast
             , str_map_t<std::shared_ptr<input_cell>> &input_cells
             , str_map_t<std::string> &input_names_to_instances_mapping
             , str_map_t<worker_cell_definition_info> &worker_cells_templates
@@ -49,9 +49,9 @@ namespace teal {
 #endif
         ) {
             for(std::size_t i = 0; i < ast.size(); ++i) {
-                teal::json const &cur{ast[i]};
+                json const &cur{ast[i]};
                 if(cur["subtype"].as_string() == "cell_definition") {
-                    teal::json const &cur_cnt{cur["content"]};
+                    json const &cur_cnt{cur["content"]};
                     if(worker_cells_templates.find(cur_cnt["cell_name"].as_string()) != worker_cells_templates.end()) {
                         throw compilation_error{
                             cur["loc"]["line"].try_as_number(),
@@ -70,7 +70,7 @@ namespace teal {
                     worker_bodies[wc.type_name()] = cb;
                     worker_cells_templates[wc.type_name()] = wc;
                 } else if(cur["subtype"].as_string() == "cell_inst") {
-                    teal::json const &cur_cnt{cur["content"]};
+                    json const &cur_cnt{cur["content"]};
                     if(array_contains_str(cur_cnt["cell_flags"], "input")) {
                         std::string cnm{cur_cnt["cell_name"].as_string()};
                         std::string inm{cur_cnt["input_name"].as_string()};
@@ -170,7 +170,7 @@ namespace teal {
                         wc_ptr->set_type_name(cur_cnt["cell_type"].as_string());
                         if(cur_cnt["args"].key_exists("content")) {
                             for(std::size_t ai = 0; ai < cur_cnt["args"]["content"].size(); ++ai) {
-                                teal::json const &arg_cnt{cur_cnt["args"]["content"][ai]};
+                                json const &arg_cnt{cur_cnt["args"]["content"][ai]};
                                 if(arg_cnt["subtype"].as_string() == "identifier") {
                                     wc_ptr->set_act_arg_source(ai, arg_cnt["content"].as_string());
                                 } else {
@@ -189,7 +189,7 @@ namespace teal {
                         };
                     }
                 } else if(cur["subtype"].as_string() == "function_definition") {
-                    teal::json const &cur_cnt{cur["content"]};
+                    json const &cur_cnt{cur["content"]};
                     std::string func_name{cur_cnt["function_name"].as_string()};
                     if(is_keyword(str_util::from_utf8(func_name))) {
                         throw compilation_error{
@@ -222,7 +222,7 @@ namespace teal {
         }
 
     private:
-        static bool array_contains_str(teal::json const &arr, std::string const &s) {
+        static bool array_contains_str(json const &arr, std::string const &s) {
             if(!arr.is_array()) {
                 return false;
             }
@@ -234,7 +234,7 @@ namespace teal {
             return false;
         }
 
-        statement_ptr chop_statement(teal::json const &ast) {
+        statement_ptr chop_statement(json const &ast) {
             statement_ptr res{};
             if(
                 ast.is_object() &&
@@ -295,7 +295,7 @@ namespace teal {
             return res;
         }
 
-        statement_ptr chop_compound_statement(teal::json const &ast) {
+        statement_ptr chop_compound_statement(json const &ast) {
             statement_ptr res{std::make_shared<statement_compound>()};
             res->set_loc(ast["loc"]["line"].try_as_number(), ast["loc"]["col"].try_as_number());
             for(std::size_t i = 0; i < ast["content"].size(); ++i) {
@@ -311,13 +311,13 @@ namespace teal {
             return res;
         }
 
-        statement_ptr chop_expression_statement(teal::json const &ast) {
+        statement_ptr chop_expression_statement(json const &ast) {
             auto res {std::make_shared<statement_expr>(chop_expression(ast["content"]))};
             res->set_loc(ast["loc"]["line"].try_as_number(), ast["loc"]["col"].try_as_number());
             return res;
         }
 
-        expr_ptr chop_expression(teal::json const &ast) {
+        expr_ptr chop_expression(json const &ast) {
             static std::unordered_set<std::string> const hobi{"hex", "oct", "bin", "int"};
 
             struct frame {
@@ -352,7 +352,7 @@ namespace teal {
                     continue;
                 }
                 if((*stack.back().ast)["subtype"].as_string() == "binop") {
-                    teal::json const &cnt{(*stack.back().ast)["content"]};
+                    json const &cnt{(*stack.back().ast)["content"]};
                     if(stack.back().phase == 0) {
                         if(cnt["left"].is_null() || cnt["right"].is_null()) {
                             throw compilation_error{
@@ -383,7 +383,7 @@ namespace teal {
                         stack.pop_back();
                     }
                 } else if((*stack.back().ast)["subtype"].as_string() == "ternop") {
-                    teal::json const &cnt{(*stack.back().ast)["content"]};
+                    json const &cnt{(*stack.back().ast)["content"]};
                     if(stack.back().phase == 0) {
                         if(
                             cnt["condition"].is_null() ||
@@ -424,7 +424,7 @@ namespace teal {
                         stack.pop_back();
                     }
                 } else if((*stack.back().ast)["subtype"].as_string() == "prefix") {
-                    teal::json const &cnt{(*stack.back().ast)["content"]};
+                    json const &cnt{(*stack.back().ast)["content"]};
                     if(stack.back().phase == 0) {
                         if(cnt["operand"].is_null() || cnt["oper_enum"].is_null()) {
                             throw compilation_error{
@@ -449,7 +449,7 @@ namespace teal {
                         stack.pop_back();
                     }
                 } else if((*stack.back().ast)["subtype"].as_string() == "postfix") {
-                    teal::json const &cnt{(*stack.back().ast)["content"]};
+                    json const &cnt{(*stack.back().ast)["content"]};
                     if(stack.back().phase == 0) {
                         if(cnt["operand"].is_null() || cnt["oper_enum"].is_null()) {
                             throw compilation_error{
@@ -474,7 +474,7 @@ namespace teal {
                         stack.pop_back();
                     }
                 } else if((*stack.back().ast)["subtype"].as_string() == "identifier") {
-                    teal::json const &cnt{(*stack.back().ast)["content"]};
+                    json const &cnt{(*stack.back().ast)["content"]};
                     stack.back().res = std::make_shared<sym_expression>(cnt.as_string());
                     stack.back().res->set_loc(
                         (*stack.back().ast)["loc"]["line"].try_as_number(),
@@ -483,7 +483,7 @@ namespace teal {
                     stack_res = std::move(stack.back());
                     stack.pop_back();
                 } else if((*stack.back().ast)["subtype"].as_string() == "literal") {
-                    teal::json const &cnt{(*stack.back().ast)["content"]};
+                    json const &cnt{(*stack.back().ast)["content"]};
                     if((*stack.back().ast)["literal"].as_string() == "flt") {
                         stack.back().res = std::make_shared<primary_expression>(cnt.as_longdouble());
                         stack.back().res->set_loc(
@@ -558,7 +558,7 @@ namespace teal {
                         stack.pop_back();
                     }
                 } else if((*stack.back().ast)["subtype"].as_string() == "func_call") {
-                    teal::json const &cnt{(*stack.back().ast)["content"]};
+                    json const &cnt{(*stack.back().ast)["content"]};
                     if(stack.back().phase == 0) {
                         if(cnt["func"].is_null()) {
                             throw compilation_error{
@@ -587,7 +587,7 @@ namespace teal {
             return stack_res.res;
         }
 
-        std::vector<expr_ptr> func_call_args(teal::json const &ast) {
+        std::vector<expr_ptr> func_call_args(json const &ast) {
             std::vector<expr_ptr> res{};
             for(std::size_t i = 0; i < ast.size(); ++i) {
                 res.push_back(chop_expression(ast[i]));

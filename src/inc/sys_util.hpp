@@ -91,7 +91,7 @@ namespace teal::sys_util {
 #endif
     }
 
-    std::string error_str(int64_t e) {
+    static std::string error_str(int64_t e) {
 #if defined(PLATFORM_WINDOWS)
         DWORD errorMessageID{(DWORD)e};
         if(errorMessageID == 0) {
@@ -208,7 +208,7 @@ namespace teal::sys_util {
             if(pc == 0) {
                 break;
             }
-            ss << "0x" << teal::str_util::utoa(pc, 16);
+            ss << "0x" << teal::str_util::utoa<std::string>(pc, 16);
 
             char sym[256];
             if(unw_get_proc_name(&cursor, sym, sizeof(sym), &offset) == 0) {
@@ -218,7 +218,7 @@ namespace teal::sys_util {
                 if (status == 0) {
                     sym_str = demangled;
                 }
-                ss << ' ' << sym_str << "+0x" << teal::str_util::utoa(offset, 16) << '\n';
+                ss << ' ' << sym_str << "+0x" << teal::str_util::utoa<std::string>(offset, 16) << '\n';
             } else {
                 ss << " -- error: unable to obtain symbol name for this frame\n";
             }
@@ -549,7 +549,7 @@ namespace teal::sys_util {
         return result;
     }
 
-    bool increase_stack(rlim_t const requiredStackSize) {
+    static bool increase_stack(rlim_t const requiredStackSize) {
         bool res{false};
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
         struct rlimit currentLimit;

@@ -1609,6 +1609,10 @@ namespace teal {
             }
         }
 
+        void load_string(std::string const &src) {
+            load_source_string(src);
+        }
+
         void loading_complete() {
             std::unique_lock l{workers_mtp_};
             for(auto &&wcp: worker_cells_) {
@@ -2211,7 +2215,7 @@ namespace teal {
                                 resp["t"] = vb.type_to_str(vb.val_or_pointed_type());
                                 if(vb.is_class_ref()) {
                                     std::shared_lock l{obj_ser_mtp_};
-                                    if(obj_svc_.contains(vb.class_name()) && obj_svc_[vb.class_name()].serializer) {
+                                    if(obj_svc_.find(vb.class_name()) != obj_svc_.end() && obj_svc_[vb.class_name()].serializer) {
                                         auto s{obj_svc_[vb.class_name()].serializer(vb)};
                                         l.unlock();
                                         if(s) {
