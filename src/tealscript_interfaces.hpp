@@ -57,12 +57,14 @@ namespace teal {
         virtual void start_net_server(
             std::string const &/*bind_addr*/,
             std::uint16_t /*port*/,
-            std::size_t /*num_threads*/
+            std::size_t /*num_threads*/,
+            bool /*no_delay*/
         ) = 0;
         virtual void stop_net_server() = 0;
         virtual bool net_server_running() const = 0;
 
 #ifdef TEAL_USE_EXTERNAL_VALUES
+        virtual void set_external_cells_nodelay(bool) = 0;
         virtual void set_external_cells_update_interval(long double /*seconds*/) = 0;
         virtual long double external_cells_update_interval() const = 0;
 

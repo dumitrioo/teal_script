@@ -42,7 +42,7 @@ namespace teal {
             return tns_.started();
         }
 
-        void start(const std::string &address, std::uint16_t port, std::size_t num_work_threads) {
+        void start(const std::string &address, std::uint16_t port, std::size_t num_work_threads, bool no_delay = false) {
             if(tns_.started()) { return; }
 #if 0
             tns_.set_on_new_connection([](conn_id_t conn_id) {
@@ -64,7 +64,7 @@ namespace teal {
             tns_.set_on_connection_closed([this](conn_id_t conn_id) {
                 remove_muxerset_by_conn_id(conn_id);
             });
-            tns_.start(address, port, num_work_threads);
+            tns_.start(address, port, num_work_threads, no_delay);
         }
 
         void stop() {
@@ -179,14 +179,14 @@ namespace teal {
             on_data_arrived_ = std::move(fun);
         }
 
-        void start(std::string host, std::uint16_t port) {
+        void start(std::string host, std::uint16_t port, bool no_delay = false) {
             connect_ = true;
             host_ = host;
             port_ = port;
             tnc_.set_on_data_arrived([&]() {
                 notify_on_data_arrived();
             });
-            tnc_.connect(host, port);
+            tnc_.connect(host, port, no_delay);
         }
 
         void stop() {

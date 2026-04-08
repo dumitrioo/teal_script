@@ -2179,7 +2179,7 @@ namespace teal {
             outputs_.clear();
         }
 
-        void start_net_server(std::string const &bind_addr, std::uint16_t port, std::size_t num_threads) override {
+        void start_net_server(std::string const &bind_addr, std::uint16_t port, std::size_t num_threads, bool no_delay) override {
             std::shared_lock l{ppserver_mtp_};
             if(!ppserver_) {
                 l.unlock();
@@ -2249,7 +2249,7 @@ namespace teal {
                 }
             }
             if(!ppserver_->started()) {
-                ppserver_->start(bind_addr, port, num_threads);
+                ppserver_->start(bind_addr, port, num_threads, no_delay);
             }
         }
 
@@ -2264,6 +2264,10 @@ namespace teal {
         }
 
 #ifdef TEAL_USE_EXTERNAL_VALUES
+        void set_external_cells_nodelay(bool val) override {
+            ext_cells_nodelay_ = val;
+        }
+
         void set_external_cells_update_interval(long double seconds) override {
             ext_cells_refresh_interval_nanos_ = seconds * 1'000'000'000.0L;
         }
@@ -2509,6 +2513,7 @@ namespace teal {
         std::thread ext_cells_processor_{};
 
         uint64_t ext_cells_refresh_interval_nanos_{0};
+        bool ext_cells_nodelay_{false};
         mutable shared_mutex pp_clients_mtp_{};
         std::map<std::string, std::map<int, std::shared_ptr<pp_client>>> pp_clients_{};
 
@@ -2530,7 +2535,7 @@ namespace teal {
                         }
                     }
                 });
-                res->start(ecp->remote_host(), *ecp->remote_url().port());
+                res->start(ecp->remote_host(), *ecp->remote_url().port(), ext_cells_nodelay_);
                 if(!res->connected()) {
                     res.reset();
                 }

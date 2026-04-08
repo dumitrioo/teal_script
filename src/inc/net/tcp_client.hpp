@@ -39,7 +39,7 @@ namespace teal {
             on_data_arrived_ = fun;
         }
 
-        bool connect(std::string host, std::uint16_t port) {
+        bool connect(std::string host, std::uint16_t port, bool no_delay = false) {
             std::unique_lock cl{cnn_mtp_};
             if(connected()) {
                 return true;
@@ -52,7 +52,7 @@ namespace teal {
                     sckt_.connect(host, port) &&
                     sckt_.make_nosigpipe() &&
                     sckt_.make_nonblocking() &&
-                    sckt_.make_nodelay() &&
+                    (!no_delay || sckt_.make_nodelay()) &&
                     sckt_.set_keepalive(true) &&                                                                                                                                         sckt_.ok() &&
                     poller_.add_event(sckt_.handle(), net::POLL_EVENT_IN | net::POLL_EVENT_ET)
                 ) {
@@ -60,14 +60,14 @@ namespace teal {
                         [this]() {
                             while(!termination() && !conn_broken_.load(std::memory_order_acquire)) {
                                 try {
-                                    std::vector<net::poll_event> evs{poller_.wait(10, timespec_wrapper{0.1})};
+                                    std::vector<net::poll_event> evs{poller_.wait(1, timespec_wrapper{0.1})};
                                     if(!evs.empty()) {
                                         if((evs[0].events & net::POLL_EVENT_IN) == net::POLL_EVENT_IN) {
                                             int bavl{sckt_.bytes_available()};
                                             if(bavl < 0) {
                                                 conn_broken_ = true;
                                             } else if(bavl > 0) {
-                                                auto dv{net_receive(std::max<int>(bavl, 4 * 1024))};
+                                                auto dv{net_receive(bavl)};
                                                 if(dv) {
                                                     if(!dv->empty()) {
                                                         push_buff_data(std::move(*dv));
@@ -85,9 +85,6 @@ namespace teal {
                                     }
                                 } catch (...) {
                                     conn_broken_ = true;
-                                }
-                                if(conn_broken_) {
-                                    break;
                                 }
                             }
                         }

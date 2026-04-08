@@ -56,13 +56,14 @@ namespace teal {
             on_connection_closed_ = std::move(on_connection_closed);
         }
 
-        void start(const std::string &address, std::uint16_t port, std::size_t num_work_threads) {
+        void start(const std::string &address, std::uint16_t port, std::size_t num_work_threads, bool no_delay = false) {
             if(conn_broken_) {
                 stop();
             }
             std::unique_lock l{mt_mtp_};
             conn_broken_ = false;
             stop_accept_ = false;
+            no_delay_ = no_delay;
             if(!thr_.joinable() && jobs_buffer_workers_.empty()) {
                 unterminate();
                 poller_.create();
@@ -87,9 +88,9 @@ namespace teal {
                     }
                     thr_ = std::thread{
                         [this]() {
-                            while(!termination()) {
+                            while(!termination() && !conn_broken_.load(std::memory_order_acquire)) {
                                 try {
-                                    std::vector<net::poll_event> events{poller_.wait(128, timespec_wrapper{0.1})};
+                                    std::vector<net::poll_event> events{poller_.wait(2048, timespec_wrapper{0.1})};
                                     std::size_t evts_size{events.size()};
                                     for(std::size_t curr_evt_indx{0}; curr_evt_indx < evts_size; ++curr_evt_indx) {
                                         if(termination()) {
@@ -106,9 +107,6 @@ namespace teal {
                                     }
                                 } catch (...) {
                                     conn_broken_ = true;
-                                }
-                                if(conn_broken_) {
-                                    break;
                                 }
                             }
                         }
@@ -205,10 +203,14 @@ namespace teal {
                     }
                     if(new_conn) {
                         if(
-                            !new_conn->sckt_.make_nonblocking() || !new_conn->sckt_.make_nodelay() ||
-                            !new_conn->sckt_.make_nosigpipe() || !new_conn->sckt_.set_linger(true, 0) ||
-                            !new_conn->sckt_.set_keepalive(true) || !new_conn->sckt_.set_tcp_keepidle(90) ||
-                            !new_conn->sckt_.set_tcp_keepitvl(30) || !new_conn->sckt_.set_tcp_keepcnt(10)
+                            !new_conn->sckt_.make_nonblocking() ||
+                            !(!no_delay_ || new_conn->sckt_.make_nodelay()) ||
+                            !new_conn->sckt_.make_nosigpipe() ||
+                            !new_conn->sckt_.set_linger(true, 0) ||
+                            !new_conn->sckt_.set_keepalive(true) ||
+                            !new_conn->sckt_.set_tcp_keepidle(90) ||
+                            !new_conn->sckt_.set_tcp_keepitvl(30) ||
+                            !new_conn->sckt_.set_tcp_keepcnt(10)
                         ) {
                             new_conn.reset();
                         }
@@ -241,7 +243,7 @@ namespace teal {
                     if(bavl <= 0) {
                         need_to_rm_sock = true;
                     } else {
-                        auto dv{curr_conn->receive(std::max<int>(bavl, 4 * 1024))};
+                        auto dv{curr_conn->receive(bavl)};
                         if(dv) {
                             if(!dv->empty()) {
                                 curr_conn->push_buff_data(std::move(*dv));
@@ -512,6 +514,7 @@ namespace teal {
 
         std::atomic_bool stop_accept_{false};
         std::atomic_bool conn_broken_{false};
+        bool no_delay_{false};
     };
 
 }
