@@ -5,11 +5,6 @@
 #include <iostream>
 
 #include <tealscript_runtime.hpp>
-#include <tealscript_net.hpp>
-#include "../src/inc/commondefs.hpp"
-#include "../src/inc/net/url.hpp"
-#include "../src/inc/net/net_utils.hpp"
-#include "../src/inc/net/net_data_transfer.hpp"
 
 // Just a regular C++ class to be added as an <<object type>> to the scripting runtime
 class example_object {

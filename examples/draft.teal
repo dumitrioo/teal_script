@@ -1,3 +1,5 @@
+'host_provided_data' host_provided_data;
+
 function undef_test() {
     println("undef_test()");
     return 0;
@@ -45,10 +47,10 @@ timestamp_value current_time();
 extern 'dvqp://127.0.0.1:43987/sample_val' sample_val_from_net;
 extern 'dvqp://127.0.0.1:43987/current_time' time_from_net;
 
-my_drafts(exv, ts) {
+my_drafts(exv, ts, hostdata) {
+    hostdata.serialize5(4).println();
+
     ts.to_string().println();
-    sleep(0.098);
-    return 0;
 
     if(exv != this.exv) {
         this.exv = exv;
@@ -232,6 +234,7 @@ my_drafts(exv, ts) {
     }
 
     exit();
+    return 0;
 }
 
-my_drafts drf(sample_val_from_net, time_from_net);
+my_drafts drf(sample_val_from_net, time_from_net, host_provided_data);

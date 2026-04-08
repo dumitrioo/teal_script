@@ -518,7 +518,7 @@ namespace teal::str_util {
         return static_cast<uint32_t>(c) < 128 && digits[c] < 16;
     }
 
-    std::int64_t utf8_to_ucs(void const *ut8, int *increment) {
+    static std::int64_t utf8_to_ucs(void const *ut8, int *increment) {
         const unsigned char *utf8{reinterpret_cast<const unsigned char *>(ut8)};
 
         if(utf8[0] < 0x80) {
@@ -595,7 +595,7 @@ namespace teal::str_util {
         return utf8[0];
     }
 
-    std::int64_t utf8_to_ucs_maxlen(void const *ut8, std::int64_t max_len, int *increment) {
+    static std::int64_t utf8_to_ucs_maxlen(void const *ut8, std::int64_t max_len, int *increment) {
         std::uint8_t const *utf8{reinterpret_cast<std::uint8_t const *>(ut8)};
 
         if(max_len < 1) {
@@ -716,7 +716,7 @@ namespace teal::str_util {
     }
 
 
-    int ucs_to_utf8(std::uint64_t c, void *ut8) {
+    static int ucs_to_utf8(std::uint64_t c, void *ut8) {
         std::uint8_t *utf8{(std::uint8_t *)ut8};
         if(c <= 0x7fULL) {
             utf8[0] = (std::uint8_t) c & 0x7f;
@@ -787,13 +787,13 @@ namespace teal::str_util {
         return 0;
     }
 
-    std::string ucs_to_utf8(std::uint64_t c) {
+    static std::string ucs_to_utf8(std::uint64_t c) {
         std::array<char, 32> buff{};
         int num{ucs_to_utf8(c, &buff[0])};
         return std::string{buff.begin(), buff.begin() + num};
     }
 
-    int ucs_to_utf8_maxlen(std::uint64_t c, void *ut8, std::int64_t max_len) {
+    static int ucs_to_utf8_maxlen(std::uint64_t c, void *ut8, std::int64_t max_len) {
         std::uint8_t *utf8{(std::uint8_t *)ut8};
         if(c <= 0x7fULL) {
             if(max_len < 2) { return 0; }

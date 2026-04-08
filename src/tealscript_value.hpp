@@ -941,6 +941,8 @@ namespace teal {
                 dr.box_->type_ = type::ARRAY;
                 dr.box_->class_.clear();
                 dr.box_->pointed_type_ = type::UNDEFINED;
+                dr.box_->func_name_.clear();
+                dr.box_->user_func_ = false;
                 dr.pointed_box_.reset();
             }
             return *this;
@@ -955,6 +957,8 @@ namespace teal {
                 dr.box_->type_ = type::OBJECT;
                 dr.box_->class_.clear();
                 dr.box_->pointed_type_ = type::UNDEFINED;
+                dr.box_->func_name_.clear();
+                dr.box_->user_func_ = false;
                 dr.pointed_box_.reset();
             }
             return *this;
@@ -6026,6 +6030,7 @@ namespace teal {
                             break;
                         case type::ARRAY:
                             thisref.box_->value_ = thatref.box_->value_;
+                            thisref.pointed_box_ = thatref.pointed_box_;
                             break;
                         case type::STRING: {
                                 array_t &thisarr{thisref.as_array()};
@@ -6196,6 +6201,8 @@ namespace teal {
                     ref.box_->type_ = type::UNDEFINED;
                     ref.box_->pointed_type_ = type::UNDEFINED;
                     ref.box_->class_.clear();
+                    ref.box_->func_name_.clear();
+                    ref.box_->user_func_ = false;
                 }
                 ref.pointed_box_.reset();
             } else {
@@ -6889,14 +6896,54 @@ namespace teal {
         valbox &from_json(teal::json const &v) {
             valbox &vr{deref()};
             vr.pointed_box_.reset();
-            if(v.is_number()) {
-                vr.box_ = std::make_shared<box_data>(v.as_number(), type::S64);
-            } else if(v.is_float()) {
-                vr.box_ = std::make_shared<box_data>(v.as_longdouble(), type::LONG_DOUBLE);
+            if(v.is_float()) {
+                if(!vr.box_) {
+                    vr.box_ = std::make_shared<box_data>(v.as_longdouble(), type::LONG_DOUBLE);
+                } else {
+                    vr.box_->value_ = v.as_longdouble();
+                    vr.box_->type_ = type::LONG_DOUBLE;
+                    vr.box_->pointed_type_ = type::UNDEFINED;
+                    vr.box_->class_.clear();
+                    vr.box_->func_name_.clear();
+                    vr.box_->user_func_ = false;
+                }
+                vr.pointed_box_.reset();
+            } else if(v.is_number()) {
+                if(!vr.box_) {
+                    vr.box_ = std::make_shared<box_data>(v.as_number(), type::S64);
+                } else {
+                    vr.box_->value_ = v.as_number();
+                    vr.box_->type_ = type::S64;
+                    vr.box_->pointed_type_ = type::UNDEFINED;
+                    vr.box_->class_.clear();
+                    vr.box_->func_name_.clear();
+                    vr.box_->user_func_ = false;
+                }
+                vr.pointed_box_.reset();
             } else if(v.is_string()) {
-                vr.box_ = std::make_shared<box_data>(v.as_string(), type::STRING);
+                if(!vr.box_) {
+                    vr.box_ = std::make_shared<box_data>(v.as_string(), type::STRING);
+                } else {
+                    vr.box_->value_ = v.as_string();
+                    vr.box_->type_ = type::STRING;
+                    vr.box_->pointed_type_ = type::UNDEFINED;
+                    vr.box_->class_.clear();
+                    vr.box_->func_name_.clear();
+                    vr.box_->user_func_ = false;
+                }
+                vr.pointed_box_.reset();
             } else if(v.is_bool()) {
-                vr.box_ = std::make_shared<box_data>(v.as_boolean(), type::BOOL);
+                if(!vr.box_) {
+                    vr.box_ = std::make_shared<box_data>(v.as_boolean(), type::BOOL);
+                } else {
+                    vr.box_->value_ = v.as_boolean();
+                    vr.box_->type_ = type::BOOL;
+                    vr.box_->pointed_type_ = type::UNDEFINED;
+                    vr.box_->class_.clear();
+                    vr.box_->func_name_.clear();
+                    vr.box_->user_func_ = false;
+                }
+                vr.pointed_box_.reset();
             } else if(v.is_array()) {
                 if(!vr.box_) {
                     vr.box_ = std::make_shared<box_data>(array_t{}, type::ARRAY);
@@ -6905,7 +6952,10 @@ namespace teal {
                     vr.box_->type_ = type::ARRAY;
                     vr.box_->pointed_type_ = type::UNDEFINED;
                     vr.box_->class_.clear();
+                    vr.box_->func_name_.clear();
+                    vr.box_->user_func_ = false;
                 }
+                vr.pointed_box_.reset();
                 for(std::size_t i{0}; i < v.size(); ++i) {
                     valbox item{};
                     item.from_json(v[i]);
@@ -6919,12 +6969,15 @@ namespace teal {
                     vr.box_->type_ = type::OBJECT;
                     vr.box_->pointed_type_ = type::UNDEFINED;
                     vr.box_->class_.clear();
+                    vr.box_->func_name_.clear();
+                    vr.box_->user_func_ = false;
                 }
+                vr.pointed_box_.reset();
                 v.traverse_object([&](std::string const &key, teal::json const &val) {
-                    vr[key].from_json(val);
+                    vr.as_object()[key].from_json(val);
                 });
             } else if(v.is_null()) {
-                vr.box_ = std::make_shared<box_data>();
+                vr.become_undefined();
             }
             return *this;
         }

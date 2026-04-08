@@ -105,6 +105,7 @@ namespace teal {
             if(rt_ == nullptr) {
                 return;
             }
+            rt_->remove_object_services("timespec_wrapper");
             rt_->remove_function("timestamp");
             rt_->remove_function("gmtimestamp");
             rt_->remove_function("steady_clock");

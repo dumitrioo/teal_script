@@ -321,6 +321,19 @@ namespace teal {
             static std::unordered_set<std::string> const hobi{"hex", "oct", "bin", "int"};
 
             struct frame {
+                frame(
+                    json const *ast_arg = nullptr,
+                    expr_ptr res_arg = {},
+                    expr_ptr buf1_arg = {},
+                    expr_ptr buf2_arg = {},
+                    size_t phase_arg = 0
+                ):
+                    ast{ast_arg},
+                    res{res_arg},
+                    buf1{buf1_arg},
+                    buf2{buf2_arg},
+                    phase{phase_arg}
+                {}
                 json const *ast{nullptr};
                 expr_ptr res{};
                 expr_ptr buf1{};

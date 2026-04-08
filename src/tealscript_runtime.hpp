@@ -1016,6 +1016,16 @@ namespace teal {
                 return args[0];
             });
 
+            add_function("is_undefined", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                return args[0].is_undefined_ref();
+            });
+
+            add_function("is_defined", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                return !args[0].is_undefined_ref();
+            });
+
             add_function("replace_substr", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 2, 3)
                 if(args.size() == 2) {
@@ -1548,8 +1558,9 @@ namespace teal {
             terminate();
             stop_mt();
             stop_net_server();
+#ifdef TEAL_USE_EXTERNAL_VALUES
             stop_extcell_processing();
-
+#endif
             worker_cells_templates_.clear();
             global_constants_dictionary_.clear();
             global_functions_dictionary_.clear();
@@ -1684,30 +1695,26 @@ namespace teal {
             }
         }
 
+
+        void remove_object_services(std::string const &class_name) override {
+            std::unique_lock l{obj_ser_mtp_};
+            obj_svc_.erase(class_name);
+        }
+
         void add_object_serializer(
             std::string const &class_name,
             std::function<std::optional<std::string>(valbox const &)> const &fun
         ) override {
             std::unique_lock l{obj_ser_mtp_};
-            obj_ser_[class_name] = fun;
-        }
-
-        void remove_object_serializer(std::string const &class_name) override {
-            std::unique_lock l{obj_ser_mtp_};
-            obj_ser_.erase(class_name);
+            obj_svc_[class_name].serializer = fun;
         }
 
         void add_object_deserializer(
             std::string const &class_name,
             std::function<valbox(std::string const &, std::string const &)> const &fun
         ) override {
-            std::unique_lock l{obj_deser_mtp_};
-            obj_deser_[class_name] = fun;
-        }
-
-        void remove_object_deserializer(std::string const &class_name) override {
-            std::unique_lock l{obj_deser_mtp_};
-            obj_deser_.erase(class_name);
+            std::unique_lock l{obj_ser_mtp_};
+            obj_svc_[class_name].deserializer = fun;
         }
 
 
@@ -2204,8 +2211,8 @@ namespace teal {
                                 resp["t"] = vb.type_to_str(vb.val_or_pointed_type());
                                 if(vb.is_class_ref()) {
                                     std::shared_lock l{obj_ser_mtp_};
-                                    if(obj_ser_.contains(vb.class_name())) {
-                                        auto s{obj_ser_[vb.class_name()](vb)};
+                                    if(obj_svc_.contains(vb.class_name()) && obj_svc_[vb.class_name()].serializer) {
+                                        auto s{obj_svc_[vb.class_name()].serializer(vb)};
                                         l.unlock();
                                         if(s) {
                                             resp["v"]["c"] = vb.class_name();
@@ -2223,6 +2230,7 @@ namespace teal {
                                 return;
                             }
                         }
+#ifdef TEAL_USE_EXTERNAL_VALUES
                         {
                             auto it{extern_cells_.find(nme)};
                             if(it != extern_cells_.end()) {
@@ -2235,6 +2243,7 @@ namespace teal {
                                 return;
                             }
                         }
+#endif
                         ppserver_->send(conn_id, "<undefined>");
                     });
                 }
@@ -2472,9 +2481,15 @@ namespace teal {
         containers_ext dict_ext_{};
 
         mutable shared_mutex obj_ser_mtp_{};
-        std::map<std::string, std::function<std::optional<std::string>(valbox const &)>> obj_ser_{};
-        mutable shared_mutex obj_deser_mtp_{};
-        std::map<std::string, std::function<valbox(std::string const &, std::string const &)>> obj_deser_{};
+        // std::map<std::string, std::function<std::optional<std::string>(valbox const &)>> obj_ser_{};
+        // mutable shared_mutex obj_deser_mtp_{};
+        // std::map<std::string, std::function<valbox(std::string const &, std::string const &)>> obj_deser_{};
+        struct obj_services {
+            std::function<std::optional<std::string>(valbox const &)> serializer{nullptr};
+            std::function<valbox(std::string const &, std::string const &)> deserializer{nullptr};
+        };
+        std::map<std::string, obj_services> obj_svc_{};
+
 
         shared_mutex loaded_extensions_mtp_{};
         std::list<std::pair<std::shared_ptr<so>, extension_interface *>> loaded_extensions_{};
@@ -2546,8 +2561,8 @@ namespace teal {
                 case valbox::type::POINTER: break;
                 case valbox::type::CLASS:
                     if(resp["v"].is_object()) {
-                        std::shared_lock l{obj_deser_mtp_};
-                        v->set_value(obj_deser_[resp["v"]["c"].as_string()](
+                        std::shared_lock l{obj_ser_mtp_};
+                        v->set_value(obj_svc_[resp["v"]["c"].as_string()].deserializer(
                             resp["v"]["c"].as_string(),
                             resp["v"]["s"].as_string())
                         );
