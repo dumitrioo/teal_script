@@ -107,27 +107,19 @@ namespace teal {
         }
 
         std::shared_ptr<multiplexing> get_or_create_muxerset(conn_id_t conn_id) {
-            // std::shared_lock l{muxers_mtp_};
-            // std::shared_ptr<multiplexing> res{};
-            // auto it{muxers_.find(conn_id)};
-            // if(it != muxers_.end()) {
-            //     res = it->second;
-            // } else {
-            //     l.unlock();
-            //     std::unique_lock l1{muxers_mtp_};
-            //     res = muxers_[conn_id];
-            //     if(!res) {
-            //         res = std::make_shared<multiplexing>();
-            //         muxers_[conn_id] = res;
-            //     }
-            // }
-            // return res;
+            std::shared_lock l{muxers_mtp_};
             std::shared_ptr<multiplexing> res{};
-            std::unique_lock l{muxers_mtp_};
-            res = muxers_[conn_id];
-            if(!res) {
-                res = std::make_shared<multiplexing>();
-                muxers_[conn_id] = res;
+            auto it{muxers_.find(conn_id)};
+            if(it != muxers_.end()) {
+                res = it->second;
+            } else {
+                l.unlock();
+                std::unique_lock l1{muxers_mtp_};
+                res = muxers_[conn_id];
+                if(!res) {
+                    res = std::make_shared<multiplexing>();
+                    muxers_[conn_id] = res;
+                }
             }
             return res;
         }
@@ -247,8 +239,6 @@ namespace teal {
         teal_net_client tnc_{};
 
         std::shared_mutex callback_mtp_{};
-        // std::function<void()> on_conn_established_{nullptr};
-        // std::function<void()> on_conn_closed_{nullptr};
         std::function<void(pp_client *)> on_data_arrived_{nullptr};
 
         std::shared_mutex muxing_mtp_{};

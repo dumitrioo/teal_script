@@ -2485,9 +2485,6 @@ namespace teal {
         containers_ext dict_ext_{};
 
         mutable shared_mutex obj_ser_mtp_{};
-        // std::map<std::string, std::function<std::optional<std::string>(valbox const &)>> obj_ser_{};
-        // mutable shared_mutex obj_deser_mtp_{};
-        // std::map<std::string, std::function<valbox(std::string const &, std::string const &)>> obj_deser_{};
         struct obj_services {
             std::function<std::optional<std::string>(valbox const &)> serializer{nullptr};
             std::function<valbox(std::string const &, std::string const &)> deserializer{nullptr};
@@ -2561,9 +2558,9 @@ namespace teal {
                 case valbox::type::FLOAT: v->set_value((float)str_util::atof(resp["v"].as_string())); break;
                 case valbox::type::DOUBLE: v->set_value((double)str_util::atof(resp["v"].as_string())); break;
                 case valbox::type::LONG_DOUBLE: v->set_value(str_util::atof(resp["v"].as_string())); break;
-                case valbox::type::VEC4: break;
-                case valbox::type::MAT4: break;
-                case valbox::type::POINTER: break;
+                case valbox::type::VEC4: break; // TODO:
+                case valbox::type::MAT4: break; // TODO:
+                case valbox::type::POINTER: break; // TODO:
                 case valbox::type::CLASS:
                     if(resp["v"].is_object()) {
                         std::shared_lock l{obj_ser_mtp_};
@@ -2576,13 +2573,13 @@ namespace teal {
                     }
                     break;
                 case valbox::type::FUNC: break;
-                case valbox::type::ARRAY: break;
-                case valbox::type::OBJECT: break;
+                case valbox::type::ARRAY: break; // TODO:
+                case valbox::type::OBJECT: break; // TODO:
                 case valbox::type::STRING: v->set_value(resp["v"].as_string()); break;
                 case valbox::type::WSTRING: v->set_value(resp["v"].as_wstring()); break;
                 case valbox::type::UNDEFINED: v->set_value(valbox{valbox_no_initialize::dont_do_it}); break;
-                case valbox::type::VALBOX: break;
-                default: break; // throw std::runtime_error{"operation not applicable"};
+                case valbox::type::VALBOX: break; // TODO:
+                default: break;  // TODO:
             }
         }
 

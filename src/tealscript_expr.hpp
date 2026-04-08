@@ -869,7 +869,7 @@ namespace teal {
                 /* ADDASSIGN */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-                    bool old{ctx->set_create_if_not_exists(true)}; //
+                    bool old{ctx->set_create_if_not_exists(true)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     this_->lval_->reset_primary();

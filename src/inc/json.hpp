@@ -1463,8 +1463,11 @@ namespace teal {
                 newline = "\n";
                 space = " ";
             }
-            // return serialize_actual5(use_formatting, indent, newline, space, 0);
+#if defined(JSON_USE_NONRECURSIVE_SERIALIZATION)
             return serialize_actual5_nr(this, use_formatting, indent, newline, space, 0);
+#else
+            return serialize_actual5(use_formatting, indent, newline, space, 0);
+#endif
         }
 
         std::vector<std::uint8_t> bserialize() const {
@@ -1677,59 +1680,8 @@ namespace teal {
                 throw json_error{"json error: invalid json"};
             }
         }
-
-        std::string serialize_actual5(bool use_formatting, std::string indent, std::string newline, std::string space, int level) const {
-            std::string prefix{};
-            if(use_formatting) {
-                for(int l{0}; l < level; ++l) { prefix += indent; }
-            }
-            if(t_ == jo_null) {
-                return "null";
-            } else if(t_ == jo_int) {
-                return str_util::itoa<std::string>(as<std::int64_t>());
-            } else if(t_ == jo_flt) {
-                return str_util::ftoa(as<long double>(), std::numeric_limits<long double>::digits10);
-            } else if(t_ == jo_bool) {
-                return as<bool>() ? "true" : "false";
-            } else if(t_ == jo_string) {
-                return std::string{"\""} + detail::escape(as<std::string>()) + std::string{"\""};
-            } else if(t_ == jo_object) {
-                o_t const &o{as<o_t>()};
-                std::string res{std::string{"{"} + (as<o_t>().size() ? newline : "")};
-                std::string comma{","};
-                std::size_t i{0};
-                for(auto &&p: o) {
-                    ++i;
-                    if(!detail::is_ident(p.first)) {
-                        res += prefix + indent + std::string{"\""} + p.first + "\"";
-                    } else {
-                        res += prefix + indent + p.first;
-                    }
-                    res += std::string() + ":" + space;
-                    res += p.second.serialize_actual5(use_formatting, indent, newline, space, level + 1);
-                    res += comma + (i < as<o_t>().size() ? newline : "");
-                }
-                res += (i > 0 ? newline + prefix : "") + "}";
-                return res;
-            } else if(t_ == jo_array) {
-                a_t const &a{as<a_t>()};
-                std::string res{std::string{"["} + (a.size() ? newline : "")};
-                std::string comma{","};
-                std::int64_t max_ind{max_array_index()};
-                std::int64_t i{0};
-                for(; i <= max_ind; ++i) {
-                    res += prefix + indent;
-                    res += a.at(i).serialize_actual5(use_formatting, indent, newline, space, level + 1);
-                    res += comma + (i - 1 < max_ind ? newline : "");
-                }
-                res += (i > 0 ? prefix : "") + "]";
-                return res;
-            } else {
-                throw json_error{"json error: invalid json"};
-            }
-        }
-
-        static std::string serialize_actual5_nr(json const *this_, bool use_formatting, std::string indent, std::string newline, std::string space, int level) {
+#if defined(JSON_USE_NONRECURSIVE_SERIALIZATION)
+        static std::string serialize_actual5(json const *this_, bool use_formatting, std::string indent, std::string newline, std::string space, int level) {
             auto prefix{[use_formatting, indent](int lvl) {
                 std::string prfx{};
                 if(use_formatting) {
@@ -1833,7 +1785,58 @@ namespace teal {
             }
             return stack_res.result_.str();
         }
-
+#else
+        std::string serialize_actual5(bool use_formatting, std::string indent, std::string newline, std::string space, int level) const {
+            std::string prefix{};
+            if(use_formatting) {
+                for(int l{0}; l < level; ++l) { prefix += indent; }
+            }
+            if(t_ == jo_null) {
+                return "null";
+            } else if(t_ == jo_int) {
+                return str_util::itoa<std::string>(as<std::int64_t>());
+            } else if(t_ == jo_flt) {
+                return str_util::ftoa(as<long double>(), std::numeric_limits<long double>::digits10);
+            } else if(t_ == jo_bool) {
+                return as<bool>() ? "true" : "false";
+            } else if(t_ == jo_string) {
+                return std::string{"\""} + detail::escape(as<std::string>()) + std::string{"\""};
+            } else if(t_ == jo_object) {
+                o_t const &o{as<o_t>()};
+                std::string res{std::string{"{"} + (as<o_t>().size() ? newline : "")};
+                std::string comma{","};
+                std::size_t i{0};
+                for(auto &&p: o) {
+                    ++i;
+                    if(!detail::is_ident(p.first)) {
+                        res += prefix + indent + std::string{"\""} + p.first + "\"";
+                    } else {
+                        res += prefix + indent + p.first;
+                    }
+                    res += std::string() + ":" + space;
+                    res += p.second.serialize_actual5(use_formatting, indent, newline, space, level + 1);
+                    res += comma + (i < as<o_t>().size() ? newline : "");
+                }
+                res += (i > 0 ? newline + prefix : "") + "}";
+                return res;
+            } else if(t_ == jo_array) {
+                a_t const &a{as<a_t>()};
+                std::string res{std::string{"["} + (a.size() ? newline : "")};
+                std::string comma{","};
+                std::int64_t max_ind{max_array_index()};
+                std::int64_t i{0};
+                for(; i <= max_ind; ++i) {
+                    res += prefix + indent;
+                    res += a.at(i).serialize_actual5(use_formatting, indent, newline, space, level + 1);
+                    res += comma + (i - 1 < max_ind ? newline : "");
+                }
+                res += (i > 0 ? prefix : "") + "]";
+                return res;
+            } else {
+                throw json_error{"json error: invalid json"};
+            }
+        }
+#endif
         void bserialize_actual(teal::serializer &ser) const {
             if(!type_valid()) {
                 throw json_error{"json error: invalid state"};
@@ -1986,8 +1989,7 @@ namespace teal {
         any v_{};
         type t_{jo_null};
 
-        static inline std::wstring const parse_rules_5{
-LR"(
+        static inline std::wstring const parse_rules_5{LR"(
 #rd|'\"'>>str;
 str|'\"'>><str|'\\'>>stre|$df>>str;
 stre|$df>>str;
@@ -2075,8 +2077,7 @@ false|$df>>^fal|[$_:alnum:]>>id|$ef>>^fal;
 #rd|']'>><];
 #rd|'{'>><{;
 #rd|'}'>><};
-)"
-        };
+        )"};
 
         bool type_valid() const {
             return
