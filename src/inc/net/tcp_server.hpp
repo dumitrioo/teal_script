@@ -98,11 +98,11 @@ namespace teal {
                                         }
                                         if(lsk_.handle() == events[curr_evt_indx].data.fd) {
                                             if(!stop_accept_.load(std::memory_order_acquire)) {
-                                                insert_job([this](){ add_new_conn(); });
+                                                enqueue_job([this](){ add_new_conn(); });
                                             }
                                         } else {
                                             auto e{events[curr_evt_indx]};
-                                            insert_job([this, e](){ process_poll_event(e); });
+                                            enqueue_job([this, e](){ process_poll_event(e); });
                                         }
                                     }
                                 } catch (...) {
@@ -473,7 +473,7 @@ namespace teal {
             return false;
         }
 
-        bool insert_job(std::function<void()> &&fn) {
+        bool enqueue_job(std::function<void()> &&fn) {
             if(termination()) { return false; }
             std::unique_lock l{jobs_buffer_mtp_};
             jobs_buffer_.push_back(std::move(fn));
@@ -481,7 +481,7 @@ namespace teal {
             return true;
         }
 
-        bool insert_job(std::function<void()> const &fn) {
+        bool enqueue_job(std::function<void()> const &fn) {
             if(termination()) { return false; }
             std::unique_lock l{jobs_buffer_mtp_};
             jobs_buffer_.push_back(fn);

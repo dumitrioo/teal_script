@@ -2192,30 +2192,37 @@ namespace teal {
                     ppserver_ = std::make_unique<pp_server>();
                     ppserver_->set_on_data_arrived([this](conn_id_t conn_id, bytevec const &data) {
                         json requ{json::bdeserialize(data)};
-                        auto nme{requ["n"].as_string()};
-                        auto ali{requ["a"].as_string()};
-                        {
-                            auto it{input_cells_.find(nme)};
-                            if(it != input_cells_.end()) {
-                                valbox vb{it->second->value().deref()};
-                                json resp{};
-                                resp["n"] = ali;
-                                resp["t"] = vb.type_to_str(vb.val_or_pointed_type());
-                                resp["v"] = vb.dump();
-                                ppserver_->send(conn_id, resp.bserialize());
-                                return;
+                        auto act{requ["act"].as_string()};
+                        if(act == "get") {
+                            cell_base *cellptr{nullptr};
+                            auto nme{requ["n"].as_string()};
+                            auto ali{requ["a"].as_string()};
+                            json resp{};
+                            resp["act"] = "get";
+                            resp["n"] = ali;
+                            {
+                                auto it{input_cells_.find(nme)};
+                                if(it != input_cells_.end()) { cellptr = it->second.get(); }
                             }
-                        }
-                        {
-                            auto it{worker_cells_.find(nme)};
-                            if(it != worker_cells_.end()) {
-                                valbox vb{it->second->value().deref()};
-                                json resp{};
-                                resp["n"] = ali;
+                            {
+                                auto it{worker_cells_.find(nme)};
+                                if(it != worker_cells_.end()) { cellptr = it->second.get(); }
+                            }
+#ifdef TEAL_USE_EXTERNAL_VALUES
+                            {
+                                auto it{extern_cells_.find(nme)};
+                                if(it != extern_cells_.end()) { cellptr = it->second.get(); }
+                            }
+#endif
+                            if(cellptr != nullptr) {
+                                valbox vb{cellptr->value().deref()};
                                 resp["t"] = vb.type_to_str(vb.val_or_pointed_type());
                                 if(vb.is_class_ref()) {
                                     std::shared_lock l{obj_ser_mtp_};
-                                    if(obj_svc_.find(vb.class_name()) != obj_svc_.end() && obj_svc_[vb.class_name()].serializer) {
+                                    if(
+                                        obj_svc_.find(vb.class_name()) != obj_svc_.end() &&
+                                        obj_svc_[vb.class_name()].serializer
+                                    ) {
                                         auto s{obj_svc_[vb.class_name()].serializer(vb)};
                                         l.unlock();
                                         if(s) {
@@ -2232,23 +2239,14 @@ namespace teal {
                                 }
                                 ppserver_->send(conn_id, resp.bserialize());
                                 return;
-                            }
-                        }
-#ifdef TEAL_USE_EXTERNAL_VALUES
-                        {
-                            auto it{extern_cells_.find(nme)};
-                            if(it != extern_cells_.end()) {
-                                valbox vb{it->second->value().deref()};
+                            } else {
                                 json resp{};
+                                resp["act"] = "get";
                                 resp["n"] = ali;
-                                resp["t"] = vb.type_to_str(vb.val_or_pointed_type());
-                                resp["v"] = vb.dump();
+                                resp["t"] = "undefined";
                                 ppserver_->send(conn_id, resp.bserialize());
-                                return;
                             }
                         }
-#endif
-                        ppserver_->send(conn_id, "<undefined>");
                     });
                 }
             }
@@ -2527,10 +2525,13 @@ namespace teal {
                     if(auto rsp{con->receive(0.05)}) {
                         try {
                             json resp{json::bdeserialize(*rsp)};
-                            auto nme{resp["n"].as_string()};
-                            auto it{extern_cells_.find(nme)};
-                            if(it != extern_cells_.end()) {
-                                update_vbox(it->second.get(), resp);
+                            auto act{resp["act"].as_string()};
+                            if(act == "get") {
+                                auto nme{resp["n"].as_string()};
+                                auto it{extern_cells_.find(nme)};
+                                if(it != extern_cells_.end()) {
+                                    update_vbox(it->second.get(), resp);
+                                }
                             }
                         } catch (...) {
                         }
@@ -2612,6 +2613,7 @@ namespace teal {
                             std::shared_lock l{extern_cells_mtp_};
                             for(auto cp: extern_cells_) {
                                 json requ{};
+                                requ["act"] = "get";
                                 requ["n"] = cp.second->remote_var_name();
                                 requ["a"] = cp.second->inst_name();
                                 if(auto con{get_connected_client(cp.second.get())}) {

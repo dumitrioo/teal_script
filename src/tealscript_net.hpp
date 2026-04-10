@@ -9,6 +9,8 @@
 #include "inc/net/net_utils.hpp"
 #include "inc/net/tcp_client.hpp"
 #include "inc/net/tcp_server.hpp"
+#include "inc/net/udp_client_muxed.hpp"
+#include "inc/net/udp_server_muxed.hpp"
 #include "inc/net/net_data_transfer.hpp"
 #include "inc/net/url.hpp"
 
@@ -250,6 +252,201 @@ namespace teal {
         std::string host_{};
         std::uint16_t port_{0};
         bool connect_{false};
+    };
+
+
+    class pp_server_udp {
+        struct multiplexing;
+
+    public:
+        pp_server_udp(
+            std::size_t num_work_threads,
+            long double recv_timeout = 0.1L,
+            bool async = false,
+            net::address_family af = net::address_family::inet4
+        ):
+            usm_{std::make_unique<net::udp_server_muxed<1450>>(num_work_threads, recv_timeout, async, af)}
+        {
+        }
+        pp_server_udp(pp_server_udp const &) = delete;
+        pp_server_udp&operator=(pp_server_udp const &) = delete;
+        pp_server_udp(pp_server_udp &&) = delete;
+        pp_server_udp&operator=(pp_server_udp &&) = delete;
+        ~pp_server_udp() {
+            stop();
+        }
+
+        void set_on_data_arrived(std::function<void(conn_id_t, bytevec const &)> &&on_data_arrived) {
+            std::unique_lock l{on_data_arrived_mtp_};
+            on_data_arrived_ = std::move(on_data_arrived);
+        }
+
+        bool started() const {
+            return usm_->started();
+        }
+
+        void start(const std::string &address, std::uint16_t port, std::size_t num_work_threads) {
+            if(usm_->started()) { return; }
+#if 0
+            usm_->set_on_new_connection([this](conn_id_t conn_id) {});
+            usm_->set_on_connection_closed([this](conn_id_t conn_id) {});
+#endif
+            usm_->set_on_data_arrived([this](conn_id_t conn_id, void const *d, std::size_t s) {
+                if(d) {
+                    notify_on_data_arrived(conn_id, bytevec{static_cast<uint8_t const *>(d), static_cast<uint8_t const *>(d) + s});
+                }
+            });
+            usm_->start(address, port, num_work_threads);
+        }
+
+        void stop() {
+            usm_->stop();
+            usm_->set_on_new_connection(nullptr);
+            usm_->set_on_data_arrived(nullptr);
+            usm_->set_on_connection_closed(nullptr);
+        }
+
+        int send(conn_id_t conn_id, void const *data, std::size_t dsize) {
+            return usm_->send(conn_id, data, dsize) ? dsize : 0;
+        }
+
+        int send(conn_id_t conn_id, std::string const &data) {
+            return send(conn_id, data.data(), data.size());
+        }
+
+        int send(conn_id_t conn_id, bytevec const &data) {
+            return send(conn_id, data.data(), data.size());
+        }
+
+    private:
+        void notify_on_data_arrived(conn_id_t c, bytevec const &d) {
+            std::shared_lock l{on_data_arrived_mtp_};
+            if(on_data_arrived_) {
+                on_data_arrived_(c, d);
+            }
+        }
+
+    private:
+        std::unique_ptr<teal::net::udp_server_muxed<1450>> usm_{};
+        mutable std::shared_mutex on_data_arrived_mtp_{};
+        std::function<void(conn_id_t, bytevec const &)> on_data_arrived_{nullptr};
+    };
+
+    class pp_client_udp {
+    public:
+        pp_client_udp() = default;
+        pp_client_udp(pp_client_udp const &) = delete;
+        pp_client_udp&operator=(pp_client_udp const &) = delete;
+        pp_client_udp(pp_client_udp &&) = delete;
+        pp_client_udp&operator=(pp_client_udp &&) = delete;
+        ~pp_client_udp() {
+            try {
+                stop();
+            } catch (...) {
+            }
+        }
+
+        void set_on_data_arrived(std::function<void(bytevec const &)> const &fun) {
+            std::unique_lock cl{callback_mtp_};
+            on_data_arrived_ = fun;
+        }
+
+        void set_on_data_arrived(std::function<void(bytevec const &)> &&fun) {
+            std::unique_lock cl{callback_mtp_};
+            on_data_arrived_ = std::move(fun);
+        }
+
+        std::thread thr_{};
+        void start(std::string host, std::uint16_t port) {
+            stop_ = false;
+            host_ = host;
+            port_ = port;
+            if(ucm_->connect(host, port)) {
+                thr_ = std::thread{
+                    [this]() {
+                        while(!stop_) {
+                            if(auto bv{ucm_->receive()}) {
+                                notify_on_data_arrived(*bv);
+                            }
+                        }
+                    }
+                };
+            }
+        }
+
+        void stop() {
+            stop_ = true;
+            if(thr_.joinable()) {
+                thr_.join();
+            }
+            ucm_->close();
+        }
+
+        bool connected() const {
+            return ucm_->connected();
+        }
+
+        int send(const void *data, size_t data_size) {
+            int res{};
+            std::unique_lock l{muxing_mtp_};
+            muxer_.add_message(data, data_size);
+            while(auto ochnk{muxer_.fetch_out_chunk()}) {
+                bytevec pkt{mux_bottom_layer_.output_data_to_network_frame(*ochnk)};
+                res += ucm_->send(pkt);
+            }
+            return res;
+        }
+
+        int send(bytevec const &data) {
+            return send(data.data(), data.size());
+        }
+
+        int send(std::string const &data) {
+            return send(data.data(), data.size());
+        }
+
+        std::optional<bytevec> receive() {
+            std::optional<bytevec> in{ucm_->receive()};
+            if(in) {
+                std::unique_lock l{muxing_mtp_};
+                demux_bottom_layer_.set_network_input(*in);
+                if(auto ofid{demux_bottom_layer_.fetch_in_data()}) {
+                    return demuxer_.add_data(*ofid);
+                }
+            }
+            return {};
+        }
+
+        std::string const &host() const {
+            return host_;
+        }
+
+        std::uint16_t port() const {
+            return port_;
+        }
+
+    private:
+        void notify_on_data_arrived(bytevec const &d) {
+            std::shared_lock cl{callback_mtp_};
+            if(on_data_arrived_) on_data_arrived_(d);
+        }
+
+    private:
+        std::unique_ptr<teal::net::udp_client_muxed<1450>> ucm_{};
+
+        std::shared_mutex callback_mtp_{};
+        std::function<void(bytevec const &)> on_data_arrived_{nullptr};
+
+        std::shared_mutex muxing_mtp_{};
+        net::sized_packets_exchanger mux_bottom_layer_{};
+        net::packets_muxer<std::uint32_t> muxer_{1400};
+        net::sized_packets_exchanger demux_bottom_layer_{};
+        net::packets_demuxer demuxer_{};
+
+        std::string host_{};
+        std::uint16_t port_{0};
+
+        bool stop_{false};
     };
 
 }

@@ -60,11 +60,14 @@ HEADERS += \
     ../../src/inc/commondefs.hpp \
     ../../src/inc/containers/buffer_queue.hpp \
     ../../src/inc/containers/circular_buffer.hpp \
+    ../../src/inc/containers/concurrentqueue.h \
     ../../src/inc/containers/static_buffer.hpp \
+    ../../src/inc/crypto/gamma.hpp \
     ../../src/inc/crypto/keccak.hpp \
     ../../src/inc/crypto/sha256.hpp \
     ../../src/inc/crypto/sha3_512.hpp \
     ../../src/inc/crypto/sha512.hpp \
+    ../../src/inc/crypto/threefish.hpp \
     ../../src/inc/emhash/hash_set2.hpp \
     ../../src/inc/emhash/hash_set3.hpp \
     ../../src/inc/emhash/hash_set4.hpp \
@@ -80,17 +83,21 @@ HEADERS += \
     ../../src/inc/hash/adler.hpp \
     ../../src/inc/hash/crc.hpp \
     ../../src/inc/hash/hash.hpp \
+    ../../src/inc/http/httplib.h \
     ../../src/inc/json.hpp \
     ../../src/inc/lzari.hpp \
     ../../src/inc/math/math_util.hpp \
     ../../src/inc/math/matrix4.hpp \
     ../../src/inc/math/vector4.hpp \
     ../../src/inc/mt_synchro.hpp \
+    ../../src/inc/net/net_data_transfer.hpp \
     ../../src/inc/net/net_utils.hpp \
     ../../src/inc/net/socket_poller.hpp \
     ../../src/inc/net/socket_wrapper.hpp \
     ../../src/inc/net/tcp_client.hpp \
     ../../src/inc/net/tcp_server.hpp \
+    ../../src/inc/net/udp_client_muxed.hpp \
+    ../../src/inc/net/udp_server_muxed.hpp \
     ../../src/inc/net/url.hpp \
     ../../src/inc/sequence_generator.hpp \
     ../../src/inc/serialization.hpp \

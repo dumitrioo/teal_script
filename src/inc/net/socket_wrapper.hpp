@@ -608,7 +608,7 @@ namespace teal::net {
             }
             if(msg_size_vec.size() == sizeof(std::uint32_t)) {
                 std::uint32_t msg_size{teal::bit_util::from_net_bytes<std::uint32_t>(msg_size_vec.data())};
-                std::uint32_t msg_size_host{teal::bit_util::hnswap{msg_size}.val};
+                std::uint32_t msg_size_host{teal::bit_util::hnswap<std::uint32_t>{msg_size}.val};
                 for(result = teal::net::socket::receive(msg_size_host); result.size() < msg_size_host; ) {
                     std::vector<std::uint8_t> data_partial_vec{teal::net::socket::receive(msg_size_host - result.size())};
                     if(data_partial_vec.size() > 0) {
