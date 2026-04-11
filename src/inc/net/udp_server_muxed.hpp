@@ -29,8 +29,8 @@ namespace teal::net {
             bool async = true,
             address_family af = address_family::inet4
         ):
-            recv_timeout_{recv_timeout},
             stale_connections_removal_timeout_{stale_connections_removal_timeout},
+            recv_timeout_{recv_timeout},
             sock_type_{af},
             async_{async}
         {
@@ -708,7 +708,7 @@ namespace teal::net {
 
     private:
         mutable std::shared_mutex threads_mtp_{};
-        std::list<std::jthread> threads_{};
+        std::list<std::thread> threads_{};
 
         std::atomic_bool stop_jobs_{false};
         mutable std::mutex jobs_buffer_mtp_{};
