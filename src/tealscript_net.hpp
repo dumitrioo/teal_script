@@ -260,13 +260,14 @@ namespace teal {
 
     public:
         pp_server_udp(
-            std::size_t num_work_threads,
-            long double stale_connections_removal_timeout = 0.0L,
-            net::address_family af = net::address_family::inet4
+            command_queue *cq,
+            net::address_family af = net::address_family::inet4,
+            long double stale_connections_removal_timeout = 0.0L
         ):
+            cq_{cq},
             usm_{
                 std::make_unique<net::udp_server_muxed<1400>>(
-                    num_work_threads,
+                    cq_,
                     stale_connections_removal_timeout,
                     af
                 )
@@ -333,6 +334,7 @@ namespace teal {
         }
 
     private:
+        command_queue *cq_{nullptr};
         std::unique_ptr<teal::net::udp_server_muxed<1400>> usm_{};
         mutable std::shared_mutex on_data_arrived_mtp_{};
         std::function<void(conn_id_t, bytevec const &)> on_data_arrived_{nullptr};

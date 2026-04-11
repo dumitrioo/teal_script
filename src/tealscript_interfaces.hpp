@@ -57,8 +57,8 @@ namespace teal {
         virtual void start_net_server(
             std::string const &/*bind_addr*/,
             std::uint16_t /*port*/,
-            std::size_t /*num_threads*/,
-            long double stale_connections_removal_timeout
+            net::address_family /*af*/,
+            long double /*stale_connections_removal_timeout*/
         ) = 0;
         virtual void stop_net_server() = 0;
         virtual bool net_server_running() const = 0;

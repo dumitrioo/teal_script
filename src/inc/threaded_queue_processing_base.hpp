@@ -26,9 +26,7 @@ namespace teal {
                         if(need_to_kill_one()) {
                             kill_someone();
                         } else if(need_to_spawn_one()) {
-                            std::unique_lock lw{workers_mtp_};
-                            workers_.push_back(std::make_unique<worker_thread>(this));
-                            num_workers_.store(workers_.size(), std::memory_order_release);
+                            create_worker();
                         }
                         std::this_thread::sleep_for(std::chrono::milliseconds{100});
                     }
@@ -68,52 +66,74 @@ namespace teal {
             if(termination()) {
                 return;
             }
-            lp_q_.enqueue(std::move(f));
             {
+                lp_q_.enqueue(std::move(f));
                 std::unique_lock lq{q_mtp_};
                 q_cvar_.notify_one();
             }
-            create_worker();
+            if(num_workers_.load(std::memory_order_acquire) == 0) {
+                create_worker();
+            }
         }
 
         void enqueue(QITEM_T const &f) {
             if(termination()) {
                 return;
             }
-            lp_q_.enqueue(f);
             {
+                lp_q_.enqueue(f);
                 std::unique_lock lq{q_mtp_};
                 q_cvar_.notify_one();
             }
-            create_worker();
+            if(num_workers_.load(std::memory_order_acquire) == 0) {
+                create_worker();
+            }
         }
 
         void enqueue_urgent(QITEM_T &&f) {
             if(termination()) {
                 return;
             }
-            hp_q_.enqueue(std::move(f));
             {
+                hp_q_.enqueue(std::move(f));
                 std::unique_lock lq{q_mtp_};
                 q_cvar_.notify_one();
             }
-            create_worker();
+            if(num_workers_.load(std::memory_order_acquire) == 0) {
+                create_worker();
+            }
         }
 
         void enqueue_urgent(QITEM_T const &f) {
             if(termination()) {
                 return;
             }
-            hp_q_.enqueue(f);
             {
+                hp_q_.enqueue(f);
                 std::unique_lock lq{q_mtp_};
                 q_cvar_.notify_one();
             }
-            create_worker();
+            if(num_workers_.load(std::memory_order_acquire) == 0) {
+                create_worker();
+            }
         }
 
-        void set_min_workload_to_start_spawn_threads(double val) noexcept {
-            load_to_start_spawn_ = math::clamp<long double>(val, 0, 1);
+        void set_workload_to_start_spawn_threads(long double val) noexcept {
+            long double clamped{math::clamp<long double>(val, 0, 1)};
+            if(clamped < load_to_start_kill_) {
+                load_to_start_spawn_ = load_to_start_kill_;
+            } else {
+                load_to_start_spawn_ = clamped;
+            }
+        }
+
+        void set_workload_to_start_kill_threads(double val) noexcept {
+            long double clamped{math::clamp<long double>(val, 0, 1)};
+            if(val > load_to_start_spawn_) {
+                load_to_start_kill_ = load_to_start_spawn_;
+            } else {
+                load_to_start_kill_ = clamped;
+            }
         }
 
         void set_min_seconds_between_killings(long double val) {
@@ -137,6 +157,10 @@ namespace teal {
 
         std::size_t num_worker_threads() const {
             return num_workers_.load(std::memory_order_acquire);
+        }
+
+        double curr_load() const {
+            return avg_lt_ld_.load(std::memory_order_acquire);
         }
 
     private:
@@ -230,20 +254,18 @@ namespace teal {
                 wtn > 0
                 &&
                 (
+                    wtn > max_workers_
+                    ||
                     termination()
                     ||
                     (
-                        (
-                            wtn > min_workers_
-                            &&
-                            !(wtn == 1 && num_enqueued_items() > 0)
-                            &&
-                            curr_timestamp_seconds() - last_kill_time_ > min_seconds_between_killings_
-                            &&
-                            avg_lt_ld_.load(std::memory_order_acquire) < load_to_start_spawn_
-                        )
-                        ||
-                        wtn > max_workers_
+                        wtn > min_workers_
+                        &&
+                        !(wtn == 1 && num_enqueued_items() > 0)
+                        &&
+                        curr_timestamp_seconds() - last_kill_time_ > min_seconds_between_killings_
+                        &&
+                        avg_lt_ld_.load(std::memory_order_acquire) <= load_to_start_kill_
                     )
                 )
             ;
@@ -293,12 +315,18 @@ namespace teal {
             return std::min(std::sqrt(num_works) * 3, num_works);
         }
 
-        void create_worker() {
+        void maybe_create_worker() {
             if(need_to_spawn_one()) {
                 std::unique_lock lw{workers_mtp_};
                 workers_.emplace_back(std::make_unique<worker_thread>(this));
                 num_workers_.store(workers_.size(), std::memory_order_release);
             }
+        }
+
+        void create_worker() {
+            std::unique_lock lw{workers_mtp_};
+            workers_.emplace_back(std::make_unique<worker_thread>(this));
+            num_workers_.store(workers_.size(), std::memory_order_release);
         }
 
     private:
@@ -309,7 +337,8 @@ namespace teal {
         std::condition_variable q_cvar_{};
         moodycamel::ConcurrentQueue<QITEM_T> hp_q_{};
         moodycamel::ConcurrentQueue<QITEM_T> lp_q_{};
-        long double load_to_start_spawn_{0.8L};
+        long double load_to_start_spawn_{0.9L};
+        long double load_to_start_kill_{0.1L};
         long double min_seconds_between_killings_{0.0L};
         long double last_kill_time_{0.0L};
         mutable std::shared_mutex workers_mtp_{};

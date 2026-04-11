@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../commondefs.hpp"
+#include "../command_queue.hpp"
 #include "../timespec_wrapper.hpp"
 #include "../serialization.hpp"
 #include "../bit_util.hpp"
@@ -23,51 +24,14 @@ namespace teal::net {
 
     public:
         udp_server_muxed(
-            std::size_t num_work_threads,
+            command_queue *cq,
             long double stale_connections_removal_timeout = 0.0L,
             address_family af = address_family::inet4
         ):
-            num_jobs_buffer_workers_{num_work_threads},
+            cq_{cq},
             stale_connections_removal_timeout_{stale_connections_removal_timeout},
             sock_type_{af}
         {
-            start_jobs();
-        }
-
-        void start_jobs() {
-            {
-                std::unique_lock l{jobs_buffer_mtp_};
-                jobs_buffer_.clear();
-                jobs_buffer_cvar_.notify_all();
-            }
-            std::unique_lock l{jobs_buffer_workers_mtp_};
-            stop_jobs_ = false;
-            for(size_t i{}; i < num_jobs_buffer_workers_; ++i) {
-                jobs_buffer_workers_.emplace_back(
-                    [this]() {
-                        while(!stop_jobs_.load(std::memory_order_acquire)) {
-                            std::function<void()> fn{};
-                            if(fetch_job(fn)) {
-                                fn();
-                            }
-                        }
-                    }
-                );
-            }
-        }
-
-        void stop_jobs() {
-            {
-                std::unique_lock l{jobs_buffer_workers_mtp_};
-                stop_jobs_ = true;
-                for(auto &&t: jobs_buffer_workers_) {
-                    if(t.joinable()) { t.join(); }
-                }
-                jobs_buffer_workers_.clear();
-            }
-            std::unique_lock l{jobs_buffer_mtp_};
-            jobs_buffer_.clear();
-            jobs_buffer_cvar_.notify_all();
         }
 
         udp_server_muxed(udp_server_muxed const &) = delete;
@@ -173,7 +137,6 @@ namespace teal::net {
             try {
                 terminate();
                 wait();
-                stop_jobs();
                 remove_all_connections();
                 {
                     if(sock_fd_ != -1) {
@@ -221,8 +184,14 @@ namespace teal::net {
                     if((events[0].events & net::POLL_EVENT_IN) == net::POLL_EVENT_IN) {
                         std::shared_lock l{sock_fd_mtp_};
                         if(sock_fd_ >= 0) {
-                            socklen_t socklen{(socklen_t)(sock_type_ == address_family::inet6 ? sizeof(sockaddr_in6) : sizeof(sockaddr_in))};
-                            n = ::recvfrom(sock_fd_, in_buff->first.data(), NET_PACKET_PAYLOAD_SIZE_MAX + 256, 0, (struct sockaddr *)&cli_addr, &socklen);
+                            socklen_t socklen{
+                                static_cast<socklen_t>(sock_type_ == address_family::inet6 ?
+                                    sizeof(sockaddr_in6) : sizeof(sockaddr_in))
+                            };
+                            n = ::recvfrom(
+                                sock_fd_, in_buff->first.data(), NET_PACKET_PAYLOAD_SIZE_MAX + 256,
+                                0, (struct sockaddr *)&cli_addr, &socklen
+                            );
                             l.unlock();
                             if(n > 0) {
                                 in_buff->second = n;
@@ -241,9 +210,8 @@ namespace teal::net {
         }
 
         void wait() {
-            std::unique_lock sl{threads_mtp_};
-            if(thread_.joinable()) {
-                thread_.join();
+            while(started_.load(std::memory_order_acquire)) {
+                std::this_thread::sleep_for(std::chrono::milliseconds{10});
             }
         }
 
@@ -273,22 +241,16 @@ namespace teal::net {
                                 serv_addr_.v4_.sin_family = AF_INET;
                                 in_addr a{net::resolve(addr)};
                                 serv_addr_.v4_.sin_addr.s_addr = a.s_addr;
-                                serv_addr_.v4_.sin_port = bit_util::swap_on_le<decltype(serv_addr_.v4_.sin_port)>{static_cast<decltype(serv_addr_.v4_.sin_port)>(port)}.val;
+                                serv_addr_.v4_.sin_port =
+                                    bit_util::swap_on_le<decltype(serv_addr_.v4_.sin_port)>{
+                                        static_cast<decltype(serv_addr_.v4_.sin_port)>(port)
+                                    }.val;
                                 if(::bind(sock_fd_, (const struct sockaddr *)&serv_addr_.v4_, sizeof(serv_addr_.v4_)) >= 0) {
                                     poller_.add_event(sock_fd_, net::POLL_EVENT_IN);
                                     if(num_listen_threads <= 0) {
                                         num_listen_threads = 1;
                                     }
-                                    std::unique_lock sl{threads_mtp_};
-                                    for(int i = 0; i < num_listen_threads; ++i) {
-                                        thread_ = std::thread{
-                                            [this]() {
-                                                while(!termination()) {
-                                                    worker();
-                                                }
-                                            }
-                                        };
-                                    }
+                                    cq_->enqueue(worker_entry_);
                                     started_ = true;
                                     res = true;
                                 }
@@ -310,22 +272,16 @@ namespace teal::net {
                                 serv_addr_.v6_.sin6_family = AF_INET6;
                                 in6_addr a{net::resolve6(addr)};
                                 serv_addr_.v6_.sin6_addr = a;
-                                serv_addr_.v6_.sin6_port = bit_util::swap_on_le<decltype(serv_addr_.v6_.sin6_port)>{static_cast<decltype(serv_addr_.v6_.sin6_port)>(port)}.val;
+                                serv_addr_.v6_.sin6_port =
+                                    bit_util::swap_on_le<decltype(serv_addr_.v6_.sin6_port)>{
+                                        static_cast<decltype(serv_addr_.v6_.sin6_port)>(port)
+                                    }.val;
                                 if(::bind(sock_fd_, (const struct sockaddr *)&serv_addr_.v6_, sizeof(serv_addr_.v6_)) >= 0) {
                                     poller_.add_event(sock_fd_, net::POLL_EVENT_IN);
                                     if(num_listen_threads <= 0) {
                                         num_listen_threads = 1;
                                     }
-                                    std::unique_lock sl{threads_mtp_};
-                                    for(int i = 0; i < num_listen_threads; ++i) {
-                                        thread_ = std::thread{
-                                            [this]() {
-                                                while(!termination()) {
-                                                    worker();
-                                                }
-                                            }
-                                        };
-                                    }
+                                    cq_->enqueue(worker_entry_);
                                     started_ = true;
                                     res = true;
                                 }
@@ -365,8 +321,14 @@ namespace teal::net {
                         while(auto och{cnn->fetch_out_chunk()}) {
                             std::shared_lock l{sock_fd_mtp_};
                             if(sock_fd_ >= 0) {
-                                socklen_t socklen{(socklen_t)(sock_type_ == address_family::inet6 ? sizeof(sockaddr_in6) : sizeof(sockaddr_in))};
-                                res = ::sendto(sock_fd_, och->data(), och->size(), 0, (const struct sockaddr *)cnn->addr_ptr(), socklen) != -1;
+                                socklen_t socklen{
+                                    static_cast<socklen_t>(sock_type_ == address_family::inet6 ?
+                                        sizeof(sockaddr_in6) : sizeof(sockaddr_in))
+                                };
+                                res = ::sendto(
+                                          sock_fd_, och->data(), och->size(), 0,
+                                          (const struct sockaddr *)cnn->addr_ptr(), socklen
+                                      ) != -1;
                             }
                         }
                     }
@@ -388,7 +350,10 @@ namespace teal::net {
                 {
                     std::shared_lock l{sock_fd_mtp_};
                     if(sock_fd_ >= 0) {
-                        socklen_t socklen{(socklen_t)(sock_type_ == address_family::inet6 ? sizeof(sockaddr_in6) : sizeof(sockaddr_in))};
+                        socklen_t socklen{
+                            static_cast<socklen_t>(sock_type_ == address_family::inet6 ?
+                                sizeof(sockaddr_in6) : sizeof(sockaddr_in))
+                        };
                         ::sendto(sock_fd_, "close", 5, MSG_DONTWAIT, cnn->addr_ptr(), socklen);
                     }
                 }
@@ -520,37 +485,19 @@ namespace teal::net {
         }
 
     private:
-        bool fetch_job(std::function<void()> &fn) {
-            std::unique_lock l{jobs_buffer_mtp_};
-            if(!jobs_buffer_.empty()) {
-                fn = std::move(jobs_buffer_.front());
-                jobs_buffer_.pop_front();
-                return true;
-            }
-            std::cv_status waitstatus{jobs_buffer_cvar_.wait_for(l, std::chrono::milliseconds{100})};
-            if(waitstatus == std::cv_status::no_timeout) {
-                if(!jobs_buffer_.empty()) {
-                    fn = std::move(jobs_buffer_.front());
-                    jobs_buffer_.pop_front();
-                    return true;
-                }
-            }
-            return false;
-        }
-
         bool enqueue_job(std::function<void()> &&fn) {
-            if(stop_jobs_) { return false; }
-            std::unique_lock l{jobs_buffer_mtp_};
-            jobs_buffer_.push_back(std::move(fn));
-            jobs_buffer_cvar_.notify_all();
+            if(!cq_) {
+                return false;
+            }
+            cq_->enqueue(std::move(fn));
             return true;
         }
 
         bool enqueue_job(std::function<void()> const &fn) {
-            if(stop_jobs_) { return false; }
-            std::unique_lock l{jobs_buffer_mtp_};
-            jobs_buffer_.push_back(fn);
-            jobs_buffer_cvar_.notify_all();
+            if(!cq_) {
+                return false;
+            }
+            cq_->enqueue(fn);
             return true;
         }
 
@@ -718,16 +665,18 @@ namespace teal::net {
         };
 
     private:
-        mutable std::shared_mutex threads_mtp_{};
-        std::thread thread_{};
+        command_queue *cq_{nullptr};
+        std::function<void()> worker_entry_{
+            [this]() {
+                if(!termination()) {
+                    worker();
+                    cq_->enqueue(worker_entry_);
+                } else {
+                    started_ = false;
+                }
+            }
+        };
 
-        std::atomic<bool> stop_jobs_{false};
-        mutable std::mutex jobs_buffer_mtp_{};
-        std::condition_variable jobs_buffer_cvar_{};
-        mutable std::mutex jobs_buffer_workers_mtp_{};
-        std::size_t num_jobs_buffer_workers_{0};
-        std::list<std::thread> jobs_buffer_workers_{};
-        std::list<std::function<void()>> jobs_buffer_{};
         long double stale_connections_removal_timeout_{0};
 
         sockaddr_any serv_addr_;
@@ -742,7 +691,7 @@ namespace teal::net {
         mutable std::shared_mutex poller_mtp_{};
         socket_poller poller_{};
         address_family sock_type_{address_family::unspecified};
-        bool started_{false};
+        std::atomic<bool> started_{false};
     };
 
 }

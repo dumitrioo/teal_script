@@ -19,9 +19,9 @@ function rnd_str(n) {
 }
 
 random_string() {
-    if(steady_clock() > this.last_time + 0.5) {
+    if(steady_clock() > this.last_time + .1) {
         this.last_time = steady_clock();
-        this.res = rnd_str(rand() % 100 + 1);
+        this.res = rnd_str(rand() % 64 + 1);
         console.print("original value changed to: ", this.res);
     }
     return this.res;

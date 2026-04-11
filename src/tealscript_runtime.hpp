@@ -2183,16 +2183,29 @@ namespace teal {
             outputs_.clear();
         }
 
-        void start_net_server(std::string const &bind_addr, std::uint16_t port, std::size_t num_work_threads, long double stale_connections_removal_timeout) override {
+        void start_net_server(
+            std::string const &bind_addr,
+            std::uint16_t port,
+            net::address_family af,
+            long double stale_connections_removal_timeout
+        ) override {
+            {
+                std::shared_lock l{ppserver_mtp_};
+                if(!cq_) {
+                    cq_ = std::make_unique<command_queue>(std::thread::hardware_concurrency());
+                    cq_->set_workload_to_start_spawn_threads(0.9);
+                    cq_->set_workload_to_start_kill_threads(0.1);
+                    cq_->set_min_seconds_between_killings(1);
+                }
+            }
             std::shared_lock l{ppserver_mtp_};
             if(!ppserver_) {
                 l.unlock();
                 std::unique_lock l1{ppserver_mtp_};
                 if(!ppserver_) {
-                    ppserver_ = std::make_unique<pp_server_udp>(num_work_threads, stale_connections_removal_timeout);
+                    ppserver_ = std::make_unique<pp_server_udp>(cq_.get(), af, stale_connections_removal_timeout);
                     ppserver_->set_on_data_arrived([this](conn_id_t conn_id, bytevec const &data) {
                         json requ{json::bdeserialize(data)};
-                        // std::cout << "server received " << requ.serialize5() << std::endl;
                         auto act{requ["act"].as_string()};
                         json resp{};
                         resp["id"] = requ["id"];
@@ -2241,7 +2254,6 @@ namespace teal {
                                 } else {
                                     resp["v"] = vb.dump();
                                 }
-                                // std::cout << "server send " << resp.serialize5() << std::endl;
                                 ppserver_->send(conn_id, resp.bserialize());
                                 return;
                             } else {
@@ -2250,7 +2262,6 @@ namespace teal {
                                 resp["act"] = "get";
                                 resp["n"] = ali;
                                 resp["t"] = "undefined";
-                                // std::cout << "server send " << resp.serialize5() << std::endl;
                                 ppserver_->send(conn_id, resp.bserialize());
                             }
                         }
@@ -2263,8 +2274,20 @@ namespace teal {
         }
 
         void stop_net_server() override {
-            std::unique_lock l{ppserver_mtp_};
-            ppserver_.reset();
+            {
+                std::unique_lock l{ppserver_mtp_};
+                ppserver_.reset();
+            }
+#ifdef TEAL_USE_EXTERNAL_VALUES
+            std::unique_lock l1{cq_mtp_};
+            std::shared_lock l2{ext_cells_processor_mtp_};
+            if(!ext_cells_processor_enabled_) {
+                cq_.reset();
+            }
+#else
+            std::unique_lock l{cq_mtp_};
+            cq_.reset();
+#endif
         }
 
         bool net_server_running() const override {
@@ -2533,7 +2556,6 @@ namespace teal {
                 res->set_on_data_arrived([this](bytevec const &rsp) {
                     try {
                         json resp{json::bdeserialize(rsp)};
-                        // std::cout << "client received " << resp.serialize5() << std::endl;
                         auto act{resp["act"].as_string()};
                         if(act == "get") {
                             auto nme{resp["n"].as_string()};
@@ -2608,7 +2630,12 @@ namespace teal {
 
             {
                 std::unique_lock l1{cq_mtp_};
-                cq_ = std::make_unique<command_queue>(std::thread::hardware_concurrency());
+                if(!cq_) {
+                    cq_ = std::make_unique<command_queue>(std::thread::hardware_concurrency());
+                    cq_->set_workload_to_start_spawn_threads(0.9);
+                    cq_->set_workload_to_start_kill_threads(0.1);
+                    cq_->set_min_seconds_between_killings(1);
+                }
             }
 
             std::unique_lock l{ext_cells_processor_mtp_};
@@ -2631,12 +2658,15 @@ namespace teal {
                                 requ["n"] = cp.second->remote_var_name();
                                 requ["a"] = cp.second->inst_name();
                                 if(auto con{get_connected_client(cp.second.get())}) {
-                                    // std::cout << "client sends " << requ.serialize5() << std::endl;
                                     con->send(requ.bserialize());
                                 }
                             }
                         }
                         if(ext_cells_refresh_interval_nanos_ > 0) {
+                            static auto lt{curr_timestamp_seconds()};
+                            if(curr_timestamp_seconds() > lt + 1) {
+                                lt = curr_timestamp_seconds();
+                            }
                             std::this_thread::sleep_for(std::chrono::nanoseconds{ext_cells_refresh_interval_nanos_});
                         }
                     } else {
@@ -2663,7 +2693,10 @@ namespace teal {
             }
             {
                 std::unique_lock l1{cq_mtp_};
-                cq_.reset();
+                std::shared_lock l{ppserver_mtp_};
+                if(!ppserver_) {
+                    cq_.reset();
+                }
             }
         }
 #endif
