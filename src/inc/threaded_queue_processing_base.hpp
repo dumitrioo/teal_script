@@ -68,9 +68,9 @@ namespace teal {
             if(termination()) {
                 return;
             }
+            lp_q_.enqueue(std::move(f));
             {
                 std::unique_lock lq{q_mtp_};
-                lp_q_.enqueue(std::move(f));
                 q_cvar_.notify_one();
             }
             create_worker();
@@ -80,9 +80,9 @@ namespace teal {
             if(termination()) {
                 return;
             }
+            lp_q_.enqueue(f);
             {
                 std::unique_lock lq{q_mtp_};
-                lp_q_.enqueue(f);
                 q_cvar_.notify_one();
             }
             create_worker();
@@ -92,9 +92,9 @@ namespace teal {
             if(termination()) {
                 return;
             }
+            hp_q_.enqueue(std::move(f));
             {
                 std::unique_lock lq{q_mtp_};
-                hp_q_.enqueue(std::move(f));
                 q_cvar_.notify_one();
             }
             create_worker();
@@ -104,9 +104,9 @@ namespace teal {
             if(termination()) {
                 return;
             }
+            hp_q_.enqueue(f);
             {
                 std::unique_lock lq{q_mtp_};
-                hp_q_.enqueue(f);
                 q_cvar_.notify_one();
             }
             create_worker();
@@ -176,6 +176,7 @@ namespace teal {
             if(!hp_q_.try_dequeue(j) && !lp_q_.try_dequeue(j)) {
                 std::unique_lock lq{q_mtp_};
                 q_cvar_.wait_for(lq, std::chrono::milliseconds{250});
+                lq.unlock();
                 if(termination() || (!hp_q_.try_dequeue(j) && !lp_q_.try_dequeue(j))) {
                     return false;
                 }
