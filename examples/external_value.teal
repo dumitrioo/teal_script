@@ -1,8 +1,8 @@
 setup_cell() {
     if(!this.set_up) {
-        set_extern_update_nanointerval(0.001 * 1'000'000'000);
-        set_cycle_nanosleep(0.001 * 1'000'000'000);
-        set_inactive_nanosleep(0.01 * 1'000'000'000);
+        set_extern_update_seconds(0.01);
+        set_cycle_sleep_seconds(0.001);
+        set_inactive_sleep_seconds(0.01);
         this.set_up = true;
     }
     return 0;

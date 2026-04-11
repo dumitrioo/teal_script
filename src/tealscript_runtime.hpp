@@ -1452,18 +1452,18 @@ namespace teal {
                 }
                 return time_to_sleep;
             });
-            add_function("set_cycle_nanosleep", TEALFUN(args) {
+            add_function("set_cycle_sleep_seconds", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1);
-                uint64_t time_to_sleep{args[0].cast_to_u64()};
+                uint64_t time_to_sleep{static_cast<uint64_t>(args[0].cast_to_long_double() * 1000000000.0L)};
                 set_nanoseconds_of_sleeping_between_cycles(time_to_sleep);
                 return time_to_sleep;
             });
             add_function("cycle_nanosleep", TEALFUN() {
                 return sleep_between_cycles_nanoseconds();
             });
-            add_function("set_inactive_nanosleep", TEALFUN(args) {
+            add_function("set_inactive_sleep_seconds", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1);
-                uint64_t time_to_sleep{args[0].cast_to_u64()};
+                uint64_t time_to_sleep{static_cast<uint64_t>(args[0].cast_to_long_double() * 1000000000.0L)};
                 set_sleep_inactive_thread_nanoseconds(time_to_sleep);
                 return time_to_sleep;
             });
@@ -1518,10 +1518,10 @@ namespace teal {
 #endif
             });
 
-            add_function("set_extern_update_nanointerval", TEALFUN(args) {
+            add_function("set_extern_update_seconds", TEALFUN(args) {
 #ifdef TEAL_USE_EXTERNAL_VALUES
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1);
-                ext_cells_refresh_interval_nanos_ = args[0].cast_to_u64();
+                ext_cells_refresh_interval_nanos_ = args[0].cast_to_long_double() * 1'000'000'000;
                 return ext_cells_refresh_interval_nanos_;
 #else
                 return uint64_t{};
@@ -2508,6 +2508,8 @@ namespace teal {
         static std::size_t constexpr version_patch_{19};
 
 #ifdef TEAL_USE_EXTERNAL_VALUES
+        mutable shared_mutex cq_mtp_{};
+        std::unique_ptr<command_queue> cq_{};
 
         std::string network_access_point_url_{};
         std::string network_name_{};
@@ -2527,7 +2529,7 @@ namespace teal {
             std::unique_lock l{pp_clients_mtp_};
             std::shared_ptr<pp_client_udp> res{pp_clients_[ecp->remote_host()][*ecp->remote_url().port()]};
             if(!res || !res->connected()) {
-                res = std::make_shared<pp_client_udp>();
+                res = std::make_shared<pp_client_udp>(cq_.get());
                 res->set_on_data_arrived([this](bytevec const &rsp) {
                     try {
                         json resp{json::bdeserialize(rsp)};
@@ -2604,6 +2606,11 @@ namespace teal {
                 return;
             }
 
+            {
+                std::unique_lock l1{cq_mtp_};
+                cq_ = std::make_unique<command_queue>(std::thread::hardware_concurrency());
+            }
+
             std::unique_lock l{ext_cells_processor_mtp_};
 
             ext_cells_processor_enabled_ = false;
@@ -2653,6 +2660,10 @@ namespace teal {
             {
                 std::unique_lock l1{pp_clients_mtp_};
                 pp_clients_.clear();
+            }
+            {
+                std::unique_lock l1{cq_mtp_};
+                cq_.reset();
             }
         }
 #endif

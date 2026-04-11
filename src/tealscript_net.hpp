@@ -297,10 +297,6 @@ namespace teal {
 
         void start(const std::string &address, std::uint16_t port, std::size_t num_listen_threads) {
             if(usm_->started()) { return; }
-#if 0
-            usm_->set_on_new_connection([this](conn_id_t conn_id) {});
-            usm_->set_on_connection_closed([this](conn_id_t conn_id) {});
-#endif
             usm_->set_on_data_arrived([this](conn_id_t conn_id, void const *d, std::size_t s) {
                 if(d) {
                     notify_on_data_arrived(conn_id, bytevec{static_cast<uint8_t const *>(d), static_cast<uint8_t const *>(d) + s});
@@ -344,7 +340,8 @@ namespace teal {
 
     class pp_client_udp {
     public:
-        pp_client_udp() = default;
+        pp_client_udp(command_queue *cq): cq_{cq} {
+        }
         pp_client_udp(pp_client_udp const &) = delete;
         pp_client_udp&operator=(pp_client_udp const &) = delete;
         pp_client_udp(pp_client_udp &&) = delete;
@@ -366,44 +363,27 @@ namespace teal {
             on_data_arrived_ = std::move(fun);
         }
 
-        // std::thread thr_{};
         void start(std::string host, std::uint16_t port) {
             stop_ = false;
             host_ = host;
             port_ = port;
             std::unique_lock lck{ucm_mtp_};
-            ucm_ = std::make_unique<teal::net::udp_client_muxed<1400>>();
-            if(ucm_->connect(host, port)) {
-                // thr_ = std::thread{
-                //     [this]() {
-                //         while(!stop_) {
-                //             std::shared_lock lck{ucm_mtp_};
-                //             if(!ucm_) { break; }
-                //             if(auto bv{ucm_->receive()}) {
-                //                 lck.unlock();
-                //                 notify_on_data_arrived(*bv);
-                //             }
-                //         }
-                //     }
-                // };
-                ucm_->set_on_data_arrived([this](bytevec const &bv) {
-                    notify_on_data_arrived(bv);
-                });
+            ucm_ = std::make_unique<teal::net::udp_client_muxed<1400>>(cq_);
+            ucm_->set_on_data_arrived([this](bytevec const &bv) { notify_on_data_arrived(bv); });
+            if(!ucm_->connect(host, port)) {
+                ucm_->set_on_data_arrived(nullptr);
             }
         }
 
         void stop() {
             stop_ = true;
-            // if(thr_.joinable()) {
-            //     thr_.join();
-            // }
             std::unique_lock lck{ucm_mtp_};
             ucm_.reset();
         }
 
         bool connected() const {
             std::shared_lock lck{ucm_mtp_};
-            return ucm_ && ucm_->connected() /*&& thr_.joinable()*/;
+            return ucm_ && ucm_->connected();
         }
 
         int send(const void *data, size_t data_size) {
@@ -424,22 +404,22 @@ namespace teal {
             return send(data.data(), data.size());
         }
 
-        // std::optional<bytevec> receive() {
-        //     std::shared_lock lck{ucm_mtp_};
-        //     if(!ucm_) {
-        //         throw std::runtime_error{"connection not ready"};
-        //     }
-        //     std::optional<bytevec> in{ucm_->receive()};
-        //     lck.unlock();
-        //     if(in) {
-        //         std::unique_lock l{muxing_mtp_};
-        //         demux_bottom_layer_.set_network_input(*in);
-        //         if(auto ofid{demux_bottom_layer_.fetch_in_data()}) {
-        //             return demuxer_.add_data(*ofid);
-        //         }
-        //     }
-        //     return {};
-        // }
+        std::optional<bytevec> receive() {
+            std::shared_lock lck{ucm_mtp_};
+            if(!ucm_) {
+                throw std::runtime_error{"connection not ready"};
+            }
+            std::optional<bytevec> in{ucm_->receive()};
+            lck.unlock();
+            if(in) {
+                std::unique_lock l{muxing_mtp_};
+                demux_bottom_layer_.set_network_input(*in);
+                if(auto ofid{demux_bottom_layer_.fetch_in_data()}) {
+                    return demuxer_.add_data(*ofid);
+                }
+            }
+            return {};
+        }
 
         std::string const &host() const {
             return host_;
@@ -456,21 +436,18 @@ namespace teal {
         }
 
     private:
+        command_queue *cq_{nullptr};
         mutable std::shared_mutex ucm_mtp_{};
         std::unique_ptr<teal::net::udp_client_muxed<1400>> ucm_{};
-
         mutable std::shared_mutex callback_mtp_{};
         std::function<void(bytevec const &)> on_data_arrived_{nullptr};
-
         mutable std::shared_mutex muxing_mtp_{};
         net::sized_packets_exchanger mux_bottom_layer_{};
         net::packets_muxer<std::uint32_t> muxer_{1400};
         net::sized_packets_exchanger demux_bottom_layer_{};
         net::packets_demuxer demuxer_{};
-
         std::string host_{};
         std::uint16_t port_{0};
-
         bool stop_{false};
     };
 
