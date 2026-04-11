@@ -512,8 +512,8 @@ namespace teal {
         mutable std::shared_mutex on_connection_closed_mtp_{};
         std::function<void(conn_id_t)> on_connection_closed_{nullptr};
 
-        std::atomic_bool stop_accept_{false};
-        std::atomic_bool conn_broken_{false};
+        std::atomic<bool> stop_accept_{false};
+        std::atomic<bool> conn_broken_{false};
         bool no_delay_{false};
     };
 

@@ -790,7 +790,27 @@ namespace teal {
             }
         }
 
+        std::uint64_t as_unumber() const {
+            if(t_ == jo_int) {
+                return as<std::int64_t>();
+            } else if(t_ == jo_flt) {
+                return as<long double>();
+            } else {
+                throw json_error{"json error: wrong number"};
+            }
+        }
+
         std::int64_t as_number(std::int64_t default_value) const {
+            if(t_ == jo_int) {
+                return as<std::int64_t>();
+            } else if(t_ == jo_flt) {
+                return as<long double>();
+            } else {
+                return default_value;
+            }
+        }
+
+        std::uint64_t as_unumber(std::uint64_t default_value) const {
             if(t_ == jo_int) {
                 return as<std::int64_t>();
             } else if(t_ == jo_flt) {

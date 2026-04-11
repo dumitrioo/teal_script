@@ -6,6 +6,7 @@
 #include "../terminable.hpp"
 #include "../crypto/gamma.hpp"
 #include "../sequence_generator.hpp"
+#include "socket_poller.hpp"
 #include "net_utils.hpp"
 #include "socket_wrapper.hpp"
 #include "net_data_transfer.hpp"
@@ -14,16 +15,14 @@
 namespace teal::net {
 
     template<std::size_t NET_PACKET_PAYLOAD_SIZE_MAX = 1400>
-    class udp_client_muxed {
+    class udp_client_muxed: public terminable {
     public:
         udp_client_muxed(
             long double recv_timeout = 0.1L,
-            bool async = false,
             address_family af = address_family::inet4
         ):
             recv_timeout_{recv_timeout},
-            sock_type_{af},
-            async_{async}
+            sock_type_{af}
         {
         }
 
@@ -34,7 +33,12 @@ namespace teal::net {
         ~udp_client_muxed() { try { close(); } catch (...) {} }
 
         bool connected() const {
-            return sock_fd_ != -1;
+            return sock_fd_ != -1 && !conn_broken_.load(std::memory_order_acquire);
+        }
+
+        void set_on_data_arrived(std::function<void(bytevec const &)> fun) {
+            std::unique_lock cl{callback_mtp_};
+            on_data_arrived_ = fun;
         }
 
         bool connect(std::string const &addr, std::uint16_t port) {
@@ -82,19 +86,66 @@ namespace teal::net {
                     std::array<std::uint8_t, NET_PACKET_PAYLOAD_SIZE_MAX + 256> buffer{};
                     ssize_t n = ::recvfrom(sock_fd_, buffer.data(), buffer.size(), 0, serv_addr(), &socklen);
                     helpers::set_rcv_timeout(sock_fd_, recv_timeout_);
-                    if(async_) {
-                        if(!helpers::make_nonblocking(sock_fd_)) {
-                            ::close(sock_fd_);
-                            sock_fd_ = -1;
-                        }
+                    if(!helpers::make_nonblocking(sock_fd_)) {
+                        ::close(sock_fd_);
+                        sock_fd_ = -1;
                     }
-                    if(n > 0) {
+                    if(sock_fd_ != -1 && n > 0) {
                         teal::serial_reader sr{buffer.data(), (std::size_t)n};
                         teal::serial_reader::const_iterator it{sr.cbegin()};
                         if(it->as_string() == "ok") {
                             ++it;
                             conn_id_ = bit_util::hnswap<std::uint64_t>{it->as<std::uint64_t>()}.val;
-                            result = true;
+                            if(
+                                poller_.create() &&
+                                poller_.add_event(sock_fd_, net::POLL_EVENT_IN /*| net::POLL_EVENT_ET*/)
+                            ) {
+                                unterminate();
+                                std::unique_lock l{thr_mtp_};
+                                thr_ = std::thread{
+                                    [this]() {
+                                        while(!termination() && !conn_broken_.load(std::memory_order_acquire)) {
+                                            std::vector<net::poll_event> evs{poller_.wait(1, timespec_wrapper{5.0})};
+                                            if(!evs.empty()) {
+                                                if((evs[0].events & net::POLL_EVENT_IN) == net::POLL_EVENT_IN) {
+                                                    std::shared_lock l{sock_fd_mtp_};
+                                                    if(sock_fd_ >= 0) {
+                                                        std::array<std::uint8_t, NET_PACKET_PAYLOAD_SIZE_MAX + 256> buffer{};
+                                                        socklen_t socklen{(socklen_t)(sock_type_ == address_family::inet6 ? sizeof(sockaddr_in6) : sizeof(sockaddr_in))};
+                                                        ssize_t n = ::recvfrom(sock_fd_, buffer.data(), buffer.size(), 0, serv_addr(), &socklen);
+                                                        l.unlock();
+                                                        if(n == 5 && std::memcmp("close", buffer.data(), 5) == 0) {
+                                                            ::close(sock_fd_);
+                                                            sock_fd_ = -1;
+                                                            sock_type_ = address_family::unspecified;
+                                                        } else if(n > 0) {
+                                                            std::unique_lock l{demuxer_mtp_};
+                                                            if(auto demuxed{demuxer_.add_data(buffer.data(), (teal::serial_reader::size_type)n)}) {
+                                                                teal::serial_reader const ser{demuxed->data(), (teal::serial_reader::size_type)demuxed->size()};
+                                                                teal::serial_reader::const_iterator iter{ser.cbegin()};
+                                                                if(iter->as_unumber() == 0) {
+                                                                    ++iter;
+                                                                    notify_on_data_arrived(iter->as_bytevec());
+                                                                } else {
+                                                                    ++iter;
+                                                                    std::uint64_t ctr_start{iter->as_unumber()};
+                                                                    ++iter;
+                                                                    notify_on_data_arrived(decrypt_data(iter->data(), iter->size(), ctr_start));
+                                                                }
+                                                                remove_stale_inputs_unlocked(180);
+                                                            }
+                                                        }
+                                                    }
+                                                } else {
+                                                    std::cout << "UDP client conn broken" << std::endl;
+                                                    conn_broken_ = true;
+                                                }
+                                            }
+                                        }
+                                    }
+                                };
+                                result = true;
+                            }
                         }
                     }
                 }
@@ -113,6 +164,11 @@ namespace teal::net {
         }
 
         void close() {
+            {
+                std::unique_lock l{thr_mtp_};
+                if(thr_.joinable()) { thr_.join(); }
+            }
+            poller_.close();
             std::vector<std::uint8_t> close_data{'c', 'l', 'o', 's', 'e', 0, 0, 0, 0, 0, 0, 0, 0};
             std::unique_lock l{sock_fd_mtp_};
             if(sock_fd_ >= 0) {
@@ -235,6 +291,7 @@ namespace teal::net {
         }
 
     private:
+        net::socket_poller poller_{};
         std::uint64_t conn_id_{0};
         long double recv_timeout_{15.0L};
         union {
@@ -244,7 +301,6 @@ namespace teal::net {
         mutable std::shared_mutex sock_fd_mtp_{};
         int sock_fd_{-1};
         address_family sock_type_{address_family::unspecified};
-        bool async_{false};
 
         struct sockaddr const *serv_addr() const {
             return (struct sockaddr const *)&serv_addr_;
@@ -255,12 +311,23 @@ namespace teal::net {
         }
 
     private:
+        std::mutex thr_mtp_{};
+        std::thread thr_{};
+        std::shared_mutex callback_mtp_{};
+        std::function<void(bytevec const &)> on_data_arrived_{nullptr};
+
+        void notify_on_data_arrived(bytevec const &bv) {
+            std::shared_lock cl{callback_mtp_};
+            if(on_data_arrived_) on_data_arrived_(bv);
+        }
+
         std::mutex encrypt_mtp_{};
         std::mutex decrypt_mtp_{};
         std::atomic<std::uint64_t> crypto_ctr_{0};
         teal::crypt::gamma out_gamma_{};
         teal::crypt::gamma in_gamma_{};
         std::atomic<bool> encryption_on_{false};
+        std::atomic<bool> conn_broken_{false};
 
         std::vector<std::uint8_t> encrypt_data(std::vector<std::uint8_t> const &p, std::uint64_t ctr_start) {
             std::unique_lock lck{encrypt_mtp_};

@@ -24,21 +24,28 @@ namespace teal::net {
     public:
         udp_server_muxed(
             std::size_t num_work_threads,
-            long double recv_timeout = 0.1L,
             long double stale_connections_removal_timeout = 0.0L,
-            bool async = true,
             address_family af = address_family::inet4
         ):
+            num_jobs_buffer_workers_{num_work_threads},
             stale_connections_removal_timeout_{stale_connections_removal_timeout},
-            recv_timeout_{recv_timeout},
-            sock_type_{af},
-            async_{async}
+            sock_type_{af}
         {
-            std::unique_lock l2{jobs_buffer_workers_mtp_};
-            for(size_t i{}; i < num_work_threads; ++i) {
+            start_jobs();
+        }
+
+        void start_jobs() {
+            {
+                std::unique_lock l{jobs_buffer_mtp_};
+                jobs_buffer_.clear();
+                jobs_buffer_cvar_.notify_all();
+            }
+            std::unique_lock l{jobs_buffer_workers_mtp_};
+            stop_jobs_ = false;
+            for(size_t i{}; i < num_jobs_buffer_workers_; ++i) {
                 jobs_buffer_workers_.emplace_back(
                     [this]() {
-                        while(!stop_jobs_) {
+                        while(!stop_jobs_.load(std::memory_order_acquire)) {
                             std::function<void()> fn{};
                             if(fetch_job(fn)) {
                                 fn();
@@ -47,6 +54,20 @@ namespace teal::net {
                     }
                 );
             }
+        }
+
+        void stop_jobs() {
+            {
+                std::unique_lock l{jobs_buffer_workers_mtp_};
+                stop_jobs_ = true;
+                for(auto &&t: jobs_buffer_workers_) {
+                    if(t.joinable()) { t.join(); }
+                }
+                jobs_buffer_workers_.clear();
+            }
+            std::unique_lock l{jobs_buffer_mtp_};
+            jobs_buffer_.clear();
+            jobs_buffer_cvar_.notify_all();
         }
 
         udp_server_muxed(udp_server_muxed const &) = delete;
@@ -59,19 +80,6 @@ namespace teal::net {
 
         ~udp_server_muxed() {
             stop();
-            stop_jobs_ = true;
-            {
-                std::unique_lock l2{jobs_buffer_workers_mtp_};
-                for(auto &&t: jobs_buffer_workers_) {
-                    if(t.joinable()) { t.join(); }
-                }
-                jobs_buffer_workers_.clear();
-            }
-            {
-                std::unique_lock l2{jobs_buffer_mtp_};
-                jobs_buffer_.clear();
-                jobs_buffer_cvar_.notify_all();
-            }
         }
 
         void set_on_data_arrived(std::function<void(std::uint64_t, void const *, std::size_t)> const &on_data_from_client) {
@@ -165,12 +173,15 @@ namespace teal::net {
             try {
                 terminate();
                 wait();
+                stop_jobs();
                 remove_all_connections();
                 {
-                    std::unique_lock l{sock_fd_mtp_};
                     if(sock_fd_ != -1) {
-                        poller_.del_event(sock_fd_);
+                        {
+                        std::unique_lock pl{poller_mtp_};
                         poller_.close();
+                        }
+                        std::unique_lock sl{sock_fd_mtp_};
                         ::close(sock_fd_);
                         sock_fd_ = -1;
                     }
@@ -182,6 +193,7 @@ namespace teal::net {
         }
 
         bool ok() const {
+            std::shared_lock pl{sock_fd_mtp_};
             return sock_fd_ != -1;
         }
 
@@ -200,13 +212,18 @@ namespace teal::net {
 
                 ssize_t n{0};
                 std::shared_ptr<in_struct> in_buff{std::make_shared<in_struct>()};
-                std::vector<poll_event> events{poller_.wait(1, timespec_wrapper{0.1})};
+                std::vector<poll_event> events{};
+                {
+                    std::unique_lock l{poller_mtp_};
+                    events = poller_.wait(1, timespec_wrapper{0.1});
+                }
                 if(events.size() == 1) {
                     if((events[0].events & net::POLL_EVENT_IN) == net::POLL_EVENT_IN) {
                         std::shared_lock l{sock_fd_mtp_};
                         if(sock_fd_ >= 0) {
                             socklen_t socklen{(socklen_t)(sock_type_ == address_family::inet6 ? sizeof(sockaddr_in6) : sizeof(sockaddr_in))};
                             n = ::recvfrom(sock_fd_, in_buff->first.data(), NET_PACKET_PAYLOAD_SIZE_MAX + 256, 0, (struct sockaddr *)&cli_addr, &socklen);
+                            l.unlock();
                             if(n > 0) {
                                 in_buff->second = n;
                                 enqueue_job([this, cli_addr, in_buff]() { process_input(cli_addr, in_buff); });
@@ -225,12 +242,9 @@ namespace teal::net {
 
         void wait() {
             std::unique_lock sl{threads_mtp_};
-            for(auto &&t: threads_) {
-                if(t.joinable()) {
-                    t.join();
-                }
+            if(thread_.joinable()) {
+                thread_.join();
             }
-            threads_.clear();
         }
 
         bool started() const {
@@ -239,18 +253,15 @@ namespace teal::net {
 
         bool start(std::string const &addr, int port, int num_listen_threads) {
             bool res{false};
-            std::unique_lock l{sock_fd_mtp_};
+            std::unique_lock pl{poller_mtp_};
+            std::unique_lock sl{sock_fd_mtp_};
             if(started_) {
                 res = true;
             } else {
                 unterminate();
                 if(sock_type_ == address_family::inet4) {
                     if((sock_fd_ = ::socket(AF_INET, SOCK_DGRAM, 0)) >= 0) {
-                        if(!helpers::set_rcv_timeout(sock_fd_, recv_timeout_)) {
-                            ::close(sock_fd_);
-                            sock_fd_ = -1;
-                        }
-                        if(sock_fd_ != -1 && async_) {
+                        if(sock_fd_ != -1) {
                             if(!helpers::make_nonblocking(sock_fd_)) {
                                 ::close(sock_fd_);
                                 sock_fd_ = -1;
@@ -270,11 +281,13 @@ namespace teal::net {
                                     }
                                     std::unique_lock sl{threads_mtp_};
                                     for(int i = 0; i < num_listen_threads; ++i) {
-                                        threads_.emplace_back([this]() {
-                                            while(!termination()) {
-                                                worker();
+                                        thread_ = std::thread{
+                                            [this]() {
+                                                while(!termination()) {
+                                                    worker();
+                                                }
                                             }
-                                        });
+                                        };
                                     }
                                     started_ = true;
                                     res = true;
@@ -285,11 +298,7 @@ namespace teal::net {
                     }
                 } else if(sock_type_ == address_family::inet6) {
                     if((sock_fd_ = ::socket(AF_INET6, SOCK_DGRAM, 0)) >= 0) {
-                        if(!helpers::set_rcv_timeout(sock_fd_, recv_timeout_)) {
-                            ::close(sock_fd_);
-                            sock_fd_ = -1;
-                        }
-                        if(sock_fd_ != -1 && async_) {
+                        if(sock_fd_ != -1) {
                             if(!helpers::make_nonblocking(sock_fd_)) {
                                 ::close(sock_fd_);
                                 sock_fd_ = -1;
@@ -309,11 +318,13 @@ namespace teal::net {
                                     }
                                     std::unique_lock sl{threads_mtp_};
                                     for(int i = 0; i < num_listen_threads; ++i) {
-                                        threads_.emplace_back([this]() {
-                                            while(!termination()) {
-                                                worker();
+                                        thread_ = std::thread{
+                                            [this]() {
+                                                while(!termination()) {
+                                                    worker();
+                                                }
                                             }
-                                        });
+                                        };
                                     }
                                     started_ = true;
                                     res = true;
@@ -708,12 +719,13 @@ namespace teal::net {
 
     private:
         mutable std::shared_mutex threads_mtp_{};
-        std::list<std::thread> threads_{};
+        std::thread thread_{};
 
-        std::atomic_bool stop_jobs_{false};
+        std::atomic<bool> stop_jobs_{false};
         mutable std::mutex jobs_buffer_mtp_{};
         std::condition_variable jobs_buffer_cvar_{};
         mutable std::mutex jobs_buffer_workers_mtp_{};
+        std::size_t num_jobs_buffer_workers_{0};
         std::list<std::thread> jobs_buffer_workers_{};
         std::list<std::function<void()>> jobs_buffer_{};
         long double stale_connections_removal_timeout_{0};
@@ -725,12 +737,11 @@ namespace teal::net {
         std::function<void(std::uint64_t)> on_new_connection_{nullptr};
         std::function<void(std::uint64_t, void const *, std::size_t)> on_data_from_client_{nullptr};
         std::function<void(std::uint64_t)> on_connection_closed_{nullptr};
-        long double recv_timeout_{0.1L};
         mutable std::shared_mutex sock_fd_mtp_{};
         int sock_fd_{-1};
+        mutable std::shared_mutex poller_mtp_{};
         socket_poller poller_{};
         address_family sock_type_{address_family::unspecified};
-        bool async_{false};
         bool started_{false};
     };
 

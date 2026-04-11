@@ -21,16 +21,7 @@ function rnd_str(n) {
 random_string() {
     if(steady_clock() > this.last_time + 0.5) {
         this.last_time = steady_clock();
-        this.res = rnd_str(1500);
-        console.print("original value changed to: ", this.res);
-    }
-    return this.res;
-}
-
-random_value() {
-    if(steady_clock() > this.last_time + 0.5) {
-        this.last_time = steady_clock();
-        this.res = rand();
+        this.res = rnd_str(rand() % 100 + 1);
         console.print("original value changed to: ", this.res);
     }
     return this.res;
@@ -40,7 +31,6 @@ random_value() {
 // all the cells are already exposed by the embedded local network server
 // inside the Engine Runtime
 // and this cell's value is accessed below over the network (TCP/IP)
-// random_value just_a_regular_cell();
 random_string just_a_regular_cell();
 
 // value obtained over the network by URL with name "value_from_net".

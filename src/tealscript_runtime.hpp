@@ -2183,21 +2183,23 @@ namespace teal {
             outputs_.clear();
         }
 
-        void start_net_server(std::string const &bind_addr, std::uint16_t port, std::size_t num_threads, long double stale_connections_removal_timeout) override {
+        void start_net_server(std::string const &bind_addr, std::uint16_t port, std::size_t num_work_threads, long double stale_connections_removal_timeout) override {
             std::shared_lock l{ppserver_mtp_};
             if(!ppserver_) {
                 l.unlock();
                 std::unique_lock l1{ppserver_mtp_};
                 if(!ppserver_) {
-                    ppserver_ = std::make_unique<pp_server_udp>(num_threads, stale_connections_removal_timeout);
+                    ppserver_ = std::make_unique<pp_server_udp>(num_work_threads, stale_connections_removal_timeout);
                     ppserver_->set_on_data_arrived([this](conn_id_t conn_id, bytevec const &data) {
                         json requ{json::bdeserialize(data)};
+                        // std::cout << "server received " << requ.serialize5() << std::endl;
                         auto act{requ["act"].as_string()};
+                        json resp{};
+                        resp["id"] = requ["id"];
                         if(act == "get") {
                             cell_base *cellptr{nullptr};
                             auto nme{requ["n"].as_string()};
                             auto ali{requ["a"].as_string()};
-                            json resp{};
                             resp["act"] = "get";
                             resp["n"] = ali;
                             do {
@@ -2239,13 +2241,16 @@ namespace teal {
                                 } else {
                                     resp["v"] = vb.dump();
                                 }
+                                // std::cout << "server send " << resp.serialize5() << std::endl;
                                 ppserver_->send(conn_id, resp.bserialize());
                                 return;
                             } else {
                                 json resp{};
+                                resp["id"] = requ["id"];
                                 resp["act"] = "get";
                                 resp["n"] = ali;
                                 resp["t"] = "undefined";
+                                // std::cout << "server send " << resp.serialize5() << std::endl;
                                 ppserver_->send(conn_id, resp.bserialize());
                             }
                         }
@@ -2253,7 +2258,7 @@ namespace teal {
                 }
             }
             if(!ppserver_->started()) {
-                ppserver_->start(bind_addr, port, num_threads);
+                ppserver_->start(bind_addr, port, 1);
             }
         }
 
@@ -2509,7 +2514,7 @@ namespace teal {
         mutable shared_mutex extern_cells_mtp_{};
         str_map_t<std::shared_ptr<extern_cell>> extern_cells_{};
         mutable shared_mutex ext_cells_processor_mtp_{};
-        std::atomic_bool ext_cells_processor_started_{false};
+        std::atomic<bool> ext_cells_processor_started_{false};
         bool ext_cells_processor_enabled_{true};
         std::thread ext_cells_processor_{};
 
@@ -2526,6 +2531,7 @@ namespace teal {
                 res->set_on_data_arrived([this](bytevec const &rsp) {
                     try {
                         json resp{json::bdeserialize(rsp)};
+                        // std::cout << "client received " << resp.serialize5() << std::endl;
                         auto act{resp["act"].as_string()};
                         if(act == "get") {
                             auto nme{resp["n"].as_string()};
@@ -2592,6 +2598,7 @@ namespace teal {
             return ext_cells_processor_started_.load(std::memory_order_acquire);
         }
 
+        sequence_generator<std::uint64_t> ext_id_gen_{0};
         void start_extcell_processing() {
             if(extcell_processing_started()) {
                 return;
@@ -2612,10 +2619,12 @@ namespace teal {
                             std::shared_lock l{extern_cells_mtp_};
                             for(auto cp: extern_cells_) {
                                 json requ{};
+                                requ["id"] = ext_id_gen_();
                                 requ["act"] = "get";
                                 requ["n"] = cp.second->remote_var_name();
                                 requ["a"] = cp.second->inst_name();
                                 if(auto con{get_connected_client(cp.second.get())}) {
+                                    // std::cout << "client sends " << requ.serialize5() << std::endl;
                                     con->send(requ.bserialize());
                                 }
                             }

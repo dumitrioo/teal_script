@@ -242,7 +242,7 @@ namespace teal {
         teal::net::socket sckt_{};
         net::socket_poller poller_{};
 
-        std::atomic_bool conn_broken_{false};
+        std::atomic<bool> conn_broken_{false};
     };
 
 }
