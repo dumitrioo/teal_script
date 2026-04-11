@@ -261,11 +261,20 @@ namespace teal {
     public:
         pp_server_udp(
             std::size_t num_work_threads,
+            long double stale_connections_removal_timeout = 0.0L,
             long double recv_timeout = 0.1L,
             bool async = false,
             net::address_family af = net::address_family::inet4
         ):
-            usm_{std::make_unique<net::udp_server_muxed<1450>>(num_work_threads, recv_timeout, async, af)}
+            usm_{
+                std::make_unique<net::udp_server_muxed<1400>>(
+                    num_work_threads,
+                    recv_timeout,
+                    stale_connections_removal_timeout,
+                    async,
+                    af
+                )
+            }
         {
         }
         pp_server_udp(pp_server_udp const &) = delete;
@@ -327,7 +336,7 @@ namespace teal {
         }
 
     private:
-        std::unique_ptr<teal::net::udp_server_muxed<1450>> usm_{};
+        std::unique_ptr<teal::net::udp_server_muxed<1400>> usm_{};
         mutable std::shared_mutex on_data_arrived_mtp_{};
         std::function<void(conn_id_t, bytevec const &)> on_data_arrived_{nullptr};
     };
@@ -361,11 +370,16 @@ namespace teal {
             stop_ = false;
             host_ = host;
             port_ = port;
+            std::unique_lock lck{ucm_mtp_};
+            ucm_ = std::make_unique<teal::net::udp_client_muxed<1400>>();
             if(ucm_->connect(host, port)) {
                 thr_ = std::thread{
                     [this]() {
                         while(!stop_) {
+                            std::shared_lock lck{ucm_mtp_};
+                            if(!ucm_) { break; }
                             if(auto bv{ucm_->receive()}) {
+                                lck.unlock();
                                 notify_on_data_arrived(*bv);
                             }
                         }
@@ -379,22 +393,23 @@ namespace teal {
             if(thr_.joinable()) {
                 thr_.join();
             }
-            ucm_->close();
+            std::unique_lock lck{ucm_mtp_};
+            ucm_.reset();
         }
 
         bool connected() const {
-            return ucm_->connected();
+            std::shared_lock lck{ucm_mtp_};
+            return ucm_ && ucm_->connected() && thr_.joinable();
         }
 
         int send(const void *data, size_t data_size) {
-            int res{};
-            std::unique_lock l{muxing_mtp_};
-            muxer_.add_message(data, data_size);
-            while(auto ochnk{muxer_.fetch_out_chunk()}) {
-                bytevec pkt{mux_bottom_layer_.output_data_to_network_frame(*ochnk)};
-                res += ucm_->send(pkt);
+            std::shared_lock lck{ucm_mtp_};
+            if(!ucm_) {
+                throw std::runtime_error{"connection not ready"};
             }
-            return res;
+            return ucm_->send(bytevec{static_cast<uint8_t const *>(data),
+                   static_cast<uint8_t const *>(data) + data_size}) ?
+                   data_size : 0;
         }
 
         int send(bytevec const &data) {
@@ -406,7 +421,12 @@ namespace teal {
         }
 
         std::optional<bytevec> receive() {
+            std::shared_lock lck{ucm_mtp_};
+            if(!ucm_) {
+                throw std::runtime_error{"connection not ready"};
+            }
             std::optional<bytevec> in{ucm_->receive()};
+            lck.unlock();
             if(in) {
                 std::unique_lock l{muxing_mtp_};
                 demux_bottom_layer_.set_network_input(*in);
@@ -432,12 +452,13 @@ namespace teal {
         }
 
     private:
-        std::unique_ptr<teal::net::udp_client_muxed<1450>> ucm_{};
+        mutable std::shared_mutex ucm_mtp_{};
+        std::unique_ptr<teal::net::udp_client_muxed<1400>> ucm_{};
 
-        std::shared_mutex callback_mtp_{};
+        mutable std::shared_mutex callback_mtp_{};
         std::function<void(bytevec const &)> on_data_arrived_{nullptr};
 
-        std::shared_mutex muxing_mtp_{};
+        mutable std::shared_mutex muxing_mtp_{};
         net::sized_packets_exchanger mux_bottom_layer_{};
         net::packets_muxer<std::uint32_t> muxer_{1400};
         net::sized_packets_exchanger demux_bottom_layer_{};

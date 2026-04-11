@@ -13,7 +13,7 @@
 
 namespace teal::net {
 
-    template<std::size_t NET_PACKET_PAYLOAD_SIZE_MAX = 1450>
+    template<std::size_t NET_PACKET_PAYLOAD_SIZE_MAX = 1400>
     class udp_client_muxed {
     public:
         udp_client_muxed(
@@ -31,7 +31,7 @@ namespace teal::net {
         udp_client_muxed(udp_client_muxed &&) = delete;
         udp_client_muxed &operator=(udp_client_muxed const &) = delete;
         udp_client_muxed &operator=(udp_client_muxed &&) = delete;
-        ~udp_client_muxed() { close(); }
+        ~udp_client_muxed() { try { close(); } catch (...) {} }
 
         bool connected() const {
             return sock_fd_ != -1;
@@ -44,14 +44,9 @@ namespace teal::net {
                 result = true;
             } else {
                 std::string const conn_data{"con"};
+                socklen_t socklen{0};
                 if(sock_type_ == address_family::inet4) {
                     if((sock_fd_ = ::socket(AF_INET, SOCK_DGRAM, 0)) != -1) {
-                        if(async_) {
-                            if(!helpers::make_nonblocking(sock_fd_)) {
-                                ::close(sock_fd_);
-                                sock_fd_ = -1;
-                            }
-                        }
                         if(sock_fd_ != -1) {
                             try {
                                 if(helpers::set_rcv_timeout(sock_fd_, 15)) {
@@ -60,23 +55,7 @@ namespace teal::net {
                                     serv_addr_.v4_.sin_family = AF_INET;
                                     serv_addr_.v4_.sin_port = ::htons(port);
                                     serv_addr_.v4_.sin_addr.s_addr = dst_ip.s_addr;
-                                    // std::cout << "cli: " << "sending " << conn_data << std::endl;
-                                    socklen_t socklen{(socklen_t)(sock_type_ == address_family::inet6 ? sizeof(sockaddr_in6) : sizeof(sockaddr_in))};
-                                    if(::sendto(sock_fd_, conn_data.data(), conn_data.size(), 0, serv_addr(), socklen) != -1) {
-                                        std::array<std::uint8_t, NET_PACKET_PAYLOAD_SIZE_MAX + 256> buffer{};
-                                        ssize_t n = ::recvfrom(sock_fd_, buffer.data(), buffer.size(), 0, serv_addr(), &socklen);
-                                        helpers::set_rcv_timeout(sock_fd_, recv_timeout_);
-                                        if(n > 0) {
-                                            teal::serial_reader sr{buffer.data(), (std::size_t)n};
-                                            // std::cout << "cli: " << "received " << sr.data_vec() << std::endl;
-                                            teal::serial_reader::const_iterator it{sr.cbegin()};
-                                            if(it->as_string() == "ok") {
-                                                ++it;
-                                                conn_id_ = it->as_unumber();
-                                                result = true;
-                                            }
-                                        }
-                                    }
+                                    socklen = (socklen_t)(sock_type_ == address_family::inet6 ? sizeof(sockaddr_in6) : sizeof(sockaddr_in));
                                 }
                             } catch (...) {
                             }
@@ -84,12 +63,6 @@ namespace teal::net {
                     }
                 } else if(sock_type_ == address_family::inet6) {
                     if((sock_fd_ = ::socket(AF_INET6, SOCK_DGRAM, 0)) != -1) {
-                        if(async_) {
-                            if(!helpers::make_nonblocking(sock_fd_)) {
-                                ::close(sock_fd_);
-                                sock_fd_ = -1;
-                            }
-                        }
                         if(sock_fd_ != -1) {
                             try {
                                 if(helpers::set_rcv_timeout(sock_fd_, 15)) {
@@ -98,27 +71,32 @@ namespace teal::net {
                                     serv_addr_.v6_.sin6_family = AF_INET6;
                                     serv_addr_.v6_.sin6_port = ::htons(port);
                                     serv_addr_.v6_.sin6_addr = dst_ip;
-                                    socklen_t socklen{(socklen_t)(sock_type_ == address_family::inet6 ? sizeof(sockaddr_in6) : sizeof(sockaddr_in))};
-                                    if(::sendto(sock_fd_, conn_data.data(), conn_data.size(), 0, serv_addr(), socklen) != -1) {
-                                        std::array<std::uint8_t, NET_PACKET_PAYLOAD_SIZE_MAX + 256> buffer{};
-                                        ssize_t n = ::recvfrom(sock_fd_, buffer.data(), buffer.size(), 0, serv_addr(), &socklen);
-                                        helpers::set_rcv_timeout(sock_fd_, recv_timeout_);
-                                        if(n > 0) {
-                                            teal::serial_reader sr{buffer.data(), (std::size_t)n};
-                                            teal::serial_reader::const_iterator it{sr.cbegin()};
-                                            if(it->as_string() == "ok") {
-                                                ++it;
-                                                conn_id_ = it->as_unumber();
-                                                result = true;
-                                            }
-                                        }
-                                    }
+                                    socklen = (socklen_t)(sock_type_ == address_family::inet6 ? sizeof(sockaddr_in6) : sizeof(sockaddr_in));
                                 }
                             } catch (...) {
                             }
                         }
                     }
-                } else {
+                }
+                if(::sendto(sock_fd_, conn_data.data(), conn_data.size(), 0, serv_addr(), socklen) != -1) {
+                    std::array<std::uint8_t, NET_PACKET_PAYLOAD_SIZE_MAX + 256> buffer{};
+                    ssize_t n = ::recvfrom(sock_fd_, buffer.data(), buffer.size(), 0, serv_addr(), &socklen);
+                    helpers::set_rcv_timeout(sock_fd_, recv_timeout_);
+                    if(async_) {
+                        if(!helpers::make_nonblocking(sock_fd_)) {
+                            ::close(sock_fd_);
+                            sock_fd_ = -1;
+                        }
+                    }
+                    if(n > 0) {
+                        teal::serial_reader sr{buffer.data(), (std::size_t)n};
+                        teal::serial_reader::const_iterator it{sr.cbegin()};
+                        if(it->as_string() == "ok") {
+                            ++it;
+                            conn_id_ = bit_util::hnswap<std::uint64_t>{it->as<std::uint64_t>()}.val;
+                            result = true;
+                        }
+                    }
                 }
             }
             if(!result) {
@@ -222,21 +200,20 @@ namespace teal::net {
                     sock_fd_ = -1;
                     sock_type_ = address_family::unspecified;
                 } else if(n > 0) {
-                    teal::serial_reader const ser{buffer.data(), (teal::serial_reader::size_type)n};
-                    teal::serial_reader::const_iterator iter{ser.cbegin()};
-                    if(iter->as_unumber() == 0) {
-                        ++iter;
-                        std::unique_lock l{demuxer_mtp_};
-                        result = demuxer_.add_data(iter->data(), iter->size());
-                        remove_stale_inputs_unlocked(120);
-                    } else {
-                        ++iter;
-                        std::uint64_t ctr_start{iter->as_unumber()};
-                        ++iter;
-                        std::vector<std::uint8_t> d{decrypt_data(iter->data(), iter->size(), ctr_start)};
-                        std::unique_lock l{demuxer_mtp_};
-                        result = demuxer_.add_data(d);
-                        remove_stale_inputs_unlocked(120);
+                    std::unique_lock l{demuxer_mtp_};
+                    if(auto demuxed{demuxer_.add_data(buffer.data(), (teal::serial_reader::size_type)n)}) {
+                        teal::serial_reader const ser{demuxed->data(), (teal::serial_reader::size_type)demuxed->size()};
+                        teal::serial_reader::const_iterator iter{ser.cbegin()};
+                        if(iter->as_unumber() == 0) {
+                            ++iter;
+                            result = iter->as_bytevec();
+                        } else {
+                            ++iter;
+                            std::uint64_t ctr_start{iter->as_unumber()};
+                            ++iter;
+                            result = decrypt_data(iter->data(), iter->size(), ctr_start);
+                        }
+                        remove_stale_inputs_unlocked(180);
                     }
                 }
             }
@@ -248,10 +225,12 @@ namespace teal::net {
         teal::net::packets_muxer<std::uint16_t> muxer_{NET_PACKET_PAYLOAD_SIZE_MAX};
         std::mutex demuxer_mtp_{};
         teal::net::packets_demuxer demuxer_{};
+        long double last_time_demuxer_check_{0};
 
         void remove_stale_inputs_unlocked(long double seconds_old) {
-            if(demuxer_.queued_items() > 10) {
+            if(curr_timestamp_seconds() > last_time_demuxer_check_ + seconds_old) {
                 demuxer_.remove_queued_items_older_than_seconds(seconds_old);
+                last_time_demuxer_check_ = curr_timestamp_seconds();
             }
         }
 

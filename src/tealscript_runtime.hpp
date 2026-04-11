@@ -2183,13 +2183,13 @@ namespace teal {
             outputs_.clear();
         }
 
-        void start_net_server(std::string const &bind_addr, std::uint16_t port, std::size_t num_threads, bool no_delay) override {
+        void start_net_server(std::string const &bind_addr, std::uint16_t port, std::size_t num_threads, long double stale_connections_removal_timeout) override {
             std::shared_lock l{ppserver_mtp_};
             if(!ppserver_) {
                 l.unlock();
                 std::unique_lock l1{ppserver_mtp_};
                 if(!ppserver_) {
-                    ppserver_ = std::make_unique<pp_server>();
+                    ppserver_ = std::make_unique<pp_server_udp>(num_threads, stale_connections_removal_timeout);
                     ppserver_->set_on_data_arrived([this](conn_id_t conn_id, bytevec const &data) {
                         json requ{json::bdeserialize(data)};
                         auto act{requ["act"].as_string()};
@@ -2200,20 +2200,22 @@ namespace teal {
                             json resp{};
                             resp["act"] = "get";
                             resp["n"] = ali;
+                            do {
                             {
                                 auto it{input_cells_.find(nme)};
-                                if(it != input_cells_.end()) { cellptr = it->second.get(); }
+                                if(it != input_cells_.end()) { cellptr = it->second.get(); break; }
                             }
                             {
                                 auto it{worker_cells_.find(nme)};
-                                if(it != worker_cells_.end()) { cellptr = it->second.get(); }
+                                if(it != worker_cells_.end()) { cellptr = it->second.get(); break; }
                             }
 #ifdef TEAL_USE_EXTERNAL_VALUES
                             {
                                 auto it{extern_cells_.find(nme)};
-                                if(it != extern_cells_.end()) { cellptr = it->second.get(); }
+                                if(it != extern_cells_.end()) { cellptr = it->second.get(); break; }
                             }
 #endif
+                            } while(false);
                             if(cellptr != nullptr) {
                                 valbox vb{cellptr->value().deref()};
                                 resp["t"] = vb.type_to_str(vb.val_or_pointed_type());
@@ -2251,7 +2253,7 @@ namespace teal {
                 }
             }
             if(!ppserver_->started()) {
-                ppserver_->start(bind_addr, port, num_threads, no_delay);
+                ppserver_->start(bind_addr, port, num_threads);
             }
         }
 
@@ -2511,33 +2513,31 @@ namespace teal {
         bool ext_cells_processor_enabled_{true};
         std::thread ext_cells_processor_{};
 
-        uint64_t ext_cells_refresh_interval_nanos_{0};
+        uint64_t ext_cells_refresh_interval_nanos_{5000000ULL};
         bool ext_cells_nodelay_{false};
         mutable shared_mutex pp_clients_mtp_{};
-        std::map<std::string, std::map<int, std::shared_ptr<pp_client>>> pp_clients_{};
+        std::map<std::string, std::map<int, std::shared_ptr<pp_client_udp>>> pp_clients_{};
 
-        std::shared_ptr<pp_client> get_connected_client(extern_cell const *ecp) {
+        std::shared_ptr<pp_client_udp> get_connected_client(extern_cell const *ecp) {
             std::unique_lock l{pp_clients_mtp_};
-            std::shared_ptr<pp_client> res{pp_clients_[ecp->remote_host()][*ecp->remote_url().port()]};
+            std::shared_ptr<pp_client_udp> res{pp_clients_[ecp->remote_host()][*ecp->remote_url().port()]};
             if(!res || !res->connected()) {
-                res = std::make_shared<pp_client>();
-                res->set_on_data_arrived([this](pp_client *con) {
-                    if(auto rsp{con->receive(0.05)}) {
-                        try {
-                            json resp{json::bdeserialize(*rsp)};
-                            auto act{resp["act"].as_string()};
-                            if(act == "get") {
-                                auto nme{resp["n"].as_string()};
-                                auto it{extern_cells_.find(nme)};
-                                if(it != extern_cells_.end()) {
-                                    update_vbox(it->second.get(), resp);
-                                }
+                res = std::make_shared<pp_client_udp>();
+                res->set_on_data_arrived([this](bytevec const &rsp) {
+                    try {
+                        json resp{json::bdeserialize(rsp)};
+                        auto act{resp["act"].as_string()};
+                        if(act == "get") {
+                            auto nme{resp["n"].as_string()};
+                            auto it{extern_cells_.find(nme)};
+                            if(it != extern_cells_.end()) {
+                                update_vbox(it->second.get(), resp);
                             }
-                        } catch (...) {
                         }
+                    } catch (...) {
                     }
                 });
-                res->start(ecp->remote_host(), *ecp->remote_url().port(), ext_cells_nodelay_);
+                res->start(ecp->remote_host(), *ecp->remote_url().port());
                 if(!res->connected()) {
                     res.reset();
                 }
@@ -2589,12 +2589,11 @@ namespace teal {
         }
 
         bool extcell_processing_started() const {
-            // std::shared_lock l{ext_cells_processor_mtp_};
             return ext_cells_processor_started_.load(std::memory_order_acquire);
         }
 
         void start_extcell_processing() {
-            if(ext_cells_processor_started_.load(std::memory_order_acquire)) {
+            if(extcell_processing_started()) {
                 return;
             }
 
@@ -2650,7 +2649,7 @@ namespace teal {
 #endif
 
         mutable shared_mutex ppserver_mtp_{};
-        std::unique_ptr<pp_server> ppserver_{nullptr};
+        std::unique_ptr<pp_server_udp> ppserver_{nullptr};
     };
 
 }
