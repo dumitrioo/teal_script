@@ -118,7 +118,7 @@ int main(int argc, char **argv) {
         rt.run_mt(std::thread::hardware_concurrency());
         while(!rt.wait(0.1)) {
         }
-        if(rt.failure()) { throw std::runtime_error{rt.failure_description()}; }
+        if(rt.failure_occured()) { throw std::runtime_error{rt.failure_description()}; }
 #endif
 
 #ifndef TEAL_DEBUGGING

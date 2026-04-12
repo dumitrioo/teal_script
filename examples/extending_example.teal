@@ -46,6 +46,7 @@ extension_test() {
         console.error(e);
     }
     exit();
+    return 0;
 }
 
 extension_test ext_test();

@@ -1874,6 +1874,27 @@ namespace teal {
             return termination_requested_.load(std::memory_order_acquire) != 0;
         }
 
+        void fail(std::string const &descr) {
+            std::unique_lock l{failure_mtp_};
+            failure_description_ = descr;
+            failure_.store(1, std::memory_order_release);
+        }
+
+        void unfail() {
+            std::unique_lock l{failure_mtp_};
+            failure_description_.clear();
+            failure_.store(0, std::memory_order_release);
+        }
+
+        bool failure_occured() const {
+            return failure_.load(std::memory_order_acquire) != 0;
+        }
+
+        std::string failure_description() const {
+            std::shared_lock l{failure_mtp_};
+            return failure_description_;
+        }
+
         bool programmatic_termination_enabled() const {
             return programmatic_termination_enabled_ != 0;
         }
@@ -1929,12 +1950,8 @@ namespace teal {
             if(!threads_.empty()) {
                 return;
             }
-            {
-                std::unique_lock l{failure_mtp_};
-                failure_description_.clear();
-                failure_.store(0, std::memory_order_release);
-            }
-            termination_requested_.store(0, std::memory_order_release);
+            unfail();
+            unterminate();
 
 #ifdef TEAL_USE_EXTERNAL_VALUES
             start_extcell_processing();
@@ -1949,19 +1966,19 @@ namespace teal {
                         std::shared_ptr<execution_context> exctx{std::make_shared<execution_context>()};
                         execution_context *exctx_ptr{exctx.get()};
                         exctx_ptr->set_runtime_interface(this);
-                        while(
-                            termination_requested_.load(std::memory_order_acquire) == 0 &&
-                            failure_.load(std::memory_order_acquire) == 0
-                        ) {
+                        while(!termination_requested() && !failure_occured()) {
                             exctx_ptr->clear_all_jumps_request();
                             bool have_locked{false};
                             for(auto &&wrkcl: worker_cells_) {
                                 std::shared_ptr<worker_cell_instance> &curr_cell{wrkcl.second};
                                 bool cell_executed{false};
                                 if(curr_cell->try_lock()) {
+                                    shut_on_destroy sod{[&]() { curr_cell->unlock(); }};
                                     cell_executed = true;
                                     have_locked = true;
-                                    shut_on_destroy sod{[&]() { curr_cell->unlock(); }};
+                                    if(termination_requested()) {
+                                        break;
+                                    }
                                     std::string const &curr_cell_type_name{curr_cell->type_name()};
 
                                     if(!curr_cell->type_info_transferred()) {
@@ -2033,7 +2050,7 @@ namespace teal {
                                     }
                                     curr_cell->body()->exec(exctx_ptr);
 
-                                    if(termination_requested() || failure()) {
+                                    if(termination_requested() || failure_occured()) {
                                         break;
                                     }
                                     if(exctx_ptr->return_requested()) {
@@ -2062,21 +2079,10 @@ namespace teal {
                     }
 #endif
                     if(excepted) {
-                        std::unique_lock l{failure_mtp_};
-                        failure_description_ = exbuf;
-                        failure_.store(1, std::memory_order_release);
+                        fail(exbuf);
                     }
                 });
             }
-        }
-
-        bool failure() const noexcept {
-            return failure_.load() != 0;
-        }
-
-        std::string failure_description() const noexcept {
-            std::shared_lock l{failure_mtp_};
-            return failure_description_;
         }
 
         bool wait(long double secnds) {
@@ -2091,21 +2097,21 @@ namespace teal {
                     std::chrono::nanoseconds{static_cast<std::int64_t>(secnds * 1'000'000'000.0L)}
                 };
                 while(
-                    termination_requested_.load(std::memory_order_acquire) == 0 &&
-                    failure_.load(std::memory_order_acquire) == 0 &&
+                    !termination_requested() &&
+                    !failure_occured() &&
                     std::chrono::steady_clock::now() < future
                 ) {
                     std::this_thread::sleep_for(slpfor);
                 }
                 std::shared_lock l{threads_mtp_};
-                if(termination_requested_.load(std::memory_order_acquire) != 0 || failure_.load(std::memory_order_acquire) != 0) {
+                if(termination_requested() || failure_occured()) {
                     for(auto &&t: threads_) {
                         if(t.joinable()) {
                             t.join();
                         }
                     }
                 }
-                return termination_requested_.load(std::memory_order_acquire) != 0 || failure_.load(std::memory_order_acquire) != 0;
+                return termination_requested() || failure_occured();
             }
             return true;
         }
