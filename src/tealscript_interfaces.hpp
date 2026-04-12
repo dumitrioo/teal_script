@@ -2,6 +2,7 @@
 
 #include "inc/commondefs.hpp"
 #include "inc/emhash/hash_set8.hpp"
+#include "inc/net/net_utils.hpp"
 
 #include "tealscript_util.hpp"
 #include "tealscript_value.hpp"
