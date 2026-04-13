@@ -444,7 +444,13 @@ namespace teal {
                     act_args.reserve(args_.size() + 1);
                 }
             }
-            if(func_->is_binop() && func_->binop_type() == token::type::DOT) {
+            if(
+                func_->is_binop() &&
+                (
+                    func_->binop_type() == token::type::DOT ||
+                    func_->binop_type() == token::type::LBRACKET
+                )
+            ) {
                 act_args.push_back(left_of_dot);
             }
             for(auto &&ex: args_) {
@@ -1353,9 +1359,12 @@ namespace teal {
                 /* LPAREN */ nullptr,
                 /* RPAREN */ nullptr,
                 /* LBRACKET */
-                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
+                [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *dotlptr) -> valbox {
                     valbox res{valbox_no_initialize::dont_do_it};
-                    valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};                    
+                    valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
+                    if(dotlptr) {
+                        *dotlptr = l;
+                    }
                     valbox r{valbox_no_initialize::dont_do_it};
                     {
                         bool old{ctx->set_create_if_not_exists(false)};
