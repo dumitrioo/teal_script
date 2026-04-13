@@ -37,17 +37,52 @@ random_value() {
     }
     return this.res;
 }
-random_value sample_val();
+// random_value sample_val();
 
 timestamp_value() {
     return timestamp();
 }
 timestamp_value current_time();
 
-extern 'dvqp://127.0.0.1:43987/sample_val' sample_val_from_net;
-extern 'dvqp://127.0.0.1:43987/current_time' time_from_net;
+// extern 'dvqp://127.0.0.1:43987/sample_val' sample_val_from_net;
+// extern 'dvqp://127.0.0.1:43987/current_time' time_from_net;
 
-my_drafts(exv, ts, hostdata) {
+
+function k_predict(ks, u) {
+    ks.x = ks.A * ks.x + ks.B * u;
+    ks.P = ks.A * ks.P * ks.A + ks.Q;
+}
+
+function k_update(ks, z) {
+    S = ks.H * ks.H * ks.P + ks.R;     // innovation covariance
+    K = (ks.P * ks.H) / S;             // Kalman gain
+    y = z - ks.H * ks.x;               // innovation
+    ks.x = ks.x + K * y;
+    ks.P = (1.0 - K * ks.H) * ks.P;
+}
+
+
+my_drafts() {
+    kf.predict = k_predict;
+    kf.update = k_update;
+    kf.x = 0.0;  // state estimate
+    kf.P = 1.0;  // estimate covariance
+    kf.A = 1.0;  // state transition (1D)
+    kf.B = 0.0;  // control (1D)
+    kf.H = 1.0;  // measurement map (1D)
+    kf.Q = 1e-4; // process noise variance
+    kf.R = 0.1;  // measurement noise variance
+
+    measurements = array(0.39, 0.50, 0.48, 0.29, 0.25, 0.32);
+    print("k\tmeas\test\tP\n");
+    for(k = 0; k < measurements.size(); ++k) {
+        kf.predict(0);
+        // kf["predict"](0);
+        kf.update(measurements[k]);
+        print(k, "\t", measurements[k], "\t", kf.x, "\t", kf.P, "\n");
+    }
+    return exit();
+
     hostdata.serialize5(4).println();
 
     ts.to_string().println();
@@ -237,4 +272,4 @@ my_drafts(exv, ts, hostdata) {
     return 0;
 }
 
-my_drafts drf(sample_val_from_net, time_from_net, host_provided_data);
+my_drafts drf();
