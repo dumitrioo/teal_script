@@ -1446,13 +1446,26 @@ namespace teal {
                             this_->sym_ = this_->rval_->symbol();
                         } else {
                             if(caller_type == eval_caller_type::func_call) {
-                                valbox found_fn{};
-                                execution_context::obj_type objtyp{execution_context::obj_type::unknown};
-                                if(ctx->find_func(this_->rval_->symbol(), found_fn, objtyp)) {
-                                    res = found_fn;
-                                    this_->sym_ = this_->rval_->symbol();
-                                } else {
-                                    res = valbox{valbox_no_initialize::dont_do_it};
+                                bool func_found{false};
+                                if(l.is_object_ref()) {
+                                    auto it{l.as_object().find(this_->rval_->symbol())};
+                                    if(
+                                        it != l.as_object().end() &&
+                                        it->second.is_func_ref()
+                                    ) {
+                                        func_found = true;
+                                        res = it->second;
+                                    }
+                                }
+                                if(!func_found) {
+                                    valbox found_fn{};
+                                    execution_context::obj_type objtyp{execution_context::obj_type::unknown};
+                                    if(ctx->find_func(this_->rval_->symbol(), found_fn, objtyp)) {
+                                        res = found_fn;
+                                        this_->sym_ = this_->rval_->symbol();
+                                    } else {
+                                        res = valbox{valbox_no_initialize::dont_do_it};
+                                    }
                                 }
                             } else if(l.is_undefined_ref()) {
                                 if(!ctx->create_if_not_exists()) {
