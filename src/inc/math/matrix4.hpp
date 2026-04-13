@@ -9,6 +9,7 @@ namespace teal::math {
     public:
         class row {
             friend class matrix4;
+
         public:
             T const &operator[](std::size_t c) const {
                 if(c > 3) {
@@ -39,6 +40,7 @@ namespace teal::math {
 
         class const_row {
             friend class matrix4;
+
         public:
             T const *ptr() const { return m4_; }
             T const &operator[](std::size_t c) const {

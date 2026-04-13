@@ -7138,6 +7138,447 @@ namespace teal {
             return os.str();
         }
 
+        template<typename T>
+        json serialize(T *helper) const {
+            json res{};
+            res["type"] = type_to_str(val_or_pointed_type());
+            json &v{res["value"]};
+            if(is_undefined_ref()) {
+                v = json{};
+            } else if(is_string_ref()) {
+                v = as_string();
+            } else if(is_bool_ref()) {
+                v = as_bool();
+            } else if(is_char_ref()) {
+                std::string s{}; s += as_char(); v = s;
+            } else if(is_wchar_ref()) {
+                std::wstring s{}; s += as_wchar(); v = s;
+            } else if(is_wstring_ref()) {
+                v = as_wstring();
+            } else if(is_s8_ref()) {
+                v = as_s8();
+            } else if(is_u8_ref()) {
+                v = as_u8();
+            } else if(is_s16_ref()) {
+                v = as_s16();
+            } else if(is_u16_ref()) {
+                v = as_u16();
+            } else if(is_s32_ref()) {
+                v = as_s32();
+            } else if(is_u32_ref()) {
+                v = as_u32();
+            } else if(is_s64_ref()) {
+                v = as_s64();
+            } else if(is_u64_ref()) {
+                v = as_u64();
+            } else if(is_any_fp_number()) {
+                v = cast_to_long_double();
+            } else if(is_vec4_ref()) {
+                v[0] = as_vec4()[0];
+                v[1] = as_vec4()[1];
+                v[2] = as_vec4()[2];
+                v[3] = as_vec4()[3];
+            } else if(is_mat4_ref()) {
+                mat4_t const &m{as_mat4()};
+                v[0][0] = m[0][0]; v[0][1] = m[0][1]; v[0][2] = m[0][2]; v[0][3] = m[0][3];
+                v[1][0] = m[1][0]; v[1][1] = m[1][1]; v[1][2] = m[1][2]; v[1][3] = m[1][3];
+                v[2][0] = m[2][0]; v[2][1] = m[2][1]; v[2][2] = m[2][2]; v[2][3] = m[2][3];
+                v[3][0] = m[3][0]; v[3][1] = m[3][1]; v[3][2] = m[3][2]; v[3][3] = m[3][3];
+            } else if(is_array_ref()) {
+                v.become_array();
+                for(auto &&val: as_array()) {
+                    v.push_back(val.serialize(helper));
+                }
+            } else if(is_object_ref()) {
+                v.become_object();
+                object_t const &o{as_object()};
+                for(auto &&p: o) {
+                    v[p.first] = p.second.serialize(helper);
+                }
+            } else if(is_class_ref()) {
+                auto s{helper->obj_svc_[class_name()].serializer(*this)};
+                if(s) {
+                    res["class"] = class_name();
+                    v = *s;
+                }
+            } else if(is_func_ref()) {
+                res["is_user_func"] = deref().is_user_func();
+                v = deref().func_name();
+            } else if(as_valbox_ptr() != nullptr) {
+                v = deref().serialize(helper);
+            }
+            return res;
+        }
+
+        template<typename T>
+        valbox &deserialize(json const &jv, T *helper) {
+            valbox &vr{deref()};
+            auto t{str_to_type(jv["type"].as_string())};
+            json const &v{jv["value"]};
+            switch(t) {
+                case type::BOOL:
+                    if(!vr.box_) {
+                        vr.box_ = std::make_shared<box_data>(v.as_boolean(), type::BOOL);
+                    } else {
+                        vr.box_->value_ = v.as_boolean();
+                        vr.box_->type_ = type::CHAR;
+                        vr.box_->pointed_type_ = type::UNDEFINED;
+                        vr.box_->class_.clear();
+                        vr.box_->func_name_.clear();
+                        vr.box_->user_func_ = false;
+                    }
+                    break;
+                case type::CHAR:
+                    if(!vr.box_) {
+                        vr.box_ = std::make_shared<box_data>(static_cast<char>(v.as_unumber()), type::CHAR);
+                    } else {
+                        vr.box_->value_ = static_cast<char>(v.as_unumber());
+                        vr.box_->type_ = type::CHAR;
+                        vr.box_->pointed_type_ = type::UNDEFINED;
+                        vr.box_->class_.clear();
+                        vr.box_->func_name_.clear();
+                        vr.box_->user_func_ = false;
+                    }
+                    break;
+                case type::S8:
+                    if(!vr.box_) {
+                        vr.box_ = std::make_shared<box_data>(static_cast<std::int8_t>(v.as_number()), type::S8);
+                    } else {
+                        vr.box_->value_ = static_cast<std::int8_t>(v.as_number());
+                        vr.box_->type_ = type::S8;
+                        vr.box_->pointed_type_ = type::UNDEFINED;
+                        vr.box_->class_.clear();
+                        vr.box_->func_name_.clear();
+                        vr.box_->user_func_ = false;
+                    }
+                    break;
+                case type::U8:
+                    if(!vr.box_) {
+                        vr.box_ = std::make_shared<box_data>(static_cast<std::uint8_t>(v.as_unumber()), type::U8);
+                    } else {
+                        vr.box_->value_ = static_cast<std::uint8_t>(v.as_unumber());
+                        vr.box_->type_ = type::U8;
+                        vr.box_->pointed_type_ = type::UNDEFINED;
+                        vr.box_->class_.clear();
+                        vr.box_->func_name_.clear();
+                        vr.box_->user_func_ = false;
+                    }
+                    break;
+                case type::S16:
+                    if(!vr.box_) {
+                        vr.box_ = std::make_shared<box_data>(static_cast<std::int16_t>(v.as_number()), type::S16);
+                    } else {
+                        vr.box_->value_ = static_cast<std::int16_t>(v.as_number());
+                        vr.box_->type_ = type::S16;
+                        vr.box_->pointed_type_ = type::UNDEFINED;
+                        vr.box_->class_.clear();
+                        vr.box_->func_name_.clear();
+                        vr.box_->user_func_ = false;
+                    }
+                    break;
+                case type::U16:
+                    if(!vr.box_) {
+                        vr.box_ = std::make_shared<box_data>(static_cast<std::uint16_t>(v.as_unumber()), type::U16);
+                    } else {
+                        vr.box_->value_ = static_cast<std::uint16_t>(v.as_unumber());
+                        vr.box_->type_ = type::U16;
+                        vr.box_->pointed_type_ = type::UNDEFINED;
+                        vr.box_->class_.clear();
+                        vr.box_->func_name_.clear();
+                        vr.box_->user_func_ = false;
+                    }
+                    break;
+                case type::WCHAR:
+                    if(!vr.box_) {
+                        vr.box_ = std::make_shared<box_data>(static_cast<wchar_t>(v.as_unumber()), type::WCHAR);
+                    } else {
+                        vr.box_->value_ = static_cast<wchar_t>(v.as_unumber());
+                        vr.box_->type_ = type::WCHAR;
+                        vr.box_->pointed_type_ = type::UNDEFINED;
+                        vr.box_->class_.clear();
+                        vr.box_->func_name_.clear();
+                        vr.box_->user_func_ = false;
+                    }
+                    break;
+                case type::S32:
+                    if(!vr.box_) {
+                        vr.box_ = std::make_shared<box_data>(static_cast<std::int32_t>(v.as_number()), type::S32);
+                    } else {
+                        vr.box_->value_ = static_cast<std::int32_t>(v.as_number());
+                        vr.box_->type_ = type::S32;
+                        vr.box_->pointed_type_ = type::UNDEFINED;
+                        vr.box_->class_.clear();
+                        vr.box_->func_name_.clear();
+                        vr.box_->user_func_ = false;
+                    }
+                    break;
+                case type::U32:
+                    if(!vr.box_) {
+                        vr.box_ = std::make_shared<box_data>(static_cast<std::uint32_t>(v.as_unumber()), type::U32);
+                    } else {
+                        vr.box_->value_ = static_cast<std::uint32_t>(v.as_unumber());
+                        vr.box_->type_ = type::U32;
+                        vr.box_->pointed_type_ = type::UNDEFINED;
+                        vr.box_->class_.clear();
+                        vr.box_->func_name_.clear();
+                        vr.box_->user_func_ = false;
+                    }
+                    break;
+                case type::S64:
+                    if(!vr.box_) {
+                        vr.box_ = std::make_shared<box_data>(static_cast<std::int64_t>(v.as_number()), type::S64);
+                    } else {
+                        vr.box_->value_ = static_cast<std::int64_t>(v.as_number());
+                        vr.box_->type_ = type::S64;
+                        vr.box_->pointed_type_ = type::UNDEFINED;
+                        vr.box_->class_.clear();
+                        vr.box_->func_name_.clear();
+                        vr.box_->user_func_ = false;
+                    }
+                    break;
+                case type::U64:
+                    if(!vr.box_) {
+                        vr.box_ = std::make_shared<box_data>(static_cast<std::uint64_t>(v.as_unumber()), type::U64);
+                    } else {
+                        vr.box_->value_ = static_cast<std::uint64_t>(v.as_unumber());
+                        vr.box_->type_ = type::U64;
+                        vr.box_->pointed_type_ = type::UNDEFINED;
+                        vr.box_->class_.clear();
+                        vr.box_->func_name_.clear();
+                        vr.box_->user_func_ = false;
+                    }
+                    break;
+                case type::FLOAT:
+                    if(!vr.box_) {
+                        vr.box_ = std::make_shared<box_data>(v.as_float(), type::FLOAT);
+                    } else {
+                        vr.box_->value_ = v.as_double();
+                        vr.box_->type_ = type::FLOAT;
+                        vr.box_->pointed_type_ = type::UNDEFINED;
+                        vr.box_->class_.clear();
+                        vr.box_->func_name_.clear();
+                        vr.box_->user_func_ = false;
+                    }
+                    break;
+                case type::DOUBLE:
+                    if(!vr.box_) {
+                        vr.box_ = std::make_shared<box_data>(v.as_double(), type::DOUBLE);
+                    } else {
+                        vr.box_->value_ = v.as_double();
+                        vr.box_->type_ = type::DOUBLE;
+                        vr.box_->pointed_type_ = type::UNDEFINED;
+                        vr.box_->class_.clear();
+                        vr.box_->func_name_.clear();
+                        vr.box_->user_func_ = false;
+                    }
+                    break;
+                case type::LONG_DOUBLE:
+                    if(!vr.box_) {
+                        vr.box_ = std::make_shared<box_data>(v.as_longdouble(), type::LONG_DOUBLE);
+                    } else {
+                        vr.box_->value_ = v.as_longdouble();
+                        vr.box_->type_ = type::LONG_DOUBLE;
+                        vr.box_->pointed_type_ = type::UNDEFINED;
+                        vr.box_->class_.clear();
+                        vr.box_->func_name_.clear();
+                        vr.box_->user_func_ = false;
+                    }
+                    break;
+                case type::VEC4: {
+                        vec4_t v4{v[0].as_longdouble(0), v[1].as_longdouble(0), v[2].as_longdouble(0), v[3].as_longdouble(0)};
+                        if(!vr.box_) {
+                            vr.box_ = std::make_shared<box_data>(v4, type::VEC4);
+                        } else {
+                            vr.box_->value_ = v4;
+                            vr.box_->type_ = type::VEC4;
+                            vr.box_->pointed_type_ = type::UNDEFINED;
+                            vr.box_->class_.clear();
+                            vr.box_->func_name_.clear();
+                            vr.box_->user_func_ = false;
+                        }
+                    }
+                    break;
+                case type::MAT4: {
+                        mat4_t m4{
+                            v[0][0].as_longdouble(0), v[0][1].as_longdouble(0), v[0][2].as_longdouble(0), v[0][3].as_longdouble(0),
+                            v[1][0].as_longdouble(0), v[1][1].as_longdouble(0), v[1][2].as_longdouble(0), v[1][3].as_longdouble(0),
+                            v[2][0].as_longdouble(0), v[2][1].as_longdouble(0), v[2][2].as_longdouble(0), v[2][3].as_longdouble(0),
+                            v[3][0].as_longdouble(0), v[3][1].as_longdouble(0), v[3][2].as_longdouble(0), v[3][3].as_longdouble(0)
+                        };
+                        if(!vr.box_) {
+                            vr.box_ = std::make_shared<box_data>(m4, type::MAT4);
+                        } else {
+                            vr.box_->value_ = m4;
+                            vr.box_->type_ = type::MAT4;
+                            vr.box_->pointed_type_ = type::UNDEFINED;
+                            vr.box_->class_.clear();
+                            vr.box_->func_name_.clear();
+                            vr.box_->user_func_ = false;
+                        }
+                    }
+                    break;
+                // case type::POINTER: break;
+                case type::CLASS: {
+                        valbox dv{
+                            helper->obj_svc_[v.as_string()].deserializer(
+                                jv["class"].as_string(), v.as_string()
+                            )
+                        };
+                        if(!vr.box_) {
+                            vr.box_ = std::move(dv.box_);
+                        } else {
+                            vr.box_->value_ = std::move(dv.box_->value_);
+                            vr.box_->type_ = type::CLASS;
+                            vr.box_->pointed_type_ = type::UNDEFINED;
+                            vr.box_->class_ = dv.box_->class_;
+                            vr.box_->func_name_.clear();
+                            vr.box_->user_func_ = false;
+                        }
+                    }
+                    break;
+                case type::FUNC: {
+                        valbox fn{helper->find_func(v.as_string())};
+                        if(fn.is_func_ref()) {
+                            if(!vr.box_) {
+                                vr.box_ = std::make_shared<box_data>(fn, type::FUNC);
+                            } else {
+                                vr.box_->value_ = std::move(fn);
+                                vr.box_->type_ = type::FUNC;
+                                vr.box_->pointed_type_ = type::UNDEFINED;
+                                vr.box_->class_.clear();
+                                vr.box_->func_name_ = v.as_string();
+                                vr.box_->user_func_ = jv["is_user_func"].as_boolean();
+                            }
+                        }
+                    }
+                    break;
+                case type::ARRAY: {
+                        vr.become_array();
+                        auto sz{v.size()};
+                        for(std::size_t i{}; i < sz; ++i) {
+                            vr.as_array().push_back(deserialize(v[i], helper));
+                        }
+                    }
+                    break;
+                case type::OBJECT: {
+                        vr.become_object();
+                        v.traverse_object([&](std::string const &key, json const &val) {
+                            vr.as_object()[key] = deserialize(val, helper);
+                        });
+                    }
+                    break;
+                case type::STRING:
+                    if(!vr.box_) {
+                        vr.box_ = std::make_shared<box_data>(v.as_string(), type::STRING);
+                    } else {
+                        vr.box_->value_ = v.as_string();
+                        vr.box_->type_ = type::STRING;
+                        vr.box_->pointed_type_ = type::UNDEFINED;
+                        vr.box_->class_.clear();
+                        vr.box_->func_name_.clear();
+                        vr.box_->user_func_ = false;
+                    }
+                    break;
+                case type::WSTRING:
+                    if(!vr.box_) {
+                        vr.box_ = std::make_shared<box_data>(v.as_wstring(), type::WSTRING);
+                    } else {
+                        vr.box_->value_ = v.as_wstring();
+                        vr.box_->type_ = type::WSTRING;
+                        vr.box_->pointed_type_ = type::UNDEFINED;
+                        vr.box_->class_.clear();
+                        vr.box_->func_name_.clear();
+                        vr.box_->user_func_ = false;
+                    }
+                    break;
+                case type::UNDEFINED:
+                    vr.become_undefined();
+                    break;
+                // case type::VALBOX: break;
+                default: throw std::runtime_error{"unsupported or invalid conversion"};
+            }
+
+            vr.pointed_box_.reset();
+            if(v.is_float()) {
+                if(!vr.box_) {
+                    vr.box_ = std::make_shared<box_data>(v.as_longdouble(), type::LONG_DOUBLE);
+                } else {
+                    vr.box_->value_ = v.as_longdouble();
+                    vr.box_->type_ = type::LONG_DOUBLE;
+                    vr.box_->pointed_type_ = type::UNDEFINED;
+                    vr.box_->class_.clear();
+                    vr.box_->func_name_.clear();
+                    vr.box_->user_func_ = false;
+                }
+            } else if(v.is_number()) {
+                if(!vr.box_) {
+                    vr.box_ = std::make_shared<box_data>(v.as_number(), type::S64);
+                } else {
+                    vr.box_->value_ = v.as_number();
+                    vr.box_->type_ = type::S64;
+                    vr.box_->pointed_type_ = type::UNDEFINED;
+                    vr.box_->class_.clear();
+                    vr.box_->func_name_.clear();
+                    vr.box_->user_func_ = false;
+                }
+            } else if(v.is_string()) {
+                if(!vr.box_) {
+                    vr.box_ = std::make_shared<box_data>(v.as_string(), type::STRING);
+                } else {
+                    vr.box_->value_ = v.as_string();
+                    vr.box_->type_ = type::STRING;
+                    vr.box_->pointed_type_ = type::UNDEFINED;
+                    vr.box_->class_.clear();
+                    vr.box_->func_name_.clear();
+                    vr.box_->user_func_ = false;
+                }
+            } else if(v.is_bool()) {
+                if(!vr.box_) {
+                    vr.box_ = std::make_shared<box_data>(v.as_boolean(), type::BOOL);
+                } else {
+                    vr.box_->value_ = v.as_boolean();
+                    vr.box_->type_ = type::BOOL;
+                    vr.box_->pointed_type_ = type::UNDEFINED;
+                    vr.box_->class_.clear();
+                    vr.box_->func_name_.clear();
+                    vr.box_->user_func_ = false;
+                }
+            } else if(v.is_array()) {
+                if(!vr.box_) {
+                    vr.box_ = std::make_shared<box_data>(array_t{}, type::ARRAY);
+                } else {
+                    vr.box_->value_ = array_t{};
+                    vr.box_->type_ = type::ARRAY;
+                    vr.box_->pointed_type_ = type::UNDEFINED;
+                    vr.box_->class_.clear();
+                    vr.box_->func_name_.clear();
+                    vr.box_->user_func_ = false;
+                }
+                for(std::size_t i{0}; i < v.size(); ++i) {
+                    valbox item{};
+                    item.from_json(v[i]);
+                    vr.as_array().push_back(std::move(item));
+                }
+            } else if(v.is_object()) {
+                if(!vr.box_) {
+                    vr.box_ = std::make_shared<box_data>(object_t{}, type::OBJECT);
+                } else {
+                    vr.box_->value_ = object_t{};
+                    vr.box_->type_ = type::OBJECT;
+                    vr.box_->pointed_type_ = type::UNDEFINED;
+                    vr.box_->class_.clear();
+                    vr.box_->func_name_.clear();
+                    vr.box_->user_func_ = false;
+                }
+                v.traverse_object([&](std::string const &key, json const &val) {
+                    vr.as_object()[key].from_json(val);
+                });
+            } else if(v.is_null()) {
+                vr.become_undefined();
+            }
+            return *this;
+        }
+
     private:
         valbox(std::shared_ptr<box_data> &&b): box_{std::move(b)} {}
 

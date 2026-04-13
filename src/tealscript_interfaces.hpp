@@ -12,11 +12,11 @@ namespace teal {
     class runtime_interface {
     public:
         virtual ~runtime_interface() = default;
-        virtual str_map_t<valbox> *global_constants_dictionary() = 0;
-        virtual str_map_t<valbox> *global_functions_dictionary() = 0;
-        virtual str_map_t<str_map_t<valbox>> *global_methods_dictionary() = 0;
-        virtual std::function<bool(std::string)> const &user_functions_search() = 0;
-        virtual std::function<valbox(std::vector<valbox> &)> const &user_function_selector() = 0;
+        virtual str_map_t<valbox> const *global_constants_dictionary() const = 0;
+        virtual str_map_t<valbox> const *global_functions_dictionary() const = 0;
+        virtual str_map_t<str_map_t<valbox>> const *global_methods_dictionary() const = 0;
+        virtual std::function<bool(std::string)> const &user_functions_search() const = 0;
+        virtual std::function<valbox(std::vector<valbox> &)> const &user_function_selector() const = 0;
         virtual valbox get_input(std::string const &) = 0;
         virtual valbox const &get_output(std::string const &) = 0;
         virtual void set_input(std::string const &, valbox const &) = 0;
@@ -56,9 +56,9 @@ namespace teal {
 
         // expose values to network directly
         virtual void start_net_server(
+            net::address_family /*af*/,
             std::string const &/*bind_addr*/,
             std::uint16_t /*port*/,
-            net::address_family /*af*/,
             long double /*stale_connections_removal_timeout*/
         ) = 0;
         virtual void stop_net_server() = 0;

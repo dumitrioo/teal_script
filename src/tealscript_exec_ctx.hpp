@@ -177,7 +177,7 @@ namespace teal {
                     }
                     break;
                 case obj_type::global_fun: {
-                    str_map_t<valbox>::iterator gvd_it{rt_ptr_->global_functions_dictionary()->find(name)};
+                    str_map_t<valbox>::const_iterator gvd_it{rt_ptr_->global_functions_dictionary()->find(name)};
                         if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
                             return gvd_it->second.clone();
                         }
@@ -205,7 +205,7 @@ namespace teal {
                     }
                     break;
                 case obj_type::global_var: {
-                        str_map_t<valbox>::iterator gvd_it{rt_ptr_->global_constants_dictionary()->find(name)};
+                        str_map_t<valbox>::const_iterator gvd_it{rt_ptr_->global_constants_dictionary()->find(name)};
                         if(gvd_it != rt_ptr_->global_constants_dictionary()->end()) {
                             return gvd_it->second.clone();
                         }
@@ -236,7 +236,7 @@ namespace teal {
                 objtyp = obj_type::stack_var;
                 return res;
             }
-            str_map_t<valbox>::iterator gvd_it{rt_ptr_->global_constants_dictionary()->find(name)};
+            str_map_t<valbox>::const_iterator gvd_it{rt_ptr_->global_constants_dictionary()->find(name)};
             if(gvd_it != rt_ptr_->global_constants_dictionary()->end()) {
                 objtyp = obj_type::global_var;
                 return gvd_it->second.clone();

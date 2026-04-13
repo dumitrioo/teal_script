@@ -25,8 +25,8 @@ namespace teal::net {
     public:
         udp_server_muxed(
             command_queue *cq,
-            long double stale_connections_removal_timeout = 0.0L,
-            address_family af = address_family::inet4
+            address_family af = address_family::inet4,
+            long double stale_connections_removal_timeout = 0.0L
         ):
             cq_{cq},
             stale_connections_removal_timeout_{stale_connections_removal_timeout},

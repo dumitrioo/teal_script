@@ -22,16 +22,16 @@
 
 namespace teal {
 
-    class pp_server {
+    class pp_server_tcp {
         struct multiplexing;
 
     public:
-        pp_server() = default;
-        pp_server(pp_server const &) = delete;
-        pp_server &operator=(pp_server const &) = delete;
-        pp_server(pp_server &&) = delete;
-        pp_server &operator=(pp_server &&) = delete;
-        ~pp_server() {
+        pp_server_tcp() = default;
+        pp_server_tcp(pp_server_tcp const &) = delete;
+        pp_server_tcp &operator=(pp_server_tcp const &) = delete;
+        pp_server_tcp(pp_server_tcp &&) = delete;
+        pp_server_tcp &operator=(pp_server_tcp &&) = delete;
+        ~pp_server_tcp() {
             stop();
         }
 
@@ -149,26 +149,26 @@ namespace teal {
         emhash8::HashMap<conn_id_t, std::shared_ptr<multiplexing>> muxers_{};
     };
 
-    class pp_client {
+    class pp_client_tcp {
     public:
-        pp_client() = default;
-        pp_client(pp_client const &) = delete;
-        pp_client &operator=(pp_client const &) = delete;
-        pp_client(pp_client &&) = delete;
-        pp_client &operator=(pp_client &&) = delete;
-        ~pp_client() {
+        pp_client_tcp() = default;
+        pp_client_tcp(pp_client_tcp const &) = delete;
+        pp_client_tcp &operator=(pp_client_tcp const &) = delete;
+        pp_client_tcp(pp_client_tcp &&) = delete;
+        pp_client_tcp &operator=(pp_client_tcp &&) = delete;
+        ~pp_client_tcp() {
             try {
                 stop();
             } catch (...) {
             }
         }
 
-        void set_on_data_arrived(std::function<void(pp_client *)> const &fun) {
+        void set_on_data_arrived(std::function<void(pp_client_tcp *)> const &fun) {
             std::unique_lock cl{callback_mtp_};
             on_data_arrived_ = fun;
         }
 
-        void set_on_data_arrived(std::function<void(pp_client *)> &&fun) {
+        void set_on_data_arrived(std::function<void(pp_client_tcp *)> &&fun) {
             std::unique_lock cl{callback_mtp_};
             on_data_arrived_ = std::move(fun);
         }
@@ -241,7 +241,7 @@ namespace teal {
         teal_net_client tnc_{};
 
         std::shared_mutex callback_mtp_{};
-        std::function<void(pp_client *)> on_data_arrived_{nullptr};
+        std::function<void(pp_client_tcp *)> on_data_arrived_{nullptr};
 
         std::shared_mutex muxing_mtp_{};
         net::sized_packets_exchanger mux_bottom_layer_{};
@@ -268,8 +268,8 @@ namespace teal {
             usm_{
                 std::make_unique<net::udp_server_muxed<1400>>(
                     cq_,
-                    stale_connections_removal_timeout,
-                    af
+                    af,
+                    stale_connections_removal_timeout = 0
                 )
             }
         {

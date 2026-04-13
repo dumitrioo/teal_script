@@ -2125,23 +2125,23 @@ namespace teal {
         }
 
         // runtime interface ---------------------------------------------------------------
-        str_map_t<valbox> *global_constants_dictionary() override {
+        str_map_t<valbox> const *global_constants_dictionary() const override {
             return &global_constants_dictionary_;
         }
 
-        str_map_t<valbox> *global_functions_dictionary() override {
+        str_map_t<valbox> const *global_functions_dictionary() const override {
             return &global_functions_dictionary_;
         }
 
-        str_map_t<str_map_t<valbox>> *global_methods_dictionary() override {
+        str_map_t<str_map_t<valbox>> const *global_methods_dictionary() const override {
             return &global_methods_dictionary_;
         }
 
-        std::function<bool(std::string)> const &user_functions_search() override {
+        std::function<bool(std::string)> const &user_functions_search() const override {
             return user_functions_search_;
         }
 
-        std::function<valbox(std::vector<valbox> &)> const &user_function_selector() override {
+        std::function<valbox(std::vector<valbox> &)> const &user_function_selector() const override {
             return user_function_selector_;
         }
 
@@ -2190,9 +2190,9 @@ namespace teal {
         }
 
         void start_net_server(
+            net::address_family af,
             std::string const &bind_addr,
             std::uint16_t port,
-            net::address_family af,
             long double stale_connections_removal_timeout
         ) override {
             {
@@ -2512,6 +2512,20 @@ namespace teal {
         int64_t exit_status_{};
         std::size_t programmatic_termination_enabled_{1};
 
+        valbox find_func(std::string const &name) const {
+            valbox fn{};
+            if((user_functions_search())(name)) {
+                fn = valbox{user_function_selector(), name, true};
+                return fn;
+            }
+            auto gvd_it{global_functions_dictionary()->find(name)};
+            if(gvd_it != global_functions_dictionary()->end()) {
+                fn = gvd_it->second;
+                return fn;
+            }
+            return fn;
+        }
+
         math_ext math_ext_{};
         time_ext time_ext_{};
         crypto_ext crypt_{};
@@ -2528,6 +2542,7 @@ namespace teal {
             std::function<valbox(std::string const &, std::string const &)> deserializer{nullptr};
         };
         std::map<std::string, obj_services> obj_svc_{};
+        friend class valbox;
 
 
         shared_mutex loaded_extensions_mtp_{};
@@ -2599,9 +2614,42 @@ namespace teal {
                 case valbox::type::FLOAT: v->set_value((float)str_util::atof(resp["v"].as_string())); break;
                 case valbox::type::DOUBLE: v->set_value((double)str_util::atof(resp["v"].as_string())); break;
                 case valbox::type::LONG_DOUBLE: v->set_value(str_util::atof(resp["v"].as_string())); break;
-                case valbox::type::VEC4: break; // TODO:
-                case valbox::type::MAT4: break; // TODO:
-                case valbox::type::POINTER: break; // TODO:
+                case valbox::type::VEC4: {
+                        auto s{resp["v"].as_string()};
+                        if(s.starts_with("vec4{")) {
+                            auto sv{str_util::str_tok<std::string>(s.substr(5, s.size() - 6), ",")};
+                            if(sv.size() == 4) {
+                                v->set_value(
+                                    valbox::vec4_t{
+                                        str_util::atof(sv[0]),
+                                        str_util::atof(sv[1]),
+                                        str_util::atof(sv[2]),
+                                        str_util::atof(sv[3])
+                                    }
+                                );
+                            }
+                        }
+                    }
+                    break;
+                case valbox::type::MAT4: {
+                        auto s{resp["v"].as_string()};
+                        if(s.starts_with("mat4{{")) {
+                            auto sv{str_util::str_tok<std::string>(s.substr(6, s.size() - 8), "},{")};
+                            if(sv.size() == 4) {
+                                valbox::mat4_t m4{};
+                                for(std::size_t r{}; r < sv.size(); ++r) {
+                                    auto sv{str_util::str_tok<std::string>(s.substr(5, s.size() - 6), ",")};
+                                    m4[r][0] = str_util::atof(sv[0]);
+                                    m4[r][1] = str_util::atof(sv[1]);
+                                    m4[r][2] = str_util::atof(sv[2]);
+                                    m4[r][3] = str_util::atof(sv[3]);
+                                }
+                                v->set_value(m4);
+                            }
+                        }
+                    }
+                    break;
+                // case valbox::type::POINTER: break; // TODO:
                 case valbox::type::CLASS:
                     if(resp["v"].is_object()) {
                         std::shared_lock l{obj_ser_mtp_};

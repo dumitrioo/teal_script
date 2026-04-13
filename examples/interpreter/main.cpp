@@ -104,7 +104,7 @@ int main(int argc, char **argv) {
             throw std::runtime_error{"nothing to do - no working elements"};
         }
 
-        rt.start_net_server("0.0.0.0", 43987, teal::net::address_family::inet4, 0);
+        rt.start_net_server(teal::net::address_family::inet4, "0.0.0.0", 43987, 0);
 #ifdef TEAL_USE_EXTERNAL_VALUES
         rt.set_external_cells_update_interval(0.005L);
         rt.set_external_cells_nodelay(true);
