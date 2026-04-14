@@ -2557,7 +2557,7 @@ namespace teal {
                             auto nme{resp["name"].as_string()};
                             auto it{extern_cells_.find(nme)};
                             if(it != extern_cells_.end()) {
-                                valbox desin{};
+                                valbox desin{ valbox_no_initialize::dont_do_it};
                                 desin.deserialize(resp["result"], this);
                                 it->second->set_value(desin);
                             }

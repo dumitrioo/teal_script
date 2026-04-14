@@ -2703,7 +2703,9 @@ namespace teal {
                     case type::MAT4: return lr.as_mat4() == rr.as_mat4();
                     case type::POINTER: return lr.as_ptr() == rr.as_ptr();
                     case type::CLASS: break;
-                    case type::FUNC: break;
+                    case type::FUNC: {
+                        return lr.as_func().target_type().hash_code() == rr.as_func().target_type().hash_code();
+                    }
                     case type::ARRAY: return lr.as_array() == rr.as_array();
                     case type::OBJECT: return lr.as_object() == rr.as_object();
                     case type::VALBOX: break;
@@ -7442,31 +7444,40 @@ namespace teal {
                         valbox fn{helper->find_func(v.as_string())};
                         if(fn.is_func_ref()) {
                             if(!vr.box_) {
-                                vr.box_ = std::make_shared<box_data>(fn, type::FUNC);
+                                vr.box_ = std::move(fn.box_);
                             } else {
-                                vr.box_->value_ = std::move(fn);
+                                vr.box_->value_ = fn.box_->value_;
                                 vr.box_->type_ = type::FUNC;
                                 vr.box_->pointed_type_ = type::UNDEFINED;
                                 vr.box_->class_.clear();
-                                vr.box_->func_name_ = v.as_string();
-                                vr.box_->user_func_ = jv["is_user_func"].as_boolean();
+                                vr.box_->func_name_ = fn.box_->func_name_;
+                                if(jv["is_user_func"].as_boolean() != fn.box_->user_func_) {
+                                    throw std::runtime_error{"not equivalent function by name"};
+                                }
+                                vr.box_->user_func_ = fn.box_->user_func_;
                             }
                         }
                     }
                     break;
                 case type::ARRAY: {
                         vr.become_array();
+                        vr.as_array().clear();
                         auto sz{v.size()};
                         for(std::size_t i{}; i < sz; ++i) {
-                            vr.as_array().push_back(deserialize(v[i], helper));
+                            vr.as_array().emplace_back(valbox_no_initialize::dont_do_it);
+                            vr.as_array().back().deserialize(v[i], helper);
                         }
                     }
                     break;
                 case type::OBJECT: {
-                        vr.become_object();
-                        v.traverse_object([&](std::string const &key, json const &val) {
-                            vr.as_object()[key] = deserialize(val, helper);
-                        });
+                        try {
+                            vr.become_object();
+                            vr.as_object().clear();
+                            v.traverse_object([&](std::string const &key, json const &val) {
+                                vr.as_object()[key].deserialize(val, helper);
+                            });
+                        } catch (...) {
+                        }
                     }
                     break;
                 case type::STRING:
