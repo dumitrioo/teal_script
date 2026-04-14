@@ -1,7 +1,7 @@
 setup_cell() {
     if(!this.set_up) {
         set_extern_update_seconds(0.01);
-        set_cycle_sleep_seconds(0.001);
+        set_cycle_sleep_seconds(0.005);
         set_inactive_sleep_seconds(0.01);
         this.set_up = true;
     }
@@ -18,10 +18,42 @@ function rnd_str(n) {
     return res;
 }
 
-random_string() {
+some_value_issuer() {
+    if(steady_clock() > this.last_time + .2) {
+        this.last_time = steady_clock();
+
+        choice = rand() % 8;
+        if(choice == 0) this.res = rnd_str(rand() % 32 + 1);
+
+        if(choice == 1) this.res = rand() % 100 + 1;
+
+        if(choice == 2) this.res = vec4(200.0 * (randf() - 0.5), 200.0 * (randf() - 0.5), 200.0 * (randf() - 0.5), 200.0 * (randf() - 0.5));
+
+        if(choice == 3) this.res = mat4(
+            200.0 * (randf() - 0.5), 200.0 * (randf() - 0.5), 200.0 * (randf() - 0.5), 200.0 * (randf() - 0.5),
+            200.0 * (randf() - 0.5), 200.0 * (randf() - 0.5), 200.0 * (randf() - 0.5), 200.0 * (randf() - 0.5),
+            200.0 * (randf() - 0.5), 200.0 * (randf() - 0.5), 200.0 * (randf() - 0.5), 200.0 * (randf() - 0.5),
+            200.0 * (randf() - 0.5), 200.0 * (randf() - 0.5), 200.0 * (randf() - 0.5), 200.0 * (randf() - 0.5)
+        );
+
+        if(choice == 4) this.res = array(200.0 * (randf() - 0.5), rnd_str(12));
+
+        if(choice == 5) { o = object(); o["key"] = 200.0 * (randf() - 0.5); this.res = o; }
+
+        if(choice == 6) this.res = sin;
+
+        if(choice == 7) this.res = timestamp();
+
+        console.print("original value changed to: ", this.res);
+    }
+    return this.res;
+}
+
+
+arr() {
     if(steady_clock() > this.last_time + .1) {
         this.last_time = steady_clock();
-        this.res = rnd_str(rand() % 64 + 1);
+        this.res = array(200.0 * (randf() - 0.5), rnd_str(12));
         console.print("original value changed to: ", this.res);
     }
     return this.res;
@@ -31,7 +63,7 @@ random_string() {
 // all the cells are already exposed by the embedded local network server
 // inside the Engine Runtime
 // and this cell's value is accessed below over the network (TCP/IP)
-random_string just_a_regular_cell();
+some_value_issuer just_a_regular_cell();
 
 // value obtained over the network by URL with name "value_from_net".
 // in real scenario, localhost will be changed to real host name or IP addr.
@@ -48,9 +80,10 @@ extern 'dvqp://127.0.0.1:43987/just_a_regular_cell' value_from_net;
 extern 'dvqp://127.0.0.1:43987/value_from_net' value_from_net_copy;
 
 ext_value_use(vname, exv) {
-    if(exv != this.exv) {
+    if(steady_clock() > this.last_time + .2) {
+        this.last_time = steady_clock();
         this.exv = exv;
-        console.print("remote value \"", vname, "\" changed to: ", this.exv);
+        console.print("remote ", typeof(exv), " \"", vname, "\": ", this.exv);
     }
     return 0;
 }
