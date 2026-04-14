@@ -7424,7 +7424,7 @@ namespace teal {
                     break;
                 case type::CLASS: {
                         valbox dv{
-                            helper->obj_svc_[v.as_string()].deserializer(
+                            helper->obj_svc_[jv["class"].as_string()].deserializer(
                                 jv["class"].as_string(), v.as_string()
                             )
                         };
