@@ -7417,7 +7417,9 @@ namespace teal {
                         }
                     }
                     break;
-                // case type::POINTER: break;
+                case type::POINTER: // TODO:
+                    throw std::runtime_error{"unsupported or invalid conversion"};
+                    break;
                 case type::CLASS: {
                         valbox dv{
                             helper->obj_svc_[v.as_string()].deserializer(
@@ -7494,87 +7496,10 @@ namespace teal {
                 case type::UNDEFINED:
                     vr.become_undefined();
                     break;
-                // case type::VALBOX: break;
+                case type::VALBOX: // TODO:
+                    throw std::runtime_error{"unsupported or invalid conversion"};
+                    break;
                 default: throw std::runtime_error{"unsupported or invalid conversion"};
-            }
-
-            vr.pointed_box_.reset();
-            if(v.is_float()) {
-                if(!vr.box_) {
-                    vr.box_ = std::make_shared<box_data>(v.as_longdouble(), type::LONG_DOUBLE);
-                } else {
-                    vr.box_->value_ = v.as_longdouble();
-                    vr.box_->type_ = type::LONG_DOUBLE;
-                    vr.box_->pointed_type_ = type::UNDEFINED;
-                    vr.box_->class_.clear();
-                    vr.box_->func_name_.clear();
-                    vr.box_->user_func_ = false;
-                }
-            } else if(v.is_number()) {
-                if(!vr.box_) {
-                    vr.box_ = std::make_shared<box_data>(v.as_number(), type::S64);
-                } else {
-                    vr.box_->value_ = v.as_number();
-                    vr.box_->type_ = type::S64;
-                    vr.box_->pointed_type_ = type::UNDEFINED;
-                    vr.box_->class_.clear();
-                    vr.box_->func_name_.clear();
-                    vr.box_->user_func_ = false;
-                }
-            } else if(v.is_string()) {
-                if(!vr.box_) {
-                    vr.box_ = std::make_shared<box_data>(v.as_string(), type::STRING);
-                } else {
-                    vr.box_->value_ = v.as_string();
-                    vr.box_->type_ = type::STRING;
-                    vr.box_->pointed_type_ = type::UNDEFINED;
-                    vr.box_->class_.clear();
-                    vr.box_->func_name_.clear();
-                    vr.box_->user_func_ = false;
-                }
-            } else if(v.is_bool()) {
-                if(!vr.box_) {
-                    vr.box_ = std::make_shared<box_data>(v.as_boolean(), type::BOOL);
-                } else {
-                    vr.box_->value_ = v.as_boolean();
-                    vr.box_->type_ = type::BOOL;
-                    vr.box_->pointed_type_ = type::UNDEFINED;
-                    vr.box_->class_.clear();
-                    vr.box_->func_name_.clear();
-                    vr.box_->user_func_ = false;
-                }
-            } else if(v.is_array()) {
-                if(!vr.box_) {
-                    vr.box_ = std::make_shared<box_data>(array_t{}, type::ARRAY);
-                } else {
-                    vr.box_->value_ = array_t{};
-                    vr.box_->type_ = type::ARRAY;
-                    vr.box_->pointed_type_ = type::UNDEFINED;
-                    vr.box_->class_.clear();
-                    vr.box_->func_name_.clear();
-                    vr.box_->user_func_ = false;
-                }
-                for(std::size_t i{0}; i < v.size(); ++i) {
-                    valbox item{};
-                    item.from_json(v[i]);
-                    vr.as_array().push_back(std::move(item));
-                }
-            } else if(v.is_object()) {
-                if(!vr.box_) {
-                    vr.box_ = std::make_shared<box_data>(object_t{}, type::OBJECT);
-                } else {
-                    vr.box_->value_ = object_t{};
-                    vr.box_->type_ = type::OBJECT;
-                    vr.box_->pointed_type_ = type::UNDEFINED;
-                    vr.box_->class_.clear();
-                    vr.box_->func_name_.clear();
-                    vr.box_->user_func_ = false;
-                }
-                v.traverse_object([&](std::string const &key, json const &val) {
-                    vr.as_object()[key].from_json(val);
-                });
-            } else if(v.is_null()) {
-                vr.become_undefined();
             }
             return *this;
         }

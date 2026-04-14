@@ -2217,59 +2217,34 @@ namespace teal {
                         resp["id"] = requ["id"];
                         if(act == "get") {
                             cell_base *cellptr{nullptr};
-                            auto nme{requ["n"].as_string()};
-                            auto ali{requ["a"].as_string()};
+                            auto nme{requ["name"].as_string()};
+                            auto ali{requ["alias"].as_string()};
                             resp["act"] = "get";
-                            resp["n"] = ali;
+                            resp["name"] = ali;
                             do {
-                            {
-                                auto it{input_cells_.find(nme)};
-                                if(it != input_cells_.end()) { cellptr = it->second.get(); break; }
-                            }
-                            {
-                                auto it{worker_cells_.find(nme)};
-                                if(it != worker_cells_.end()) { cellptr = it->second.get(); break; }
-                            }
+                                {
+                                    auto it{input_cells_.find(nme)};
+                                    if(it != input_cells_.end()) { cellptr = it->second.get(); break; }
+                                }
+                                {
+                                    auto it{worker_cells_.find(nme)};
+                                    if(it != worker_cells_.end()) { cellptr = it->second.get(); break; }
+                                }
 #ifdef TEAL_USE_EXTERNAL_VALUES
-                            {
-                                auto it{extern_cells_.find(nme)};
-                                if(it != extern_cells_.end()) { cellptr = it->second.get(); break; }
-                            }
+                                {
+                                    auto it{extern_cells_.find(nme)};
+                                    if(it != extern_cells_.end()) { cellptr = it->second.get(); break; }
+                                }
 #endif
                             } while(false);
                             if(cellptr != nullptr) {
                                 valbox vb{cellptr->value().deref()};
-                                resp["t"] = vb.type_to_str(vb.val_or_pointed_type());
-                                if(vb.is_class_ref()) {
-                                    std::shared_lock l{obj_ser_mtp_};
-                                    if(
-                                        obj_svc_.find(vb.class_name()) != obj_svc_.end() &&
-                                        obj_svc_[vb.class_name()].serializer
-                                    ) {
-                                        auto s{obj_svc_[vb.class_name()].serializer(vb)};
-                                        l.unlock();
-                                        if(s) {
-                                            resp["v"]["c"] = vb.class_name();
-                                            resp["v"]["s"] = *s;
-                                        } else {
-                                            resp["v"] = vb.class_name();
-                                        }
-                                    } else {
-                                        resp["v"] = vb.class_name();
-                                    }
-                                } else {
-                                    resp["v"] = vb.dump();
-                                }
-                                ppserver_->send(conn_id, resp.bserialize());
-                                return;
+                                resp["result"] = vb.serialize(this);
                             } else {
                                 json resp{};
-                                resp["id"] = requ["id"];
-                                resp["act"] = "get";
-                                resp["n"] = ali;
-                                resp["t"] = "undefined";
-                                ppserver_->send(conn_id, resp.bserialize());
+                                resp["result"] = valbox{}.serialize(this);
                             }
+                            ppserver_->send(conn_id, resp.bserialize());
                         }
                     });
                 }
@@ -2579,10 +2554,12 @@ namespace teal {
                         json resp{json::bdeserialize(rsp)};
                         auto act{resp["act"].as_string()};
                         if(act == "get") {
-                            auto nme{resp["n"].as_string()};
+                            auto nme{resp["name"].as_string()};
                             auto it{extern_cells_.find(nme)};
                             if(it != extern_cells_.end()) {
-                                update_vbox(it->second.get(), resp);
+                                valbox desin{};
+                                desin.deserialize(resp["result"], this);
+                                it->second->set_value(desin);
                             }
                         }
                     } catch (...) {
@@ -2595,81 +2572,6 @@ namespace teal {
                 pp_clients_[ecp->remote_host()][*ecp->remote_url().port()] = res;
             }
             return res;
-        }
-
-        void update_vbox(extern_cell *v, json const &resp) {
-            valbox::type t{valbox::str_to_type(resp["t"].as_string())};
-            switch(t) {
-                case valbox::type::BOOL: v->set_value(resp["v"].as_string() == "true"); break;
-                case valbox::type::CHAR: v->set_value(resp["v"].as_string()[0]); break;
-                case valbox::type::S8: v->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
-                case valbox::type::U8: v->set_value(str_util::atoui<std::string>(resp["v"].as_string())); break;
-                case valbox::type::S16: v->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
-                case valbox::type::U16: v->set_value(str_util::atoui<std::string>(resp["v"].as_string())); break;
-                case valbox::type::WCHAR: v->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
-                case valbox::type::S32: v->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
-                case valbox::type::U32: v->set_value(str_util::atoui<std::string>(resp["v"].as_string())); break;
-                case valbox::type::S64: v->set_value(str_util::atoi<std::string>(resp["v"].as_string())); break;
-                case valbox::type::U64: v->set_value(str_util::atoui<std::string>(resp["v"].as_string())); break;
-                case valbox::type::FLOAT: v->set_value((float)str_util::atof(resp["v"].as_string())); break;
-                case valbox::type::DOUBLE: v->set_value((double)str_util::atof(resp["v"].as_string())); break;
-                case valbox::type::LONG_DOUBLE: v->set_value(str_util::atof(resp["v"].as_string())); break;
-                case valbox::type::VEC4: {
-                        auto s{resp["v"].as_string()};
-                        if(s.starts_with("vec4{")) {
-                            auto sv{str_util::str_tok<std::string>(s.substr(5, s.size() - 6), ",")};
-                            if(sv.size() == 4) {
-                                v->set_value(
-                                    valbox::vec4_t{
-                                        str_util::atof(sv[0]),
-                                        str_util::atof(sv[1]),
-                                        str_util::atof(sv[2]),
-                                        str_util::atof(sv[3])
-                                    }
-                                );
-                            }
-                        }
-                    }
-                    break;
-                case valbox::type::MAT4: {
-                        auto s{resp["v"].as_string()};
-                        if(s.starts_with("mat4{{")) {
-                            auto sv{str_util::str_tok<std::string>(s.substr(6, s.size() - 8), "},{")};
-                            if(sv.size() == 4) {
-                                valbox::mat4_t m4{};
-                                for(std::size_t r{}; r < sv.size(); ++r) {
-                                    auto sv{str_util::str_tok<std::string>(s.substr(5, s.size() - 6), ",")};
-                                    m4[r][0] = str_util::atof(sv[0]);
-                                    m4[r][1] = str_util::atof(sv[1]);
-                                    m4[r][2] = str_util::atof(sv[2]);
-                                    m4[r][3] = str_util::atof(sv[3]);
-                                }
-                                v->set_value(m4);
-                            }
-                        }
-                    }
-                    break;
-                // case valbox::type::POINTER: break; // TODO:
-                case valbox::type::CLASS:
-                    if(resp["v"].is_object()) {
-                        std::shared_lock l{obj_ser_mtp_};
-                        v->set_value(obj_svc_[resp["v"]["c"].as_string()].deserializer(
-                            resp["v"]["c"].as_string(),
-                            resp["v"]["s"].as_string())
-                        );
-                    } else {
-                        v->set_value(resp["v"].as_string());
-                    }
-                    break;
-                case valbox::type::FUNC: break;
-                case valbox::type::ARRAY: break; // TODO:
-                case valbox::type::OBJECT: break; // TODO:
-                case valbox::type::STRING: v->set_value(resp["v"].as_string()); break;
-                case valbox::type::WSTRING: v->set_value(resp["v"].as_wstring()); break;
-                case valbox::type::UNDEFINED: v->set_value(valbox{valbox_no_initialize::dont_do_it}); break;
-                case valbox::type::VALBOX: break; // TODO:
-                default: break;  // TODO:
-            }
         }
 
         bool extcell_processing_started() const {
@@ -2709,8 +2611,8 @@ namespace teal {
                                 json requ{};
                                 requ["id"] = ext_id_gen_();
                                 requ["act"] = "get";
-                                requ["n"] = cp.second->remote_var_name();
-                                requ["a"] = cp.second->inst_name();
+                                requ["name"] = cp.second->remote_var_name();
+                                requ["alias"] = cp.second->inst_name();
                                 if(auto con{get_connected_client(cp.second.get())}) {
                                     con->send(requ.bserialize());
                                 }
