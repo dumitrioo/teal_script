@@ -9,6 +9,13 @@
 
 namespace teal {
 
+    struct obj_services {
+        std::function<std::optional<std::string>(valbox const &)> serializer{nullptr};
+        std::function<valbox(std::string const &, std::string const &)> deserializer{nullptr};
+        std::function<valbox(valbox const &, valbox const &)> comparator{nullptr};
+        std::function<valbox(valbox const &)> stringify{nullptr};
+    };
+
     class runtime_interface {
     public:
         virtual ~runtime_interface() = default;
@@ -35,7 +42,16 @@ namespace teal {
             std::string const &,
             std::function<valbox(std::string const &, std::string const &)> const &
         ) = 0;
+        virtual void add_object_comparator(
+            std::string const &,
+            std::function<valbox(valbox const &, valbox const &)> const &
+        ) = 0;
+        virtual void add_object_stringifier(
+            std::string const &,
+            std::function<valbox(valbox const &)> const &
+        ) = 0;
         virtual void remove_object_services(std::string const &) = 0;
+        virtual obj_services const *get_object_services(std::string const &) const = 0;
 
         virtual void add_function(
             std::string const &,

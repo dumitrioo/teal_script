@@ -290,6 +290,9 @@ namespace teal {
 #else
         class console {
         public:
+            console(runtime_interface *rt = nullptr): rt_{rt} {
+            }
+
             void print(std::vector<valbox> const &args) {
                 cout_out((terminal_colours_ ? "\033[32mprint\033[0m" : "print"), args);
             }
@@ -322,7 +325,19 @@ namespace teal {
                         default: out << std::defaultfloat; break;
                     }
                 }
-                for(auto &&v: args) { out << v; }
+                for(auto &&v: args) {
+                    auto printed{false};
+                    if(v.is_class_ref()) {
+                        obj_services const *osvc{rt_->get_object_services(v.class_name())};
+                        if(osvc != nullptr) {
+                            auto srgngr{osvc->stringify};
+                            auto s{srgngr(v)};
+                            out << s;
+                            printed = true;
+                        }
+                    }
+                    if(!printed) out << v;
+                }
                 std::unique_lock l{out_mtp_};
                 std::cout << out.str() << std::flush;
             }
@@ -340,7 +355,19 @@ namespace teal {
                         default: out << std::defaultfloat; break;
                     }
                 }
-                for(auto &&v: args) { out << v; }
+                for(auto &&v: args) {
+                    auto printed{false};
+                    if(v.is_class_ref()) {
+                        obj_services const *osvc{rt_->get_object_services(v.class_name())};
+                        if(osvc != nullptr) {
+                            auto srgngr{osvc->stringify};
+                            auto s{srgngr(v)};
+                            out << s;
+                            printed = true;
+                        }
+                    }
+                    if(!printed) out << v;
+                }
                 std::unique_lock l{out_mtp_};
                 std::cout << out.str() << std::endl;
             }
@@ -378,7 +405,17 @@ namespace teal {
                 }
                 out << str_util::from_utf8(timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
                 for(auto &&v: args) {
-                    out << v;
+                    auto printed{false};
+                    if(v.is_class_ref()) {
+                        obj_services const *osvc{rt_->get_object_services(v.class_name())};
+                        if(osvc != nullptr) {
+                            auto srgngr{osvc->stringify};
+                            auto s{srgngr(v)};
+                            out << s;
+                            printed = true;
+                        }
+                    }
+                    if(!printed) out << v;
                 }
                 std::unique_lock l{out_mtp_};
                 std::cerr << out.str() << std::endl;
@@ -399,13 +436,24 @@ namespace teal {
                 }
                 out << str_util::from_utf8(timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
                 for(auto &&v: args) {
-                    out << v;
+                    auto printed{false};
+                    if(v.is_class_ref()) {
+                        obj_services const *osvc{rt_->get_object_services(v.class_name())};
+                        if(osvc != nullptr) {
+                            auto srgngr{osvc->stringify};
+                            auto s{srgngr(v)};
+                            out << s;
+                            printed = true;
+                        }
+                    }
+                    if(!printed) out << v;
                 }
                 std::unique_lock l{out_mtp_};
                 std::cout << out.str() << std::endl;
             }
 
         private:
+            runtime_interface *rt_{nullptr};
             bool setfill_{false};
             char fill_char_{};
             bool setw_{false};
@@ -1721,6 +1769,34 @@ namespace teal {
             obj_svc_[class_name].deserializer = fun;
         }
 
+        virtual void add_object_comparator(
+            std::string const &class_name,
+            std::function<valbox(valbox const &, valbox const &)> const &fun
+        ) override {
+            std::unique_lock l{obj_ser_mtp_};
+            obj_svc_[class_name].comparator = fun;
+        }
+        virtual void add_object_stringifier(
+            std::string const &class_name,
+            std::function<valbox(valbox const &)> const &fun
+        ) override {
+            std::unique_lock l{obj_ser_mtp_};
+            obj_svc_[class_name].stringify = fun;
+        }
+
+
+        obj_services def_obj_svc_{
+            [](valbox const &) -> std::optional<std::string> { return std::optional<std::string>{}; },
+            [](std::string const &, std::string const &) -> valbox { return {}; },
+            [](valbox const &, valbox const &) -> valbox { return {}; },
+            [](valbox const &) -> valbox { return std::string{}; }
+        };
+        obj_services const *get_object_services(std::string const &class_name) const override {
+            std::shared_lock l{obj_ser_mtp_};
+            auto it{obj_svc_.find(class_name)};
+            return it == obj_svc_.end() ? &def_obj_svc_ : &it->second;
+        }
+
 
         valbox get_node_val(std::string const &name) {
             std::shared_lock l{workers_mtp_};
@@ -2399,7 +2475,7 @@ namespace teal {
         };
 
     private:
-        detail::console con_{};
+        detail::console con_{this};
 
         std::atomic<std::int64_t> failure_{0};
         mutable shared_mutex failure_mtp_{};
@@ -2512,10 +2588,10 @@ namespace teal {
         containers_ext dict_ext_{};
 
         mutable shared_mutex obj_ser_mtp_{};
-        struct obj_services {
-            std::function<std::optional<std::string>(valbox const &)> serializer{nullptr};
-            std::function<valbox(std::string const &, std::string const &)> deserializer{nullptr};
-        };
+        // struct obj_services {
+        //     std::function<std::optional<std::string>(valbox const &)> serializer{nullptr};
+        //     std::function<valbox(std::string const &, std::string const &)> deserializer{nullptr};
+        // };
         std::map<std::string, obj_services> obj_svc_{};
         friend class valbox;
 

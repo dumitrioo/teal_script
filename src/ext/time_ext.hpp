@@ -59,6 +59,30 @@ namespace teal {
                 }
             );
 
+            rt->add_object_comparator("timespec_wrapper",
+                [](valbox const &l, valbox const &r) -> valbox {
+                    if(l.class_name() == "timespec_wrapper" && r.class_name() == "timespec_wrapper") {
+                        return
+                            l.as_class<teal::timespec_wrapper>() < r.as_class<teal::timespec_wrapper>() ?
+                                -1:
+                                l.as_class<teal::timespec_wrapper>() > r.as_class<teal::timespec_wrapper>() ?
+                                    1:
+                                    0
+                        ;
+                    }
+                    return teal::valbox{valbox_no_initialize::dont_do_it};
+                }
+            );
+
+            rt->add_object_stringifier("timespec_wrapper",
+                [](valbox const &v) -> valbox {
+                    if(v.class_name() == "timespec_wrapper") {
+                        return v.as_class<teal::timespec_wrapper>().as_iso_8601_str();
+                    }
+                    return std::string{};
+                }
+            );
+
             rt->add_function("gmtimestamp", TEALFUN() { return teal::valbox{teal::timespec_wrapper::gmtnow(), "timespec_wrapper"}; });
             rt->add_method("timespec_wrapper", "year", TEALFUN(args) { return TEALTHIS(args, teal::timespec_wrapper).year(); });
             rt->add_method("timespec_wrapper", "month", TEALFUN(args) { return TEALTHIS(args, teal::timespec_wrapper).month(); });

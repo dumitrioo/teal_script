@@ -19,7 +19,7 @@ function rnd_str(n) {
 }
 
 some_value_issuer() {
-    if(steady_clock() > this.last_time + .2) {
+    if(steady_clock() > this.last_time + .5) {
         this.last_time = steady_clock();
 
         choice = rand() % 8;
@@ -49,16 +49,6 @@ some_value_issuer() {
     return this.res;
 }
 
-
-arr() {
-    if(steady_clock() > this.last_time + .1) {
-        this.last_time = steady_clock();
-        this.res = array(200.0 * (randf() - 0.5), rnd_str(12));
-        console.print("original value changed to: ", this.res);
-    }
-    return this.res;
-}
-
 // just a regular cell, no fancy stuff, no effort to expose it
 // all the cells are already exposed by the embedded local network server
 // inside the Engine Runtime
@@ -80,8 +70,7 @@ extern 'dvqp://127.0.0.1:43987/just_a_regular_cell' value_from_net;
 extern 'dvqp://127.0.0.1:43987/value_from_net' value_from_net_copy;
 
 ext_value_use(vname, exv) {
-    if(steady_clock() > this.last_time + .2) {
-        this.last_time = steady_clock();
+    if(exv != this.exv) {
         this.exv = exv;
         console.print("remote ", typeof(exv), " \"", vname, "\": ", this.exv);
     }

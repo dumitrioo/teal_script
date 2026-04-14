@@ -36,6 +36,17 @@ namespace teal {
 
     class execution_context {
     public:
+        execution_context() = default;
+
+        execution_context(execution_context const &that):
+            rt_ptr_{that.rt_ptr_}
+        {
+        }
+
+        runtime_interface *rt_interface() {
+            return rt_ptr_;
+        }
+
         void set_runtime_interface(runtime_interface *rt_ptr) {
             rt_ptr_ = rt_ptr;
         }
@@ -401,13 +412,6 @@ namespace teal {
             bool res{create_if_not_exists_ != 0};
             create_if_not_exists_ = val;
             return res;
-        }
-
-        execution_context() = default;
-
-        execution_context(execution_context const &that):
-            rt_ptr_{that.rt_ptr_}
-        {
         }
 
     private:

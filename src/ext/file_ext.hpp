@@ -153,10 +153,6 @@ namespace teal {
                 }
                 return static_cast<std::int64_t>(0);
             });
-
-
-
-
         }
 
         void unregister_runtime() override {

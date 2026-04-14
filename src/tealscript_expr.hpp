@@ -680,24 +680,41 @@ namespace teal {
                     bool old{ctx->set_create_if_not_exists(false)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox res{valbox_no_initialize::dont_do_it};
-                    auto l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr)};
-                    auto r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr)};
-                    bool excepted{false};
-                    runtime_error er{{}, {}, {}};
-                    try {
-                        res = l == r;
-                    } catch (runtime_error const &e) {
-                        er = e;
-                        excepted = true;
-                    } catch (std::exception const &e) {
-                        er = runtime_error(this_->line_, this_->col_, e.what());
-                        excepted = true;
-                    } catch (...) {
-                        er = runtime_error(this_->line_, this_->col_, "unknown error");
-                        excepted = true;
+                    auto l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
+                    auto r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
+
+                    bool res_found{false};
+                    if(l.is_class_ref() && r.is_class_ref()) {
+                        auto cmpfn{ctx->rt_interface()->get_object_services(r.class_name())->comparator};
+                        if(cmpfn) {
+                            valbox cmp_res{cmpfn(l, r)};
+                            if(!cmp_res.is_undefined_ref()) {
+                                res = cmp_res.cast_to_int() == 0;
+                                res_found = true;
+                            }
+                        }
+                    } else if(l.is_class_ref() || r.is_class_ref()) {
+                        res = false;
+                        res_found = true;
                     }
-                    if(excepted) {
-                        throw er;
+                    if(!res_found) {
+                        bool excepted{false};
+                        runtime_error er{{}, {}, {}};
+                        try {
+                            res = l == r;
+                        } catch (runtime_error const &e) {
+                            er = e;
+                            excepted = true;
+                        } catch (std::exception const &e) {
+                            er = runtime_error(this_->line_, this_->col_, e.what());
+                            excepted = true;
+                        } catch (...) {
+                            er = runtime_error(this_->line_, this_->col_, "unknown error");
+                            excepted = true;
+                        }
+                        if(excepted) {
+                            throw er;
+                        }
                     }
                     return res;
                 },
@@ -707,24 +724,40 @@ namespace teal {
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool old{ctx->set_create_if_not_exists(false)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
-                    auto l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr)};
-                    auto r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr)};
-                    bool excepted{false};
-                    runtime_error er{{}, {}, {}};
-                    try {
-                        res = l != r;
-                    } catch (runtime_error const &e) {
-                        er = e;
-                        excepted = true;
-                    } catch (std::exception const &e) {
-                        er = runtime_error(this_->line_, this_->col_, e.what());
-                        excepted = true;
-                    } catch (...) {
-                        er = runtime_error(this_->line_, this_->col_, "unknown error");
-                        excepted = true;
+                    auto l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
+                    auto r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
+                    bool res_found{false};
+                    if(l.is_class_ref() && r.is_class_ref()) {
+                        auto cmpfn{ctx->rt_interface()->get_object_services(r.class_name())->comparator};
+                        if(cmpfn) {
+                            valbox cmp_res{cmpfn(l, r)};
+                            if(!cmp_res.is_undefined_ref()) {
+                                res = cmp_res.cast_to_int() != 0;
+                                res_found = true;
+                            }
+                        }
+                    } else if(l.is_class_ref() || r.is_class_ref()) {
+                        res = false;
+                        res_found = true;
                     }
-                    if(excepted) {
-                        throw er;
+                    if(!res_found) {
+                        bool excepted{false};
+                        runtime_error er{{}, {}, {}};
+                        try {
+                            res = l != r;
+                        } catch (runtime_error const &e) {
+                            er = e;
+                            excepted = true;
+                        } catch (std::exception const &e) {
+                            er = runtime_error(this_->line_, this_->col_, e.what());
+                            excepted = true;
+                        } catch (...) {
+                            er = runtime_error(this_->line_, this_->col_, "unknown error");
+                            excepted = true;
+                        }
+                        if(excepted) {
+                            throw er;
+                        }
                     }
                     return res;
                 },
@@ -735,22 +768,38 @@ namespace teal {
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
-                    valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr)};
-                    valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr)};
-                    try {
-                        res = l <= r;
-                    } catch (runtime_error const &e) {
-                        er = e;
-                        excepted = true;
-                    } catch (std::exception const &e) {
-                        er = runtime_error(this_->line_, this_->col_, e.what());
-                        excepted = true;
-                    } catch (...) {
-                        er = runtime_error(this_->line_, this_->col_, "unknown error");
-                        excepted = true;
+                    valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
+                    valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
+                    bool res_found{false};
+                    if(l.is_class_ref() && r.is_class_ref()) {
+                        auto cmpfn{ctx->rt_interface()->get_object_services(r.class_name())->comparator};
+                        if(cmpfn) {
+                            valbox cmp_res{cmpfn(l, r)};
+                            if(!cmp_res.is_undefined_ref()) {
+                                res = cmp_res.cast_to_int() <= 0;
+                                res_found = true;
+                            }
+                        }
+                    } else if(l.is_class_ref() || r.is_class_ref()) {
+                        res = false;
+                        res_found = true;
                     }
-                    if(excepted) {
-                        throw er;
+                    if(!res_found) {
+                        try {
+                            res = l <= r;
+                        } catch (runtime_error const &e) {
+                            er = e;
+                            excepted = true;
+                        } catch (std::exception const &e) {
+                            er = runtime_error(this_->line_, this_->col_, e.what());
+                            excepted = true;
+                        } catch (...) {
+                            er = runtime_error(this_->line_, this_->col_, "unknown error");
+                            excepted = true;
+                        }
+                        if(excepted) {
+                            throw er;
+                        }
                     }
                     return res;
                 },
@@ -761,21 +810,38 @@ namespace teal {
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
-                    try {
-                        res = this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr) <
-                              this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr);
-                    } catch (runtime_error const &e) {
-                        er = e;
-                        excepted = true;
-                    } catch (std::exception const &e) {
-                        er = runtime_error(this_->line_, this_->col_, e.what());
-                        excepted = true;
-                    } catch (...) {
-                        er = runtime_error(this_->line_, this_->col_, "unknown error");
-                        excepted = true;
+                    valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
+                    valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
+                    bool res_found{false};
+                    if(l.is_class_ref() && r.is_class_ref()) {
+                        auto cmpfn{ctx->rt_interface()->get_object_services(r.class_name())->comparator};
+                        if(cmpfn) {
+                            valbox cmp_res{cmpfn(l, r)};
+                            if(!cmp_res.is_undefined_ref()) {
+                                res = cmp_res.cast_to_int() < 0;
+                                res_found = true;
+                            }
+                        }
+                    } else if(l.is_class_ref() || r.is_class_ref()) {
+                        res = false;
+                        res_found = true;
                     }
-                    if(excepted) {
-                        throw er;
+                    if(!res_found) {
+                        try {
+                            res = l < r;
+                        } catch (runtime_error const &e) {
+                            er = e;
+                            excepted = true;
+                        } catch (std::exception const &e) {
+                            er = runtime_error(this_->line_, this_->col_, e.what());
+                            excepted = true;
+                        } catch (...) {
+                            er = runtime_error(this_->line_, this_->col_, "unknown error");
+                            excepted = true;
+                        }
+                        if(excepted) {
+                            throw er;
+                        }
                     }
                     return res;
                 },
@@ -786,21 +852,38 @@ namespace teal {
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
-                    try {
-                        res = this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr) >
-                              this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr);
-                    } catch (runtime_error const &e) {
-                        er = e;
-                        excepted = true;
-                    } catch (std::exception const &e) {
-                        er = runtime_error(this_->line_, this_->col_, e.what());
-                        excepted = true;
-                    } catch (...) {
-                        er = runtime_error(this_->line_, this_->col_, "unknown error");
-                        excepted = true;
+                    valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
+                    valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
+                    bool res_found{false};
+                    if(l.is_class_ref() && r.is_class_ref()) {
+                        auto cmpfn{ctx->rt_interface()->get_object_services(r.class_name())->comparator};
+                        if(cmpfn) {
+                            valbox cmp_res{cmpfn(l, r)};
+                            if(!cmp_res.is_undefined_ref()) {
+                                res = cmp_res.cast_to_int() > 0;
+                                res_found = true;
+                            }
+                        }
+                    } else if(l.is_class_ref() || r.is_class_ref()) {
+                        res = false;
+                        res_found = true;
                     }
-                    if(excepted) {
-                        throw er;
+                    if(!res_found) {
+                        try {
+                            res = r < l;
+                        } catch (runtime_error const &e) {
+                            er = e;
+                            excepted = true;
+                        } catch (std::exception const &e) {
+                            er = runtime_error(this_->line_, this_->col_, e.what());
+                            excepted = true;
+                        } catch (...) {
+                            er = runtime_error(this_->line_, this_->col_, "unknown error");
+                            excepted = true;
+                        }
+                        if(excepted) {
+                            throw er;
+                        }
                     }
                     return res;
                 },
@@ -811,21 +894,38 @@ namespace teal {
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
-                    try {
-                        res = !(this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr) <
-                                this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr));
-                    } catch (runtime_error const &e) {
-                        er = e;
-                        excepted = true;
-                    } catch (std::exception const &e) {
-                        er = runtime_error(this_->line_, this_->col_, e.what());
-                        excepted = true;
-                    } catch (...) {
-                        er = runtime_error(this_->line_, this_->col_, "unknown error");
-                        excepted = true;
+                    valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
+                    valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
+                    bool res_found{false};
+                    if(l.is_class_ref() && r.is_class_ref()) {
+                        auto cmpfn{ctx->rt_interface()->get_object_services(r.class_name())->comparator};
+                        if(cmpfn) {
+                            valbox cmp_res{cmpfn(l, r)};
+                            if(!cmp_res.is_undefined_ref()) {
+                                res = cmp_res.cast_to_int() >= 0;
+                                res_found = true;
+                            }
+                        }
+                    } else if(l.is_class_ref() || r.is_class_ref()) {
+                        res = false;
+                        res_found = true;
                     }
-                    if(excepted) {
-                        throw er;
+                    if(!res_found) {
+                        try {
+                            res = !(l < r);
+                        } catch (runtime_error const &e) {
+                            er = e;
+                            excepted = true;
+                        } catch (std::exception const &e) {
+                            er = runtime_error(this_->line_, this_->col_, e.what());
+                            excepted = true;
+                        } catch (...) {
+                            er = runtime_error(this_->line_, this_->col_, "unknown error");
+                            excepted = true;
+                        }
+                        if(excepted) {
+                            throw er;
+                        }
                     }
                     return res;
                 },
@@ -837,21 +937,35 @@ namespace teal {
                     valbox res{valbox_no_initialize::dont_do_it};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
-                    try {
-                        res = this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr) <=>
-                              this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr);
-                    } catch (runtime_error const &e) {
-                        er = e;
-                        excepted = true;
-                    } catch (std::exception const &e) {
-                        er = runtime_error(this_->line_, this_->col_, e.what());
-                        excepted = true;
-                    } catch (...) {
-                        er = runtime_error(this_->line_, this_->col_, "unknown error");
-                        excepted = true;
+                    valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
+                    valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
+                    bool res_found{false};
+                    if(l.is_class_ref() && r.is_class_ref()) {
+                        auto cmpfn{ctx->rt_interface()->get_object_services(r.class_name())->comparator};
+                        if(cmpfn) {
+                            valbox cmp_res{cmpfn(l, r)};
+                            if(!cmp_res.is_undefined_ref()) {
+                                res = cmp_res.cast_to_int();
+                                res_found = true;
+                            }
+                        }
                     }
-                    if(excepted) {
-                        throw er;
+                    if(!res_found) {
+                        try {
+                            res = l <=> r;
+                        } catch (runtime_error const &e) {
+                            er = e;
+                            excepted = true;
+                        } catch (std::exception const &e) {
+                            er = runtime_error(this_->line_, this_->col_, e.what());
+                            excepted = true;
+                        } catch (...) {
+                            er = runtime_error(this_->line_, this_->col_, "unknown error");
+                            excepted = true;
+                        }
+                        if(excepted) {
+                            throw er;
+                        }
                     }
                     return res;
                 }
