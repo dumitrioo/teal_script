@@ -2600,7 +2600,7 @@ namespace teal {
         std::list<std::pair<std::shared_ptr<so>, extension_interface *>> loaded_extensions_{};
         static std::size_t constexpr version_major_{1};
         static std::size_t constexpr version_minor_{4};
-        static std::size_t constexpr version_patch_{26};
+        static std::size_t constexpr version_patch_{38};
 
 #ifdef TEAL_USE_EXTERNAL_VALUES
         mutable shared_mutex cq_mtp_{};
