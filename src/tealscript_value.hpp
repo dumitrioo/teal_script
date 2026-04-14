@@ -2760,14 +2760,7 @@ namespace teal {
                         return lr.cast_to_string() == rr.as_string();
                     } else if(rt == type::WSTRING) {
                         return lr.cast_to_wstring() == rr.as_wstring();
-                    } else if(
-                        rt == type::ARRAY || rt == type::OBJECT ||
-                        rt == type::VEC4 || rt == type::MAT4 ||
-                        rt == type::CLASS || rt == type::FUNC ||
-                        lt == type::ARRAY || lt == type::OBJECT ||
-                        lt == type::VEC4 || lt == type::MAT4 ||
-                        lt == type::CLASS || lt == type::FUNC
-                    ) {
+                    } else {
                         return false;
                     }
                 }
