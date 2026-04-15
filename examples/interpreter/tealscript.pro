@@ -20,16 +20,16 @@ DEFINES += TEAL_USE_EXTERNAL_VALUES
 
 ###############################################################################
 # DEFINES += TEAL_USE_CUSTOM_MUTEX
-DEFINES += MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING
-DEFINES += MUTEX_ATOMIC_SM_SLEEP_NANOS=100000
+# DEFINES += MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING
+# DEFINES += MUTEX_ATOMIC_SM_SLEEP_NANOS=100000
 ###############################################################################
 
 ###############################################################################
 # DEFINES += TEAL_USE_CUSTOM_SHARED_MUTEX
-DEFINES += RW_MUTEX_PRIORITIES
+# DEFINES += RW_MUTEX_PRIORITIES
 # DEFINES += RW_MUTEX_UPGRADEABLE
-DEFINES += RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING
-DEFINES += RW_MUTEX_ATOMIC_SM_SLEEP_NANOS=100000
+# DEFINES += RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING
+# DEFINES += RW_MUTEX_ATOMIC_SM_SLEEP_NANOS=100000
 ###############################################################################
 
 ###############################################################################
