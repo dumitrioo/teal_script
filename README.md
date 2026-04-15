@@ -9,7 +9,13 @@ The platform supports flexible input formats, allowing integration with virtuall
 
 ## Why?
 
-The advantage of C++ is that it can solve all of the development tasks. But object-oriented and imperative approaches are not equally good for everything. There are many classes of computational problems that are much easier to solve using specialized tools, approaches, paradigms. So, we write specialized tools in C++ and use them with C++ instead of C++. One such tool and a description of the tasks it can solve are presented here...
+When designing any control logic, it is tempting to specify only what the final outcome should be, rather than provide detailed, step‑by‑step instructions for how to achieve it. The functional programming paradigm, in a sense, aligns with this declarative approach to problem solving. Although C++ has acquired some rudimentary functional features, the core language remains imperative and retains built‑in support for object‑oriented programming. That means C++ development typically requires architects and programmers to design the system in detail and to script the entire computational process down to the smallest steps.
+
+At the same time, it is desirable to have a dedicated tool or abstraction for each problem domain while continuing to use familiar development tools. In other words, we would like to broaden the range of programming approaches available without changing our toolchain. This goal has long been achieved by combining application source code with additional tooling in the form of libraries or inline source modules implemented using the language itself. Employing specialized components to solve domain‑specific problems is common practice.
+
+Here we present another tool that significantly simplifies building complex control schemes for many actuators based on processing numerous sensor signals via programming. Although there is a current trend toward coupling artificial neural networks directly with hardware for control purposes, part of any application will inevitably remain explicitly programmed—for example, to provide integration points. Adopting the proposed solution will substantially ease the manual development of low‑level, programmatically expressed control logic and will also facilitate integration with machine‑learning products.
+
+So, we write specialized tools in C++ and use them with C++ instead of C++.
 
 
 ## The Data-flow Graph Paradigm
