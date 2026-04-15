@@ -7,8 +7,14 @@ namespace teal::str_util {
 
     namespace detail {
 
-        template<typename T>
+        template<typename T
+#if (__cplusplus < 202000L)
+                 , typename = std::enable_if_t<std::is_integral_v<T> || std::is_enum_v<T>>
+#endif
+        >
+#if (__cplusplus >= 202000L)
             requires(std::is_integral_v<T> || std::is_enum_v<T>)
+#endif
         struct num_cast_hash {
             std::size_t operator()(T n) const noexcept {
                 return static_cast<std::size_t>(n);

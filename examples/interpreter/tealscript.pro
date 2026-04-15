@@ -7,7 +7,7 @@ TEMPLATE = app
 
 ###############################################################################
 # DEFINES += TEAL_SINGLE_THREADED
-# DEFINES += TEAL_DEBUGGING
+DEFINES += TEAL_DEBUGGING
 ###############################################################################
 
 ###############################################################################
@@ -41,7 +41,7 @@ DEFINES += TEAL_USE_EMHASH8_MAP
 ###############################################################################
 
 ###############################################################################
-# DEFINES += STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
+DEFINES += STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
 ###############################################################################
 
 INCLUDEPATH += ../../src
@@ -129,7 +129,7 @@ HEADERS += \
     ../../src/tealscript_util.hpp \
     ../../src/tealscript_value.hpp
 
-QMAKE_CXXFLAGS += -std=c++20 -march=native -Wno-unused-parameter -Wno-unused-function -Wl,-rpath,.
+QMAKE_CXXFLAGS += -std=c++17 -march=native -Wno-unused-parameter -Wno-unused-function -Wl,-rpath,.
 QMAKE_CXXFLAGS += -ftree-vectorize -mavx2 -ftree-vectorizer-verbose=5
 QMAKE_CXXFLAGS_RELEASE -= -O2
 QMAKE_CXXFLAGS_RELEASE += -O3

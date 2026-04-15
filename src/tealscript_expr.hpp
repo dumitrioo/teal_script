@@ -918,7 +918,6 @@ namespace teal {
                     return res;
                 },
                 /* SPACESHIP */
-#if (__cplusplus >= 202000L)
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
@@ -941,7 +940,11 @@ namespace teal {
                     }
                     if(!res_found) {
                         try {
+#if (__cplusplus >= 202000L)
                             res = l <=> r;
+#else
+                            res = valbox::operator_spaceship(l,  r);
+#endif
                         } catch (runtime_error const &e) {
                             er = e;
                             excepted = true;
@@ -958,9 +961,6 @@ namespace teal {
                     }
                     return res;
                 }
-#else
-                nullptr
-#endif
                 ,
                 /* ASSIGN */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {

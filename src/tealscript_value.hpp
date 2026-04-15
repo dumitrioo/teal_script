@@ -3170,6 +3170,97 @@ namespace teal {
             }
             throw std::runtime_error{"operation not applicable"};
         }
+#else
+        static int operator_spaceship(valbox const &l, valbox const &r) {
+            auto lr{l.deref()};
+            auto rr{r.deref()};
+            type lt{lr.val_or_pointed_type()};
+            type rt{rr.val_or_pointed_type()};
+            if(lt == rt) {
+                switch(lt) {
+                    case type::S64: { auto lv{lr.as_s64()}; auto rv{rr.as_s64()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                    case type::U64: { auto lv{lr.as_u64()}; auto rv{rr.as_u64()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                    case type::CHAR: { auto lv{lr.as_char()}; auto rv{rr.as_char()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                    case type::U8: { auto lv{lr.as_u8()}; auto rv{rr.as_u8()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                    case type::S8: { auto lv{lr.as_s8()}; auto rv{rr.as_s8()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                    case type::U16: { auto lv{lr.as_u16()}; auto rv{rr.as_u16()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                    case type::S16: { auto lv{lr.as_s16()}; auto rv{rr.as_s16()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                    case type::U32: { auto lv{lr.as_u32()}; auto rv{rr.as_u32()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                    case type::S32: { auto lv{lr.as_s32()}; auto rv{rr.as_s32()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                    case type::FLOAT: { auto lv{lr.as_float()}; auto rv{rr.as_float()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                    case type::DOUBLE: { auto lv{lr.as_double()}; auto rv{rr.as_double()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                    case type::LONG_DOUBLE: { auto lv{lr.as_long_double()}; auto rv{rr.as_long_double()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                    case type::BOOL: { auto lv{(int)lr.as_bool()}; auto rv{(int)rr.as_bool()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                    case type::WCHAR: { auto lv{lr.as_wchar()}; auto rv{rr.as_wchar()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                    case type::STRING: { auto lv{lr.as_string()}; auto rv{rr.as_string()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                    case type::WSTRING: { auto lv{lr.as_wstring()}; auto rv{rr.as_wstring()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                    case type::UNDEFINED: return 0;
+                    default: break;
+                }
+            } else {
+                if(lt == type::UNDEFINED) {
+                    return -1;
+                } else if(rt == type::UNDEFINED) {
+                    return 1;
+                }
+                if(is_numeric_type(lt) && is_numeric_type(rt)) {
+                    if(static_cast<int>(lt) > static_cast<int>(rt)) {
+                        switch(lt) {
+                            case type::CHAR: { auto lv{lr.as_char()}; auto rv{rr.cast_to_char()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                            case type::WCHAR: { auto lv{lr.as_wchar()}; auto rv{rr.cast_to_wchar()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                            case type::U8: { auto lv{lr.as_u8()}; auto rv{rr.cast_to_u8()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                            case type::S8: { auto lv{lr.as_s8()}; auto rv{rr.cast_to_s8()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                            case type::U16: { auto lv{lr.as_u16()}; auto rv{rr.cast_to_u16()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                            case type::S16: { auto lv{lr.as_s16()}; auto rv{rr.cast_to_s16()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                            case type::U32: { auto lv{lr.as_u32()}; auto rv{rr.cast_to_u32()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                            case type::S32: { auto lv{lr.as_s32()}; auto rv{rr.cast_to_s32()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                            case type::U64: { auto lv{lr.as_u64()}; auto rv{rr.cast_to_u64()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                            case type::S64: { auto lv{lr.as_s64()}; auto rv{rr.cast_to_s64()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                            case type::FLOAT: { auto lv{lr.as_float()}; auto rv{rr.cast_to_float()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                            case type::DOUBLE: { auto lv{lr.as_double()}; auto rv{rr.cast_to_double()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                            case type::LONG_DOUBLE: { auto lv{lr.as_long_double()}; auto rv{rr.cast_to_long_double()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                            default: break;
+                        }
+                    } else {
+                        switch(rt) {
+                            case type::CHAR: { auto lv{lr.cast_to_char()}; auto rv{rr.as_char()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                            case type::WCHAR: { auto lv{lr.cast_to_wchar()}; auto rv{rr.as_wchar()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                            case type::U8: { auto lv{lr.cast_to_u8()}; auto rv{rr.as_u8()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                            case type::S8: { auto lv{lr.cast_to_s8()}; auto rv{rr.as_s8()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                            case type::U16: { auto lv{lr.cast_to_u16()}; auto rv{rr.as_u16()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                            case type::S16: { auto lv{lr.cast_to_s16()}; auto rv{rr.as_s16()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                            case type::U32: { auto lv{lr.cast_to_u32()}; auto rv{rr.as_u32()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                            case type::S32: { auto lv{lr.cast_to_s32()}; auto rv{rr.as_s32()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                            case type::U64: { auto lv{lr.cast_to_u64()}; auto rv{rr.as_u64()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                            case type::S64: { auto lv{lr.cast_to_s64()}; auto rv{rr.as_s64()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                            case type::FLOAT: { auto lv{lr.cast_to_float()}; auto rv{rr.as_float()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                            case type::DOUBLE: { auto lv{lr.cast_to_double()}; auto rv{rr.as_double()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                            case type::LONG_DOUBLE: { auto lv{lr.cast_to_long_double()}; auto rv{rr.as_long_double()}; return lv < rv ? -1 : (rv < lv ? 1 : 0); }
+                            default: break;
+                        }
+                    }
+                } else {
+                    if(lt == type::STRING) {
+                        auto lv{lr.as_string()};
+                        auto rv{rr.cast_to_string()};
+                        return lv < rv ? -1 : (rv < lv ? 1 : 0);
+                    } else if(lt == type::WSTRING) {
+                        auto lv{lr.as_wstring()};
+                        auto rv{rr.cast_to_wstring()};
+                        return lv < rv ? -1 : (rv < lv ? 1 : 0);
+                    } else if(rt == type::STRING) {
+                        auto lv{lr.cast_to_string()};
+                        auto rv{rr.as_string()};
+                        return lv < rv ? -1 : (rv < lv ? 1 : 0);
+                    } else if(rt == type::WSTRING) {
+                        auto lv{lr.cast_to_wstring()};
+                        auto rv{rr.as_wstring()};
+                        return lv < rv ? -1 : (rv < lv ? 1 : 0);
+                    }
+                }
+            }
+            throw std::runtime_error{"operation not applicable"};
+        }
 #endif
 
         friend bool operator!=(valbox const &l, valbox const &r) {
