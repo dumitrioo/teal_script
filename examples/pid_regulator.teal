@@ -39,7 +39,7 @@ logprint pv(in, diff1, pid, diff2, mr);
 pid_regulator(err, kp, ki, kd) {
     if(this.prev_t == undefined) {
         this.prev_t = steady_clock();
-        this.prev_err = float(err);
+        this.prev_err = (float)err;
         this.integral = 0.0;
     }
     t = steady_clock();
@@ -49,7 +49,7 @@ pid_regulator(err, kp, ki, kd) {
         proportional = err;
         this.integral += err * dt;
         derivative = (err - this.prev_err) / dt;
-        this.prev_err = float(err);
+        this.prev_err = (float)err;
         output = kp * proportional + ki * this.integral + kd * derivative;
         return output;
     }
@@ -96,11 +96,12 @@ logprint(in, e1, pidval, e2, mathval) {
     t = steady_clock();
     dt = t - this.prev_t;
     if(dt > 0.1) {
+        console.fixed();
         this.prev_t = t;
-        console.print("|| target: ", in,
-            " | err1: ", e1, ", PID val: ", pidval,
+        console.print("[ target: ", in,
+            " || err1: ", e1, ", PID val: ", pidval,
             " | err2: ", e2, ", Math val: ", mathval,
-            " ||"
+            " ]"
         );
     }
 }

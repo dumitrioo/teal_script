@@ -61,11 +61,13 @@ function k_update(ks, z) {
 
 my_drafts(host_data) {
     console.fixed();
-    // index_mem_size = u64(1024 * 1024);
+    console.setprecision(0);
+
+    // index_mem_size = (u64)(1024 * 1024);
     // index_num_entries = index_mem_size / 8;
-    index_num_entries = (float)(u64)0xff'ff'ff'ff'ff'ff'ff'ff;
-    index_mem_size = index_num_entries * 8.0;
-    page_size = (float)4096.0;
+    index_num_entries = (float)(u64)0x1f'ff'ff'ff'ff;
+    index_mem_size = index_num_entries * 8;
+    page_size = (float)16384;
     paged_size = page_size * index_num_entries;
     println("index_num_entries: ", index_num_entries);
     println("paged_size: ", paged_size);
@@ -76,6 +78,7 @@ my_drafts(host_data) {
 
     exit();
     return 0;
+
     kf.predict = k_predict;
     kf.update = k_update;
     kf.x = 0.0;  // state estimate

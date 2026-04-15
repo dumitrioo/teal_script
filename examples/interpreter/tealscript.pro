@@ -150,6 +150,7 @@ DISTFILES += \
     ../example.teal \
     ../extending_example.teal \
     ../external_value.teal \
+    ../kalman_1D_example.teal \
     ../one_second_limit.teal \
     ../perf_limit.teal \
     ../pid_regulator.teal \

@@ -29,7 +29,7 @@ tbbt2cola(sg) {
 
     n = sg.next();
 
-    outstr = string();
+    outstr = "";
     outstr.reserve(4096);
     outstr += "Target turn number: " + string(n) + "\n";
 

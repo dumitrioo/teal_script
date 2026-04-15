@@ -55,7 +55,7 @@ first_defined m(i_m, r_m);
 
 ///////////////////////// logical gates
 not(a) { return !a; }
-fwd(a) { return bool(a); }
+fwd(a) { return (bool)a; }
 and2(a, b) { return a && b; }
 and3(a, b, c) { return a && b && c; }
 and4(a, b, c, d) { return a && b && c && d; }

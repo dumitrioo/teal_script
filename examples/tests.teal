@@ -9,10 +9,10 @@ tests_execution_time_limit tstsetl(0.1);
 binary_data_test() {
     ab = array_buffer();
 
-    ab.append(hton(i32(623)));
+    ab.append(hton((i32)623));
     ab.to_string().hexdump().println();
 
-    ab.put_at(i32(623), 1);
+    ab.put_at((i32)623, 1);
     ab.to_string().hexdump().println();
 
     u = ab.u16_at(0);
