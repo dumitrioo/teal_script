@@ -44,9 +44,6 @@ timestamp_value() {
 }
 timestamp_value current_time();
 
-// extern 'dvqp://127.0.0.1:43987/sample_val' sample_val_from_net;
-// extern 'dvqp://127.0.0.1:43987/current_time' time_from_net;
-
 
 function k_predict(ks, u) {
     ks.x = ks.A * ks.x + ks.B * u;
@@ -62,7 +59,7 @@ function k_update(ks, z) {
 }
 
 
-my_drafts() {
+my_drafts(host_data) {
     kf.predict = k_predict;
     kf.update = k_update;
     kf.x = 0.0;  // state estimate
@@ -81,16 +78,10 @@ my_drafts() {
         kf.update(measurements[k]);
         print(k, "\t", measurements[k], "\t", kf.x, "\t", kf.P, "\n");
     }
-    return exit();
 
-    hostdata.serialize5(4).println();
+    host_data.serialize5(4).println();
 
-    ts.to_string().println();
-
-    if(exv != this.exv) {
-        this.exv = exv;
-        console.print("remote value: ", exv);
-    }
+    timestamp().to_string().println();
 
     println(false, " && ", false, " = ", false && false);
     println(false, " && ", true, " = ", false && true);
@@ -272,4 +263,4 @@ my_drafts() {
     return 0;
 }
 
-my_drafts drf();
+my_drafts drf(host_provided_data);

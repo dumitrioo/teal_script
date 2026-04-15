@@ -14,15 +14,15 @@
 #include "tealscript_util.hpp"
 #include "tealscript_token.hpp"
 #include "tealscript_lexer.hpp"
+#include "tealscript_parser.hpp"
 #include "tealscript_expr.hpp"
 #include "tealscript_statement.hpp"
-#include "tealscript_parser.hpp"
-#include "tealscript_lexer.hpp"
 #include "tealscript_cells.hpp"
 #include "tealscript_codegen.hpp"
 #include "tealscript_exec_ctx.hpp"
 #include "tealscript_interfaces.hpp"
 #include "tealscript_net.hpp"
+#include "tealscript_console.hpp"
 
 #include "ext/array_buffer_ext.hpp"
 #include "ext/containers_ext.hpp"
@@ -72,402 +72,6 @@
 #endif
 
 namespace teal {
-
-    namespace detail {
-
-#if defined(TEAL_USE_ASYNC_CONSOLE)
-        class console {
-        public:
-            console():
-                out_buffers_{std::make_unique<buff>(), std::make_unique<buff>()},
-                out_thread_{
-                    [this]() {
-                        while(!termination_) {
-                            auto opt_pair{fetch_string_from_buffer()};
-                            if(opt_pair) {
-                                if(opt_pair->second) {
-                                    std::cerr << opt_pair->first << std::flush;
-                                } else {
-                                    std::cout << opt_pair->first << std::flush;
-                                }
-                            }
-                        }
-                    }
-                }
-            {
-            }
-
-            ~console() {
-                termination_ = true;
-                if(out_thread_.joinable()) { out_thread_.join(); }
-            }
-
-            void print(std::vector<valbox> const &args) {
-                cout_out((terminal_colours_ ? "\033[32mprint\033[0m" : "print"), args);
-            }
-            void info(std::vector<valbox> const &args) {
-                cout_out((terminal_colours_ ? "\033[34minfo\033[0m" : "info"), args);
-            }
-            void log(std::vector<valbox> const &args) {
-                cout_out((terminal_colours_ ? "\033[32mlog\033[0m" : "log"), args);
-            }
-            void warn(std::vector<valbox> const &args) {
-                cout_out((terminal_colours_ ? "\033[35mwarning\033[0m" : "warning"), args);
-            }
-            void debug(std::vector<valbox> const &args) {
-                cout_out((terminal_colours_ ? "\033[93mdebug\033[0m" : "debug"), args);
-            }
-            void error(std::vector<valbox> const &args) {
-                cout_out((terminal_colours_ ? "\033[91merror\033[0m" : "error"), args);
-            }
-
-            void rawprint(std::vector<valbox> const &args) {
-                std::stringstream out{};
-                if(setfill_) { out << std::setfill(fill_char_); }
-                if(setw_) { out << std::setw(w_); }
-                if(setprec_) { out << std::setprecision(prec_); }
-                if(fk_ != flt_kind::def) {
-                    switch(fk_) {
-                        case flt_kind::fix: out << std::fixed; break;
-                        case flt_kind::sci: out << std::scientific; break;
-                        case flt_kind::hex: out << std::hex; break;
-                        default: out << std::defaultfloat; break;
-                    }
-                }
-                for(auto &&v: args) { out << v; }
-                put_string_to_buffer(out.str(), false);
-            }
-
-            void println(std::vector<valbox> const &args) {
-                std::stringstream out{};
-                if(setfill_) { out << std::setfill(fill_char_); }
-                if(setw_) { out << std::setw(w_); }
-                if(setprec_) { out << std::setprecision(prec_); }
-                if(fk_ != flt_kind::def) {
-                    switch(fk_) {
-                        case flt_kind::fix: out << std::fixed; break;
-                        case flt_kind::sci: out << std::scientific; break;
-                        case flt_kind::hex: out << std::hex; break;
-                        default: out << std::defaultfloat; break;
-                    }
-                }
-                for(auto &&v: args) { out << v; }
-                out << '\n';
-                put_string_to_buffer(out.str(), false);
-            }
-
-            void flush() {}
-            void fixed() { fk_ = flt_kind::fix; }
-            void scientific() { fk_ = flt_kind::sci; }
-            void hexfloat() { fk_ = flt_kind::hex; }
-            void defaultfloat() { fk_ = flt_kind::def; }
-            void setprecision(int prec) { setprec_ = true; prec_ = prec; }
-            int precision() { return prec_; }
-            void setw(int w) { setw_ = true; w_ = w; }
-            void setfill(char arg) { setfill_ = true; fill_char_ = arg; }
-            char fill() { return fill_char_; }
-            bool colors_enabled() const { return terminal_colours_; }
-            void enable_colors(bool v) { terminal_colours_ = v; }
-            bool setsync(bool v) const { return std::ios::sync_with_stdio(v); }
-
-        private:
-            void cerr_out(std::string const &type, std::vector<valbox> const &args) {
-                std::stringstream out{};
-                if(setfill_) { out << std::setfill(fill_char_); }
-                if(setw_) { out << std::setw(w_); }
-                if(setprec_) { out << std::setprecision(prec_); }
-                if(fk_ != flt_kind::def) {
-                    switch(fk_) {
-                    case flt_kind::fix: out << std::fixed; break;
-                    case flt_kind::sci: out << std::scientific; break;
-                    case flt_kind::hex: out << std::hex; break;
-                    default: out << std::defaultfloat; break;
-                    }
-                }
-                out << str_util::from_utf8(timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
-                for(auto &&v: args) {
-                    out << v;
-                }
-                out << '\n';
-                put_string_to_buffer(out.str(), true);
-            }
-
-            void cout_out(std::string const &type, std::vector<valbox> const &args) {
-                std::stringstream out{};
-                if(setfill_) { out << std::setfill(fill_char_); }
-                if(setw_) { out << std::setw(w_); }
-                if(setprec_) { out << std::setprecision(prec_); }
-                if(fk_ != flt_kind::def) {
-                    switch(fk_) {
-                        case flt_kind::fix: out << std::fixed; break;
-                        case flt_kind::sci: out << std::scientific; break;
-                        case flt_kind::hex: out << std::hex; break;
-                        default: out << std::defaultfloat; break;
-                    }
-                }
-                out << str_util::from_utf8(timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
-                for(auto &&v: args) {
-                    out << v;
-                }
-                out << '\n';
-                put_string_to_buffer(out.str(), false);
-            }
-
-            class buff {
-            public:
-                void put_string(std::string const &s, bool is_err) {
-                    out_buffer_.enqueue({s, is_err});
-                }
-
-                std::optional<std::pair<std::string, bool>> fetch_string() {
-                    std::pair<std::string, bool> res{};
-                    if(out_buffer_.try_dequeue(res)) {
-                        return res;
-                    }
-                    return {};
-                }
-
-                std::size_t size() const {
-                    return out_buffer_.size_approx();
-                }
-
-            private:
-                moodycamel::ConcurrentQueue<std::pair<std::string, bool>> out_buffer_{};
-            };
-
-            void put_string_to_buffer(std::string const &s, bool is_err) {
-                {
-                    std::shared_lock l{out_index_mtp_};
-                    out_buffers_[(out_index_.load(std::memory_order::acquire) + 1) % 2]->put_string(s, is_err);
-                }
-                {
-                    std::unique_lock l{out_mtp_};
-                    out_cvar_.notify_one();
-                }
-            }
-
-            std::optional<std::pair<std::string, bool>> fetch_string_from_buffer() {
-                std::optional<std::pair<std::string, bool>> res{out_buffers_[out_index_.load(std::memory_order::acquire) % 2]->fetch_string()};
-                if(res) {
-                    return res;
-                } else {
-                    bool need_switch_index{true};
-                    std::unique_lock l{out_mtp_};
-                    if(out_buffers_[(out_index_.load(std::memory_order::acquire) + 1) % 2]->size() == 0) {
-                        std::cv_status wst{out_cvar_.wait_for(l, std::chrono::milliseconds{100})};
-                        if(wst == std::cv_status::timeout) {
-                            need_switch_index = false;
-                        }
-                    }
-                    if(need_switch_index) {
-                        std::unique_lock l{out_index_mtp_};
-                        out_index_ = (out_index_ + 1) % 2;
-                        out_index_switches_++;
-                    }
-                }
-                return out_buffers_[out_index_.load(std::memory_order::acquire) % 2]->fetch_string();
-            }
-
-            std::mutex out_mtp_{};
-            std::condition_variable out_cvar_{};
-            std::atomic<std::size_t> out_index_switches_{0};
-            mutable shared_mutex out_index_mtp_{};
-            std::atomic<std::size_t> out_index_{0};
-            std::array<std::unique_ptr<buff>, 2> out_buffers_{};
-            std::thread out_thread_{};
-
-            bool setfill_{false};
-            char fill_char_{};
-            bool setw_{false};
-            int w_{};
-            bool setprec_{false};
-            int prec_{};
-            enum class flt_kind{def, sci, fix, hex};
-            flt_kind fk_{flt_kind::def};
-            bool terminal_colours_{false};
-            bool termination_{false};
-        };
-#else
-        class console {
-        public:
-            console(runtime_interface *rt = nullptr): rt_{rt} {
-            }
-
-            void print(std::vector<valbox> const &args) {
-                cout_out((terminal_colours_ ? "\033[32mprint\033[0m" : "print"), args);
-            }
-            void info(std::vector<valbox> const &args) {
-                cout_out((terminal_colours_ ? "\033[34minfo\033[0m" : "info"), args);
-            }
-            void log(std::vector<valbox> const &args) {
-                cout_out((terminal_colours_ ? "\033[32mlog\033[0m" : "log"), args);
-            }
-            void warn(std::vector<valbox> const &args) {
-                cout_out((terminal_colours_ ? "\033[35mwarning\033[0m" : "warning"), args);
-            }
-            void debug(std::vector<valbox> const &args) {
-                cout_out((terminal_colours_ ? "\033[93mdebug\033[0m" : "debug"), args);
-            }
-            void error(std::vector<valbox> const &args) {
-                cout_out((terminal_colours_ ? "\033[91merror\033[0m" : "error"), args);
-            }
-
-            void rawprint(std::vector<valbox> const &args) {
-                std::stringstream out{};
-                if(setfill_) { out << std::setfill(fill_char_); }
-                if(setw_) { out << std::setw(w_); }
-                if(setprec_) { out << std::setprecision(prec_); }
-                if(fk_ != flt_kind::def) {
-                    switch(fk_) {
-                        case flt_kind::fix: out << std::fixed; break;
-                        case flt_kind::sci: out << std::scientific; break;
-                        case flt_kind::hex: out << std::hex; break;
-                        default: out << std::defaultfloat; break;
-                    }
-                }
-                for(auto &&v: args) {
-                    auto printed{false};
-                    if(v.is_class_ref()) {
-                        obj_services const *osvc{rt_->get_object_services(v.class_name())};
-                        if(osvc != nullptr) {
-                            auto srgngr{osvc->stringify};
-                            auto s{srgngr(v)};
-                            out << s;
-                            printed = true;
-                        }
-                    }
-                    if(!printed) out << v;
-                }
-                std::unique_lock l{out_mtp_};
-                std::cout << out.str() << std::flush;
-            }
-
-            void println(std::vector<valbox> const &args) {
-                std::stringstream out{};
-                if(setfill_) { out << std::setfill(fill_char_); }
-                if(setw_) { out << std::setw(w_); }
-                if(setprec_) { out << std::setprecision(prec_); }
-                if(fk_ != flt_kind::def) {
-                    switch(fk_) {
-                        case flt_kind::fix: out << std::fixed; break;
-                        case flt_kind::sci: out << std::scientific; break;
-                        case flt_kind::hex: out << std::hex; break;
-                        default: out << std::defaultfloat; break;
-                    }
-                }
-                for(auto &&v: args) {
-                    auto printed{false};
-                    if(v.is_class_ref()) {
-                        obj_services const *osvc{rt_->get_object_services(v.class_name())};
-                        if(osvc != nullptr) {
-                            auto srgngr{osvc->stringify};
-                            auto s{srgngr(v)};
-                            out << s;
-                            printed = true;
-                        }
-                    }
-                    if(!printed) out << v;
-                }
-                std::unique_lock l{out_mtp_};
-                std::cout << out.str() << std::endl;
-            }
-
-            void flush() {
-                std::unique_lock l{out_mtp_};
-                std::cout.flush();
-            }
-            void fixed() { fk_ = flt_kind::fix; }
-            void scientific() { fk_ = flt_kind::sci; }
-            void hexfloat() { fk_ = flt_kind::hex; }
-            void defaultfloat() { fk_ = flt_kind::def; }
-            void setprecision(int prec) { setprec_ = true; prec_ = prec; }
-            int precision() { return prec_; }
-            void setw(int w) { setw_ = true; w_ = w; }
-            void setfill(char arg) { setfill_ = true; fill_char_ = arg; }
-            char fill() { return fill_char_; }
-            bool colors_enabled() const { return terminal_colours_; }
-            void enable_colors(bool v) { terminal_colours_ = v; }
-            bool setsync(bool v) const { return std::ios::sync_with_stdio(v); }
-
-        private:
-            void cerr_out(std::string const &type, std::vector<valbox> const &args) {
-                std::stringstream out{};
-                if(setfill_) { out << std::setfill(fill_char_); }
-                if(setw_) { out << std::setw(w_); }
-                if(setprec_) { out << std::setprecision(prec_); }
-                if(fk_ != flt_kind::def) {
-                    switch(fk_) {
-                    case flt_kind::fix: out << std::fixed; break;
-                    case flt_kind::sci: out << std::scientific; break;
-                    case flt_kind::hex: out << std::hex; break;
-                    default: out << std::defaultfloat; break;
-                    }
-                }
-                out << str_util::from_utf8(timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
-                for(auto &&v: args) {
-                    auto printed{false};
-                    if(v.is_class_ref()) {
-                        obj_services const *osvc{rt_->get_object_services(v.class_name())};
-                        if(osvc != nullptr) {
-                            auto srgngr{osvc->stringify};
-                            auto s{srgngr(v)};
-                            out << s;
-                            printed = true;
-                        }
-                    }
-                    if(!printed) out << v;
-                }
-                std::unique_lock l{out_mtp_};
-                std::cerr << out.str() << std::endl;
-            }
-
-            void cout_out(std::string const &type, std::vector<valbox> const &args) {
-                std::stringstream out{};
-                if(setfill_) { out << std::setfill(fill_char_); }
-                if(setw_) { out << std::setw(w_); }
-                if(setprec_) { out << std::setprecision(prec_); }
-                if(fk_ != flt_kind::def) {
-                    switch(fk_) {
-                        case flt_kind::fix: out << std::fixed; break;
-                        case flt_kind::sci: out << std::scientific; break;
-                        case flt_kind::hex: out << std::hex; break;
-                        default: out << std::defaultfloat; break;
-                    }
-                }
-                out << str_util::from_utf8(timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
-                for(auto &&v: args) {
-                    auto printed{false};
-                    if(v.is_class_ref()) {
-                        obj_services const *osvc{rt_->get_object_services(v.class_name())};
-                        if(osvc != nullptr) {
-                            auto srgngr{osvc->stringify};
-                            auto s{srgngr(v)};
-                            out << s;
-                            printed = true;
-                        }
-                    }
-                    if(!printed) out << v;
-                }
-                std::unique_lock l{out_mtp_};
-                std::cout << out.str() << std::endl;
-            }
-
-        private:
-            runtime_interface *rt_{nullptr};
-            bool setfill_{false};
-            char fill_char_{};
-            bool setw_{false};
-            int w_{};
-            bool setprec_{false};
-            int prec_{};
-            shared_mutex out_mtp_{};
-            enum class flt_kind{def, sci, fix, hex};
-            flt_kind fk_{flt_kind::def};
-            bool terminal_colours_{false};
-        };
-#endif
-    }
-
 
     class runtime: public runtime_interface {
     public:
@@ -666,27 +270,27 @@ namespace teal {
             add_method("console", "info", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1)
                 std::vector<valbox> args1{args.begin() + 1, args.end()};
-                TEALTHIS(args, detail::console *)->info(args1);
+                TEALTHIS(args, console *)->info(args1);
                 return {valbox_no_initialize::dont_do_it};
             });
-            add_method("console", "log", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, detail::console *)->log(args1); return {valbox_no_initialize::dont_do_it}; });
-            add_method("console", "warn", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, detail::console *)->warn(args1); return {valbox_no_initialize::dont_do_it}; });
-            add_method("console", "debug", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, detail::console *)->debug(args1); return {valbox_no_initialize::dont_do_it}; });
-            add_method("console", "error", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, detail::console *)->error(args1); return {valbox_no_initialize::dont_do_it}; });
-            add_method("console", "print", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, detail::console *)->print(args1); return {valbox_no_initialize::dont_do_it}; });
-            add_method("console", "flush", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, detail::console *)->flush(); return valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "fixed", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, detail::console *)->fixed(); return valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "scientific", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, detail::console *)->scientific(); return valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "hexfloat", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, detail::console *)->hexfloat(); return valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "defaultfloat", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, detail::console *)->defaultfloat(); return valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "setprecision", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) TEALTHIS(args, detail::console *)->setprecision(args[1].cast_to_u64()); return valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "precision", TEALFUN(args) { return TEALTHIS(args, detail::console *)->precision(); });
-            add_method("console", "setw", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) TEALTHIS(args, detail::console *)->setw(args[1].cast_to_u64()); return valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "setfill", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) TEALTHIS(args, detail::console *)->setfill(args[1].cast_to_char()); return valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "fill", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return TEALTHIS(args, detail::console *)->fill(); });
-            add_method("console", "enable_colors", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) TEALTHIS(args, detail::console *)->enable_colors(args[1].cast_to_bool()); return valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "colors_enabled", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return TEALTHIS(args, detail::console *)->colors_enabled(); });
-            add_method("console", "sync_stdio", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) return TEALTHIS(args, detail::console *)->setsync(args[1].cast_to_bool()); });
+            add_method("console", "log", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, console *)->log(args1); return {valbox_no_initialize::dont_do_it}; });
+            add_method("console", "warn", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, console *)->warn(args1); return {valbox_no_initialize::dont_do_it}; });
+            add_method("console", "debug", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, console *)->debug(args1); return {valbox_no_initialize::dont_do_it}; });
+            add_method("console", "error", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, console *)->error(args1); return {valbox_no_initialize::dont_do_it}; });
+            add_method("console", "print", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, console *)->print(args1); return {valbox_no_initialize::dont_do_it}; });
+            add_method("console", "flush", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, console *)->flush(); return valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "fixed", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, console *)->fixed(); return valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "scientific", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, console *)->scientific(); return valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "hexfloat", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, console *)->hexfloat(); return valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "defaultfloat", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, console *)->defaultfloat(); return valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "setprecision", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) TEALTHIS(args, console *)->setprecision(args[1].cast_to_u64()); return valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "precision", TEALFUN(args) { return TEALTHIS(args, console *)->precision(); });
+            add_method("console", "setw", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) TEALTHIS(args, console *)->setw(args[1].cast_to_u64()); return valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "setfill", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) TEALTHIS(args, console *)->setfill(args[1].cast_to_char()); return valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "fill", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return TEALTHIS(args, console *)->fill(); });
+            add_method("console", "enable_colors", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) TEALTHIS(args, console *)->enable_colors(args[1].cast_to_bool()); return valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "colors_enabled", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return TEALTHIS(args, console *)->colors_enabled(); });
+            add_method("console", "sync_stdio", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) return TEALTHIS(args, console *)->setsync(args[1].cast_to_bool()); });
             add_function("print", TEALFUN(args) { con_.rawprint(args); return {valbox_no_initialize::dont_do_it}; });
             add_function("println", TEALFUN(args) { con_.println(args); return {valbox_no_initialize::dont_do_it}; });
 
@@ -2475,7 +2079,7 @@ namespace teal {
         };
 
     private:
-        detail::console con_{this};
+        console con_{this};
 
         std::atomic<std::int64_t> failure_{0};
         mutable shared_mutex failure_mtp_{};
@@ -2695,9 +2299,9 @@ namespace teal {
                             }
                         }
                         if(ext_cells_refresh_interval_nanos_ > 0) {
-                            static auto lt{curr_timestamp_seconds()};
-                            if(curr_timestamp_seconds() > lt + 1) {
-                                lt = curr_timestamp_seconds();
+                            static auto lt{steady_time_sec()};
+                            if(steady_time_sec() > lt + 1) {
+                                lt = steady_time_sec();
                             }
                             std::this_thread::sleep_for(std::chrono::nanoseconds{ext_cells_refresh_interval_nanos_});
                         }

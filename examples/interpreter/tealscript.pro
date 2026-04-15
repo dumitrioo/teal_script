@@ -117,6 +117,7 @@ HEADERS += \
     ../../src/tealscript_cells.hpp \
     ../../src/tealscript_net.hpp \
     ../../src/tealscript_codegen.hpp \
+    ../../src/tealscript_console.hpp \
     ../../src/tealscript_exec_ctx.hpp \
     ../../src/tealscript_expr.hpp \
     ../../src/tealscript_interfaces.hpp \

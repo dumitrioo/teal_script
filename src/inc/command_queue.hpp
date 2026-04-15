@@ -71,13 +71,13 @@ namespace teal {
 
         void enqueue(std::function<void()> &&j, long double timeout, std::string const &group_id = {}) {
             std::unique_lock el{evt_mtp_};
-            jobs_[curr_timestamp_seconds() + timeout].push_back({std::move(j), group_id});
+            jobs_[steady_time_sec() + timeout].push_back({std::move(j), group_id});
             evt_.notify_one();
         }
 
         void enqueue(std::function<void()> const &j, long double timeout, std::string const &group_id = {}) {
             std::unique_lock el{evt_mtp_};
-            jobs_[curr_timestamp_seconds() + timeout].push_back({j, group_id});
+            jobs_[steady_time_sec() + timeout].push_back({j, group_id});
             evt_.notify_one();
         }
 
@@ -106,7 +106,7 @@ namespace teal {
             std::int64_t time_to_wait{0};
             if(!jobs_.empty()) {
                 auto jobs_begin_iter{jobs_.begin()};
-                if(0.1L + curr_timestamp_seconds() - jobs_begin_iter->first >= 0) {
+                if(0.1L + steady_time_sec() - jobs_begin_iter->first >= 0) {
                     std::list<std::pair<std::function<void()>, std::string>> &the_list{jobs_begin_iter->second};
                     j = std::move(the_list.front().first);
                     the_list.pop_front();
@@ -115,7 +115,7 @@ namespace teal {
                     }
                     return true;
                 } else {
-                    time_to_wait = (jobs_begin_iter->first - curr_timestamp_seconds()) * 1000;
+                    time_to_wait = (jobs_begin_iter->first - steady_time_sec()) * 1000;
                 }
             } else {
                 time_to_wait = 250L;

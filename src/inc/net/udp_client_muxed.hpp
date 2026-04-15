@@ -259,9 +259,9 @@ namespace teal::net {
         }
 
         void remove_stale_inputs_unlocked(long double seconds_old) {
-            if(curr_timestamp_seconds() > last_time_demuxer_check_ + seconds_old) {
+            if(steady_time_sec() > last_time_demuxer_check_ + seconds_old) {
                 demuxer_.remove_queued_items_older_than_seconds(seconds_old);
-                last_time_demuxer_check_ = curr_timestamp_seconds();
+                last_time_demuxer_check_ = steady_time_sec();
             }
         }
 

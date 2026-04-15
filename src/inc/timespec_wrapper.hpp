@@ -8,15 +8,18 @@
 
 namespace teal {
 
-    static /*(nanoseconds)*/inline std::uint64_t curr_timestamp_ns() noexcept {
+    // nanoseconds
+    static inline std::uint64_t steady_time_ns() noexcept {
         return static_cast<std::uint64_t>(std::chrono::steady_clock::now().time_since_epoch().count());
     }
 
-    static /*(useconds)*/inline std::uint64_t curr_timestamp() noexcept {
+    // microseconds
+    static inline std::uint64_t steady_time_us() noexcept {
         return static_cast<std::uint64_t>(std::chrono::steady_clock::now().time_since_epoch().count()) / 1'000ULL;
     }
 
-    static /*(seconds)*/inline long double curr_timestamp_seconds() noexcept {
+    // seconds as floating point type, with fraction part
+    static inline long double steady_time_sec() noexcept {
         return static_cast<long double>(std::chrono::steady_clock::now().time_since_epoch().count()) / 1'000'000'000.0L;
     }
 
@@ -274,7 +277,7 @@ namespace teal {
                     for(std::size_t cno{0}; cno < dts.size(); ++cno) {
                         if(state >= 0 && state < fi) {
                             char currc{dts[cno]};
-                            if(!std::isdigit(currc) /*std::ispunct(currc) || std::isblank(currc)*/) {
+                            if(!std::isdigit(currc)) {
                                 if(state == ye && !sign_set && (currc == '-' || currc == '+')) {
                                     neg = currc == '-';
                                 } else {
@@ -467,11 +470,11 @@ namespace teal {
         }
 
         friend bool operator<(const timespec_wrapper &l, const timespec_wrapper &r) noexcept {
-            return (l.t_.tv_sec == r.t_.tv_sec && l.t_.tv_nsec < r.t_.tv_nsec) || l.t_.tv_sec < r.t_.tv_sec;
+            return l.t_.tv_sec < r.t_.tv_sec || (l.t_.tv_sec == r.t_.tv_sec && l.t_.tv_nsec < r.t_.tv_nsec);
         }
 
         friend bool operator>(const timespec_wrapper &l, const timespec_wrapper &r) noexcept {
-            return (l.t_.tv_sec == r.t_.tv_sec && l.t_.tv_nsec > r.t_.tv_nsec) || l.t_.tv_sec > r.t_.tv_sec;
+            return l.t_.tv_sec > r.t_.tv_sec || (l.t_.tv_sec == r.t_.tv_sec && l.t_.tv_nsec > r.t_.tv_nsec);
         }
 
         friend bool operator==(const timespec_wrapper &l, const timespec_wrapper &r) noexcept {
@@ -479,11 +482,11 @@ namespace teal {
         }
 
         friend bool operator<=(const timespec_wrapper &l, const timespec_wrapper &r) noexcept {
-            return (l.t_.tv_sec == r.t_.tv_sec && l.t_.tv_nsec <= r.t_.tv_nsec) || (l.t_.tv_sec < r.t_.tv_sec);
+            return (l.t_.tv_sec < r.t_.tv_sec) || (l.t_.tv_sec == r.t_.tv_sec && l.t_.tv_nsec <= r.t_.tv_nsec);
         }
 
         friend bool operator>=(const timespec_wrapper &l, const timespec_wrapper &r) noexcept {
-            return (l.t_.tv_sec == r.t_.tv_sec && l.t_.tv_nsec >= r.t_.tv_nsec) || (l.t_.tv_sec > r.t_.tv_sec);
+            return (l.t_.tv_sec > r.t_.tv_sec) || (l.t_.tv_sec == r.t_.tv_sec && l.t_.tv_nsec >= r.t_.tv_nsec);
         }
 
         friend bool operator!=(const timespec_wrapper &l, const timespec_wrapper &r) noexcept {

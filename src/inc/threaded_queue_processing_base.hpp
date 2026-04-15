@@ -263,7 +263,7 @@ namespace teal {
                         &&
                         !(wtn == 1 && num_enqueued_items() > 0)
                         &&
-                        curr_timestamp_seconds() - last_kill_time_ > min_seconds_between_killings_
+                        steady_time_sec() - last_kill_time_ > min_seconds_between_killings_
                         &&
                         avg_lt_ld_.load(std::memory_order_acquire) <= load_to_start_kill_
                     )
@@ -307,7 +307,7 @@ namespace teal {
                     q_cvar_.notify_all();
                 }
                 wptr.reset();
-                last_kill_time_ = curr_timestamp_seconds();
+                last_kill_time_ = steady_time_sec();
             }
         }
 

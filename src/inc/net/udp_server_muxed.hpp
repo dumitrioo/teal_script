@@ -525,12 +525,12 @@ namespace teal::net {
 
             void update_last_activity_time() {
                 std::unique_lock l{last_activity_time_mtp_};
-                last_activity_time_ = curr_timestamp_seconds();
+                last_activity_time_ = steady_time_sec();
             }
 
             long double seconds_since_last_activity() const {
                 std::shared_lock l{last_activity_time_mtp_};
-                return curr_timestamp_seconds() - last_activity_time_;
+                return steady_time_sec() - last_activity_time_;
             }
 
             std::uint64_t conn_id() const {
@@ -641,9 +641,9 @@ namespace teal::net {
             long double last_time_demuxer_check_{0};
 
             void remove_stale_inputs_unlocked(long double seconds_old) {
-                if(curr_timestamp_seconds() > last_time_demuxer_check_ + seconds_old) {
+                if(steady_time_sec() > last_time_demuxer_check_ + seconds_old) {
                     demuxer_.remove_queued_items_older_than_seconds(seconds_old);
-                    last_time_demuxer_check_ = curr_timestamp_seconds();
+                    last_time_demuxer_check_ = steady_time_sec();
                 }
             }
 
@@ -652,7 +652,7 @@ namespace teal::net {
             std::uint64_t conn_id_{0};
 
             mutable std::shared_mutex last_activity_time_mtp_{};
-            long double last_activity_time_{curr_timestamp_seconds()};
+            long double last_activity_time_{steady_time_sec()};
 
             bool ack_{false};
 

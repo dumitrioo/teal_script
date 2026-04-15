@@ -684,8 +684,9 @@ namespace teal {
                     auto r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
 
                     bool res_found{false};
-                    if(l.is_class_ref() && r.is_class_ref()) {
-                        auto cmpfn{ctx->rt_interface()->get_object_services(r.class_name())->comparator};
+                    if(l.is_class_ref() || r.is_class_ref()) {
+                        std::string cname{l.is_class_ref() ? l.class_name() : r.class_name()};
+                        auto cmpfn{ctx->rt_interface()->get_object_services(cname)->comparator};
                         if(cmpfn) {
                             valbox cmp_res{cmpfn(l, r)};
                             if(!cmp_res.is_undefined_ref()) {
@@ -693,9 +694,6 @@ namespace teal {
                                 res_found = true;
                             }
                         }
-                    } else if(l.is_class_ref() || r.is_class_ref()) {
-                        res = false;
-                        res_found = true;
                     }
                     if(!res_found) {
                         bool excepted{false};
@@ -727,8 +725,9 @@ namespace teal {
                     auto l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     auto r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     bool res_found{false};
-                    if(l.is_class_ref() && r.is_class_ref()) {
-                        auto cmpfn{ctx->rt_interface()->get_object_services(r.class_name())->comparator};
+                    if(l.is_class_ref() || r.is_class_ref()) {
+                        std::string cname{l.is_class_ref() ? l.class_name() : r.class_name()};
+                        auto cmpfn{ctx->rt_interface()->get_object_services(cname)->comparator};
                         if(cmpfn) {
                             valbox cmp_res{cmpfn(l, r)};
                             if(!cmp_res.is_undefined_ref()) {
@@ -736,9 +735,6 @@ namespace teal {
                                 res_found = true;
                             }
                         }
-                    } else if(l.is_class_ref() || r.is_class_ref()) {
-                        res = false;
-                        res_found = true;
                     }
                     if(!res_found) {
                         bool excepted{false};
@@ -771,8 +767,9 @@ namespace teal {
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     bool res_found{false};
-                    if(l.is_class_ref() && r.is_class_ref()) {
-                        auto cmpfn{ctx->rt_interface()->get_object_services(r.class_name())->comparator};
+                    if(l.is_class_ref() || r.is_class_ref()) {
+                        std::string cname{l.is_class_ref() ? l.class_name() : r.class_name()};
+                        auto cmpfn{ctx->rt_interface()->get_object_services(cname)->comparator};
                         if(cmpfn) {
                             valbox cmp_res{cmpfn(l, r)};
                             if(!cmp_res.is_undefined_ref()) {
@@ -780,9 +777,6 @@ namespace teal {
                                 res_found = true;
                             }
                         }
-                    } else if(l.is_class_ref() || r.is_class_ref()) {
-                        res = false;
-                        res_found = true;
                     }
                     if(!res_found) {
                         try {
@@ -813,8 +807,9 @@ namespace teal {
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     bool res_found{false};
-                    if(l.is_class_ref() && r.is_class_ref()) {
-                        auto cmpfn{ctx->rt_interface()->get_object_services(r.class_name())->comparator};
+                    if(l.is_class_ref() || r.is_class_ref()) {
+                        std::string cname{l.is_class_ref() ? l.class_name() : r.class_name()};
+                        auto cmpfn{ctx->rt_interface()->get_object_services(cname)->comparator};
                         if(cmpfn) {
                             valbox cmp_res{cmpfn(l, r)};
                             if(!cmp_res.is_undefined_ref()) {
@@ -822,9 +817,6 @@ namespace teal {
                                 res_found = true;
                             }
                         }
-                    } else if(l.is_class_ref() || r.is_class_ref()) {
-                        res = false;
-                        res_found = true;
                     }
                     if(!res_found) {
                         try {
@@ -855,8 +847,9 @@ namespace teal {
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     bool res_found{false};
-                    if(l.is_class_ref() && r.is_class_ref()) {
-                        auto cmpfn{ctx->rt_interface()->get_object_services(r.class_name())->comparator};
+                    if(l.is_class_ref() || r.is_class_ref()) {
+                        std::string cname{l.is_class_ref() ? l.class_name() : r.class_name()};
+                        auto cmpfn{ctx->rt_interface()->get_object_services(cname)->comparator};
                         if(cmpfn) {
                             valbox cmp_res{cmpfn(l, r)};
                             if(!cmp_res.is_undefined_ref()) {
@@ -864,9 +857,6 @@ namespace teal {
                                 res_found = true;
                             }
                         }
-                    } else if(l.is_class_ref() || r.is_class_ref()) {
-                        res = false;
-                        res_found = true;
                     }
                     if(!res_found) {
                         try {
@@ -897,8 +887,9 @@ namespace teal {
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     bool res_found{false};
-                    if(l.is_class_ref() && r.is_class_ref()) {
-                        auto cmpfn{ctx->rt_interface()->get_object_services(r.class_name())->comparator};
+                    if(l.is_class_ref() || r.is_class_ref()) {
+                        std::string cname{l.is_class_ref() ? l.class_name() : r.class_name()};
+                        auto cmpfn{ctx->rt_interface()->get_object_services(cname)->comparator};
                         if(cmpfn) {
                             valbox cmp_res{cmpfn(l, r)};
                             if(!cmp_res.is_undefined_ref()) {
@@ -906,9 +897,6 @@ namespace teal {
                                 res_found = true;
                             }
                         }
-                    } else if(l.is_class_ref() || r.is_class_ref()) {
-                        res = false;
-                        res_found = true;
                     }
                     if(!res_found) {
                         try {
@@ -940,8 +928,9 @@ namespace teal {
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     bool res_found{false};
-                    if(l.is_class_ref() && r.is_class_ref()) {
-                        auto cmpfn{ctx->rt_interface()->get_object_services(r.class_name())->comparator};
+                    if(l.is_class_ref() || r.is_class_ref()) {
+                        std::string cname{l.is_class_ref() ? l.class_name() : r.class_name()};
+                        auto cmpfn{ctx->rt_interface()->get_object_services(cname)->comparator};
                         if(cmpfn) {
                             valbox cmp_res{cmpfn(l, r)};
                             if(!cmp_res.is_undefined_ref()) {

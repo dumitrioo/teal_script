@@ -527,12 +527,12 @@ namespace teal::net {
             }
 
             long double seconds_alive() const {
-                return curr_timestamp_seconds() - created_;
+                return steady_time_sec() - created_;
             }
 
         private:
             net::data_fragments_buffer data_{};
-            long double created_{curr_timestamp_seconds()};
+            long double created_{steady_time_sec()};
         };
 
         std::map<std::uint64_t, in_data_wrapper> in_buffers_{};
