@@ -437,10 +437,31 @@ namespace teal {
                         stack.emplace_back(&cnt["operand"]);
                         continue;
                     } else if(stack.back().phase == 1) {
-                        stack.back().res = std::make_shared<prefix_unop_expression>(
-                            static_cast<token::type>(cnt["oper_enum"].as_int()),
-                            stack_res.res
-                        );
+                        if(static_cast<token::type>(cnt["oper_enum"].as_int()) == token::type::TYPECAST) {
+                            static const std::set<valbox::type> forbidden_casts{
+                                valbox::type::POINTER,
+                                valbox::type::CLASS,
+                                valbox::type::FUNC,
+                                valbox::type::VALBOX,
+                            };
+                            if(forbidden_casts.find(valbox::str_to_type(cnt["operation"].as_string())) != forbidden_casts.end()) {
+                                throw compilation_error{
+                                    (*stack.back().ast)["loc"]["line"].try_as_number(),
+                                    (*stack.back().ast)["loc"]["col"].try_as_number(),
+                                    cnt["operation"].as_string() + ": invalid type to convert to"
+                                };
+                            }
+                            stack.back().res = std::make_shared<prefix_unop_expression>(
+                                static_cast<token::type>(cnt["oper_enum"].as_int()),
+                                stack_res.res,
+                                cnt["operation"].as_string()
+                            );
+                        } else {
+                            stack.back().res = std::make_shared<prefix_unop_expression>(
+                                static_cast<token::type>(cnt["oper_enum"].as_int()),
+                                stack_res.res
+                            );
+                        }
                         stack.back().res->set_loc(
                             (*stack.back().ast)["loc"]["line"].try_as_number(),
                             (*stack.back().ast)["loc"]["col"].try_as_number()

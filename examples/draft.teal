@@ -22,11 +22,11 @@ function clamp(v, mi, ma)
 function Q_rsqrt(x) {
     i = 0x5fe6a09e667f3bcd - (f64(x).as_array_buffer().get_i64_at(0) >> 1);
     y = i.as_array_buffer().get_f64_at(0);
-    x2 = f64(x * 0.5);
-    y *= f64(1.5) - x2 * y * y;
-    y *= f64(1.5) - x2 * y * y;
-    y *= f64(1.5) - x2 * y * y;
-    y *= f64(1.5) - x2 * y * y;
+    x2 = (f64)x * 0.5;
+    y *= (f64)1.5 - x2 * y * y;
+    y *= (f64)1.5 - x2 * y * y;
+    y *= (f64)1.5 - x2 * y * y;
+    y *= (f64)1.5 - x2 * y * y;
     return y;
 }
 
@@ -60,6 +60,22 @@ function k_update(ks, z) {
 
 
 my_drafts(host_data) {
+    console.fixed();
+    // index_mem_size = u64(1024 * 1024);
+    // index_num_entries = index_mem_size / 8;
+    index_num_entries = (float)(u64)0xff'ff'ff'ff'ff'ff'ff'ff;
+    index_mem_size = index_num_entries * 8.0;
+    page_size = (float)4096.0;
+    paged_size = page_size * index_num_entries;
+    println("index_num_entries: ", index_num_entries);
+    println("paged_size: ", paged_size);
+    println("index_mem_size: ", index_mem_size);
+    println("total_mem_size: ", paged_size + index_mem_size);
+
+    // (8 * (256 * 1024 * 1024 * 1024 * 1024 / 4096)).println();
+
+    exit();
+    return 0;
     kf.predict = k_predict;
     kf.update = k_update;
     kf.x = 0.0;  // state estimate

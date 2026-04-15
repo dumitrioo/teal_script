@@ -5,6 +5,7 @@
 #include "inc/str_util.hpp"
 
 #include "tealscript_util.hpp"
+#include "tealscript_value.hpp"
 #include "tealscript_token.hpp"
 #include "tealscript_lexer.hpp"
 #include "tealscript_expr.hpp"
@@ -1132,6 +1133,19 @@ namespace teal {
                 res["content"]["operation"] = tk.tktype_str();
                 res["content"]["oper_enum"] = static_cast<int>(tk.tktype());
                 increment_pos();
+                res["content"]["operand"] = get_prio_3();
+            } else if(
+                tk.type_is(token::type::LPAREN) &&
+                get_token(1).is_id() && valbox::is_type(str_util::to_utf8(get_token(1).lexem())) &&
+                get_token(2).type_is(token::type::RPAREN)
+            ) {
+                res["loc"]["line"] = get_token(1).line();
+                res["loc"]["col"] = get_token(1).col();
+                res["type"] = "expression";
+                res["subtype"] = "prefix";
+                res["content"]["operation"] = get_token(1).lexem();
+                res["content"]["oper_enum"] = static_cast<int>(token::type::TYPECAST);
+                increment_pos(3);
                 res["content"]["operand"] = get_prio_3();
             } else {
                 return get_prio_2();

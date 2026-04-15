@@ -78,6 +78,7 @@ namespace teal {
             COMMA,                       // ,
             DOT,                         // .
             FUNCCALL,
+            TYPECAST,
             ENDOFFILE,
         };
 

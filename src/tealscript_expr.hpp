@@ -134,9 +134,10 @@ namespace teal {
         };
 
     public:
-        prefix_unop_expression(token::type opcode, expr_ptr val):
+        prefix_unop_expression(token::type opcode, expr_ptr val, std::string const &new_val_type = std::string{}):
             opcode_{opcode},
-            val_{val}
+            val_{val},
+            conversion_type_{new_val_type.empty() ? valbox::type::UNDEFINED : valbox::str_to_type(new_val_type)}
         {
         }
 
@@ -150,7 +151,7 @@ namespace teal {
         }
 
         valbox eval(execution_context *ctx, eval_caller_type, valbox *) override {
-            static std::array<valbox(*)(prefix_unop_expression *, execution_context *), 68> const ops{
+            static std::array<valbox(*)(prefix_unop_expression *, execution_context *), 69> const ops{
                 /* NONE */ nullptr,
                 /* INT_LITERAL */ nullptr,
                 /* HEX_LITERAL */ nullptr,
@@ -343,6 +344,37 @@ namespace teal {
                 /* COMMA */ nullptr,
                 /* DOT */ nullptr,
                 /* FUNCCALL */ nullptr,
+                /* TYPECAST */
+                [](prefix_unop_expression *this_, execution_context *ctx) -> valbox {
+                    expr_ptr &expr{this_->val_};
+                    valbox v{};
+                    bool old{ctx->set_create_if_not_exists(false)};
+                    teal::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
+                    valbox res{valbox_no_initialize::dont_do_it};
+                    bool excepted{false};
+                    runtime_error er{{}, {}, {}};
+                    try {
+                        res.become_type(this_->conversion_type_);
+                        res.assign_preserving_type(expr->eval(ctx, eval_caller_type::no_matter, nullptr));
+                    } catch (runtime_error const &e) {
+                        er = e;
+                        excepted = true;
+                    } catch (std::exception const &e) {
+                        er = runtime_error(this_->line_, this_->col_, e.what());
+                        excepted = true;
+                    } catch (...) {
+                        er = runtime_error(this_->line_, this_->col_, "unknown error");
+                        excepted = true;
+                    }
+                    if(excepted) {
+                        throw er;
+                    }
+                    if(expr->primary()) {
+                        std::unique_lock l{this_->primary_val_mtp_};
+                        this_->primary_val_ = res; this_->primary_ = true;
+                    }
+                    return res;
+                },
                 /* ENDOFFILE */ nullptr,
             };
             if(primary()) {
@@ -359,6 +391,7 @@ namespace teal {
     private:
         token::type opcode_{};
         expr_ptr val_{};
+        valbox::type conversion_type_{};
         mutable shared_mutex primary_val_mtp_{};
         valbox primary_val_{};
         std::atomic<bool> primary_{false};
@@ -532,7 +565,7 @@ namespace teal {
         }
 
         valbox eval(execution_context *ctx, eval_caller_type caller_type, valbox *dotlptr) override {
-            static std::array<valbox(*)(binop_expression *, execution_context *, eval_caller_type, valbox *), 68> const ops{
+            static std::array<valbox(*)(binop_expression *, execution_context *, eval_caller_type, valbox *), 69> const ops{
                 /* NONE */ nullptr,
                 /* INT_LITERAL */ nullptr,
                 /* HEX_LITERAL */ nullptr,
@@ -1608,6 +1641,7 @@ namespace teal {
                     return res;
                 },
                 /* FUNCCALL */ nullptr,
+                /* TYPECAST */ nullptr,
                 /* ENDOFFILE */ nullptr,
             };
             if(primary()) {
