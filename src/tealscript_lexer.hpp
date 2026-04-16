@@ -15,7 +15,7 @@ namespace teal {
         static inline std::int64_t constexpr CRET{'\r'};
         static inline std::int64_t constexpr HTAB{'\t'};
         static inline std::int64_t constexpr BACK{'\b'};
-        static inline std::int64_t constexpr ALRT{'\a'};
+        static inline std::int64_t constexpr BELL{'\a'};
         static inline std::int64_t constexpr FMFD{'\f'};
         static inline std::int64_t constexpr VTAB{'\v'};
         static inline std::int64_t constexpr APOS{'\''};
@@ -494,7 +494,7 @@ namespace teal {
                 } else if(c == 'r') { string_buff_ += CRET; stop_escaping();
                 } else if(c == 't') { string_buff_ += HTAB; stop_escaping();
                 } else if(c == 'b') { string_buff_ += BACK; stop_escaping();
-                } else if(c == 'a') { string_buff_ += ALRT; stop_escaping();
+                } else if(c == 'a') { string_buff_ += BELL; stop_escaping();
                 } else if(c == 'f') { string_buff_ += FMFD; stop_escaping();
                 } else if(c == 'v') { string_buff_ += VTAB; stop_escaping();
                 } else if(c == 'e') { string_buff_ += ESCP; stop_escaping();
