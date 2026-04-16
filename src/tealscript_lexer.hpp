@@ -13,10 +13,10 @@ namespace teal {
     class lexer {
         static inline std::int64_t constexpr NEWL{'\n'};
         static inline std::int64_t constexpr CRET{'\r'};
-        static inline std::int64_t constexpr TAB{'\t'};
+        static inline std::int64_t constexpr HTAB{'\t'};
         static inline std::int64_t constexpr BACK{'\b'};
         static inline std::int64_t constexpr ALRT{'\a'};
-        static inline std::int64_t constexpr FRFD{'\f'};
+        static inline std::int64_t constexpr FMFD{'\f'};
         static inline std::int64_t constexpr VTAB{'\v'};
         static inline std::int64_t constexpr APOS{'\''};
         static inline std::int64_t constexpr DQUO{'\"'};
@@ -492,10 +492,10 @@ namespace teal {
             } else {
                 if(c == 'n') { string_buff_ += NEWL; stop_escaping();
                 } else if(c == 'r') { string_buff_ += CRET; stop_escaping();
-                } else if(c == 't') { string_buff_ += TAB; stop_escaping();
+                } else if(c == 't') { string_buff_ += HTAB; stop_escaping();
                 } else if(c == 'b') { string_buff_ += BACK; stop_escaping();
                 } else if(c == 'a') { string_buff_ += ALRT; stop_escaping();
-                } else if(c == 'f') { string_buff_ += FRFD; stop_escaping();
+                } else if(c == 'f') { string_buff_ += FMFD; stop_escaping();
                 } else if(c == 'v') { string_buff_ += VTAB; stop_escaping();
                 } else if(c == 'e') { string_buff_ += ESCP; stop_escaping();
                 } else if(c >= '0' && c < '8') { esc_buff_ += c; str_num_escape_mode_ = str_num_escaping_t::oct;
