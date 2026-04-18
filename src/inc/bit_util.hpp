@@ -12,25 +12,21 @@ namespace teal::bit_util {
 
 
     template<typename T>
-    [[nodiscard]]
-    constexpr T byteswap(T val) noexcept {
-#if (__cplusplus < 202300L)
+    constexpr T byteswap(T const val) noexcept {
         if constexpr (sizeof(T) == 1) {
             return val;
+        } else {
+            std::uint8_t const *val_ptr{reinterpret_cast<std::uint8_t const *>(&val)};
+            std::array<std::uint8_t, sizeof(T)> ret_val_buf{};
+            for(size_t i{}; i < sizeof(T); ++i) {
+                ret_val_buf[sizeof(T) - i - 1] = val_ptr[i];
+            }
+            return *reinterpret_cast<T *>(&ret_val_buf[0]);
         }
-        std::uint8_t const *val_ptr{reinterpret_cast<std::uint8_t const *>(&val)};
-        std::uint8_t ret_val_buf[sizeof(T)];
-        for(size_t i{}; i < sizeof(T); ++i) {
-            ret_val_buf[sizeof(T) - i - 1] = val_ptr[i];
-        }
-        return *reinterpret_cast<T *>(&ret_val_buf[0]);
-#else
-        return std::byteswap(val);
-#endif
     }
 
 
-    static constexpr void inplace_swap(void *data, std::size_t count) {
+    static constexpr void inplace_swap(void *data, std::size_t const count) {
         if(data && count > 1) {
             std::size_t const count_half{count >> 1};
             for(std::size_t i{0}; i < count_half; ++i) {
