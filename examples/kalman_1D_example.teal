@@ -26,11 +26,10 @@ kalman() {
     print("k\tmeas\test\tP\n");
     for(k = 0; k < measurements.size(); ++k) {
         kf.predict(0);
-        // kf["predict"](0);
         kf.update(measurements[k]);
         print(k, "\t", measurements[k], "\t", kf.x, "\t", kf.P, "\n");
     }
-    exit();
-    return 0;
+
+    return exit();
 }
 kalman klmn();
