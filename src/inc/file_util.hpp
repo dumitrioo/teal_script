@@ -24,10 +24,6 @@
 #include <ctime>
 #include <fstream>
 
-#ifdef USE_FILE_MAGIC
-#include <magic.h>
-#endif
-
 #include "timespec_wrapper.hpp"
 #include <sys/types.h>
 #ifdef PLATFORM_WINDOWS
@@ -300,64 +296,6 @@ namespace teal::file_util {
 #endif
     }
 
-#ifdef USE_FILE_MAGIC
-    namespace detail {
-
-        class mgc_detector {
-        public:
-            mgc_detector(int flags = MAGIC_MIME_TYPE):
-                magic_handle_{magic_open(flags), &magic_close}
-            {
-                if(magic_handle_) {
-                    if(::magic_load(magic_handle_.get(), nullptr) != 0) {
-                        magic_handle_.reset();
-                    }
-                }
-            }
-
-            bool ok() const {
-                return magic_handle_.get() != nullptr;
-            }
-
-            std::string file(const std::string &pat_str) const {
-                if(!magic_handle_) {
-                    throw std::runtime_error{"magic library is not initialized."};
-                }
-                char const *res{::magic_file(magic_handle_.get(), pat_str.c_str())}; if(res) { return res; } return {};
-            }
-
-            std::string buffer(void const *data, std::size_t data_size) const {
-                if(!magic_handle_) {
-                    throw std::runtime_error{"magic library is not initialized."};
-                }
-                char const *res{::magic_buffer(magic_handle_.get(), data, data_size)}; if(res) { return res; } else { return {}; }
-            }
-
-        private:
-            std::unique_ptr<magic_set, decltype(&magic_close)> magic_handle_;
-        };
-
-    }
-
-    static std::string file_type(const std::string &pat_str, int flags = MAGIC_MIME_TYPE) {
-        if(file_exists(pat_str)) { return detail::mgc_detector{flags}.file(pat_str); }
-        return {};
-    }
-
-    static std::string data_type(void const *data, std::size_t data_size, int flags = MAGIC_MIME_TYPE) {
-        if(data && data_size) { return detail::mgc_detector{flags}.buffer(data, data_size); }
-        return {};
-    }
-
-    static std::string data_type(std::vector<std::uint8_t> const &data, int flags = MAGIC_MIME_TYPE) {
-        return data_type(data.data(), data.size(), flags);
-    }
-
-    static std::string data_type(std::string const &data, int flags = MAGIC_MIME_TYPE) {
-        return data_type(data.data(), data.size(), flags);
-    }
-#endif
-
     static bool dir_exists(const std::string &file_name) {
 #if (__cplusplus < 201700L)
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_UNIXISH) || defined(PLATFORM_APPLE) || defined(PLATFORM_ANDROID)
@@ -376,7 +314,6 @@ namespace teal::file_util {
 #else
         return std::filesystem::is_directory(file_name);
 #endif
-
     }
 
     static std::string real_path(const std::string &p) {

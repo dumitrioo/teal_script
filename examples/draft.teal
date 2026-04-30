@@ -63,6 +63,10 @@ my_drafts(host_data) {
     console.fixed();
     console.setprecision(0);
 
+    arr = 3 + [12, undefined, '2', "122", 9090.9090, [],];
+    arr.println();
+    return exit();
+
     // index_mem_size = (u64)(1024 * 1024);
     // index_num_entries = index_mem_size / 8;
     index_num_entries = (float)(u64)0x1f'ff'ff'ff'ff;

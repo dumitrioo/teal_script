@@ -547,6 +547,17 @@ namespace teal {
                         );
                         stack_res = std::move(stack.back());
                         stack.pop_back();
+                    } else if((*stack.back().ast)["literal"].as_string() == "array") {
+                        stack.back().res = std::make_shared<func_call_expression>(
+                            std::make_shared<sym_expression>("array"),
+                            func_call_args(cnt)
+                        );
+                        stack.back().res->set_loc(
+                            (*stack.back().ast)["loc"]["line"].try_as_number(),
+                            (*stack.back().ast)["loc"]["col"].try_as_number()
+                        );
+                        stack_res = std::move(stack.back());
+                        stack.pop_back();
                     } else if((*stack.back().ast)["literal"].as_string() == "chr") {
                         std::wstring chr_str{teal::str_util::from_utf8(cnt.as_string())};
                         if(chr_str.size() == 1) {

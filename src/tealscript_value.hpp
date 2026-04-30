@@ -62,13 +62,13 @@ namespace teal {
                 {"wchar", type::WCHAR},
                 {"string", type::STRING},
                 {"wstring", type::WSTRING},
-                {"s8", type::S8},
+                {"i8", type::S8},
                 {"u8", type::U8},
-                {"s16", type::S16},
+                {"i16", type::S16},
                 {"u16", type::U16},
-                {"s32", type::S32},
+                {"i32", type::S32},
                 {"u32", type::U32},
-                {"s64", type::S64},
+                {"i64", type::S64},
                 {"u64", type::U64},
                 {"vec4", type::VEC4},
                 {"mat4", type::MAT4},
@@ -92,7 +92,7 @@ namespace teal {
 
         static std::string type_to_str(type t) {
             static std::array<std::string_view, 25> const names{
-                "bool", "char", "s8", "u8", "s16", "u16", "wchar", "s32", "u32", "s64", "u64",
+                "bool", "char", "i8", "u8", "i16", "u16", "wchar", "i32", "u32", "i64", "u64",
                 "f32", "f64", "float", "vec4", "mat4", "pointer", "class", "func",
                 "array",  "object", "string", "wstring", "undefined", "valbox",
             };
@@ -105,8 +105,8 @@ namespace teal {
 
         static bool is_type(std::string const &idr) {
             static std::set<std::string> const tset{
-                "object", "array", "bool", "char", "wchar", "string", "wstring", "u8", "s8", "u16"
-                "s16", "u32", "s32", "u64", "s64", "f32", "f64", "float", "vec4", "mat4", "func",
+                "object", "array", "bool", "char", "wchar", "string", "wstring", "u8", "i8", "u16"
+                "i16", "u32", "i32", "u64", "i64", "f32", "f64", "float", "vec4", "mat4", "func",
                 "pointer", "undefined", "valbox"
             };
             return tset.find(idr) != tset.end();

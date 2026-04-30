@@ -41,15 +41,6 @@ dot_notation_call_test() {
 dot_notation_call_test dnctest();
 
 
-mime_type_test() {
-    "/bin/ls".load_from_file().data_type(MAGIC_MIME_TYPE | MAGIC_MIME_ENCODING).println();
-    // same as previous line
-    println(data_type(load_from_file("/bin/ls"), MAGIC_MIME_TYPE | MAGIC_MIME_ENCODING));
-}
-
-mime_type_test mttest();
-
-
 merge_objects() {
     k["r"] = "1";
     t["d"] = "d";
@@ -236,7 +227,7 @@ cpu_test cputst();
 
 
 function num_to_suffixed(n, prec) {
-    a = array("", "k", "M", "G", "T", "P", "E", "Z", "Y", "R", "Q");
+    a = ["", "k", "M", "G", "T", "P", "E", "Z", "Y", "R", "Q"];
     p = 0; k = n;
     while(k > 1000.0) {
         k /= 1000.0;

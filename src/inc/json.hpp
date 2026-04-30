@@ -574,7 +574,7 @@ namespace teal {
         using ssize_type = std::int64_t;
 
     private:
-#ifdef TEAL_DEBUGGING
+#ifdef TEAL_JSON_DEBUGGING
         using o_t = std::map<std::string, json>;
 #else
         using o_t = emhash8::HashMap<std::string, json, str_crc<std::string>>;

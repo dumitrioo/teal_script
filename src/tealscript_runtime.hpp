@@ -205,49 +205,6 @@ namespace teal {
                 return names;
             });
 
-#ifdef USE_FILE_MAGIC
-            add_function("data_type", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2);
-                std::string res{};
-                if(args[0].is_string_ref()) {
-                    if(args.size() == 1) {
-                        res = file_util::data_type(args[0].as_string());
-                    } else {
-                        res = file_util::data_type(args[0].as_string(), args[1].cast_to_s32());
-                    }
-                } else if(args[0].is_array_ref()) {
-                    if(args.size() == 1) {
-                        res = file_util::data_type(args[0].cast_to_string());
-                    } else {
-                        res = file_util::data_type(args[0].cast_to_string(), args[1].cast_to_s32());
-                    }
-                }
-                return res;
-            });
-            add_function("file_type", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2);
-                if(args.size() == 1) {
-                    return file_util::file_type(args[0].cast_to_string());
-                } else {
-                    return file_util::file_type(args[0].cast_to_string(), args[1].cast_to_s32());
-                }
-            });
-            add_var("MAGIC_NONE", MAGIC_NONE);
-            add_var("MAGIC_DEBUG", MAGIC_DEBUG);
-            add_var("MAGIC_SYMLINK", MAGIC_SYMLINK);
-            add_var("MAGIC_COMPRESS", MAGIC_COMPRESS);
-            add_var("MAGIC_DEVICES", MAGIC_DEVICES);
-            add_var("MAGIC_MIME_TYPE", MAGIC_MIME_TYPE);
-            add_var("MAGIC_CONTINUE", MAGIC_CONTINUE);
-            add_var("MAGIC_CHECK", MAGIC_CHECK);
-            add_var("MAGIC_PRESERVE_ATIME", MAGIC_PRESERVE_ATIME);
-            add_var("MAGIC_RAW", MAGIC_RAW);
-            add_var("MAGIC_ERROR", MAGIC_ERROR);
-            add_var("MAGIC_MIME_ENCODING", MAGIC_MIME_ENCODING);
-            add_var("MAGIC_MIME", MAGIC_MIME);
-            add_var("MAGIC_APPLE", MAGIC_APPLE);
-            add_var("MAGIC_EXTENSION", MAGIC_EXTENSION);
-#endif
             add_function("errno", TEALFUN() { return sys_util::last_error(); });
             add_function("strerror", TEALFUN(args) {
                 if(args.size() > 0) {

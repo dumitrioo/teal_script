@@ -1176,7 +1176,6 @@ namespace teal {
                     increment_pos();
                 } else if(tk.type_is(token::type::LPAREN)) {
                     cont = true;
-
                     json args{};
                     increment_pos();
                     if(get_token(0).type_is(token::type::RPAREN)) {
@@ -1422,6 +1421,30 @@ namespace teal {
                 increment_pos();
                 json res{get_expr()};
                 if(get_token(0).type_is_not(token::type::RPAREN)) {
+                    throw compilation_error{get_token(0).line(), get_token(0).col(), "expected parentesis"};
+                }
+                increment_pos();
+                return res;
+            } else if(tk.type_is(token::type::LBRACKET)) {
+                json res{};
+                res["loc"]["line"] = tk.line();
+                res["loc"]["col"] = tk.col();
+                res["type"] = "expression";
+                res["subtype"] = "literal";
+                res["literal"] = "array";
+                res["content"].become_array();
+                increment_pos();
+                while(get_token(0).type_is_not(token::type::RBRACKET)) {
+                    json itm{get_expr()};
+                    if(!itm.is_object()) {
+                        throw compilation_error{get_token(0).line(), get_token(0).col(), "expression expected in array initialization sequence"};
+                    }
+                    res["content"].push_back(itm);
+                    if(get_token(0).type_is(token::type::COMMA)) {
+                        increment_pos();
+                    }
+                }
+                if(get_token(0).type_is_not(token::type::RBRACKET)) {
                     throw compilation_error{get_token(0).line(), get_token(0).col(), "expected parentesis"};
                 }
                 increment_pos();
