@@ -22,7 +22,7 @@ kalman() {
     kf.Q = 1e-4; // process noise variance
     kf.R = 0.1;  // measurement noise variance
 
-    measurements = array(0.39, 0.50, 0.48, 0.29, 0.25, 0.32);
+    measurements = [0.39, 0.50, 0.48, 0.29, 0.25, 0.32];
     print("k\tmeas\test\tP\n");
     for(k = 0; k < measurements.size(); ++k) {
         kf.predict(0);

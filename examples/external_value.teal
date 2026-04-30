@@ -36,7 +36,7 @@ some_value_issuer() {
             200.0 * (randf() - 0.5), 200.0 * (randf() - 0.5), 200.0 * (randf() - 0.5), 200.0 * (randf() - 0.5)
         );
 
-        if(choice == 4) this.res = array(200.0 * (randf() - 0.5), rnd_str(12));
+        if(choice == 4) this.res = [200.0 * (randf() - 0.5), rnd_str(12)];
 
         if(choice == 5) { o = object(); o["key"] = 200.0 * (randf() - 0.5); this.res = o; }
 

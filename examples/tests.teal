@@ -233,7 +233,7 @@ function num_to_suffixed(n, prec) {
         k /= 1000.0;
         ++p;
     }
-    return array(ftoa(k, prec), a[p]);
+    return [ftoa(k, prec), a[p]];
 }
 
 my_test() {
