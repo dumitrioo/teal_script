@@ -61,13 +61,13 @@ some_value_issuer just_a_regular_cell();
 //
 // in other words, locally-accessible cell "just_a_regular_cell" accessed
 // over the network for testing and demo purposes
-extern 'dvqp://127.0.0.1:43987/just_a_regular_cell' value_from_net;
+extern 'tealscript://127.0.0.1:43987/just_a_regular_cell' value_from_net;
 
 // the following extern value is an example of network access to the other
 // external value resided on other host in the network which is also could
 // be an extern value and so on. this way you can create a chain of values
 // network alues. this may be used to create network values hubs.
-extern 'dvqp://127.0.0.1:43987/value_from_net' value_from_net_copy;
+extern 'tealscript://127.0.0.1:43987/value_from_net' value_from_net_copy;
 
 ext_value_use(vname, exv) {
     if(exv != this.exv) {

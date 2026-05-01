@@ -110,9 +110,9 @@ namespace teal {
                             throw compilation_error{cur["loc"]["line"].try_as_number(), cur["loc"]["col"].try_as_number(),
                                                     rnm + ": path must be a valid identifier after \"/\""};
                         }
-                        if(u.scheme() != "dvqp") {
+                        if(u.scheme() != "tealscript") {
                             throw compilation_error{cur["loc"]["line"].try_as_number(), cur["loc"]["col"].try_as_number(),
-                                                    u.scheme() + ": URL scheme must be \"dvqp\""};
+                                                    u.scheme() + ": URL scheme must be \"tealscript\""};
                         }
                         std::string remote_host{teal::net::ntop(teal::net::resolve(u.host()))};
                         if(remote_host.empty() || !u.port()) {
