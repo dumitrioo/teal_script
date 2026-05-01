@@ -1,6 +1,6 @@
 # TealScript
 
-TealScript is a lightweight, distributed, and deterministic control logic engine—free from heavy message brokers (ROS/MQTT) and garbage collection overhead, with native C++ integration. 
+TealScript is a lightweight, distributed, and deterministic control logic engine - free from heavy message brokers (ROS/MQTT) and garbage collection overhead, with native C++ integration. 
 
 It is an embedded scripting language designed to seamlessly wire physical and virtual devices into a unified control system. The language enforces strict, declarative rules for building schemas, making complex logic highly readable and maintainable. Combined with seamless C++ host extensibility, the result is a deterministic, cohesive hardware-software ecosystem driven entirely by data-flow graphs.
 
@@ -137,7 +137,7 @@ Requires a C++20 compatible compiler.
 3. Load source code and register C++ extensions (functions, variables, custom types). 
 4. Execute in single- or multi-threaded mode. 
 
-To build the examples (requires Raylib and ZeroMQ on Linux): 
+To build the examples (on Linux): 
 ``` bash 
 mkdir build && cd build
 cmake ..
