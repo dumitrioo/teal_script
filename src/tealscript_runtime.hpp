@@ -387,12 +387,12 @@ namespace teal {
                 valbox res{valbox::vec4_t{0, 0, 0, 1}};
                 if(args.size() == 1) {
                     if(args[0].is_array_ref() || args[0].is_object_ref()) {
-                        res = vec4_from_json<long double>(args[0].to_json());
+                        res = vec4_from_json<double>(args[0].to_json());
                     } else if(args[0].is_string_ref() || args[0].is_wstring_ref()) {
                         if(args[0].is_string_ref()) {
-                            res = vec4_from_str<long double>(args[0].as_string());
+                            res = vec4_from_str<double>(args[0].as_string());
                         } else {
-                            res = vec4_from_str<long double>(args[0].as_wstring());
+                            res = vec4_from_str<double>(args[0].as_wstring());
                         }
                     } else {
                         res.as_vec4()[0] = args[0].cast_to_long_double();

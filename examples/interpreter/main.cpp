@@ -4,6 +4,10 @@
 #include <filesystem>
 #include <iostream>
 
+#if 0
+#include <inc/binned_allocator.hpp>
+#endif
+
 #include <tealscript_runtime.hpp>
 
 // Just a regular C++ class to be added as an <<object type>> to the scripting runtime
@@ -17,6 +21,46 @@ public:
 private:
     int v_{};
 };
+
+#if 0
+
+static teal::sorting_alloc<256 * 1024 * 1024, 16, 1024> srtalloc{};
+
+void* operator new(std::size_t sz) {
+    if(sz == 0) { ++sz; }
+
+    if(void *ptr = srtalloc.allocate(sz)) {
+        return ptr;
+    }
+
+    throw std::bad_alloc{};
+}
+
+void* operator new[](std::size_t sz) {
+    if(sz == 0) { ++sz; }
+    if(void *ptr = srtalloc.allocate(sz)) {
+        return ptr;
+    }
+    throw std::bad_alloc{};
+}
+
+void operator delete(void* ptr) noexcept {
+    srtalloc.deallocate(ptr);
+}
+
+void operator delete(void* ptr, std::size_t size) noexcept {
+    srtalloc.deallocate(ptr, size);
+}
+
+void operator delete[](void* ptr) noexcept {
+    srtalloc.deallocate(ptr);
+}
+
+void operator delete[](void* ptr, std::size_t size) noexcept {
+    srtalloc.deallocate(ptr, size);
+}
+
+#endif
 
 int main(int argc, char **argv) {
     std::vector<std::string> args{argv, argv + argc};

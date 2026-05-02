@@ -65,7 +65,6 @@ my_drafts(host_data) {
 
     arr = 3 + [12, undefined, '2', "122", 9090.9090, [],];
     arr.println();
-    return exit();
 
     // index_mem_size = (u64)(1024 * 1024);
     // index_num_entries = index_mem_size / 8;
@@ -79,9 +78,6 @@ my_drafts(host_data) {
     println("total_mem_size: ", paged_size + index_mem_size);
 
     // (8 * (256 * 1024 * 1024 * 1024 * 1024 / 4096)).println();
-
-    exit();
-    return 0;
 
     kf.predict = k_predict;
     kf.update = k_update;

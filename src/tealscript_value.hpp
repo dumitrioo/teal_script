@@ -129,8 +129,8 @@ namespace teal {
         }
 
     public:
-        using vec4_t = teal::math::vector4<long double>;
-        using mat4_t = teal::math::matrix4<long double>;
+        using vec4_t = teal::math::vector4<double>;
+        using mat4_t = teal::math::matrix4<double>;
 
     private:
         using array_t = std::deque<valbox>;
@@ -150,8 +150,6 @@ namespace teal {
             float,
             double,
             long double,
-            vec4_t,
-            mat4_t,
             void *,
             std::function<valbox(std::vector<valbox> &)>,
             array_t,
@@ -235,8 +233,8 @@ namespace teal {
         valbox(std::int64_t *v): box_{std::make_shared<box_data>((void *)v, type::POINTER, type::S64)} {}
         valbox(std::uint64_t v): box_{std::make_shared<box_data>(v, type::U64)} {}
         valbox(std::uint64_t *v): box_{std::make_shared<box_data>((void *)v, type::POINTER, type::U64)} {}
-        valbox(vec4_t const &v): box_{std::make_shared<box_data>(v, type::VEC4)} {}
-        valbox(mat4_t const &v): box_{std::make_shared<box_data>(v, type::MAT4)} {}
+        valbox(vec4_t const &v): box_{std::make_shared<box_data>(any{v}, type::VEC4)} {}
+        valbox(mat4_t const &v): box_{std::make_shared<box_data>(any{v}, type::MAT4)} {}
         valbox(long long v): box_{std::make_shared<box_data>((std::int64_t)v, type::S64)} {}
         valbox(long long *v): box_{std::make_shared<box_data>((void *)v, type::POINTER, type::S64)} {}
         valbox(unsigned long long v): box_{std::make_shared<box_data>((std::uint64_t)v, type::U64)} {}
@@ -519,7 +517,7 @@ namespace teal {
             if(!box_) {
                 throw std::runtime_error{"not an object"};
             }
-            return any_cast<T &>(std::get<any>(deref().box_->value_));
+            return any_cast<T const &>(std::get<any>(deref().box_->value_));
         }
         bool is_class_ref() const { return val_or_pointed_type() == type::CLASS; }
         std::string class_name() const { return box_ ? deref().box_->class_ : std::string{}; }
@@ -844,16 +842,16 @@ namespace teal {
             if(!dr.box_ || !(dr.box_->type_ == type::VEC4 || dr.box_->pointed_type_ == type::VEC4))
                 throw std::runtime_error{"not a vec4"};
             return dr.box_->pointed_type_ == type::VEC4 ?
-                        dr.deref_ptr<vec4_t>() :
-                        std::get<vec4_t>(dr.box_->value_);
+                        std::any_cast<vec4_t &>(dr.deref_ptr<any>()) :
+                        std::any_cast<vec4_t &>(std::get<any>(dr.box_->value_));
         }
         vec4_t const &as_vec4() const {
             valbox const &dr{deref()};
             if(!dr.box_ || !(dr.box_->type_ == type::VEC4 || dr.box_->pointed_type_ == type::VEC4))
                 throw std::runtime_error{"not a vec4"};
             return dr.box_->pointed_type_ == type::VEC4 ?
-                        dr.deref_ptr<vec4_t>() :
-                        std::get<vec4_t>(dr.box_->value_);
+                        std::any_cast<vec4_t const &>(dr.deref_ptr<any>()) :
+                        std::any_cast<vec4_t const &>(std::get<any>(dr.box_->value_));
         }
 
         bool is_mat4_ref() const { return val_or_pointed_type() == type::MAT4; }
@@ -862,16 +860,16 @@ namespace teal {
             if(!dr.box_ || !(dr.box_->type_ == type::MAT4 || dr.box_->pointed_type_ == type::MAT4))
                 throw std::runtime_error{"not a mat4"};
             return dr.box_->pointed_type_ == type::MAT4 ?
-                        dr.deref_ptr<mat4_t>() :
-                        std::get<mat4_t>(dr.box_->value_);
+                        std::any_cast<mat4_t &>(dr.deref_ptr<any>()) :
+                        std::any_cast<mat4_t &>(std::get<any>(dr.box_->value_));
         }
         mat4_t const &as_mat4() const {
             valbox const &dr{deref()};
             if(!dr.box_ || !(dr.box_->type_ == type::MAT4 || dr.box_->pointed_type_ == type::MAT4))
                 throw std::runtime_error{"not a mat4"};
             return dr.box_->pointed_type_ == type::MAT4 ?
-                        dr.deref_ptr<mat4_t>() :
-                        std::get<mat4_t>(dr.box_->value_);
+                        std::any_cast<mat4_t const &>(dr.deref_ptr<any>()) :
+                        std::any_cast<mat4_t const &>(std::get<any>(dr.box_->value_));
         }
 
         bool is_array_ref() const { return val_or_pointed_type() == type::ARRAY; }
@@ -7480,7 +7478,7 @@ namespace teal {
                     }
                     break;
                 case type::VEC4: {
-                        vec4_t v4{v[0].as_longdouble(0), v[1].as_longdouble(0), v[2].as_longdouble(0), v[3].as_longdouble(0)};
+                        vec4_t v4{v[0].as_double(0), v[1].as_double(0), v[2].as_double(0), v[3].as_double(0)};
                         if(!vr.box_) {
                             vr.box_ = std::make_shared<box_data>(v4, type::VEC4);
                         } else {
@@ -7495,10 +7493,10 @@ namespace teal {
                     break;
                 case type::MAT4: {
                         mat4_t m4{
-                            v[0][0].as_longdouble(0), v[0][1].as_longdouble(0), v[0][2].as_longdouble(0), v[0][3].as_longdouble(0),
-                            v[1][0].as_longdouble(0), v[1][1].as_longdouble(0), v[1][2].as_longdouble(0), v[1][3].as_longdouble(0),
-                            v[2][0].as_longdouble(0), v[2][1].as_longdouble(0), v[2][2].as_longdouble(0), v[2][3].as_longdouble(0),
-                            v[3][0].as_longdouble(0), v[3][1].as_longdouble(0), v[3][2].as_longdouble(0), v[3][3].as_longdouble(0)
+                            v[0][0].as_double(0), v[0][1].as_double(0), v[0][2].as_double(0), v[0][3].as_double(0),
+                            v[1][0].as_double(0), v[1][1].as_double(0), v[1][2].as_double(0), v[1][3].as_double(0),
+                            v[2][0].as_double(0), v[2][1].as_double(0), v[2][2].as_double(0), v[2][3].as_double(0),
+                            v[3][0].as_double(0), v[3][1].as_double(0), v[3][2].as_double(0), v[3][3].as_double(0)
                         };
                         if(!vr.box_) {
                             vr.box_ = std::make_shared<box_data>(m4, type::MAT4);

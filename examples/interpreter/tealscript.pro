@@ -7,7 +7,7 @@ TEMPLATE = app
 
 ###############################################################################
 # DEFINES += TEAL_SINGLE_THREADED
-DEFINES += TEAL_DEBUGGING
+# DEFINES += TEAL_DEBUGGING
 ###############################################################################
 
 ###############################################################################
@@ -51,6 +51,7 @@ HEADERS += \
     ../../src/inc/base16.hpp \
     ../../src/inc/base64.hpp \
     ../../src/inc/base85.hpp \
+    ../../src/inc/binned_allocator.hpp \
     ../../src/inc/bit_util.hpp \
     ../../src/inc/command_queue.hpp \
     ../../src/inc/commondefs.hpp \

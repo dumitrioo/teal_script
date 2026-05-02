@@ -1533,42 +1533,42 @@ namespace teal {
             });
 
             rt->add_function("rotation_z", TEALFUN(args) {
-                long double ang{0.0L};
+                double ang{0.0};
                 if(args.size() == 1 && (args[0].is_any_fp_number() || args[0].is_any_int_number())) {
-                    ang = args[0].cast_to_long_double();
+                    ang = args[0].cast_to_double();
                 }
                 return valbox::mat4_t::rotate_z(ang);
             });
             rt->add_function("rotation_x", TEALFUN(args) {
-                long double ang{0.0L};
+                double ang{0.0};
                 if(args.size() == 1 && (args[0].is_any_fp_number() || args[0].is_any_int_number())) {
-                    ang = args[0].cast_to_long_double();
+                    ang = args[0].cast_to_double();
                 }
                 return valbox::mat4_t::rotate_x(ang);
             });
             rt->add_function("rotation_y", TEALFUN(args) {
-                long double ang{0.0L};
+                double ang{0.0};
                 if(args.size() == 1 && (args[0].is_any_fp_number() || args[0].is_any_int_number())) {
-                    ang = args[0].cast_to_long_double();
+                    ang = args[0].cast_to_double();
                 }
                 return valbox::mat4_t::rotate_y(ang);
             });
             rt->add_function("rotation", TEALFUN(args) {
-                long double ang{0.0L};
-                long double vx{0.0L};
-                long double vy{0.0L};
-                long double vz{0.0L};
+                double ang{0.0};
+                double vx{0.0};
+                double vy{0.0};
+                double vz{0.0};
                 if(
                     args.size() == 2 &&
                     (args[0].is_any_fp_number() || args[0].is_any_int_number()) &&
                     (args[1].is_array_ref() || args[1].is_vec4_ref())
                 ) {
-                    ang = args[0].cast_to_long_double();
+                    ang = args[0].cast_to_double();
                     if(args[1].is_array_ref()) {
                         auto const &a{args[1].as_array()};
-                        if(a.size() > 0) { vx = a.at(0).cast_to_long_double(); }
-                        if(a.size() > 1) { vy = a.at(1).cast_to_long_double(); }
-                        if(a.size() > 2) { vz = a.at(2).cast_to_long_double(); }
+                        if(a.size() > 0) { vx = a.at(0).cast_to_double(); }
+                        if(a.size() > 1) { vy = a.at(1).cast_to_double(); }
+                        if(a.size() > 2) { vz = a.at(2).cast_to_double(); }
                     } else if(args[1].is_vec4_ref()) {
                         auto const &a{args[1].as_vec4()};
                         vx = a[0];
@@ -1576,10 +1576,10 @@ namespace teal {
                         vz = a[2];
                     }
                 } else {
-                    if(args.size() > 0) { ang = args[0].cast_to_long_double(); }
-                    if(args.size() > 1) { vx = args[1].cast_to_long_double(); }
-                    if(args.size() > 2) { vy = args[2].cast_to_long_double(); }
-                    if(args.size() > 3) { vz = args[3].cast_to_long_double(); }
+                    if(args.size() > 0) { ang = args[0].cast_to_double(); }
+                    if(args.size() > 1) { vx = args[1].cast_to_double(); }
+                    if(args.size() > 2) { vy = args[2].cast_to_double(); }
+                    if(args.size() > 3) { vz = args[3].cast_to_double(); }
                 }
                 return valbox::mat4_t::rotation(ang, vx, vy, vz);
             });
@@ -1615,50 +1615,50 @@ namespace teal {
             rt->add_function("spheric_to_cartesian", TEALFUN(args) {
                 if(args.size() == 1) {
                     if(args[0].is_array_ref()) {
-                        long double vx{};
-                        long double vy{};
-                        long double vz{};
+                        double vx{};
+                        double vy{};
+                        double vz{};
                         auto const &a{args[0].as_array()};
-                        if(a.size() > 0) { vx = a.at(0).cast_to_long_double(); }
-                        if(a.size() > 1) { vy = a.at(1).cast_to_long_double(); }
-                        if(a.size() > 2) { vz = a.at(2).cast_to_long_double(); }
-                        return teal::math::spheric_to_cartesian<long double>(vx, vy, vz);
+                        if(a.size() > 0) { vx = a.at(0).cast_to_double(); }
+                        if(a.size() > 1) { vy = a.at(1).cast_to_double(); }
+                        if(a.size() > 2) { vz = a.at(2).cast_to_double(); }
+                        return teal::math::spheric_to_cartesian<double>(vx, vy, vz);
                     } else if(args[0].is_vec4_ref()) {
                         auto const &a{args[0].as_vec4()};
-                        return teal::math::spheric_to_cartesian<long double>(a.x(), a.y(), a.z());
+                        return teal::math::spheric_to_cartesian<double>(a.x(), a.y(), a.z());
                     }
                 }
-                long double vx{};
-                long double vy{};
-                long double vz{};
-                if(args.size() > 0) { vx = args[0].cast_to_long_double(); }
-                if(args.size() > 1) { vy = args[1].cast_to_long_double(); }
-                if(args.size() > 2) { vz = args[2].cast_to_long_double(); }
-                return teal::math::spheric_to_cartesian<long double>(vx, vy, vz);
+                double vx{};
+                double vy{};
+                double vz{};
+                if(args.size() > 0) { vx = args[0].cast_to_double(); }
+                if(args.size() > 1) { vy = args[1].cast_to_double(); }
+                if(args.size() > 2) { vz = args[2].cast_to_double(); }
+                return teal::math::spheric_to_cartesian<double>(vx, vy, vz);
             });
             rt->add_function("cartesian_to_spheric", TEALFUN(args) {
                 if(args.size() == 1) {
                     if(args[0].is_array_ref()) {
-                        long double vx{};
-                        long double vy{};
-                        long double vz{};
+                        double vx{};
+                        double vy{};
+                        double vz{};
                         auto const &a{args[0].as_array()};
-                        if(a.size() > 0) { vx = a.at(0).cast_to_long_double(); }
-                        if(a.size() > 1) { vy = a.at(1).cast_to_long_double(); }
-                        if(a.size() > 2) { vz = a.at(2).cast_to_long_double(); }
-                        return teal::math::cartesian_to_spheric<long double>(vx, vy, vz);
+                        if(a.size() > 0) { vx = a.at(0).cast_to_double(); }
+                        if(a.size() > 1) { vy = a.at(1).cast_to_double(); }
+                        if(a.size() > 2) { vz = a.at(2).cast_to_double(); }
+                        return teal::math::cartesian_to_spheric<double>(vx, vy, vz);
                     } else if(args[0].is_vec4_ref()) {
                         auto const &a{args[0].as_vec4()};
-                        return teal::math::cartesian_to_spheric<long double>(a.x(), a.y(), a.z());
+                        return teal::math::cartesian_to_spheric<double>(a.x(), a.y(), a.z());
                     }
                 }
-                long double vx{};
-                long double vy{};
-                long double vz{};
-                if(args.size() > 0) { vx = args[0].cast_to_long_double(); }
-                if(args.size() > 1) { vy = args[1].cast_to_long_double(); }
-                if(args.size() > 2) { vz = args[2].cast_to_long_double(); }
-                return teal::math::cartesian_to_spheric<long double>(vx, vy, vz);
+                double vx{};
+                double vy{};
+                double vz{};
+                if(args.size() > 0) { vx = args[0].cast_to_double(); }
+                if(args.size() > 1) { vy = args[1].cast_to_double(); }
+                if(args.size() > 2) { vz = args[2].cast_to_double(); }
+                return teal::math::cartesian_to_spheric<double>(vx, vy, vz);
             });
             rt->add_function("vec4_r", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].as_vec4().r(); });
             rt->add_function("vec4_theta", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].as_vec4().theta(); });
@@ -1672,15 +1672,15 @@ namespace teal {
             rt->add_function("normalized", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].as_vec4().normalized(); });
             rt->add_function("inverted", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].as_mat4().inverted(); });
             rt->add_function("translation", TEALFUN(args) {
-                long double dx{0.0L};
-                long double dy{0.0L};
-                long double dz{0.0L};
+                double dx{0.0};
+                double dy{0.0};
+                double dz{0.0};
                 if(args.size() == 1 && (args[0].is_array_ref() || args[0].is_vec4_ref())) {
                     if(args[0].is_array_ref()) {
                         auto const &a{args[0].as_array()};
-                        if(a.size() > 0) { dx = a.at(0).cast_to_long_double(); }
-                        if(a.size() > 1) { dy = a.at(1).cast_to_long_double(); }
-                        if(a.size() > 2) { dz = a.at(2).cast_to_long_double(); }
+                        if(a.size() > 0) { dx = a.at(0).cast_to_double(); }
+                        if(a.size() > 1) { dy = a.at(1).cast_to_double(); }
+                        if(a.size() > 2) { dz = a.at(2).cast_to_double(); }
                     } else if(args[0].is_vec4_ref()) {
                         auto const &a{args[0].as_vec4()};
                         dx = a[0];
@@ -1688,33 +1688,33 @@ namespace teal {
                         dz = a[2];
                     }
                 } else {
-                    if(args.size() > 0) { dx = args[0].cast_to_long_double(); }
-                    if(args.size() > 1) { dy = args[1].cast_to_long_double(); }
-                    if(args.size() > 2) { dz = args[2].cast_to_long_double(); }
+                    if(args.size() > 0) { dx = args[0].cast_to_double(); }
+                    if(args.size() > 1) { dy = args[1].cast_to_double(); }
+                    if(args.size() > 2) { dz = args[2].cast_to_double(); }
                 }
                 return valbox::mat4_t::translate(dx, dy, dz);
             });
             rt->add_function("perspective", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 4)
                 return valbox::mat4_t::perspective(
-                    args[0].cast_to_long_double(), // fov_y_degrees
-                    args[1].cast_to_long_double(), // aspect_ratio
-                    args[2].cast_to_long_double(), // znear
-                    args[3].cast_to_long_double()  // zfar
+                    args[0].cast_to_double(), // fov_y_degrees
+                    args[1].cast_to_double(), // aspect_ratio
+                    args[2].cast_to_double(), // znear
+                    args[3].cast_to_double()  // zfar
                 );
             });
             rt->add_function("look_at", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 9)
-                return teal::math::look_at_matrix<long double>(
-                    args[0].cast_to_long_double(), // eyeX
-                    args[1].cast_to_long_double(), // eyeY
-                    args[2].cast_to_long_double(), // eyeZ
-                    args[3].cast_to_long_double(), // centerX
-                    args[4].cast_to_long_double(), // centerY
-                    args[5].cast_to_long_double(), // centerZ
-                    args[6].cast_to_long_double(), // upX
-                    args[7].cast_to_long_double(), // upY
-                    args[8].cast_to_long_double()  // upZ
+                return teal::math::look_at_matrix<double>(
+                    args[0].cast_to_double(), // eyeX
+                    args[1].cast_to_double(), // eyeY
+                    args[2].cast_to_double(), // eyeZ
+                    args[3].cast_to_double(), // centerX
+                    args[4].cast_to_double(), // centerY
+                    args[5].cast_to_double(), // centerZ
+                    args[6].cast_to_double(), // upX
+                    args[7].cast_to_double(), // upY
+                    args[8].cast_to_double()  // upZ
                 );
             });
 
@@ -1726,9 +1726,7 @@ namespace teal {
                 return;
             }
 
-
-
-
+            // TODO:
 
             rt_ = nullptr;
         }
