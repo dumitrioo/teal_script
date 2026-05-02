@@ -5,9 +5,9 @@ TealScript is a lightweight, distributed, and deterministic control logic engine
 It is an embedded scripting language designed to seamlessly wire physical and virtual devices into a unified control system. The language enforces strict, declarative rules for building schemas, making complex logic highly readable and maintainable. Combined with seamless C++ host extensibility, the result is a deterministic, cohesive hardware-software ecosystem driven entirely by data-flow graphs.
 
 
-## The "Secret Sauce": Stateful Data-Flow
+## Stateful Data-Flow
 
-While based on the discrete-time, clocked data-flow paradigm (similar to Unreal Engine Blueprints), TealScript departs from strict functional purity. Each compute node is an instance of an object that syntactically resembles a function, but can retain state between execution cycles via instance variables accessible through the this keyword. This makes writing complex state machines or PID controllers as easy as writing simple C functions.
+While based on the discrete-time, clocked data-flow paradigm (similar to Unreal Engine Blueprints), TealScript departs from strict functional purity. Each compute node is an instance of an object that syntactically resembles a function, but can retain state between execution cycles via instance variables accessible through the this keyword. This makes writing complex state machines or PID controllers as easy as writing simple functions.
 
 
 ## Why TealScript?
@@ -116,7 +116,6 @@ logprint(in, e1, pidval, e2, mathval) {
     }
 }
 ```
-
 
 ## Application & Use Cases
 
