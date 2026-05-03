@@ -29,92 +29,59 @@ You get a problem-specific tool to handle complex control schemes for multiple a
 A logical schema written in TealScript manages physical actuators in parallel by analyzing signals from input devices:
 
 ``` TealScript
-// input values from C++ host
-'in' in;
-'kp' kp;
-'ki' ki;
-'kd' kd;
-'km' km;
+// Node 1: Smooth balancer
+balance_pid(angle, ang_vel) {
+    // 1. Low-Pass Filter
+    this.smooth_vel = 0.85 * this.smooth_vel + 0.15 * ang_vel;
 
-// worker computation nodes declarative schema
-difference      diff1(in, pid);
-pid_regulator   pid(diff1, kp, ki, kd) 'pid_out';
-difference      diff2(in, mr);
-math_regulator  mr(diff2, km) 'pow_out';
-logprint        pv(in, diff1, pid, diff2, mr);
+    // 2. Accelerator lower, brakes on
+    p_term = 25.0 * angle;
+    d_term = -35.0 * this.smooth_vel;
 
-// computation nodes functionality...
+    // 3. Rid of integral
+    out = p_term + d_term;
 
-// PID regulator
-pid_regulator(err, kp, ki, kd) {
-    if(this.prev_t == undefined) {
-        this.prev_t = steady_clock();
-        this.prev_err = (float)err;
-        this.integral = 0.0;
-    }
-    t = steady_clock();
-    dt = t - this.prev_t;
-    if(dt > 0.0) {
-        this.prev_t = t;
-        proportional = err;
-        this.integral += err * dt;
-        derivative = (err - this.prev_err) / dt;
-        this.prev_err = (float)err;
-        output = kp * proportional + ki * this.integral + kd * derivative;
-        return output;
-    }
+    return out;
 }
 
-// Alternative regulator...
-math_regulator(err, km) {
-    if(this.output == undefined) {
-        this.output = 0.0;
-        this.prev_t = steady_clock();
-    }
-    t = steady_clock();
-    dt = t - this.prev_t;
-    if(dt > 0.0) {
-        this.prev_t = t;
-        delta = km * dt * (pow(err * 0.02, 3) - pow(err * 0.0199999, 3) + 100000.0 * sin(err * .000001));
-        if(abs(delta) > abs(err)) {
-            delta = 0.333 * err;
-        }
-        this.output += delta;
-        return this.output;
-    }
+// Node 2: Lazy centering
+center_pid(cart_pos, cart_vel) {
+    return -0.5 * cart_pos - 1.0 * cart_vel;
 }
 
-first_defined(a, b) return a != undefined ? a : b;
-forward(val) return val;
-difference(a, b) return a - b;
+// Node 3: "Soft wall"
+soft_wall(cart_pos) {
+    wall_force = 0.0;
+    limit = 4.5;
 
-val_with_rand(v, dev, expire_time) {
-    if(this.prev_t == undefined) {
-        this.prev_t = steady_clock();
-        this.delta = (randf() - 0.5) * 2.0 * dev;
+    if (cart_pos > limit) {
+        wall_force = -150.0 * (cart_pos - limit);
+    } else if (cart_pos < -limit) {
+        wall_force = -150.0 * (cart_pos + limit);
     }
-    t = steady_clock();
-    dt = t - this.prev_t;
-    if(dt > expire_time) {
-        this.delta = (randf() - 0.5) * 2.0 * dev;
-        this.prev_t = t;
-    }
-    return v + this.delta;
+
+    return wall_force;
 }
 
-logprint(in, e1, pidval, e2, mathval) {
-    t = steady_clock();
-    dt = t - this.prev_t;
-    if(dt > 0.1) {
-        console.fixed();
-        this.prev_t = t;
-        console.print("[ target: ", in,
-            " || err1: ", e1, ", PID val: ", pidval,
-            " | err2: ", e2, ", Math val: ", mathval,
-            " ]"
-        );
-    }
+// Node 4
+mixer(balance_force, center_force, wall_force) {
+    out = balance_force + center_force + wall_force;
+    if (out > 80.0) out = 80.0;
+    if (out < -80.0) out = -80.0;
+    return out;
 }
+
+// ---------------------------------------------------------
+// The Graph
+// ---------------------------------------------------------
+'sensor_angle' sensor_angle;
+'sensor_vel' sensor_vel;
+'cart_position' cart_position;
+'cart_velocity' cart_velocity;
+balance_pid balancer(sensor_angle, sensor_vel);
+center_pid centerer(cart_position, cart_velocity);
+soft_wall wall(cart_position);
+mixer motor_control(balancer, centerer, wall) 'motor_force';
 ```
 
 ## Application & Use Cases
