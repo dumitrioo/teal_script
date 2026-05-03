@@ -79,12 +79,10 @@ namespace teal {
         ) = 0;
         virtual void stop_net_server() = 0;
         virtual bool net_server_running() const = 0;
-
-#ifdef TEAL_USE_EXTERNAL_VALUES
-        virtual void set_external_cells_nodelay(bool) = 0;
         virtual void set_external_cells_update_interval(long double /*seconds*/) = 0;
         virtual long double external_cells_update_interval() const = 0;
 
+#ifdef TEAL_USE_EXTERNAL_VALUES
         // connect to a common network for exchanging values (alternative to the above)
         virtual void net_hub_connect(
             std::string const &/*host_addr*/,

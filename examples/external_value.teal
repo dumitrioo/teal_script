@@ -1,7 +1,7 @@
 setup_cell() {
     if(!this.set_up) {
-        set_extern_update_seconds(0.01);
-        set_cycle_sleep_seconds(0.005);
+        set_extern_update_seconds(0.001);
+        set_cycle_sleep_seconds(0.0005);
         set_inactive_sleep_seconds(0.01);
         this.set_up = true;
     }
@@ -19,7 +19,7 @@ function rnd_str(n) {
 }
 
 some_value_issuer() {
-    if(steady_clock() > this.last_time + .5) {
+    if(steady_clock() > this.last_time + 0.1) {
         this.last_time = steady_clock();
 
         choice = rand() % 8;

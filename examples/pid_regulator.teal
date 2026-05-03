@@ -12,7 +12,7 @@ val_with_rand mock_in(0.0, 1000.0, 5);
 forward mock_kp(0.8);
 forward mock_ki(0.4);
 forward mock_kd(0.000001);
-forward mock_km(1000.0);
+forward mock_km(100.0);
 
 // choose and return first one defined
 first_defined in(real_in, mock_in);
@@ -39,7 +39,7 @@ logprint pv(in, diff1, pid, diff2, mr);
 pid_regulator(err, kp, ki, kd) {
     if(this.prev_t == undefined) {
         this.prev_t = steady_clock();
-        this.prev_err = (float)err;
+        this.prev_err = (f64)err;
         this.integral = 0.0;
     }
     t = steady_clock();
@@ -49,7 +49,7 @@ pid_regulator(err, kp, ki, kd) {
         proportional = err;
         this.integral += err * dt;
         derivative = (err - this.prev_err) / dt;
-        this.prev_err = (float)err;
+        this.prev_err = (f64)err;
         output = kp * proportional + ki * this.integral + kd * derivative;
         return output;
     }

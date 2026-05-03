@@ -114,7 +114,7 @@ namespace teal {
             auto c0{v[0]};
             if(!(c0 == '_' || c0 == '$' || teal::str_util::fltr<std::wstring>::isalpha(c0))) { return false; }
             for(auto &&c: v) { if(!(c == '_' || c == '$' || teal::str_util::fltr<std::wstring>::isalnum(c))) { return false; } }
-            static emhash8::HashSet<std::wstring, str_crc<std::wstring>> const rsvd{
+            static emhash_8::HashSet<std::wstring, str_crc<std::wstring>> const rsvd{
                 L"false",      L"true",     L"null",
                 L"break",      L"do",       L"instanceof", L"typeof",
                 L"case",       L"else",     L"new",        L"var",
@@ -192,7 +192,7 @@ namespace teal {
                     ||
                     (stack_.size() == 1 && top().closed)
                 ) {
-                    static const emhash8::HashMap<std::string, std::string, str_crc<std::string>> exp_map {
+                    static const emhash_8::HashMap<std::string, std::string, str_crc<std::string>> exp_map {
                         {"str" , "<string>" },
                         {"sts" , "<single-quoted string>" },
                         {"sgn" , "<sign>" },
@@ -577,7 +577,7 @@ namespace teal {
 #ifdef TEAL_JSON_DEBUGGING
         using o_t = std::map<std::string, json>;
 #else
-        using o_t = emhash8::HashMap<std::string, json, str_crc<std::string>>;
+        using o_t = emhash_8::HashMap<std::string, json, str_crc<std::string>>;
 #endif
         using a_t = std::vector<json>;
 

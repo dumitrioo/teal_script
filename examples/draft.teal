@@ -8,15 +8,6 @@ function undef_test() {
 function sinus(x)
     return sin(x);
 
-function integral(func, beg, end, dx) {
-    s = 0.0;
-    for(x = beg; x <= end; x += dx)
-        s += func(x) * dx;
-    return s;
-}
-
-function clamp(v, mi, ma)
-    return v < mi ? mi : v > ma ? ma : v;
 
 // adapted algo from Quake III Arena
 function Q_rsqrt(x) {
@@ -29,6 +20,24 @@ function Q_rsqrt(x) {
     y *= (f64)1.5 - x2 * y * y;
     return y;
 }
+
+function clamp(v, mi, ma) return v < mi ? mi : v > ma ? ma : v;
+
+function integral(func, beg, end, dx) {
+    s = 0.0;
+    for(x = (f64)beg; x <= (f64)end; x += (f64)dx)
+        s += func(x) * dx;
+    return s;
+}
+
+function_test() {
+    sin.integral(0, 1, 1e-4).println();
+    M_PI.sin().println();
+    return 0;
+}
+
+function_test ftest();
+
 
 random_value() {
     if(!this.res) {

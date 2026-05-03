@@ -146,7 +146,7 @@ namespace teal {
             net::packets_demuxer demuxer_{};
         };
         mutable std::shared_mutex muxers_mtp_{};
-        emhash8::HashMap<conn_id_t, std::shared_ptr<multiplexing>> muxers_{};
+        emhash_8::HashMap<conn_id_t, std::shared_ptr<multiplexing>> muxers_{};
     };
 
     class pp_client_tcp {

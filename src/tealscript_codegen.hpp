@@ -506,7 +506,7 @@ namespace teal {
                 } else if((*stack.back().ast)["subtype"].as_string() == "literal") {
                     json const &cnt{(*stack.back().ast)["content"]};
                     if((*stack.back().ast)["literal"].as_string() == "flt") {
-                        stack.back().res = std::make_shared<primary_expression>(cnt.as_longdouble());
+                        stack.back().res = std::make_shared<primary_expression>(cnt.as_double());
                         stack.back().res->set_loc(
                             (*stack.back().ast)["loc"]["line"].try_as_number(),
                             (*stack.back().ast)["loc"]["col"].try_as_number()

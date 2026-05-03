@@ -7,7 +7,7 @@
 #include "inc/mt_synchro.hpp"
 #include "inc/math/math_util.hpp"
 #include "inc/json.hpp"
-#ifdef TEAL_USE_EMHASH8_MAP
+#ifndef NOT_USING_TEAL_USE_EMHASH8_MAP
 #include "inc/emhash/hash_set8.hpp"
 #include "inc/emhash/hash_table8.hpp"
 #endif
@@ -98,16 +98,16 @@ namespace teal {
     template<typename V_T>
     using str_map_t = std::map<std::string, V_T>;
 #else
-    #ifdef TEAL_USE_EMHASH8_MAP
+    #ifndef NOT_USING_TEAL_USE_EMHASH8_MAP
     template<typename K_T, typename V_T>
-    using num_map_t = emhash8::HashMap<K_T, V_T, num_cast_hash<K_T>>;
+    using num_map_t = emhash_8::HashMap<K_T, V_T, num_cast_hash<K_T>>;
     template<typename V_T>
-    using str_map_t = emhash8::HashMap<std::string, V_T, str_crc<std::string>>;
+    using str_map_t = emhash_8::HashMap<std::string, V_T, str_crc<std::string>>;
     #else
     template<typename K_T, typename V_T>
-    using num_map_t = std::map<K_T, V_T>;
+    using num_map_t = std::unordered_map<K_T, V_T>;
     template<typename V_T>
-    using str_map_t = std::map<std::string, V_T>;
+    using str_map_t = std::unordered_map<std::string, V_T>;
     #endif
 #endif
 
@@ -118,13 +118,7 @@ namespace teal {
     using shared_mutex = std::shared_mutex;
 #endif
 
-
-#ifdef TEAL_USE_CUSTOM_MUTEX
-    using mutex = mt::atomic_spin_mutex;
-#else
     using mutex = std::mutex;
-#endif
-
 
     static bool is_identifier(std::string const &ident) {
         if(ident.size() == 0) {

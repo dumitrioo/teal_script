@@ -7,19 +7,19 @@ namespace teal {
     class terminable {
     public:
         void terminate() noexcept {
-            termination_requested_.store(1, std::memory_order_release);
+            termination_requested_ = 1;
         }
 
         void unterminate() noexcept {
-            termination_requested_.store(0, std::memory_order_release);
+            termination_requested_ = 0;
         }
 
         bool termination() const noexcept {
-            return termination_requested_.load(std::memory_order_acquire) != 0;
+            return termination_requested_ != 0;
         }
 
     protected:
-        std::atomic<std::size_t> termination_requested_{0};
+        std::size_t termination_requested_{0};
     };
 
 }

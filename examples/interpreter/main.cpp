@@ -149,10 +149,7 @@ int main(int argc, char **argv) {
         }
 
         rt.start_net_server(teal::net::address_family::inet4, "0.0.0.0", 43987, 0);
-#ifdef TEAL_USE_EXTERNAL_VALUES
-        rt.set_external_cells_update_interval(0.005L);
-        rt.set_external_cells_nodelay(true);
-#endif
+        rt.set_external_cells_update_interval(0.001L);
 
 #ifdef TEAL_SINGLE_THREADED
         while(!rt.termination_requested()) {

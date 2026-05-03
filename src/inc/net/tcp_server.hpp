@@ -502,8 +502,8 @@ namespace teal {
         std::list<std::function<void()>> jobs_buffer_{};
 
         mutable std::shared_mutex connections_mtp_{};
-        emhash8::HashMap<int, std::shared_ptr<connection>, num_cast_hash<int>> skfd_to_conn_{};
-        emhash8::HashMap<conn_id_t, std::shared_ptr<connection>, num_cast_hash<conn_id_t>> id_to_conn_{};
+        emhash_8::HashMap<int, std::shared_ptr<connection>, num_cast_hash<int>> skfd_to_conn_{};
+        emhash_8::HashMap<conn_id_t, std::shared_ptr<connection>, num_cast_hash<conn_id_t>> id_to_conn_{};
 
         mutable std::shared_mutex on_data_arrived_mtp_{};
         std::function<void(conn_id_t)> on_data_arrived_{nullptr};

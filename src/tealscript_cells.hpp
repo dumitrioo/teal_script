@@ -68,12 +68,6 @@ namespace teal {
 
     class worker_cell_definition_info {
     public:
-#if 0
-        void set_num_args(std::size_t num) {
-            num_args_ = num;
-            arg_names_.resize(num);
-        }
-#endif
         void set_arg_name(std::size_t indx, std::string const &name) {
             if(arg_number_by_name_.find(name) != arg_number_by_name_.end()) {
                 throw runtime_error{
@@ -218,19 +212,11 @@ namespace teal {
         }
 
         bool try_lock() {
-#if defined(TEAL_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
-            return locker_.try_lock();
-#else
             return locker_->try_lock();
-#endif
         }
 
         void unlock() {
-#if defined(TEAL_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
-            return locker_.unlock();
-#else
             locker_->unlock();
-#endif
         }
 
         statement_ptr body() {
@@ -248,22 +234,12 @@ namespace teal {
         std::vector<arg_info> args_info_{};
         std::string output_name_{};
         std::uint64_t type_info_transferred_{0};
-#if defined(TEAL_USE_CUSTOM_SHARED_MUTEX) && defined(RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING)
-        mutable shared_mutex locker_{};
-#else
         mutable std::unique_ptr<shared_mutex> locker_{std::make_unique<shared_mutex>()};
-#endif
     };
 
 
     class function_definition {
     public:
-#if 0
-        void set_num_args(std::size_t num) {
-            num_args_ = num;
-            arg_names_.resize(num);
-        }
-#endif
         void set_arg_name(std::size_t indx, std::string const &name) {
             if(arg_number_by_name_.find(name) != arg_number_by_name_.end()) {
                 throw runtime_error{

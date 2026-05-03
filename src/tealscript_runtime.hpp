@@ -1,6 +1,7 @@
 #pragma once
 
 #include "inc/commondefs.hpp"
+#include "inc/command_queue.hpp"
 #include "inc/file_util.hpp"
 #include "inc/str_util.hpp"
 #include "inc/containers/concurrentqueue.h"
@@ -1839,6 +1840,7 @@ namespace teal {
                     cq_->set_workload_to_start_spawn_threads(0.9);
                     cq_->set_workload_to_start_kill_threads(0.1);
                     cq_->set_min_seconds_between_killings(1);
+                    cq_->enqueue_urgent(pp_subs_functor_);
                 }
             }
             std::shared_lock l{ppserver_mtp_};
@@ -1851,37 +1853,12 @@ namespace teal {
                         json requ{json::bdeserialize(data)};
                         auto act{requ["act"].as_string()};
                         json resp{};
-                        resp["id"] = requ["id"];
-                        if(act == "get") {
-                            cell_base *cellptr{nullptr};
+                        if(act == "sub") {
                             auto nme{requ["name"].as_string()};
                             auto ali{requ["alias"].as_string()};
-                            resp["act"] = "get";
+                            resp["act"] = "sub";
                             resp["name"] = ali;
-                            do {
-                                {
-                                    auto it{input_cells_.find(nme)};
-                                    if(it != input_cells_.end()) { cellptr = it->second.get(); break; }
-                                }
-                                {
-                                    auto it{worker_cells_.find(nme)};
-                                    if(it != worker_cells_.end()) { cellptr = it->second.get(); break; }
-                                }
-#ifdef TEAL_USE_EXTERNAL_VALUES
-                                {
-                                    auto it{extern_cells_.find(nme)};
-                                    if(it != extern_cells_.end()) { cellptr = it->second.get(); break; }
-                                }
-#endif
-                            } while(false);
-                            if(cellptr != nullptr) {
-                                valbox vb{cellptr->value().deref()};
-                                resp["result"] = vb.serialize(this);
-                            } else {
-                                json resp{};
-                                resp["result"] = valbox{}.serialize(this);
-                            }
-                            ppserver_->send(conn_id, resp.bserialize());
+                            pp_subscribe(conn_id, nme, ali);
                         }
                     });
                 }
@@ -1896,26 +1873,16 @@ namespace teal {
                 std::unique_lock l{ppserver_mtp_};
                 ppserver_.reset();
             }
-#ifdef TEAL_USE_EXTERNAL_VALUES
-            std::unique_lock l1{cq_mtp_};
-            std::shared_lock l2{ext_cells_processor_mtp_};
-            if(!ext_cells_processor_enabled_) {
-                cq_.reset();
-            }
-#else
             std::unique_lock l{cq_mtp_};
-            cq_.reset();
+#ifdef TEAL_USE_EXTERNAL_VALUES
+            std::shared_lock l2{ext_cells_processor_mtp_};
 #endif
+            cq_.reset();
         }
 
         bool net_server_running() const override {
             std::shared_lock l{ppserver_mtp_};
             return ppserver_->started();
-        }
-
-#ifdef TEAL_USE_EXTERNAL_VALUES
-        void set_external_cells_nodelay(bool val) override {
-            ext_cells_nodelay_ = val;
         }
 
         void set_external_cells_update_interval(long double seconds) override {
@@ -1926,6 +1893,7 @@ namespace teal {
             return static_cast<long double>(ext_cells_refresh_interval_nanos_) / 1'000'000'000.0L;
         }
 
+#ifdef TEAL_USE_EXTERNAL_VALUES
         // TODO: implement this and the standalone distributed service
         void net_hub_connect(std::string const &/*host_addr*/, std::uint16_t /*port*/, std::string const &/*unique_net_name*/) override {
         }
@@ -2149,23 +2117,18 @@ namespace teal {
         containers_ext dict_ext_{};
 
         mutable shared_mutex obj_ser_mtp_{};
-        // struct obj_services {
-        //     std::function<std::optional<std::string>(valbox const &)> serializer{nullptr};
-        //     std::function<valbox(std::string const &, std::string const &)> deserializer{nullptr};
-        // };
         std::map<std::string, obj_services> obj_svc_{};
         friend class valbox;
-
 
         shared_mutex loaded_extensions_mtp_{};
         std::list<std::pair<std::shared_ptr<so>, extension_interface *>> loaded_extensions_{};
         static std::size_t constexpr version_major_{1};
-        static std::size_t constexpr version_minor_{4};
-        static std::size_t constexpr version_patch_{43};
+        static std::size_t constexpr version_minor_{5};
+        static std::size_t constexpr version_patch_{0};
 
-#ifdef TEAL_USE_EXTERNAL_VALUES
         mutable shared_mutex cq_mtp_{};
         std::unique_ptr<command_queue> cq_{};
+#ifdef TEAL_USE_EXTERNAL_VALUES
 
         std::string network_access_point_url_{};
         std::string network_name_{};
@@ -2176,8 +2139,6 @@ namespace teal {
         bool ext_cells_processor_enabled_{true};
         std::thread ext_cells_processor_{};
 
-        uint64_t ext_cells_refresh_interval_nanos_{5000000ULL};
-        bool ext_cells_nodelay_{false};
         mutable shared_mutex pp_clients_mtp_{};
         std::map<std::string, std::map<int, std::shared_ptr<pp_client_udp>>> pp_clients_{};
 
@@ -2190,7 +2151,7 @@ namespace teal {
                     try {
                         json resp{json::bdeserialize(rsp)};
                         auto act{resp["act"].as_string()};
-                        if(act == "get") {
+                        if(act == "pub") {
                             auto nme{resp["name"].as_string()};
                             auto it{extern_cells_.find(nme)};
                             if(it != extern_cells_.end()) {
@@ -2215,7 +2176,6 @@ namespace teal {
             return ext_cells_processor_started_.load(std::memory_order_acquire);
         }
 
-        sequence_generator<std::uint64_t> ext_id_gen_{0};
         void start_extcell_processing() {
             if(extcell_processing_started()) {
                 return;
@@ -2240,14 +2200,15 @@ namespace teal {
 
             ext_cells_processor_enabled_ = true;
             ext_cells_processor_ = std::thread{[this]() {
+                long double last_sub_time{0};
                 while(ext_cells_processor_enabled_) {
                     if(!extern_cells_.empty()) {
-                        {
+                        if(steady_time_sec() > last_sub_time + 5) {
+                            last_sub_time = steady_time_sec();
                             std::shared_lock l{extern_cells_mtp_};
                             for(auto cp: extern_cells_) {
                                 json requ{};
-                                requ["id"] = ext_id_gen_();
-                                requ["act"] = "get";
+                                requ["act"] = "sub";
                                 requ["name"] = cp.second->remote_var_name();
                                 requ["alias"] = cp.second->inst_name();
                                 if(auto con{get_connected_client(cp.second.get())}) {
@@ -2255,16 +2216,8 @@ namespace teal {
                                 }
                             }
                         }
-                        if(ext_cells_refresh_interval_nanos_ > 0) {
-                            static auto lt{steady_time_sec()};
-                            if(steady_time_sec() > lt + 1) {
-                                lt = steady_time_sec();
-                            }
-                            std::this_thread::sleep_for(std::chrono::nanoseconds{ext_cells_refresh_interval_nanos_});
-                        }
-                    } else {
-                        std::this_thread::sleep_for(std::chrono::milliseconds{100});
                     }
+                    std::this_thread::sleep_for(std::chrono::milliseconds{10});
                 }
                 ext_cells_processor_started_ = false;
             }};
@@ -2296,6 +2249,116 @@ namespace teal {
 
         mutable shared_mutex ppserver_mtp_{};
         std::unique_ptr<pp_server_udp> ppserver_{nullptr};
+        class net_value_subscriber {
+            struct name_attrs;
+
+        public:
+            void subscribe(std::string const &name, std::string const &alias) {
+                names_[name] = {alias, {}, 0}; actualize_input_activity();
+            }
+            void unsubscribe(std::string const &name) { names_.erase(name); actualize_input_activity(); }
+            void actualize_input_activity() { last_incoming_activity_time_ = steady_time_sec(); }
+            long double seconds_that_side_inactive() const {
+                return steady_time_sec() - last_incoming_activity_time_;
+            }
+            void actualize_send_val(std::string const &n, std::vector<std::uint8_t> const &v) {
+                names_[n].val = v;
+            }
+            void actualize_send_time(std::string const &n, long double t) {
+                names_[n].last_sent_timestamp_ = t;
+            }
+            std::vector<std::pair<std::string, name_attrs>> names() const {
+                return std::vector<std::pair<std::string, name_attrs>>{names_.begin(), names_.end()};
+            }
+
+        private:
+            long double last_incoming_activity_time_{steady_time_sec()};
+            struct name_attrs{ std::string alias; std::vector<std::uint8_t> val; long double last_sent_timestamp_; };
+            std::map<std::string, name_attrs> names_{};
+        };
+
+        std::shared_mutex net_subs_mtp_{};
+        std::map<conn_id_t, net_value_subscriber> net_subs_{};
+        uint64_t ext_cells_refresh_interval_nanos_{1000000ULL};
+
+        void pp_subscribe(conn_id_t conn_id, std::string const &name, std::string const &alias) {
+            std::unique_lock l{net_subs_mtp_};
+            net_subs_[conn_id].subscribe(name, alias);
+        }
+        void pp_unsubscribe(conn_id_t conn_id, std::string const &name) {
+            std::unique_lock l{net_subs_mtp_};
+            net_subs_[conn_id].unsubscribe(name);
+        }
+        void pp_remove(conn_id_t conn_id) {
+            std::unique_lock l{net_subs_mtp_};
+            net_subs_.erase(conn_id);
+        }
+
+        std::function<void()> pp_subs_functor_{[this]() {
+            {
+                std::unique_lock l{net_subs_mtp_};
+                for(auto it{net_subs_.begin()}; it != net_subs_.end(); ) {
+                    if(it->second.seconds_that_side_inactive() > 10) {
+                        it = net_subs_.erase(it);
+                        continue;
+                    }
+                    auto name_pairs{it->second.names()};
+                    for(auto &&np: name_pairs) {
+                        json resp{};
+                        cell_base *cellptr{nullptr};
+                        auto const &nme{np.first};
+                        auto &v{np.second};
+                        resp["act"] = "pub";
+                        resp["name"] = v.alias;
+                        std::vector<std::uint8_t> last_value{v.val};
+                        do {
+                            {
+                                auto it{input_cells_.find(nme)};
+                                if(it != input_cells_.end()) { cellptr = it->second.get(); break; }
+                            }
+                            {
+                                auto it{worker_cells_.find(nme)};
+                                if(it != worker_cells_.end()) { cellptr = it->second.get(); break; }
+                            }
+#ifdef TEAL_USE_EXTERNAL_VALUES
+                            {
+                                auto it{extern_cells_.find(nme)};
+                                if(it != extern_cells_.end()) { cellptr = it->second.get(); break; }
+                            }
+#endif
+                        } while(false);
+                        bool need_send{false};
+                        if(cellptr != nullptr) {
+                            valbox vb{cellptr->value().deref().clone()};
+                            json vbsr{vb.serialize(this)};
+                            std::vector<std::uint8_t> bs{vbsr.bserialize()};
+                            if(last_value != bs) {
+                                need_send = true;
+                                it->second.actualize_send_val(nme, bs);
+                                it->second.actualize_send_time(nme, steady_time_sec());
+                                resp["result"] = std::move(vbsr);
+                            }
+                        } else {
+                            if(steady_time_sec() > v.last_sent_timestamp_ + 3) {
+                                need_send = true;
+                                it->second.actualize_send_time(nme, steady_time_sec());
+                                resp["result"] = valbox{}.serialize(this);
+                            }
+                        }
+                        if(need_send) {
+                            ppserver_->send(it->first, resp.bserialize());
+                        }
+                    }
+                    ++it;
+                }
+            }
+            if(ext_cells_refresh_interval_nanos_ > 0) {
+                std::this_thread::sleep_for(std::chrono::nanoseconds{ext_cells_refresh_interval_nanos_});
+            }
+            if(!termination_requested()) {
+                cq_->enqueue_urgent(pp_subs_functor_);
+            }
+        }};
     };
 
 }

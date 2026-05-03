@@ -228,7 +228,7 @@ namespace teal::str_util {
             Invalid,
         };
 
-        inline static emhash8::HashMap<int, std::string_view> const html_names_{
+        inline static emhash_8::HashMap<int, std::string_view> const html_names_{
             {33, "&excl;"},
             {34, "&quot;"},
             {35, "&num;"},
@@ -530,7 +530,7 @@ namespace teal::str_util {
             bidi cp_bidi{bidi::Invalid};
         };
 
-        inline static emhash8::HashMap<int, uinfo, detail::num_cast_hash<int>> const ucdb_{
+        inline static emhash_8::HashMap<int, uinfo, detail::num_cast_hash<int>> const ucdb_{
             {0, {category::Control, bidi::Boundary_Neutral}},
             {1, {category::Control, bidi::Boundary_Neutral}},
             {2, {category::Control, bidi::Boundary_Neutral}},
@@ -35464,7 +35464,7 @@ namespace teal::str_util {
             {1114109, {category::Private_Use, bidi::Left_to_Right}},
         };
 
-        inline static emhash8::HashMap<int, int, detail::num_cast_hash<int>> const cap_to_small_{
+        inline static emhash_8::HashMap<int, int, detail::num_cast_hash<int>> const cap_to_small_{
             {65, 97}, {66, 98}, {67, 99}, {68, 100}, {69, 101}, {70, 102}, {71, 103}, {72, 104},
             {73, 105}, {74, 106}, {75, 107}, {76, 108}, {77, 109}, {78, 110}, {79, 111}, {80, 112},
             {81, 113}, {82, 114}, {83, 115}, {84, 116}, {85, 117}, {86, 118}, {87, 119}, {88, 120},
@@ -35647,7 +35647,7 @@ namespace teal::str_util {
             {125217, 125251}
         };
 
-        inline static emhash8::HashMap<int, int, detail::num_cast_hash<int>> const small_to_cap_{
+        inline static emhash_8::HashMap<int, int, detail::num_cast_hash<int>> const small_to_cap_{
             {97, 65}, {98, 66}, {99, 67}, {100, 68}, {101, 69}, {102, 70}, {103, 71}, {104, 72},
             {105, 73}, {106, 74}, {107, 75}, {108, 76}, {109, 77}, {110, 78}, {111, 79}, {112, 80},
             {113, 81}, {114, 82}, {115, 83}, {116, 84}, {117, 85}, {118, 86}, {119, 87}, {120, 88},

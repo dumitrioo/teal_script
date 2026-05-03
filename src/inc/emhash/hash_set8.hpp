@@ -67,7 +67,7 @@
     _etail = bucket; \
     _index[bucket] = {bucket, _num_filled++ | ((size_type)(key_hash) & ~_mask)}
 
-namespace emhash8 {
+namespace emhash_8 {
 
 struct DefaultPolicy8 {
     static constexpr float load_factor = 0.80f;
