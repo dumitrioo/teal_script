@@ -1020,22 +1020,28 @@ namespace teal {
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     this_->lval_->reset_primary();
-                    bool excepted{false};
-                    runtime_error er{{}, {}, {}};
-                    try {
-                        l += r;
-                    } catch (runtime_error const &e) {
-                        er = e;
-                        excepted = true;
-                    } catch (std::exception const &e) {
-                        er = runtime_error(this_->line_, this_->col_, e.what());
-                        excepted = true;
-                    } catch (...) {
-                        er = runtime_error(this_->line_, this_->col_, "unknown error");
-                        excepted = true;
-                    }
-                    if(excepted) {
-                        throw er;
+                    if(!r.is_undefined_ref()) {
+                        if(l.is_undefined_ref()) {
+                            l.assign(r);
+                        } else {
+                            bool excepted{false};
+                            runtime_error er{{}, {}, {}};
+                            try {
+                                l.assign_preserving_type(l + r);
+                            } catch (runtime_error const &e) {
+                                er = e;
+                                excepted = true;
+                            } catch (std::exception const &e) {
+                                er = runtime_error(this_->line_, this_->col_, e.what());
+                                excepted = true;
+                            } catch (...) {
+                                er = runtime_error(this_->line_, this_->col_, "unknown error");
+                                excepted = true;
+                            }
+                            if(excepted) {
+                                throw er;
+                            }
+                        }
                     }
                     return l;
                 },
@@ -1183,6 +1189,7 @@ namespace teal {
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     this_->lval_->reset_primary();
                     if(r.is_undefined_ref()) {
+                        l.assign_preserving_type(0);
                     } else {
                         if(l.is_undefined_ref()) {
                             l.become_same_type_as(r);

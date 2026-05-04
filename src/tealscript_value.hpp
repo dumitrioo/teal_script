@@ -2085,7 +2085,7 @@ namespace teal {
                     break;
                 case type::UNDEFINED:
                     if(thatt != type::UNDEFINED) {
-                        *this = thatref.clone();
+                        assign(thatref);
                     }
                     break;
                 case type::VALBOX:

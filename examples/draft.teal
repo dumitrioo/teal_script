@@ -36,7 +36,7 @@ function_test() {
     return 0;
 }
 
-function_test ftest();
+// function_test ftest();
 
 
 random_value() {
@@ -71,6 +71,11 @@ function k_update(ks, z) {
 my_drafts(host_data) {
     console.fixed();
     console.setprecision(0);
+
+    this.i += 3.1;
+    this.i.println();
+
+    return 0;
 
     arr = 3 + [12, undefined, '2', "122", 9090.9090, [],];
     arr.println();
