@@ -517,7 +517,7 @@ namespace teal {
             if(!box_) {
                 throw std::runtime_error{"not an object"};
             }
-            return any_cast<T const &>(std::get<any>(deref().box_->value_));
+            return any_cast<T &>(std::get<any>(deref().box_->value_));
         }
         bool is_class_ref() const { return val_or_pointed_type() == type::CLASS; }
         std::string class_name() const { return box_ ? deref().box_->class_ : std::string{}; }

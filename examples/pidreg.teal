@@ -1,0 +1,53 @@
+repeater(v) return v;
+
+// Configuration for host code
+repeater friction_force(0.5) 'friction_force';
+repeater cart_mass(1.) 'cart_mass';
+repeater pend_mass(.3) 'pend_mass';
+repeater start_force_impulse(0.6) 'start_force_impulse';
+
+// PID balancing
+balance_pid(angle, dt) {
+    if(this.p_error == undefined) {
+        this.p_error = 0.0;
+        this.i_error = 0.0;
+        this.kp = 100.0;
+        this.ki = 20.0;
+        this.kd = 20.0;
+    }
+    prev_cte = this.p_error;
+    this.p_error = angle;
+    this.i_error = (1.0 * dt) * this.i_error + angle;
+    d_error = (angle - prev_cte) / (1.0 * dt);
+    res = this.kp * this.p_error + this.ki * this.i_error + this.kd * d_error;
+    return res;
+}
+
+// Lazy centering
+center_pid(cart_pos, cart_vel) {
+    return 4.0 * sqrt(abs(cart_pos)) * sign(cart_pos) + 4.0 * sqrt(abs(cart_vel)) * sign(cart_vel);
+}
+
+// "Soft wall"
+soft_wall(cp) {
+    lim = 4.5;
+    return cp > lim ? -50.0 * (cp - lim) : cp < -lim ? -50.0 * (cp + lim) : 0.0;
+}
+
+mixer(balance_force, center_force, wall_force) {
+    out = balance_force + center_force + wall_force;
+    return out > 80.0 ? 80.0 : out < -80.0 ? -80.0 : out;
+}
+
+// ---------------------------------------------------------
+// The Graph
+// ---------------------------------------------------------
+// Inputs from host code
+'dt' dt;
+'ang' angle;
+'cart_pos' cart_pos;
+'cart_vel' cart_vel;
+balance_pid balancer(angle, dt);
+center_pid centerer(cart_pos, cart_vel);
+soft_wall wall(cart_pos);
+mixer motor_control(balancer, centerer, wall) 'motor_force';

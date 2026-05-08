@@ -173,6 +173,18 @@ namespace teal {
                     runtime_error er{{}, {}, {}};
                     try {
                         res = val->eval(ctx, eval_caller_type::no_matter, nullptr);
+                        if(res.is_class_ref()) {
+                            str_map_t<std::function<valbox(valbox const &)>> const *unops{
+                                &(ctx->rt_interface()->get_object_services(res.class_name())->unops)
+                            };
+                            if(unops != nullptr) {
+                                auto it{unops->find("+")};
+                                if(it != unops->end()) {
+                                    res = it->second(res);
+                                }
+                            }
+                        } else {
+                        }
                     } catch (runtime_error const &e) {
                         er = e;
                         excepted = true;
@@ -201,7 +213,20 @@ namespace teal {
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
                     try {
-                        res = -val->eval(ctx, eval_caller_type::no_matter, nullptr);
+                        res = val->eval(ctx, eval_caller_type::no_matter, nullptr);
+                        if(res.is_class_ref()) {
+                            str_map_t<std::function<valbox(valbox const &)>> const *unops{
+                                &(ctx->rt_interface()->get_object_services(res.class_name())->unops)
+                            };
+                            if(unops != nullptr) {
+                                auto it{unops->find("-")};
+                                if(it != unops->end()) {
+                                    res = it->second(res);
+                                }
+                            }
+                        } else {
+                            res = -res;
+                        }
                     } catch (runtime_error const &e) {
                         er = e;
                         excepted = true;
@@ -231,7 +256,20 @@ namespace teal {
                     expr_ptr &val{this_->val_};
                     bool old{ctx->set_create_if_not_exists(false)};
                     teal::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
-                    valbox res{!val->eval(ctx, eval_caller_type::no_matter, nullptr).cast_to_bool()};
+                    valbox res{val->eval(ctx, eval_caller_type::no_matter, nullptr)};
+                    if(res.is_class_ref()) {
+                        str_map_t<std::function<valbox(valbox const &)>> const *unops{
+                            &(ctx->rt_interface()->get_object_services(res.class_name())->unops)
+                        };
+                        if(unops != nullptr) {
+                            auto it{unops->find("!")};
+                            if(it != unops->end()) {
+                                res = it->second(res);
+                            }
+                        }
+                    } else {
+                        res = !res.cast_to_bool();
+                    }
                     if(val->primary()) {
                         std::unique_lock l{this_->primary_val_mtp_};
                         this_->primary_val_ = res; this_->primary_ = true;
@@ -263,8 +301,23 @@ namespace teal {
                     bool old{ctx->set_create_if_not_exists(true)};
                     teal::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
                     runtime_error er{{}, {}, {}};
+                    valbox res{valbox_no_initialize::dont_do_it};
                     try {
-                        return ++this_->val_->eval(ctx, eval_caller_type::no_matter, nullptr);
+                        res = this_->val_->eval(ctx, eval_caller_type::no_matter, nullptr);
+                        if(res.is_class_ref()) {
+                            str_map_t<std::function<valbox(valbox const &)>> const *unops{
+                                &(ctx->rt_interface()->get_object_services(res.class_name())->unops)
+                            };
+                            if(unops != nullptr) {
+                                auto it{unops->find("prefix++")};
+                                if(it != unops->end()) {
+                                    res = it->second(res);
+                                }
+                            }
+                        } else {
+                            ++res;
+                        }
+                        return res;
                     } catch (runtime_error const &e) {
                         er = e;
                     } catch (std::exception const &e) {
@@ -279,8 +332,23 @@ namespace teal {
                     bool old{ctx->set_create_if_not_exists(true)};
                     teal::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
                     runtime_error er{{}, {}, {}};
+                    valbox res{valbox_no_initialize::dont_do_it};
                     try {
-                        return --this_->val_->eval(ctx, eval_caller_type::no_matter, nullptr);
+                        res = this_->val_->eval(ctx, eval_caller_type::no_matter, nullptr);
+                        if(res.is_class_ref()) {
+                            str_map_t<std::function<valbox(valbox const &)>> const *unops{
+                                &(ctx->rt_interface()->get_object_services(res.class_name())->unops)
+                            };
+                            if(unops != nullptr) {
+                                auto it{unops->find("prefix--")};
+                                if(it != unops->end()) {
+                                    res = it->second(res);
+                                }
+                            }
+                        } else {
+                            --res;
+                        }
+                        return res;
                     } catch (runtime_error const &e) {
                         er = e;
                     } catch (std::exception const &e) {
@@ -289,6 +357,7 @@ namespace teal {
                         er = runtime_error{this_->line_, this_->col_, "unknown error"};
                     }
                     throw er;
+                    return res;
                 },
                 /* LSHIFT */ nullptr,
                 /* RSHIFT */ nullptr,
@@ -305,7 +374,22 @@ namespace teal {
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
                     try {
-                        res = ~val->eval(ctx, eval_caller_type::no_matter, nullptr);
+                        // res = ~val->eval(ctx, eval_caller_type::no_matter, nullptr);
+                        res = this_->val_->eval(ctx, eval_caller_type::no_matter, nullptr);
+                        if(res.is_class_ref()) {
+                            str_map_t<std::function<valbox(valbox const &)>> const *unops{
+                                &(ctx->rt_interface()->get_object_services(res.class_name())->unops)
+                            };
+                            if(unops != nullptr) {
+                                auto it{unops->find("~")};
+                                if(it != unops->end()) {
+                                    res = it->second(res);
+                                }
+                            }
+                        } else {
+                            res = ~res;
+                        }
+                        return res;
                     } catch (runtime_error const &e) {
                         er = e;
                         excepted = true;
@@ -414,12 +498,40 @@ namespace teal {
                 case token::type::INCREMENT: {
                     bool old{ctx->set_create_if_not_exists(true)};
                     teal::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
-                    return val_->eval(ctx, eval_caller_type::no_matter, nullptr)++;
+                    valbox res{val_->eval(ctx, eval_caller_type::no_matter, nullptr)};
+                    if(res.is_class_ref()) {
+                        str_map_t<std::function<valbox(valbox const &)>> const *unops{
+                            &(ctx->rt_interface()->get_object_services(res.class_name())->unops)
+                        };
+                        if(unops != nullptr) {
+                            auto it{unops->find("postfix++")};
+                            if(it != unops->end()) {
+                                res = it->second(res);
+                            }
+                        }
+                    } else {
+                        res = res++;
+                    }
+                    return res;
                 }
                 case token::type::DECREMENT: {
                     bool old{ctx->set_create_if_not_exists(true)};
                     teal::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
-                    return val_->eval(ctx, eval_caller_type::no_matter, nullptr)--;
+                    valbox res{val_->eval(ctx, eval_caller_type::no_matter, nullptr)};
+                    if(res.is_class_ref()) {
+                        str_map_t<std::function<valbox(valbox const &)>> const *unops{
+                            &(ctx->rt_interface()->get_object_services(res.class_name())->unops)
+                        };
+                        if(unops != nullptr) {
+                            auto it{unops->find("postfix--")};
+                            if(it != unops->end()) {
+                                res = it->second(res);
+                            }
+                        }
+                    } else {
+                        res = res--;
+                    }
+                    return res;
                 }
                 default:
                     throw runtime_error{val_->line(), val_->col(), "unsupported operation"};
@@ -587,7 +699,20 @@ namespace teal {
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
                     try {
-                        res = l + r;
+                        str_map_t<std::function<valbox(valbox const &, valbox const &)>> const *binops{nullptr};
+                        if(l.is_class_ref()) {
+                            binops = &(ctx->rt_interface()->get_object_services(l.class_name())->binops);
+                        } else if(r.is_class_ref()) {
+                            binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
+                        }
+                        if(binops != nullptr) {
+                            auto it{binops->find("+")};
+                            if(it != binops->end()) {
+                                res = it->second(l, r);
+                            }
+                        } else {
+                            res = l + r;
+                        }
                     } catch (runtime_error const &e) {
                         er = e;
                         excepted = true;
@@ -613,7 +738,20 @@ namespace teal {
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
                     try {
-                        res = l - r;
+                        str_map_t<std::function<valbox(valbox const &, valbox const &)>> const *binops{nullptr};
+                        if(l.is_class_ref()) {
+                            binops = &(ctx->rt_interface()->get_object_services(l.class_name())->binops);
+                        } else if(r.is_class_ref()) {
+                            binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
+                        }
+                        if(binops != nullptr) {
+                            auto it{binops->find("-")};
+                            if(it != binops->end()) {
+                                res = it->second(l, r);
+                            }
+                        } else {
+                            res = l - r;
+                        }
                     } catch (runtime_error const &e) {
                         er = e;
                         excepted = true;
@@ -639,7 +777,20 @@ namespace teal {
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
                     try {
-                        res = l * r;
+                        str_map_t<std::function<valbox(valbox const &, valbox const &)>> const *binops{nullptr};
+                        if(l.is_class_ref()) {
+                            binops = &(ctx->rt_interface()->get_object_services(l.class_name())->binops);
+                        } else if(r.is_class_ref()) {
+                            binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
+                        }
+                        if(binops != nullptr) {
+                            auto it{binops->find("*")};
+                            if(it != binops->end()) {
+                                res = it->second(l, r);
+                            }
+                        } else {
+                            res = l * r;
+                        }
                     } catch (runtime_error const &e) {
                         er = e;
                         excepted = true;
@@ -665,7 +816,20 @@ namespace teal {
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
                     try {
-                        res = l / r;
+                        str_map_t<std::function<valbox(valbox const &, valbox const &)>> const *binops{nullptr};
+                        if(l.is_class_ref()) {
+                            binops = &(ctx->rt_interface()->get_object_services(l.class_name())->binops);
+                        } else if(r.is_class_ref()) {
+                            binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
+                        }
+                        if(binops != nullptr) {
+                            auto it{binops->find("/")};
+                            if(it != binops->end()) {
+                                res = it->second(l, r);
+                            }
+                        } else {
+                            res = l / r;
+                        }
                     } catch (runtime_error const &e) {
                         er = e;
                         excepted = true;
@@ -1595,7 +1759,18 @@ namespace teal {
                         if(l.is_class_ref()) {
                             res = ctx->find_method(l.ref_class_name(), this_->rval_->symbol(),
                                                    this_->rval_->line(), this_->rval_->col());
-                            this_->sym_ = this_->rval_->symbol();
+                            if(res.is_undefined_ref()) {
+                                valbox found_fn{};
+                                execution_context::obj_type objtyp{execution_context::obj_type::unknown};
+                                if(ctx->find_func(this_->rval_->symbol(), found_fn, objtyp)) {
+                                    res = found_fn;
+                                    this_->sym_ = this_->rval_->symbol();
+                                } else {
+                                    res = valbox{valbox_no_initialize::dont_do_it};
+                                }
+                            } else {
+                                this_->sym_ = this_->rval_->symbol();
+                            }
                         } else {
                             if(caller_type == eval_caller_type::func_call) {
                                 bool func_found{false};

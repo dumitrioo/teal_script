@@ -360,8 +360,9 @@ namespace teal {
                     return m_it->second;
                 }
             }
-            std::string em{"method "}; em += class_name; em += "."; em += method_name; em += "() not found";
-            throw teal_function_not_found{l, c, em};
+            // std::string em{"method "}; em += class_name; em += "."; em += method_name; em += "() not found";
+            // throw teal_function_not_found{l, c, em};
+            return valbox{valbox_no_initialize::dont_do_it};
         }
 
         void set_input(std::string const &name, valbox const &val) {

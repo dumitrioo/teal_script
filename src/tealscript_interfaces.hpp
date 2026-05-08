@@ -14,6 +14,8 @@ namespace teal {
         std::function<valbox(std::string const &, std::string const &)> deserializer{nullptr};
         std::function<valbox(valbox const &, valbox const &)> comparator{nullptr};
         std::function<valbox(valbox const &)> stringify{nullptr};
+        str_map_t<std::function<valbox(valbox const &, valbox const &)>> binops{};
+        str_map_t<std::function<valbox(valbox const &)>> unops{};
     };
 
     class runtime_interface {
@@ -49,6 +51,14 @@ namespace teal {
         virtual void add_object_stringifier(
             std::string const &,
             std::function<valbox(valbox const &)> const &
+        ) = 0;
+        virtual void add_object_unary_operation(
+            std::string const &, std::string const &,
+            std::function<valbox(valbox const &)> const &
+        ) = 0;
+        virtual void add_object_binary_operation(
+            std::string const &, std::string const &,
+            std::function<valbox(valbox const &, valbox const &)> const &
         ) = 0;
         virtual void remove_object_services(std::string const &) = 0;
         virtual obj_services const *get_object_services(std::string const &) const = 0;

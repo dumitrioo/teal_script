@@ -67,15 +67,52 @@ function k_update(ks, z) {
     ks.P = (1.0 - K * ks.H) * ks.P;
 }
 
-
 my_drafts(host_data) {
     console.fixed();
     console.setprecision(0);
 
-    this.i += 3.1;
-    this.i.println();
+    m = identity_matrix(4);
+    println(m);
+    m.at(0) = 10;
+    println(m);
 
-    return 0;
+    v = matrix(4, 1,
+       [1,
+        2,
+        3,
+        4]
+    );
+    mr = m * v;
+    println(m);
+    println(v);
+    println(mr);
+
+    mr.at(2) = 2124;
+    println(mr);
+
+    println("--------------------");
+    t = matrix(4, 4,
+        [
+            1, 2, 3, 4,
+            5, 6, 7, 8,
+            9,10,11,12,
+           13,14,15,16,
+        ]
+    );
+    println(t);
+    t.transposed().println();
+    println(t);
+    t.inversed().println();
+    println(t);
+
+    u = t - m;
+    println(u);
+    u.inverse();
+    println(u);
+    u.inverse();
+    println(u);
+
+    return exit();
 
     arr = 3 + [12, undefined, '2', "122", 9090.9090, [],];
     arr.println();

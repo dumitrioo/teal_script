@@ -1,0 +1,1 @@
+./bin/pendulum ./examples/pidreg.teal

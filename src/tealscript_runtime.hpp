@@ -27,6 +27,7 @@
 
 #include "ext/array_buffer_ext.hpp"
 #include "ext/containers_ext.hpp"
+#include "ext/eigen_ext.hpp"
 #include "ext/file_ext.hpp"
 #include "ext/crypto_ext.hpp"
 #include "ext/cpu_ext.hpp"
@@ -215,6 +216,7 @@ namespace teal {
             });
 
             array_buffer_ext_.register_runtime(this);
+            eigen_ext_.register_runtime(this);
             math_ext_.register_runtime(this);
             time_ext_.register_runtime(this);
             crypt_.register_runtime(this);
@@ -1189,6 +1191,7 @@ namespace teal {
             crypt_.unregister_runtime();
             fpool_.unregister_runtime();
             perf_stat_.unregister_runtime();
+            eigen_ext_.unregister_runtime();
             randlib_.unregister_runtime();
             time_ext_.unregister_runtime();
             math_ext_.unregister_runtime();
@@ -1346,6 +1349,21 @@ namespace teal {
             obj_svc_[class_name].stringify = fun;
         }
 
+        void add_object_unary_operation(
+            std::string const &class_name, std::string const &op_code,
+            std::function<valbox(valbox const &)> const &fun
+        ) override {
+            std::unique_lock l{obj_ser_mtp_};
+            obj_svc_[class_name].unops[op_code] = fun;
+        }
+
+        void add_object_binary_operation(
+            std::string const &class_name, std::string const &op_code,
+            std::function<valbox(valbox const &, valbox const &)> const &fun
+        ) override {
+            std::unique_lock l{obj_ser_mtp_};
+            obj_svc_[class_name].binops[op_code] = fun;
+        }
 
         obj_services def_obj_svc_{
             [](valbox const &) -> std::optional<std::string> { return std::optional<std::string>{}; },
@@ -2115,6 +2133,7 @@ namespace teal {
         array_buffer_ext array_buffer_ext_{};
         socket_ext sockext_{};
         containers_ext dict_ext_{};
+        eigen_ext eigen_ext_{};
 
         mutable shared_mutex obj_ser_mtp_{};
         std::map<std::string, obj_services> obj_svc_{};

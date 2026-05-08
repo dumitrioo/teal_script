@@ -337,7 +337,8 @@ namespace teal {
                 throw bad_serial_cast{"Invalid content for being a number"};
             }
 
-            long double as_fpnum() const {
+            template<typename T>
+            T as_fpnum() const {
                 std::uint64_t s{size()};
                 if(s == sizeof(float)) {
                     return *reinterpret_cast<float const *>(data());

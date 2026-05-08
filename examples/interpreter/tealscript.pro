@@ -6,7 +6,7 @@ CONFIG   -= app_bundle
 TEMPLATE = app
 
 # DEFINES += TEAL_SINGLE_THREADED
-# DEFINES += TEAL_DEBUGGING
+DEFINES += TEAL_DEBUGGING
 
 DEFINES += TEAL_USE_EXTERNAL_VALUES
 DEFINES += STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
@@ -18,6 +18,7 @@ SOURCES += main.cpp
 HEADERS += \
     ../../src/ext/array_buffer_ext.hpp \
     ../../src/ext/containers_ext.hpp \
+    ../../src/ext/eigen_ext.hpp \
     ../../src/ext/socket_ext.hpp \
     ../../src/inc/base16.hpp \
     ../../src/inc/base64.hpp \
@@ -105,7 +106,6 @@ QMAKE_CFLAGS_RELEASE -= -O2
 QMAKE_CFLAGS_RELEASE += -O3
 
 LIBS += -lpthread -ldl
-# LIBS += -lmagic
 
 DISTFILES += \
     ../../README.md \
