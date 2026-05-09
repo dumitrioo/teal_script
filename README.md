@@ -29,60 +29,63 @@ You get a problem-specific tool to handle complex control schemes for multiple a
 A logical schema written in TealScript manages physical actuators in parallel by analyzing signals from input devices:
 
 ``` TealScript
-// Node 1: Smooth balancer
-balance_pid(angle, ang_vel) {
-    // 1. Low-Pass Filter
-    this.smooth_vel = 0.85 * this.smooth_vel + 0.15 * ang_vel;
-
-    // 2. Accelerator lower, brakes on
-    p_term = 25.0 * angle;
-    d_term = -35.0 * this.smooth_vel;
-
-    // 3. Rid of integral
-    out = p_term + d_term;
-
-    return out;
-}
-
-// Node 2: Lazy centering
-center_pid(cart_pos, cart_vel) {
-    return -0.5 * cart_pos - 1.0 * cart_vel;
-}
-
-// Node 3: "Soft wall"
-soft_wall(cart_pos) {
-    wall_force = 0.0;
-    limit = 4.5;
-
-    if (cart_pos > limit) {
-        wall_force = -150.0 * (cart_pos - limit);
-    } else if (cart_pos < -limit) {
-        wall_force = -150.0 * (cart_pos + limit);
+// PID balancing
+balance_pid(angle, dt) {
+    if(this.p_error == undefined) {
+        this.p_error = 0.0;
+        this.i_error = 0.0;
     }
-
-    return wall_force;
+    kp = 60.0;
+    ki = 20.0;
+    kd = 20.0;
+    prev_ang = this.p_error;
+    this.p_error = angle;
+    this.i_error = dt * this.i_error + angle;
+    d_error = (angle - prev_ang) / dt;
+    res = kp * this.p_error + ki * this.i_error + kd * d_error;
+    return res;
 }
 
-// Node 4
+// Lazy centering
+center_pid(cart_pos, cart_vel) {
+    return abs(cart_pos) < 2
+        ?
+            4.0 * sqrt(abs(cart_pos)) * sign(cart_pos) + 
+            4.0 * sqrt(abs(cart_vel)) * sign(cart_vel)
+        :
+            2.0 * sign(cart_pos) + 2.0 * sign(cart_vel);
+}
+
+// "Soft wall"
+soft_wall(cp) {
+    return abs(cp) > 4.5 ? sign(cp) * 8.0 : 0.0;
+}
+
 mixer(balance_force, center_force, wall_force) {
     out = balance_force + center_force + wall_force;
-    if (out > 80.0) out = 80.0;
-    if (out < -80.0) out = -80.0;
-    return out;
+    return out > 80.0 ? 80.0 : out < -80.0 ? -80.0 : out;
 }
 
 // ---------------------------------------------------------
 // The Graph
 // ---------------------------------------------------------
-'sensor_angle' sensor_angle;
-'sensor_vel' sensor_vel;
-'cart_position' cart_position;
-'cart_velocity' cart_velocity;
-balance_pid balancer(sensor_angle, sensor_vel);
-center_pid centerer(cart_position, cart_velocity);
-soft_wall wall(cart_position);
+
+// Inputs from host code
+'dt' dt;
+'ang' angle;
+'cart_pos' cart_pos;
+'cart_vel' cart_vel;
+
+// Compute nodes
+balance_pid balancer(angle, dt);
+center_pid centerer(cart_pos, cart_vel);
+soft_wall wall(cart_pos);
 mixer motor_control(balancer, centerer, wall) 'motor_force';
 ```
+
+[![Watch the video](https://github.com/dumitrioo/tealscript/blob/main/resources/pid_demo.png)](https://github.com/dumitrioo/tealscript/blob/main/resources/pid_demo.mp4)
+
+[Example application](examples/pendulum/main.cpp)
 
 ## Application & Use Cases
 
