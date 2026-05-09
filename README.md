@@ -21,14 +21,14 @@ You get a problem-specific tool to handle complex control schemes for multiple a
  * Network-Agnostic Distributed Graphs: Seamlessly link variables across different hosts using extern URIs. Built on a custom UDP multiplexing protocol (MTU-safe 1400 bytes) that eliminates Head-of-Line blocking without the overhead of TCP or heavy brokers like MQTT.
  * True Multi-Threading: Execute graph schemas in parallel across available CPU cores. The interpreter safely handles node execution without requiring the user to manage C++ threads or locks.
  * Zero Dependencies & Portable: Implemented as a custom execution tree interpreter (no LLVM/external lexers). It compiles into any C++20 codebase via CMake and is completely hardware-agnostic.
- * Turing Complete & Extensible: Handle general-purpose tasks, math (vec4, mat4), JSON, and custom C++ types. Easily inject host functions into the scripting runtime.
+ * Turing Complete & Extensible: Handle general-purpose tasks, math (functions, matrices), JSON, and custom host-provided types. Easily inject host functions into the scripting runtime.
 
 
 ## Quick Example
 
 A logical schema written in TealScript manages physical actuators in parallel by analyzing signals from input devices:
 
-``` TealScript
+```TealScript
 // PID balancing
 balance_pid(angle, dt) {
     if(this.p_error == undefined) {
@@ -48,12 +48,8 @@ balance_pid(angle, dt) {
 
 // Lazy centering
 center_pid(cart_pos, cart_vel) {
-    return abs(cart_pos) < 2
-        ?
-            4.0 * sqrt(abs(cart_pos)) * sign(cart_pos) + 
-            4.0 * sqrt(abs(cart_vel)) * sign(cart_vel)
-        :
-            2.0 * sign(cart_pos) + 2.0 * sign(cart_vel);
+    return 4.0 * sqrt(abs(cart_pos)) * sign(cart_pos) + 
+           4.0 * sqrt(abs(cart_vel)) * sign(cart_vel);
 }
 
 // "Soft wall"
@@ -62,8 +58,7 @@ soft_wall(cp) {
 }
 
 mixer(balance_force, center_force, wall_force) {
-    out = balance_force + center_force + wall_force;
-    return out > 80.0 ? 80.0 : out < -80.0 ? -80.0 : out;
+    return balance_force + center_force + wall_force;
 }
 
 // ---------------------------------------------------------
