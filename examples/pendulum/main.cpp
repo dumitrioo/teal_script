@@ -163,10 +163,14 @@ int main(int argc, char **argv) {
                 }
                 // Force vector (Arrow)
                 Vector3 forceStart = { cPos.x, cPos.y, cPos.z + 0.5f };
-                Vector3 forceEnd = { cPos.x + (float)force, cPos.y, cPos.z + 0.5f };
+                float arrow_x_end{
+                    cPos.x +
+                    std::abs(force) < 1 ? (float)force : (float)teal::math::sign(force) * std::log((float)std::abs(force))
+                };
+                Vector3 forceEnd = {arrow_x_end, cPos.y, cPos.z + 0.5f};
                 DrawCylinderEx(forceStart, forceEnd, 0.02, 0.02, 10, MAROON);
                 Vector3 arrowEnd{forceEnd};
-                arrowEnd.x += teal::math::sign(force) * 0.2;
+                arrowEnd.x += teal::math::sign(forceEnd.x - forceStart.x) * 0.2;
                 DrawCylinderEx(forceEnd, arrowEnd, 0.05, 0.0, 10, MAROON);
                 // Soft walls
                 DrawCube((Vector3){4.5f, 0.5f, 0.0f}, 0.1f, 1.0f, 1.0f, Fade(VIOLET, 0.3f));

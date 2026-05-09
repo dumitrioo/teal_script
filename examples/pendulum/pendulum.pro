@@ -9,6 +9,8 @@ QMAKE_CXXFLAGS += -std=c++20 -march=native
 QMAKE_CXXFLAGS_RELEASE -= -O2
 QMAKE_CXXFLAGS_RELEASE += -O3
 
+DEFINES += TEALSCRIPT_NO_EIGEN
+
 LIBS += -lraylib
 
 INCLUDEPATH += ../../src \

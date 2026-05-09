@@ -1,7 +1,7 @@
 pass(v) return v;
 
 // Configuration for host code
-pass friction_force(10.5) 'friction_force';
+pass friction_force(.5) 'friction_force';
 pass cart_mass(1.0) 'cart_mass';
 pass pend_mass(0.3) 'pend_mass';
 pass start_force_impulse(0.5) 'start_force_impulse';
