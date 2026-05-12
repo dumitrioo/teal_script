@@ -126,7 +126,7 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    teal::runtime teal_rt{};
+    teal::runtime rt{};
 
     // load script file
     rt.load_file(argv[1]);
