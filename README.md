@@ -17,6 +17,7 @@ You get a problem-specific tool to handle complex control schemes for multiple a
 
 ## Key Features
  * C-like sytax, most of C math functions provided.
+ * Very thoughtful, maximally intuitive syntax in order to provide a full range of capabilities while maintaining conciseness and readability of the program.
  * True Multi-Threading: Execute graph schemas in parallel across available CPU cores. The interpreter safely handles node execution without requiring the user to manage C++ threads or locks.
  * Zero Dependencies & Portable: Implemented as a custom execution tree interpreter (no LLVM/external lexers). It compiles into any C++20 codebase via CMake and is completely hardware-agnostic.
  * Turing Complete & Extensible: Handle general-purpose tasks, math (functions, matrices), JSON, and custom host-provided types. Easily inject host functions into the scripting runtime.
