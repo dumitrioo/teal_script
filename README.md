@@ -101,9 +101,9 @@ TealScript excels at "sense → compute → act" pipelines:
 The usage of library is as simple as following:
 
 1. Include [tealscript_runtime.hpp](src/tealscript_runtime.hpp) header file
-2. Instantiate the TealScript runtime object.
-3. Load source code and register C++ extensions (functions, variables, custom types).
-4. Execute in single/multi-threaded mode.
+2. Instantiate the TealScript runtime object and load scripting sources (from strings or files) into the runtime.
+3. Optionally, add your custom C++ functions, variables, types (if any) into the runtime instance.
+4. Execute runtime in single/multi-threaded mode exchanging data.
 
 
 ```C++
@@ -116,12 +116,12 @@ int main(int argc, char **argv) {
         return 0;
     }
 
+    // tealscript runtime instance 
     teal::runtime rt{};
 
-    // load script file
+    // loading script file passed from command line
     rt.load_file(argv[1]);
     rt.loading_complete();
-    rt.run_cycle();
     
     ...
     ...
@@ -151,8 +151,6 @@ int main(int argc, char **argv) {
 }
 ```
 
-
-
 To build the examples (on Linux): 
 ``` bash 
 mkdir build && cd build
@@ -160,7 +158,7 @@ cmake ..
 make
 ```
 
-Or you can just use shell script
+Or use a provided shell script
 
 ``` bash 
 git clone https://github.com/dumitrioo/tealscript.git
