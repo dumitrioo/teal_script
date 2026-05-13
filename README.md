@@ -1,16 +1,6 @@
 # TealScript
 
-TealScript is a lightweight, distributed, and deterministic control logic engine - free from heavy message brokers (ROS/MQTT) and garbage collection overhead, with native C++ integration.
-
-It is an embedded scripting language designed to seamlessly wire physical and virtual devices into a unified control system. The language enforces strict, declarative rules for building schemas, making complex logic highly readable and maintainable. Combined with seamless C++ host extensibility, the result is a deterministic, cohesive hardware-software ecosystem driven entirely by data-flow graphs.
-
-
-
-
-
-TealScript is an embedded lightweight, distributed scripting language control logic engine - free from heavy message brokers (ROS/MQTT) and garbage collection overhead, with native C++ integration, designed to seamlessly wire physical and virtual devices into a unified control system. The language enforces strict, declarative rules for building schemas, making complex logic highly readable and maintainable. Combined with seamless C++ host extensibility, the result is a deterministic, cohesive hardware-software ecosystem driven entirely by data-flow graphs.
-
-
+TealScript is an embedded scripting engine. Lightweight, easy to integrate, intended to create control logic. Distributed, but free from heavy message brokers (ROS/MQTT). Free from garbage collection overhead, with native C++ integration, designed to seamlessly wire physical and virtual devices into a unified control system. The language in data-flow graph paradigm enforces clear declarative rules for building schemas, making complex logic highly readable and maintainable. Combined with seamless C++ host extensibility, the result is a deterministic, cohesive hardware-software ecosystem driven entirely by data-flow graphs.
 
 
 ## Stateful Data-Flow
