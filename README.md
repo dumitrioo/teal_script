@@ -157,7 +157,7 @@ int main(int argc, char **argv) {
 
 How would you implement a given logic circuit in a regular programming language?
 
-[Logic cirquit for 74181](examples/alu74181.png)
+![Logic cirquit for 74181](examples/alu74181.png)
 
 I won’t bother you with waiting and will immediately provide the implementation in TealScript.
 
