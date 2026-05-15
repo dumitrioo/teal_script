@@ -284,7 +284,7 @@ namespace teal {
                     if(v.class_name() == "matrix") {
                         auto m{v.as_class<Eigen::MatrixXd>()};
                         std::stringstream ss{};
-                        ss << "eigen_mat{";
+                        ss << "matrix{";
                         for(int r{}; r < v.as_class<Eigen::MatrixXd>().rows(); ++r) {
                             ss << "{";
                             for(int c{}; c < v.as_class<Eigen::MatrixXd>().cols(); ++c) {
