@@ -155,7 +155,7 @@ int main(int argc, char **argv) {
 
 ## Another Example
 
-How would you implement a given logic circuit in a regular programming language?
+How would you implement the following logic circuit in a regular programming language?
 
 ![Logic cirquit for 74181](examples/alu74181.png)
 
