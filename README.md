@@ -94,7 +94,7 @@ How would you implement the following logic circuit in a regular programming lan
 
 ![Logic cirquit for 74181](examples/alu74181.png)
 
-And while you are thinking, I will offer you a ([solution](examples/alu74181.teal)) in a TealScript programming language.
+And while you are thinking, I will offer you a [solution](examples/alu74181.teal) in a TealScript programming language.
 
 ```TealScript
 // ---------------------------------------------------------
