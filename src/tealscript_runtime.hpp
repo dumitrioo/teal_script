@@ -1143,8 +1143,8 @@ namespace teal {
                 return !net_server_running();
             });
 
-            add_function("extern_update_nanointerval", TEALFUN(args) {
-                return ext_cells_refresh_interval_nanos_;
+            add_function("extern_update_seconds", TEALFUN(args) {
+                return ext_cells_refresh_interval_nanos_ / 1'000'000'000.0L;
             });
 
             add_function("set_extern_update_seconds", TEALFUN(args) {
