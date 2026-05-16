@@ -1,11 +1,11 @@
 # TealScript
 
-TealScript is an embedded scripting engine. Lightweight, easy to integrate, intended to create control logic. Distributed, but free from heavy message brokers (ROS/MQTT). Free from garbage collection overhead, with native C++ integration, designed to seamlessly wire physical and virtual devices into a unified control system. The language in data-flow graph paradigm enforces clear declarative rules for building schemas, making complex logic highly readable and maintainable. Combined with seamless C++ host extensibility, the result is a deterministic, cohesive hardware-software ecosystem driven entirely by data-flow graphs.
+TealScript is an embedded scripting engine. Lightweight, easy to integrate, intended to create control logic. Distributed, but free from heavy message brokers (ROS/MQTT). Free from garbage collection overhead, with native C++ integration, designed to seamlessly wire physical and virtual devices into a unified control system. The language in data-flow graph paradigm enforces clear declarative rules for building schemas, making complex logic highly readable and maintainable. Combined with seamless C++ host extensibility, the result is a cohesive hardware-software ecosystem driven entirely by data-flow graphs.
 
 
-## Stateful Data-Flow
+## Data-Flow Graph
 
-While based on the discrete-time, clocked data-flow paradigm (similar to Unreal Engine Blueprints), TealScript departs from strict functional purity. Each compute node is an instance of an object that syntactically resembles a function, but can retain state between execution cycles via instance variables accessible through the this keyword. This makes writing complex state machines or PID controllers as easy as writing simple functions.
+While based on the data-centric discrete-time, clocked data-flow static declarative stream functional programming paradigm, TealScript departs from strict functional purity. Each compute node is an instance of an object that syntactically resembles a function, but can retain state between execution cycles via instance variables accessible through the this keyword. This makes writing complex state machines or PID controllers as easy as writing simple functions.
 
 
 ## Why TealScript?
@@ -17,7 +17,7 @@ You get a problem-specific tool to handle complex control schemes for multiple a
 
 ## Key Features
  * Intuitive C-like sytax, conciseness and readability of the program, most of C math functions provided.
-  * Turing Complete & Extensible: Handle general-purpose tasks, math (functions, matrices), JSON, and custom host-provided types. Easily inject host functions into the scripting runtime. Simple integration, well defined rules of host-script interaction.
+  * Turing Complete & Extensible: Handle general-purpose tasks, system interaction, math (functions, matrices), JSON, and custom host-provided types. Easily inject host functions into the scripting runtime. Simple integration, well defined rules of host-script interaction.
  * Partially Stateful: DFG computation nodes are able to store a state between execution cycles which gives the ability to perform imperative work inside the node while the overall structure of the program is static declarative.
  * Uniform Function Call Syntax (UFCS), where __func(obj, arg)__ call is fully equivalent of __obj.func(arg)__.
  * True Multi-Threading: Execute graph schemas in parallel across available CPU cores. The interpreter safely handles node execution without requiring the user to manage C++ threads or locks.
