@@ -5,7 +5,7 @@ TealScript is an embedded scripting engine. Lightweight, easy to integrate, inte
 
 ## Data-Flow Graph
 
-While based on the data-centric discrete-time, clocked data-flow static declarative stream functional programming paradigm, TealScript departs from strict functional purity. Each compute node is an instance of an object that syntactically resembles a function, but can retain state between execution cycles via instance variables accessible through the this keyword. This makes writing complex state machines or PID controllers as easy as writing simple functions.
+While based on the data-centric discrete-time, clocked data-flow static declarative stream functional programming paradigm, TealScript departs from strict functional purity. Each compute node is an instance of an object that syntactically resembles a function, but can retain state between execution cycles via instance variables accessible through the "this" keyword. This makes writing complex state machines or PID controllers as easy as writing simple functions.
 
 
 ## Why TealScript?
