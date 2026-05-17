@@ -2150,13 +2150,13 @@ namespace teal {
         std::atomic<bool> ext_cells_processor_needed_{false};
         std::atomic<bool> ext_cells_processor_started_{false};
         bool ext_cells_processor_enabled_{true};
+        long double last_sub_time_{0};
         std::function<void()> ext_cells_processor_{[this]() {
-            long double last_sub_time{0};
             if(!termination_requested() && ext_cells_processor_enabled_) {
                 ext_cells_processor_started_ = true;
                 if(!extern_cells_.empty()) {
-                    if(steady_time_sec() > last_sub_time + 5) {
-                        last_sub_time = steady_time_sec();
+                    if(steady_time_sec() > last_sub_time_ + 5) {
+                        last_sub_time_ = steady_time_sec();
                         std::shared_lock l{extern_cells_mtp_};
                         for(auto cp: extern_cells_) {
                             json requ{};
