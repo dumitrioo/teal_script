@@ -1,10 +1,10 @@
 setup_cell() {
-    if(!this.set_up) {
-        enable_external_values_server("0.0.0.0", 43987);
-        set_extern_update_seconds(0.01);
-        this.set_up = true;
+    if(!external_values_server_enabled()) {
+        if(!enable_external_values_server("0.0.0.0", 43987)) {
+            throw error_str(last_error());
+        }
     }
-    return 0;
+    return external_values_server_enabled();
 }
 setup_cell setup();
 

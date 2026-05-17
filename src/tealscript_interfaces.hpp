@@ -77,7 +77,7 @@ namespace teal {
         ) = 0;
 
         // expose values to network directly
-        virtual void start_net_server(
+        virtual bool start_net_server(
             net::address_family /*af*/,
             std::string const &/*bind_addr*/,
             std::uint16_t /*port*/,

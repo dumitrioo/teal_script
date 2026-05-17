@@ -296,14 +296,14 @@ namespace teal {
             return usm_->started();
         }
 
-        void start(const std::string &address, std::uint16_t port, std::size_t num_listen_threads) {
-            if(usm_->started()) { return; }
+        bool start(const std::string &address, std::uint16_t port, std::size_t num_listen_threads) {
+            if(usm_->started()) { return true; }
             usm_->set_on_data_arrived([this](conn_id_t conn_id, void const *d, std::size_t s) {
                 if(d) {
                     notify_on_data_arrived(conn_id, bytevec{static_cast<uint8_t const *>(d), static_cast<uint8_t const *>(d) + s});
                 }
             });
-            usm_->start(address, port, num_listen_threads);
+            return usm_->start(address, port, num_listen_threads);
         }
 
         void stop() {

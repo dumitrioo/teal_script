@@ -1134,13 +1134,16 @@ namespace teal {
                 if(args.size() > 0) { bind_addr = args[0].cast_to_string(); }
                 if(args.size() > 1) { port = args[1].cast_to_u16(); }
                 if(args.size() > 2) { port = args[2].cast_to_long_double(); }
-                start_net_server(teal::net::address_family::inet4, bind_addr, port, stale_connections_removal_timeout);
-                return net_server_running();
+                return start_net_server(teal::net::address_family::inet4, bind_addr, port, stale_connections_removal_timeout);
             });
 
             add_function("disable_external_values_server", TEALFUN(args) {
                 stop_net_server();
                 return !net_server_running();
+            });
+
+            add_function("external_values_server_enabled", TEALFUN(args) {
+                return net_server_running();
             });
 
             add_function("extern_update_seconds", TEALFUN(args) {
@@ -1149,7 +1152,7 @@ namespace teal {
 
             add_function("set_extern_update_seconds", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1);
-                ext_cells_refresh_interval_nanos_ = args[0].cast_to_long_double() * 1'000'000'000;
+                ext_cells_refresh_interval_nanos_ = math::clamp<long double>(args[0].cast_to_long_double(), 0, 3) * 1'000'000'000;
                 return ext_cells_refresh_interval_nanos_;
             });
 
@@ -1835,7 +1838,7 @@ namespace teal {
             outputs_.clear();
         }
 
-        void start_net_server(
+        bool start_net_server(
             net::address_family af,
             std::string const &bind_addr,
             std::uint16_t port,
@@ -1863,8 +1866,9 @@ namespace teal {
                 }
             }
             if(!ppserver_->started()) {
-                ppserver_->start(bind_addr, port, 1);
+                return ppserver_->start(bind_addr, port, 1);
             }
+            return true;
         }
 
         void stop_net_server() override {
@@ -1875,7 +1879,7 @@ namespace teal {
 
         bool net_server_running() const override {
             std::shared_lock l{ppserver_mtp_};
-            return ppserver_->started();
+            return ppserver_ && ppserver_->started();
         }
 
         void set_external_cells_update_interval(long double seconds) override {
