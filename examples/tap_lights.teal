@@ -1,9 +1,9 @@
 ray_window_lights() {
     if(!this.win_created) {
-        w = 1024;
+        w = 1600;
         h = w / 1.6;
         ray_init_window(w, h, "Tap Lights");
-        ray_set_target_fps(30);
+        ray_set_target_fps(60);
         ray_begin_drawing();
         ray_clear_background(Color(0, 0, 0, 255));
         this.win_created = true;
@@ -48,7 +48,7 @@ pcll(tid, y,x, sn) {
         yv = y * yar;
         xc = xv * ray_get_screen_width() + 0.5 * xar * ray_get_screen_width();
         yc = yv * ray_get_screen_height() + 0.5 * yar * ray_get_screen_height();
-        tt = sn.t + 1.0 * sqrt((xv - sn.x) * (xv - sn.x) * ar * ar + (yv - sn.y) * (yv - sn.y));
+        tt = sn.t + 1.2 * sqrt((xv - sn.x) * (xv - sn.x) * ar * ar + (yv - sn.y) * (yv - sn.y));
         if(steady_clock().between(tt, tt + .1)) {
             ray_draw_circle(xc, yc, ray_get_screen_width() * 0.003, Color(245, 255, 230, 255));
         } else {
