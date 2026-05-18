@@ -148,6 +148,8 @@ public:
         rt->add_function("ray_get_current_monitor", TEALFUN() { return GetCurrentMonitor(); });
         rt->add_function("ray_get_monitor_width", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return GetMonitorWidth(TEALNUMARG(args, 0, int)); });
         rt->add_function("ray_get_monitor_height", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return GetMonitorHeight(TEALNUMARG(args, 0, int)); });
+        rt->add_function("ray_get_monitor_physical_width", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return GetMonitorPhysicalWidth(TEALNUMARG(args, 0, int)); });
+        rt->add_function("ray_get_monitor_physical_height", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return GetMonitorPhysicalHeight(TEALNUMARG(args, 0, int)); });
 
 
         rt->add_function("ray_init_window", TEALFUN(args) {
@@ -158,6 +160,8 @@ public:
             );
             return teal::valbox{teal::valbox_no_initialize::dont_do_it};
         });
+        rt->add_function("ray_maximize_window", TEALFUN() { MaximizeWindow(); return true; });
+        rt->add_function("ray_minimize_window", TEALFUN() { MinimizeWindow(); return true; });
         rt->add_function("ray_window_should_close", TEALFUN() { return WindowShouldClose(); });
         rt->add_function("ray_begin_drawing", TEALFUN() { BeginDrawing(); return teal::valbox{teal::valbox_no_initialize::dont_do_it}; });
         rt->add_function("ray_end_drawing", TEALFUN() { EndDrawing(); return teal::valbox{teal::valbox_no_initialize::dont_do_it}; });
