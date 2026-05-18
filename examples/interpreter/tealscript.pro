@@ -125,12 +125,12 @@ DISTFILES += \
     ../external_server.teal \
     ../external_value.teal \
     ../kalman_1D_example.teal \
-    ../lights.teal \
     ../one_second_limit.teal \
     ../perf_limit.teal \
     ../pid_regulator.teal \
     ../quad_eq.teal \
     ../sockets_server.teal \
+    ../tap_lights.teal \
     ../tbbt_2cola.teal \
     ../tests.teal \
     ../unix_socket.teal
