@@ -1,6 +1,6 @@
 ray_window_lights() {
     if(!this.win_created) {
-        w = 1600;
+        w = 1024;
         h = w / 1.6;
         ray_init_window(w, h, "Tap Lights");
         ray_set_target_fps(60);
@@ -73,7 +73,6 @@ pcll c0c(t, 0,12, sn); pcll c0s(t, 0,28, sn);
 pcll c0d(t, 0,13, sn); pcll c0t(t, 0,29, sn);
 pcll c0e(t, 0,14, sn); pcll c0u(t, 0,30, sn);
 pcll c0f(t, 0,15, sn); pcll c0v(t, 0,31, sn);
-
 pcll c10(t, 1, 0, sn); pcll c1g(t, 1,16, sn);
 pcll c11(t, 1, 1, sn); pcll c1h(t, 1,17, sn);
 pcll c12(t, 1, 2, sn); pcll c1i(t, 1,18, sn);
@@ -90,7 +89,6 @@ pcll c1c(t, 1,12, sn); pcll c1s(t, 1,28, sn);
 pcll c1d(t, 1,13, sn); pcll c1t(t, 1,29, sn);
 pcll c1e(t, 1,14, sn); pcll c1u(t, 1,30, sn);
 pcll c1f(t, 1,15, sn); pcll c1v(t, 1,31, sn);
-
 pcll c20(t, 2, 0, sn); pcll c2g(t, 2,16, sn);
 pcll c21(t, 2, 1, sn); pcll c2h(t, 2,17, sn);
 pcll c22(t, 2, 2, sn); pcll c2i(t, 2,18, sn);
@@ -107,7 +105,6 @@ pcll c2c(t, 2,12, sn); pcll c2s(t, 2,28, sn);
 pcll c2d(t, 2,13, sn); pcll c2t(t, 2,29, sn);
 pcll c2e(t, 2,14, sn); pcll c2u(t, 2,30, sn);
 pcll c2f(t, 2,15, sn); pcll c2v(t, 2,31, sn);
-
 pcll c30(t, 3, 0, sn); pcll c3g(t, 3,16, sn);
 pcll c31(t, 3, 1, sn); pcll c3h(t, 3,17, sn);
 pcll c32(t, 3, 2, sn); pcll c3i(t, 3,18, sn);
@@ -124,7 +121,6 @@ pcll c3c(t, 3,12, sn); pcll c3s(t, 3,28, sn);
 pcll c3d(t, 3,13, sn); pcll c3t(t, 3,29, sn);
 pcll c3e(t, 3,14, sn); pcll c3u(t, 3,30, sn);
 pcll c3f(t, 3,15, sn); pcll c3v(t, 3,31, sn);
-
 pcll c40(t, 4, 0, sn); pcll c4g(t, 4,16, sn);
 pcll c41(t, 4, 1, sn); pcll c4h(t, 4,17, sn);
 pcll c42(t, 4, 2, sn); pcll c4i(t, 4,18, sn);
@@ -141,7 +137,6 @@ pcll c4c(t, 4,12, sn); pcll c4s(t, 4,28, sn);
 pcll c4d(t, 4,13, sn); pcll c4t(t, 4,29, sn);
 pcll c4e(t, 4,14, sn); pcll c4u(t, 4,30, sn);
 pcll c4f(t, 4,15, sn); pcll c4v(t, 4,31, sn);
-
 pcll c50(t, 5, 0, sn); pcll c5g(t, 5,16, sn);
 pcll c51(t, 5, 1, sn); pcll c5h(t, 5,17, sn);
 pcll c52(t, 5, 2, sn); pcll c5i(t, 5,18, sn);
@@ -158,7 +153,6 @@ pcll c5c(t, 5,12, sn); pcll c5s(t, 5,28, sn);
 pcll c5d(t, 5,13, sn); pcll c5t(t, 5,29, sn);
 pcll c5e(t, 5,14, sn); pcll c5u(t, 5,30, sn);
 pcll c5f(t, 5,15, sn); pcll c5v(t, 5,31, sn);
-
 pcll c60(t, 6, 0, sn); pcll c6g(t, 6,16, sn);
 pcll c61(t, 6, 1, sn); pcll c6h(t, 6,17, sn);
 pcll c62(t, 6, 2, sn); pcll c6i(t, 6,18, sn);
@@ -175,7 +169,6 @@ pcll c6c(t, 6,12, sn); pcll c6s(t, 6,28, sn);
 pcll c6d(t, 6,13, sn); pcll c6t(t, 6,29, sn);
 pcll c6e(t, 6,14, sn); pcll c6u(t, 6,30, sn);
 pcll c6f(t, 6,15, sn); pcll c6v(t, 6,31, sn);
-
 pcll c70(t, 7, 0, sn); pcll c7g(t, 7,16, sn);
 pcll c71(t, 7, 1, sn); pcll c7h(t, 7,17, sn);
 pcll c72(t, 7, 2, sn); pcll c7i(t, 7,18, sn);
@@ -192,7 +185,6 @@ pcll c7c(t, 7,12, sn); pcll c7s(t, 7,28, sn);
 pcll c7d(t, 7,13, sn); pcll c7t(t, 7,29, sn);
 pcll c7e(t, 7,14, sn); pcll c7u(t, 7,30, sn);
 pcll c7f(t, 7,15, sn); pcll c7v(t, 7,31, sn);
-
 pcll c80(t, 8, 0, sn); pcll c8g(t, 8,16, sn);
 pcll c81(t, 8, 1, sn); pcll c8h(t, 8,17, sn);
 pcll c82(t, 8, 2, sn); pcll c8i(t, 8,18, sn);
@@ -209,7 +201,6 @@ pcll c8c(t, 8,12, sn); pcll c8s(t, 8,28, sn);
 pcll c8d(t, 8,13, sn); pcll c8t(t, 8,29, sn);
 pcll c8e(t, 8,14, sn); pcll c8u(t, 8,30, sn);
 pcll c8f(t, 8,15, sn); pcll c8v(t, 8,31, sn);
-
 pcll c90(t, 9, 0, sn); pcll c9g(t, 9,16, sn);
 pcll c91(t, 9, 1, sn); pcll c9h(t, 9,17, sn);
 pcll c92(t, 9, 2, sn); pcll c9i(t, 9,18, sn);
@@ -226,7 +217,6 @@ pcll c9c(t, 9,12, sn); pcll c9s(t, 9,28, sn);
 pcll c9d(t, 9,13, sn); pcll c9t(t, 9,29, sn);
 pcll c9e(t, 9,14, sn); pcll c9u(t, 9,30, sn);
 pcll c9f(t, 9,15, sn); pcll c9v(t, 9,31, sn);
-
 pcll ca0(t,10, 0, sn); pcll cag(t,10,16, sn);
 pcll ca1(t,10, 1, sn); pcll cah(t,10,17, sn);
 pcll ca2(t,10, 2, sn); pcll cai(t,10,18, sn);
@@ -243,7 +233,6 @@ pcll cac(t,10,12, sn); pcll cas(t,10,28, sn);
 pcll cad(t,10,13, sn); pcll cat(t,10,29, sn);
 pcll cae(t,10,14, sn); pcll cau(t,10,30, sn);
 pcll caf(t,10,15, sn); pcll cav(t,10,31, sn);
-
 pcll cb0(t,11, 0, sn); pcll cbg(t,11,16, sn);
 pcll cb1(t,11, 1, sn); pcll cbh(t,11,17, sn);
 pcll cb2(t,11, 2, sn); pcll cbi(t,11,18, sn);
@@ -260,7 +249,6 @@ pcll cbc(t,11,12, sn); pcll cbs(t,11,28, sn);
 pcll cbd(t,11,13, sn); pcll cbt(t,11,29, sn);
 pcll cbe(t,11,14, sn); pcll cbu(t,11,30, sn);
 pcll cbf(t,11,15, sn); pcll cbv(t,11,31, sn);
-
 pcll cc0(t,12, 0, sn); pcll ccg(t,12,16, sn);
 pcll cc1(t,12, 1, sn); pcll cch(t,12,17, sn);
 pcll cc2(t,12, 2, sn); pcll cci(t,12,18, sn);
@@ -277,7 +265,6 @@ pcll ccc(t,12,12, sn); pcll ccs(t,12,28, sn);
 pcll ccd(t,12,13, sn); pcll cct(t,12,29, sn);
 pcll cce(t,12,14, sn); pcll ccu(t,12,30, sn);
 pcll ccf(t,12,15, sn); pcll ccv(t,12,31, sn);
-
 pcll cd0(t,13, 0, sn); pcll cdg(t,13,16, sn);
 pcll cd1(t,13, 1, sn); pcll cdh(t,13,17, sn);
 pcll cd2(t,13, 2, sn); pcll cdi(t,13,18, sn);
@@ -294,7 +281,6 @@ pcll cdc(t,13,12, sn); pcll cds(t,13,28, sn);
 pcll cdd(t,13,13, sn); pcll cdt(t,13,29, sn);
 pcll cde(t,13,14, sn); pcll cdu(t,13,30, sn);
 pcll cdf(t,13,15, sn); pcll cdv(t,13,31, sn);
-
 pcll ce0(t,14, 0, sn); pcll ceg(t,14,16, sn);
 pcll ce1(t,14, 1, sn); pcll ceh(t,14,17, sn);
 pcll ce2(t,14, 2, sn); pcll cei(t,14,18, sn);
@@ -311,7 +297,6 @@ pcll cec(t,14,12, sn); pcll ces(t,14,28, sn);
 pcll ced(t,14,13, sn); pcll cet(t,14,29, sn);
 pcll cee(t,14,14, sn); pcll ceu(t,14,30, sn);
 pcll cef(t,14,15, sn); pcll cev(t,14,31, sn);
-
 pcll cf0(t,15, 0, sn); pcll cfg(t,15,16, sn);
 pcll cf1(t,15, 1, sn); pcll cfh(t,15,17, sn);
 pcll cf2(t,15, 2, sn); pcll cfi(t,15,18, sn);
