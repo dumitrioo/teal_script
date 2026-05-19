@@ -27,7 +27,7 @@ You get a problem-specific tool to handle complex control schemes for multiple a
 
 ## Quick Example
 
-A logical schema written in TealScript manages physical actuators in parallel by analyzing signals from input devices:
+The Bullet Physics engine is used to model a cart with inverse pendulum. All the needed data, in real time, is read from physical simulation and passed to the Scripting Engine Runtime being executing a script. A logical schema, written in TealScript, manages physical simulation by analyzing in parallel the data passed from Bullet Engine and generating control data for the cart virtual actuator:
 
 ```TealScript
 pass(v) return v;
