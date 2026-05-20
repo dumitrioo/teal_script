@@ -19,7 +19,13 @@
 'M' i_m;
 
 ///////////////////////// randomly generated inputs
-rand_bool() return randf() >= 0.5;
+rand_bool() {
+    if(this.res == undefined || steady_clock() > this.t) {
+        this.res = randf() >= 0.5;
+        this.t = steady_clock() + 0.3;
+    }
+    return this.res;
+}
 
 rand_bool r_s0();
 rand_bool r_s1();
@@ -145,9 +151,17 @@ and4  alu_62(alu_58, alu_59, alu_60, alu_61)          'EQ';
 
 
 ///////////////////////// display
-ray_window() {
+syncobj() {
+    if(this.ob == undefined) {
+        this.ob = 0;
+    }
+    return this.ob;
+}
+syncobj synob();
+
+ray_window(synob) {
     if(!this.win_created) {
-        ray_init_window(800, 600, "ALU 74181");
+        ray_init_window(700, 600, "ALU 74181");
         ray_set_target_fps(30);
         ray_begin_drawing();
         ray_clear_background(Color(0, 0, 0, 255));
@@ -161,8 +175,10 @@ ray_window() {
             exit(0);
         } else {
             if(ray_get_key_pressed() == 300) ray_toggle_full_screen();
+            synob = 1;
             ray_end_drawing();
             ray_begin_drawing();
+            synob = 0;
         }
     }
     return this.tid;
@@ -172,48 +188,52 @@ color_in() return Color(0x64, 0xff, 0x9f, 255);
 color_out() return Color(0x1e, 0xed, 0x00, 255);
 color_carry() return Color(0xfe, 0x24, 0x02, 255);
 color_pgeq() return Color(0x9e, 0xdb, 0x00, 255);
-draw_bool(t, v, x, y, f, lbl, crcclr) {
+draw_bool(t, v, x, y, f, lbl, crcclr, synob) {
     if(t == thread_id()) {
         if(ray_window_should_close()) { ray_close_window(); exit(0); return 0; }
         if(ray_get_key_pressed() == 300) { ray_toggle_full_screen(); }
-        rctclr = Color(64, 64, 64, 255);
-        rcdclr = Color(32, 32, 32, 255);
-        ray_draw_circle(x * f, y * f, 7 * f, v ? crcclr : Color(0, 0, 0, 255));
-        ray_draw_text(lbl, (x - 9) * f, (y + 11) * f, 15 * f, Color(80, 200, 100, 255));
-        ray_draw_line((x - 10.5) * f, (y - 10) * f, (x + 10) * f, (y - 10) * f, rctclr);
-        ray_draw_line((x - 10) * f, (y - 10) * f, (x - 10) * f, (y + 10) * f, rctclr);
-        ray_draw_line((x + 10.5) * f, (y + 10) * f, (x + 10) * f, (y - 10) * f, rcdclr);
-        ray_draw_line((x + 10) * f, (y + 10) * f, (x - 10) * f, (y + 10) * f, rcdclr);
+        if(synob == 0) {
+            rctclr = Color(64, 64, 64, 255);
+            rcdclr = Color(32, 32, 32, 255);
+            ray_draw_text(lbl, (x - 9) * f, (y + 11) * f, 15 * f, Color(80, 200, 100, 255));
+            ray_draw_line((x - 10.5) * f, (y - 10) * f, (x + 10) * f, (y - 10) * f, rctclr);
+            ray_draw_line((x - 10) * f, (y - 10) * f, (x - 10) * f, (y + 10) * f, rctclr);
+            ray_draw_line((x + 10.5) * f, (y + 10) * f, (x + 10) * f, (y - 10) * f, rcdclr);
+            ray_draw_line((x + 10) * f, (y + 10) * f, (x - 10) * f, (y + 10) * f, rcdclr);
+            ray_draw_circle(x * f, y * f, 7 * f, v ? crcclr : Color(0, 0, 0, 255));
+        } else {
+            println("nodraw");
+        }
     }
     return 0;
 }
 
-ray_window ray();
+ray_window ray(synob);
 forward sfctr(2.6);
 color_select clr_s();
 color_in clr_in();
 color_out clr_out();
 color_carry clr_c();
 color_pgeq clr_pgeq();
-draw_bool dr_c_in(ray, c_in, 200, 20, sfctr, "inC", clr_c);
-draw_bool dr_m(ray, m, 240, 20, sfctr, " M", clr_in);
-draw_bool dr_s0(ray, s3, 20, 20, sfctr, "s3", clr_s);
-draw_bool dr_s1(ray, s2, 60, 20, sfctr, "s2", clr_s);
-draw_bool dr_s2(ray, s1, 100, 20, sfctr, "s1", clr_s);
-draw_bool dr_s3(ray, s0, 140, 20, sfctr, "s0", clr_s);
-draw_bool dr_a0(ray, a3, 20, 60, sfctr, "a3", clr_in);
-draw_bool dr_a1(ray, a2, 60, 60, sfctr, "a2", clr_in);
-draw_bool dr_a2(ray, a1, 100, 60, sfctr, "a1", clr_in);
-draw_bool dr_a3(ray, a0, 140, 60, sfctr, "a0", clr_in);
-draw_bool dr_b0(ray, b3, 20, 100, sfctr, "b3", clr_in);
-draw_bool dr_b1(ray, b2, 60, 100, sfctr, "b2", clr_in);
-draw_bool dr_b2(ray, b1, 100, 100, sfctr, "b1", clr_in);
-draw_bool dr_b3(ray, b0, 140, 100, sfctr, "b0", clr_in);
-draw_bool dr_f3(ray, alu_61, 20, 160, sfctr, "f3", clr_out);
-draw_bool dr_f2(ray, alu_60, 60, 160, sfctr, "f2", clr_out);
-draw_bool dr_f1(ray, alu_59, 100, 160, sfctr, "f1", clr_out);
-draw_bool dr_f0(ray, alu_58, 140, 160, sfctr, "f0", clr_out);
-draw_bool dr_c_out(ray, alu_57, 200, 160, sfctr, "outC", clr_c);
-draw_bool dr_p(ray, alu_42, 20, 200, sfctr, " P", clr_pgeq);
-draw_bool dr_g(ray, alu_53, 60, 200, sfctr, " G", clr_pgeq);
-draw_bool dr_AeB(ray, alu_62, 120, 200, sfctr, "EQ", clr_pgeq);
+draw_bool dr_c_in(ray, c_in, 200, 20, sfctr, "inC", clr_c, synob);
+draw_bool dr_m(ray, m, 240, 20, sfctr, " M", clr_in, synob);
+draw_bool dr_s0(ray, s3, 20, 20, sfctr, "s3", clr_s, synob);
+draw_bool dr_s1(ray, s2, 60, 20, sfctr, "s2", clr_s, synob);
+draw_bool dr_s2(ray, s1, 100, 20, sfctr, "s1", clr_s, synob);
+draw_bool dr_s3(ray, s0, 140, 20, sfctr, "s0", clr_s, synob);
+draw_bool dr_a0(ray, a3, 20, 60, sfctr, "a3", clr_in, synob);
+draw_bool dr_a1(ray, a2, 60, 60, sfctr, "a2", clr_in, synob);
+draw_bool dr_a2(ray, a1, 100, 60, sfctr, "a1", clr_in, synob);
+draw_bool dr_a3(ray, a0, 140, 60, sfctr, "a0", clr_in, synob);
+draw_bool dr_b0(ray, b3, 20, 100, sfctr, "b3", clr_in, synob);
+draw_bool dr_b1(ray, b2, 60, 100, sfctr, "b2", clr_in, synob);
+draw_bool dr_b2(ray, b1, 100, 100, sfctr, "b1", clr_in, synob);
+draw_bool dr_b3(ray, b0, 140, 100, sfctr, "b0", clr_in, synob);
+draw_bool dr_f3(ray, alu_61, 20, 160, sfctr, "f3", clr_out, synob);
+draw_bool dr_f2(ray, alu_60, 60, 160, sfctr, "f2", clr_out, synob);
+draw_bool dr_f1(ray, alu_59, 100, 160, sfctr, "f1", clr_out, synob);
+draw_bool dr_f0(ray, alu_58, 140, 160, sfctr, "f0", clr_out, synob);
+draw_bool dr_c_out(ray, alu_57, 200, 160, sfctr, "outC", clr_c, synob);
+draw_bool dr_p(ray, alu_42, 20, 200, sfctr, " P", clr_pgeq, synob);
+draw_bool dr_g(ray, alu_53, 60, 200, sfctr, " G", clr_pgeq, synob);
+draw_bool dr_AeB(ray, alu_62, 120, 200, sfctr, "EQ", clr_pgeq, synob);

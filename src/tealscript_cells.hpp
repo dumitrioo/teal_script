@@ -17,7 +17,7 @@ namespace teal {
     public:
         virtual ~cell_base() {}
         virtual void exec(execution_context *) {}
-        virtual void set_value(valbox const &val) { std::unique_lock l{val_mtp_}; val_ = val.clone(); }
+        virtual void set_value(valbox const &val) { std::unique_lock l{val_mtp_}; val_ = val; }
         virtual valbox value() const { std::shared_lock l{val_mtp_}; return val_; }
         virtual valbox value_clone() const { std::shared_lock l{val_mtp_}; return val_.clone(); }
         virtual void set_inst_name(std::string const &name) { inst_name_ = name; }
@@ -210,12 +210,16 @@ namespace teal {
             return &cell_self_values_;
         }
 
+        void lock() {
+            locker_.lock();
+        }
+
         bool try_lock() {
-            return locker_->try_lock();
+            return locker_.try_lock();
         }
 
         void unlock() {
-            locker_->unlock();
+            locker_.unlock();
         }
 
         statement_ptr body() {
@@ -233,7 +237,7 @@ namespace teal {
         std::vector<arg_info> args_info_{};
         std::string output_name_{};
         std::uint64_t type_info_transferred_{0};
-        mutable std::unique_ptr<shared_mutex> locker_{std::make_unique<shared_mutex>()};
+        mutable shared_mutex locker_{};
     };
 
 

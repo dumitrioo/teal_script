@@ -43,7 +43,7 @@ namespace teal {
     class void_expression: public expression {
     public:
         void_expression() {}
-        valbox eval(execution_context *, eval_caller_type, valbox *) override {
+        valbox eval(execution_context *ctx, eval_caller_type, valbox *) override {
             return valbox{valbox_no_initialize::dont_do_it};
         }
     };
@@ -51,7 +51,7 @@ namespace teal {
     class primary_expression: public expression {
     public:
         primary_expression(valbox const &val): val_{val} {}
-        valbox eval(execution_context *, eval_caller_type, valbox *) override { return val_/*.clone()*/; }
+        valbox eval(execution_context *, eval_caller_type, valbox *) override { return val_; }
         bool primary() const override { return true; }
 
     private:
@@ -172,7 +172,7 @@ namespace teal {
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
                     try {
-                        valbox t = val->eval(ctx, eval_caller_type::no_matter, nullptr);
+                        valbox t{val->eval(ctx, eval_caller_type::no_matter, nullptr)};
                         if(t.is_class_ref()) {
                             str_map_t<std::function<valbox(valbox &)>> const *unops{
                                 &(ctx->rt_interface()->get_object_services(t.class_name())->unops)

@@ -7082,7 +7082,8 @@ namespace teal {
         }
 
         std::size_t num_refs() const {
-            return box_.use_count();
+            valbox const &dr{deref()};
+            return dr.box_ ? static_cast<std::size_t>(dr.box_.use_count()) : static_cast<std::size_t>(0);
         }
 
         std::string dump() const {

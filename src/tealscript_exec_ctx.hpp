@@ -34,6 +34,29 @@ namespace teal {
 
     class function_definition;
 
+    class valbox_pool {
+    public:
+        valbox get_valbox() {
+            valbox res{valbox_no_initialize::dont_do_it};
+            if(!vals_.empty()) {
+                res = std::move(vals_.front());
+                vals_.pop_front();
+            }
+            return res;
+        }
+
+        void put_valbox(valbox const &vb) {
+            vals_.push_front(vb);
+        }
+
+        void put_valbox(valbox &&vb) {
+            vals_.push_front(std::move(vb));
+        }
+
+    private:
+        std::list<valbox> vals_{};
+    };
+
     class execution_context {
     public:
         execution_context() = default;
@@ -69,6 +92,19 @@ namespace teal {
 
         valbox const &return_result() const & {
             return return_result_;
+        }
+
+
+        valbox get_valbox() {
+            return vals_pool_.get_valbox();
+        }
+
+        void put_valbox(valbox const &vb) {
+            vals_pool_.put_valbox(vb);
+        }
+
+        void put_valbox(valbox &&vb) {
+            vals_pool_.put_valbox(std::move(vb));
         }
 
 
@@ -445,6 +481,7 @@ namespace teal {
             str_map_t<valbox> m_{};
         };
 
+        valbox_pool vals_pool_{};
         runtime_interface *rt_ptr_{nullptr};
         std::atomic_int64_t function_depth_{0};
         std::vector<stack_frame> stack_{};

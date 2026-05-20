@@ -1,7 +1,8 @@
 ray_window_lights() {
     if(!this.win_created) {
-        w = 1024;
-        h = w / 1.6;
+        w = (i32)1280;
+        h = (i32)(w * (9.0 / 16.0));
+        h.println();
         ray_init_window(w, h, "Tap Lights");
         ray_set_target_fps(60);
         ray_begin_drawing();
@@ -39,21 +40,24 @@ touch_sensor sn(t);
 
 function between(x, y , z) return x >= y && x <= z;
 
-pcll(tid, y,x, sn) {
-    if(tid == thread_id() && sn.is_object()) {
-        ar = (f64)ray_get_screen_width() / ray_get_screen_height();
-        xar = 1.0 / 32.0;
-        yar = 1.0 / 16.0;
-        xv = x * xar;
-        yv = y * yar;
-        xc = xv * ray_get_screen_width() + 0.5 * xar * ray_get_screen_width();
-        yc = yv * ray_get_screen_height() + 0.5 * yar * ray_get_screen_height();
-        tt = sn.t + 1.2 * sqrt((xv - sn.x) * (xv - sn.x) * ar * ar + (yv - sn.y) * (yv - sn.y));
-        if(steady_clock().between(tt, tt + .1)) {
-            ray_draw_circle(xc, yc, ray_get_screen_width() * 0.003, Color(245, 255, 230, 255));
+pcll(tid, y, x, sn) {
+    if(this.xv == undefined && tid == thread_id()) {
+        this.xar = 1.0 / 32.0; this.yar = 1.0 / 16.0;
+        this.xv = x * this.xar; this.yv = y * this.yar;
+        this.ar = (f64)ray_get_screen_width() / (f64)ray_get_screen_height();
+        this.xc = this.xv * ray_get_screen_width() + 0.5 * this.xar * ray_get_screen_width();
+        this.yc = this.yv * ray_get_screen_height() + 0.5 * this.yar * ray_get_screen_height();
+    }
+    if(tid == thread_id() && sn.is_object() && (this.lastdraw == undefined || steady_clock() - this.lastdraw > 0.016)) {
+        dx = (this.xv - sn.x);
+        dy = (this.yv - sn.y);
+        tt = sn.t + 1. * sqrt(dx * dx * this.ar * this.ar + dy * dy);
+        if(steady_clock().between(tt, tt + .2)) {
+            ray_draw_circle(this.xc, this.yc, ray_get_screen_width() * 0.003, Color(245, 255, 230, 255));
         } else {
-            ray_draw_circle(xc, yc, ray_get_screen_width() * 0.003, Color(0, 0, 0, 128));
+            ray_draw_circle(this.xc, this.yc, ray_get_screen_width() * 0.003, Color(0, 0, 0, 128));
         }
+        this.lastdraw = steady_clock();
     }
 }
 
@@ -313,3 +317,12 @@ pcll cfc(t,15,12, sn); pcll cfs(t,15,28, sn);
 pcll cfd(t,15,13, sn); pcll cft(t,15,29, sn);
 pcll cfe(t,15,14, sn); pcll cfu(t,15,30, sn);
 pcll cff(t,15,15, sn); pcll cfv(t,15,31, sn);
+
+performance_limiter() {
+    if(this.initialized == undefined) {
+        this.initialized = true;
+        set_cycle_sleep_seconds(0.00001);
+        set_inactive_sleep_seconds(0.01);
+    }
+}
+performance_limiter perf_limiter();

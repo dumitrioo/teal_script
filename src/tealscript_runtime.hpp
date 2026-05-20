@@ -1196,6 +1196,8 @@ namespace teal {
             outputs_.clear();
             worker_cells_templates_.clear();
             worker_cells_.clear();
+            worker_cells_flat_array_.clear();
+            worker_cells_flat_array_index_ = 0;
             worker_bodies_.clear();
             user_functions_.clear();
 
@@ -1244,6 +1246,7 @@ namespace teal {
 
         void loading_complete() {
             std::unique_lock l{workers_mtp_};
+            worker_cells_flat_array_.clear();
             for(auto &&wcp: worker_cells_) {
                 std::shared_ptr<worker_cell_instance> curr_cell{wcp.second};
                 auto type_it{worker_cells_templates_.find(curr_cell->type_name())};
@@ -1253,6 +1256,7 @@ namespace teal {
                     }
                     curr_cell->set_type_info(type_it->second.num_args(), type_it->second.arg_names());
                 }
+                worker_cells_flat_array_.push_back(wcp.second.get());
             }
         }
 
@@ -1512,10 +1516,6 @@ namespace teal {
                     }
                 }
                 exctx_.clear_all_jumps_request();
-
-                if(sleep_between_cycles_nanoseconds_ > 0) {
-                    std::this_thread::sleep_for(std::chrono::nanoseconds{sleep_between_cycles_nanoseconds_});
-                }
             }
         }
 
@@ -1528,7 +1528,7 @@ namespace teal {
         }
 
         bool termination_requested() const {
-            return termination_requested_.load(std::memory_order_acquire) != 0;
+            return termination_requested_.load(std::memory_order_relaxed) != 0;
         }
 
         void fail(std::string const &descr) {
@@ -1544,7 +1544,7 @@ namespace teal {
         }
 
         bool failure_occured() const {
-            return failure_.load(std::memory_order_acquire) != 0;
+            return failure_.load(std::memory_order_relaxed) != 0;
         }
 
         std::string failure_description() const {
@@ -1619,103 +1619,118 @@ namespace teal {
                         std::shared_ptr<execution_context> exctx{std::make_shared<execution_context>()};
                         execution_context *exctx_ptr{exctx.get()};
                         exctx_ptr->set_runtime_interface(this);
+                        uint64_t wc_indx{};
+                        uint64_t const worker_cells_cnt{worker_cells_flat_array_.size()};
+                        uint64_t const worker_cells_max_idx{worker_cells_flat_array_.size() - 1};
+                        bool have_locked{false};
+                        uint64_t loop_ctr{0};
+                        uint64_t num_cycles{0};
                         while(!termination_requested() && !failure_occured()) {
-                            exctx_ptr->clear_all_jumps_request();
-                            bool have_locked{false};
-                            for(auto &&wrkcl: worker_cells_) {
-                                std::shared_ptr<worker_cell_instance> &curr_cell{wrkcl.second};
-                                bool cell_executed{false};
-                                if(curr_cell->try_lock()) {
-                                    shut_on_destroy sod{[&]() { curr_cell->unlock(); }};
-                                    cell_executed = true;
-                                    have_locked = true;
-                                    if(termination_requested()) {
-                                        break;
-                                    }
-                                    std::string const &curr_cell_type_name{curr_cell->type_name()};
+                            wc_indx = worker_cells_flat_array_index_.fetch_add(1);
+                            worker_cell_instance *curr_cell{worker_cells_flat_array_[
+#ifdef LINEAR_CELLS_TRAVERSING
+                                    loop_ctr
+#else
+                                    wc_indx % worker_cells_cnt
+#endif
+                                ]
+                            };
+                            bool cell_executed{false};
+                            if(curr_cell->try_lock()) {
+                                shut_on_destroy sod{[&]() { curr_cell->unlock(); }};
+                                cell_executed = true;
+                                have_locked = true;
+                                std::string const &curr_cell_type_name{curr_cell->type_name()};
 
-                                    if(!curr_cell->type_info_transferred()) {
-                                        auto type_it{worker_cells_templates_.find(curr_cell_type_name)};
-                                        if(type_it != worker_cells_templates_.end()) {
-                                            if(curr_cell->actual_args_info().size() != static_cast<size_t>(type_it->second.num_args())) {
-                                                throw runtime_error{curr_cell->line(), curr_cell->col(), "actual arguments count for the cell mismatch"};
-                                            }
-                                            curr_cell->set_type_info(type_it->second.num_args(), type_it->second.arg_names());
+                                if(!curr_cell->type_info_transferred()) {
+                                    auto type_it{worker_cells_templates_.find(curr_cell_type_name)};
+                                    if(type_it != worker_cells_templates_.end()) {
+                                        if(curr_cell->actual_args_info().size() != static_cast<size_t>(type_it->second.num_args())) {
+                                            throw runtime_error{curr_cell->line(), curr_cell->col(), "actual arguments count for the cell mismatch"};
                                         }
+                                        curr_cell->set_type_info(type_it->second.num_args(), type_it->second.arg_names());
                                     }
+                                }
 
-                                    exctx_ptr->set_self_fields(curr_cell->cell_self_values_ptr());
+                                exctx_ptr->set_self_fields(curr_cell->cell_self_values_ptr());
 
-                                    exctx_ptr->clear_stack_soft();
-                                    exctx_ptr->new_stack_frame();
+                                exctx_ptr->clear_stack_soft();
+                                exctx_ptr->new_stack_frame();
 
-                                    std::vector<worker_cell_instance::arg_info> &args_info{curr_cell->actual_args_info()};
-                                    for(std::size_t curr_arg_number{0}; curr_arg_number < args_info.size(); ++curr_arg_number) {
-                                        worker_cell_instance::arg_info &ai{args_info[curr_arg_number]};
-                                        std::string curr_arg_name{ai.argname};
-                                        if(ai.is_cell) {
-                                            if(ai.cell_ptr != nullptr) {
+                                std::vector<worker_cell_instance::arg_info> &args_info{curr_cell->actual_args_info()};
+                                for(std::size_t curr_arg_number{0}; curr_arg_number < args_info.size(); ++curr_arg_number) {
+                                    worker_cell_instance::arg_info &ai{args_info[curr_arg_number]};
+                                    std::string curr_arg_name{ai.argname};
+                                    if(ai.is_cell) {
+                                        if(ai.cell_ptr != nullptr) {
+                                            exctx_ptr->set_local_value(curr_arg_name, ai.cell_ptr->value());
+                                        } else {
+                                            auto w_it{worker_cells_.find(ai.cell_name)};
+                                            if(w_it != worker_cells_.end()) {
+                                                ai.cell_ptr = w_it->second.get();
                                                 exctx_ptr->set_local_value(curr_arg_name, ai.cell_ptr->value());
                                             } else {
-                                                auto w_it{worker_cells_.find(ai.cell_name)};
-                                                if(w_it != worker_cells_.end()) {
-                                                    ai.cell_ptr = w_it->second.get();
+                                                auto in_it{input_cells_.find(ai.cell_name)};
+                                                if(in_it != input_cells_.end()) {
+                                                    ai.cell_ptr = in_it->second.get();
                                                     exctx_ptr->set_local_value(curr_arg_name, ai.cell_ptr->value());
                                                 } else {
-                                                    auto in_it{input_cells_.find(ai.cell_name)};
-                                                    if(in_it != input_cells_.end()) {
-                                                        ai.cell_ptr = in_it->second.get();
+                                                    auto ex_it{extern_cells_.find(ai.cell_name)};
+                                                    if(ex_it != extern_cells_.end()) {
+                                                        ai.cell_ptr = ex_it->second.get();
                                                         exctx_ptr->set_local_value(curr_arg_name, ai.cell_ptr->value());
                                                     } else {
-                                                        auto ex_it{extern_cells_.find(ai.cell_name)};
-                                                        if(ex_it != extern_cells_.end()) {
-                                                            ai.cell_ptr = ex_it->second.get();
-                                                            exctx_ptr->set_local_value(curr_arg_name, ai.cell_ptr->value());
-                                                        } else {
-                                                            throw runtime_error{
-                                                                curr_cell->line(), curr_cell->col(),
-                                                                std::string{"input value not found for compute element \""} +
-                                                                    curr_cell->inst_name() + "\""
-                                                            };
-                                                        }
+                                                        throw runtime_error{
+                                                            curr_cell->line(), curr_cell->col(),
+                                                            std::string{"input value not found for compute element \""} +
+                                                                curr_cell->inst_name() + "\""
+                                                        };
                                                     }
                                                 }
                                             }
-                                        } else {
-                                            if(ai.expr_val.is_undefined_ref()) {
-                                                ai.expr_val = ai.expr->eval(exctx_ptr, eval_caller_type::no_matter, nullptr);
-                                            }
-                                            valbox vb{ai.expr_val};
-                                            exctx_ptr->set_local_value(curr_arg_name, vb);
                                         }
-                                    }
-
-                                    if(!curr_cell->body()) {
-                                        auto body_it{worker_bodies_.find(curr_cell_type_name)};
-                                        if(body_it == worker_bodies_.end()) {
-                                            throw runtime_error{curr_cell->line(), curr_cell->col(), "cell not found"};
+                                    } else {
+                                        if(ai.expr_val.is_undefined_ref()) {
+                                            ai.expr_val = ai.expr->eval(exctx_ptr, eval_caller_type::no_matter, nullptr);
                                         }
-                                        curr_cell->set_body(body_it->second);
+                                        valbox vb{ai.expr_val};
+                                        exctx_ptr->set_local_value(curr_arg_name, vb);
                                     }
-                                    curr_cell->body()->exec(exctx_ptr);
-
-                                    if(termination_requested() || failure_occured()) {
-                                        break;
-                                    }
-                                    if(exctx_ptr->return_requested()) {
-                                        curr_cell->set_value(exctx_ptr->return_result());
-                                        if(!curr_cell->output_name().empty()) {
-                                            exctx_ptr->set_output(curr_cell->output_name(), exctx_ptr->return_result());
-                                        }
-                                    }
-                                    exctx_ptr->clear_all_jumps_request();
                                 }
-                                if(cell_executed && sleep_between_cycles_nanoseconds_ > 0) {
-                                    std::this_thread::sleep_for(std::chrono::nanoseconds{sleep_between_cycles_nanoseconds_});
+
+                                if(!curr_cell->body()) {
+                                    auto body_it{worker_bodies_.find(curr_cell_type_name)};
+                                    if(body_it == worker_bodies_.end()) {
+                                        throw runtime_error{curr_cell->line(), curr_cell->col(), "cell not found"};
+                                    }
+                                    curr_cell->set_body(body_it->second);
                                 }
+                                curr_cell->body()->exec(exctx_ptr);
+
+                                if(exctx_ptr->return_requested()) {
+                                    curr_cell->set_value(exctx_ptr->return_result());
+                                    if(!curr_cell->output_name().empty()) {
+                                        exctx_ptr->set_output(curr_cell->output_name(), exctx_ptr->return_result());
+                                    }
+                                }
+                                exctx_ptr->clear_all_jumps_request();
                             }
-                            if(!have_locked) {
-                                std::this_thread::sleep_for(std::chrono::nanoseconds{sleep_inactive_thread_nanoseconds_});
+
+                            if(sleep_between_cycles_nanoseconds_ > 0 && cell_executed) {
+                                std::this_thread::sleep_for(std::chrono::nanoseconds{sleep_between_cycles_nanoseconds_});
+                            }
+
+                            if(num_cycles < wc_indx / worker_cells_cnt) {
+                                num_cycles = wc_indx / worker_cells_cnt;
+                                if(!have_locked && sleep_inactive_thread_nanoseconds_ > 0) {
+                                    std::this_thread::sleep_for(std::chrono::nanoseconds{sleep_inactive_thread_nanoseconds_});
+                                }
+                                have_locked = false;
+                            }
+                            if(loop_ctr >= worker_cells_max_idx) {
+                                loop_ctr = 0;
+                            } else {
+                                ++loop_ctr;
                             }
                         }
 #ifndef TEAL_DEBUGGING
@@ -2034,6 +2049,8 @@ namespace teal {
         mutable shared_mutex workers_mtp_{};
         str_map_t<worker_cell_definition_info> worker_cells_templates_{};
         str_map_t<std::shared_ptr<worker_cell_instance>> worker_cells_{};
+        std::vector<worker_cell_instance *> worker_cells_flat_array_{};
+        std::atomic<std::uint64_t> worker_cells_flat_array_index_{0};
         str_map_t<statement_ptr> worker_bodies_{};
         str_map_t<function_definition> user_functions_{};
         std::function<bool(std::string)> user_functions_search_{

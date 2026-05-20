@@ -51,7 +51,7 @@ random_value() {
 timestamp_value() {
     return timestamp();
 }
-timestamp_value current_time();
+// timestamp_value current_time();
 
 
 function k_predict(ks, u) {
@@ -70,6 +70,9 @@ function k_update(ks, z) {
 my_drafts(host_data) {
     console.fixed();
     console.setprecision(0);
+
+    this.k = timestamp();
+    return this.k;
 
 
     for(v = matrix(4, 1, [10, 0, 0, 0]); v; v.at(0) -= 1) {
