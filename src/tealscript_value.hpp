@@ -265,6 +265,152 @@ namespace teal {
         {
         }
 
+#define VALBOX_ASSIGN_OPERATOR_BODY(ARGTYPE) valbox &ref{deref()}; \
+        if(!ref.box_) { \
+            ref.box_ = std::make_shared<box_data>(v, type::ARGTYPE); \
+        } else { \
+            ref.box_->value_ = v; \
+            ref.box_->type_ = type::ARGTYPE; \
+            ref.box_->pointed_type_ = type::UNDEFINED; \
+            ref.box_->class_.clear(); \
+            ref.box_->func_name_.clear(); \
+            ref.box_->user_func_ = false; \
+        } \
+        ref.pointed_box_.reset(); \
+        return *this;
+#define VALBOX_ASSIGN_PTR_OPERATOR_BODY(ARGTYPE) valbox &ref{deref()}; \
+        if(!ref.box_) { \
+            ref.box_ = std::make_shared<box_data>((void *)v, type::POINTER, type::ARGTYPE); \
+        } else { \
+            ref.box_->value_ = (void *)v; \
+            ref.box_->type_ = type::POINTER; \
+            ref.box_->pointed_type_ = type::ARGTYPE; \
+            ref.box_->class_.clear(); \
+            ref.box_->func_name_.clear(); \
+            ref.box_->user_func_ = false; \
+        } \
+        ref.pointed_box_.reset(); \
+        return *this;
+
+        valbox &operator=(bool v) { VALBOX_ASSIGN_OPERATOR_BODY(BOOL) }
+        valbox &operator=(bool *v) { VALBOX_ASSIGN_PTR_OPERATOR_BODY(BOOL) }
+        valbox &operator=(float v) { VALBOX_ASSIGN_OPERATOR_BODY(FLOAT) }
+        valbox &operator=(float *v) { VALBOX_ASSIGN_PTR_OPERATOR_BODY(FLOAT) }
+        valbox &operator=(double v) { VALBOX_ASSIGN_OPERATOR_BODY(DOUBLE) }
+        valbox &operator=(double *v) { VALBOX_ASSIGN_PTR_OPERATOR_BODY(DOUBLE) }
+        valbox &operator=(long double v) { VALBOX_ASSIGN_OPERATOR_BODY(LONG_DOUBLE) }
+        valbox &operator=(long double *v) { VALBOX_ASSIGN_PTR_OPERATOR_BODY(LONG_DOUBLE) }
+        valbox &operator=(char v) { VALBOX_ASSIGN_OPERATOR_BODY(CHAR) }
+        valbox &operator=(char *v) { VALBOX_ASSIGN_PTR_OPERATOR_BODY(CHAR) }
+        valbox &operator=(wchar_t v) { VALBOX_ASSIGN_OPERATOR_BODY(WCHAR) }
+        valbox &operator=(wchar_t *v) { VALBOX_ASSIGN_PTR_OPERATOR_BODY(WCHAR) }
+        valbox &operator=(std::string const &v) { VALBOX_ASSIGN_OPERATOR_BODY(STRING) }
+        valbox &operator=(std::string *v) { VALBOX_ASSIGN_PTR_OPERATOR_BODY(STRING) }
+        valbox &operator=(char const *v) {
+            valbox &ref{deref()};
+            if(!ref.box_) {
+                ref.box_ = std::make_shared<box_data>(std::string{v}, type::STRING);
+            } else {
+                ref.box_->value_ = std::string{v};
+                ref.box_->type_ = type::STRING;
+                ref.box_->pointed_type_ = type::UNDEFINED;
+                ref.box_->class_.clear();
+                ref.box_->func_name_.clear();
+                ref.box_->user_func_ = false;
+            }
+            ref.pointed_box_.reset();
+            return *this;
+        }
+        valbox &operator=(std::wstring const &v) { VALBOX_ASSIGN_OPERATOR_BODY(WSTRING) }
+        valbox &operator=(std::wstring *v) { VALBOX_ASSIGN_PTR_OPERATOR_BODY(WSTRING) }
+        valbox &operator=(wchar_t const *v) {
+            valbox &ref{deref()};
+            if(!ref.box_) {
+                ref.box_ = std::make_shared<box_data>(std::wstring{v}, type::WSTRING);
+            } else {
+                ref.box_->value_ = std::wstring{v};
+                ref.box_->type_ = type::WSTRING;
+                ref.box_->pointed_type_ = type::UNDEFINED;
+                ref.box_->class_.clear();
+                ref.box_->func_name_.clear();
+                ref.box_->user_func_ = false;
+            }
+            ref.pointed_box_.reset();
+            return *this;
+        }
+        valbox &operator=(std::string &&v) {
+            valbox &ref{deref()};
+            if(!ref.box_) {
+                ref.box_ = std::make_shared<box_data>(std::move(v), type::STRING);
+            } else {
+                ref.box_->value_ = std::move(v);
+                ref.box_->type_ = type::STRING;
+                ref.box_->pointed_type_ = type::UNDEFINED;
+                ref.box_->class_.clear();
+                ref.box_->func_name_.clear();
+                ref.box_->user_func_ = false;
+            }
+            ref.pointed_box_.reset();
+            return *this;
+        }
+        valbox &operator=(std::wstring &&v) {
+            valbox &ref{deref()};
+            if(!ref.box_) {
+                ref.box_ = std::make_shared<box_data>(std::move(v), type::WSTRING);
+            } else {
+                ref.box_->value_ = std::move(v);
+                ref.box_->type_ = type::WSTRING;
+                ref.box_->pointed_type_ = type::UNDEFINED;
+                ref.box_->class_.clear();
+                ref.box_->func_name_.clear();
+                ref.box_->user_func_ = false;
+            }
+            ref.pointed_box_.reset();
+            return *this;
+        }
+        valbox &operator=(std::int8_t v) { VALBOX_ASSIGN_OPERATOR_BODY(S8) }
+        valbox &operator=(std::int8_t *v) { VALBOX_ASSIGN_PTR_OPERATOR_BODY(S8) }
+        valbox &operator=(std::uint8_t v) { VALBOX_ASSIGN_OPERATOR_BODY(U8) }
+        valbox &operator=(std::uint8_t *v) { VALBOX_ASSIGN_PTR_OPERATOR_BODY(U8) }
+        valbox &operator=(std::int16_t v) { VALBOX_ASSIGN_OPERATOR_BODY(S16) }
+        valbox &operator=(std::int16_t *v) { VALBOX_ASSIGN_PTR_OPERATOR_BODY(S16) }
+        valbox &operator=(std::uint16_t v) { VALBOX_ASSIGN_OPERATOR_BODY(U16) }
+        valbox &operator=(std::uint16_t *v) { VALBOX_ASSIGN_PTR_OPERATOR_BODY(U16) }
+        valbox &operator=(std::int32_t v) { VALBOX_ASSIGN_OPERATOR_BODY(S32) }
+        valbox &operator=(std::int32_t *v) { VALBOX_ASSIGN_PTR_OPERATOR_BODY(S32) }
+        valbox &operator=(std::uint32_t v) { VALBOX_ASSIGN_OPERATOR_BODY(U32) }
+        valbox &operator=(std::uint32_t *v) { VALBOX_ASSIGN_PTR_OPERATOR_BODY(U32) }
+        valbox &operator=(std::int64_t v) { VALBOX_ASSIGN_OPERATOR_BODY(S64) }
+        valbox &operator=(std::int64_t *v) { VALBOX_ASSIGN_PTR_OPERATOR_BODY(S64) }
+        valbox &operator=(std::uint64_t v) { VALBOX_ASSIGN_OPERATOR_BODY(U64) }
+        valbox &operator=(std::uint64_t *v) { VALBOX_ASSIGN_PTR_OPERATOR_BODY(U64) }
+        valbox &operator=(vec4_t const &v) { VALBOX_ASSIGN_OPERATOR_BODY(VEC4) }
+        valbox &operator=(mat4_t const &v) { VALBOX_ASSIGN_OPERATOR_BODY(MAT4) }
+        valbox &operator=(long long v) { VALBOX_ASSIGN_OPERATOR_BODY(S64) }
+        valbox &operator=(long long *v) { VALBOX_ASSIGN_PTR_OPERATOR_BODY(S64) }
+        valbox &operator=(unsigned long long v) { VALBOX_ASSIGN_OPERATOR_BODY(U64) }
+        valbox &operator=(unsigned long long *v) { VALBOX_ASSIGN_PTR_OPERATOR_BODY(U64) }
+        valbox &operator=(json const &v) {
+            valbox &ref{deref()};
+            if(!ref.box_) {
+                ref.box_ = std::make_shared<box_data>(value_t{}, type::UNDEFINED);
+            } else {
+                ref.box_->value_ = value_t{};
+                ref.box_->type_ = type::UNDEFINED;
+                ref.box_->pointed_type_ = type::UNDEFINED;
+                ref.box_->class_.clear();
+                ref.box_->func_name_.clear();
+                ref.box_->user_func_ = false;
+            }
+            from_json(v);
+            ref.pointed_box_.reset();
+            return *this;
+        }
+        valbox &operator=(object_t const &v) { VALBOX_ASSIGN_OPERATOR_BODY(OBJECT) }
+        valbox &operator=(valbox *v) { VALBOX_ASSIGN_PTR_OPERATOR_BODY(VALBOX) }
+#undef VALBOX_ASSIGN_OPERATOR_BODY
+#undef VALBOX_ASSIGN_PTR_OPERATOR_BODY
+
         void construct(array_t const &arr) {
             box_ = std::make_shared<box_data>(arr, type::ARRAY);
             pointed_box_.reset();
@@ -476,7 +622,7 @@ namespace teal {
                 static_cast<uintptr_t>(
                     box != nullptr &&
                     box->type_ == type::POINTER &&
-                    box->pointed_type_ == type::VALBOX ? 1 : 0
+                    box->pointed_type_ == type::VALBOX
                 )
                 *
                 reinterpret_cast<uintptr_t>(box)
@@ -1508,592 +1654,6 @@ namespace teal {
 
         static type stronger_type(type t1, type t2) {
             return static_cast<int>(t1) > static_cast<int>(t2) ? t1 : t2;
-        }
-
-        valbox &operator+=(valbox const &other) {
-            valbox &thisref{deref()};
-            valbox const &thatref{other.deref()};
-            auto thist{thisref.val_or_pointed_type()};
-            auto thatt{thatref.val_or_pointed_type()};
-            switch(thist) {
-                case type::BOOL:
-                    switch(thatt) {
-                        case type::BOOL: as_bool() += thatref.as_bool(); break;
-                        case type::CHAR: as_bool() += thatref.as_char(); break;
-                        case type::S8: as_bool() += thatref.as_s8(); break;
-                        case type::U8: as_bool() += thatref.as_u8(); break;
-                        case type::S16: as_bool() += thatref.as_s16(); break;
-                        case type::U16: as_bool() += thatref.as_u16(); break;
-                        case type::WCHAR: as_bool() += thatref.as_wchar(); break;
-                        case type::S32: as_bool() += thatref.as_s32(); break;
-                        case type::U32: as_bool() += thatref.as_u32(); break;
-                        case type::S64: as_bool() += thatref.as_s64(); break;
-                        case type::U64: as_bool() += thatref.as_u64(); break;
-                        case type::FLOAT: as_bool() += thatref.as_float(); break;
-                        case type::DOUBLE: as_bool() += thatref.as_double(); break;
-                        case type::LONG_DOUBLE: as_bool() += thatref.as_long_double(); break;
-                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
-                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
-                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
-                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
-                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
-                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
-                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
-                        case type::STRING: throw std::runtime_error{"operation not applicable"};
-                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
-                        case type::UNDEFINED: break;
-                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
-                        default: throw std::runtime_error{"operation not applicable"};
-                    }
-                    break;
-                case type::CHAR:
-                    switch(thatt) {
-                        case type::BOOL: as_char() += thatref.as_bool(); break;
-                        case type::CHAR: as_char() += thatref.as_char(); break;
-                        case type::S8: as_char() += thatref.as_s8(); break;
-                        case type::U8: as_char() += thatref.as_u8(); break;
-                        case type::S16: as_char() += thatref.as_s16(); break;
-                        case type::U16: as_char() += thatref.as_u16(); break;
-                        case type::WCHAR: as_char() += thatref.as_wchar(); break;
-                        case type::S32: as_char() += thatref.as_s32(); break;
-                        case type::U32: as_char() += thatref.as_u32(); break;
-                        case type::S64: as_char() += thatref.as_s64(); break;
-                        case type::U64: as_char() += thatref.as_u64(); break;
-                        case type::FLOAT: as_char() += thatref.as_float(); break;
-                        case type::DOUBLE: as_char() += thatref.as_double(); break;
-                        case type::LONG_DOUBLE: as_char() += thatref.as_long_double(); break;
-                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
-                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
-                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
-                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
-                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
-                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
-                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
-                        case type::STRING: throw std::runtime_error{"operation not applicable"};
-                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
-                        case type::UNDEFINED: break;
-                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
-                        default: throw std::runtime_error{"operation not applicable"};
-                    }
-                    break;
-                case type::S8:
-                    switch(thatt) {
-                        case type::BOOL: as_s8() += thatref.as_bool(); break;
-                        case type::CHAR: as_s8() += thatref.as_char(); break;
-                        case type::S8: as_s8() += thatref.as_s8(); break;
-                        case type::U8: as_s8() += thatref.as_u8(); break;
-                        case type::S16: as_s8() += thatref.as_s16(); break;
-                        case type::U16: as_s8() += thatref.as_u16(); break;
-                        case type::WCHAR: as_s8() += thatref.as_wchar(); break;
-                        case type::S32: as_s8() += thatref.as_s32(); break;
-                        case type::U32: as_s8() += thatref.as_u32(); break;
-                        case type::S64: as_s8() += thatref.as_s64(); break;
-                        case type::U64: as_s8() += thatref.as_u64(); break;
-                        case type::FLOAT: as_s8() += thatref.as_float(); break;
-                        case type::DOUBLE: as_s8() += thatref.as_double(); break;
-                        case type::LONG_DOUBLE: as_s8() += thatref.as_long_double(); break;
-                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
-                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
-                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
-                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
-                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
-                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
-                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
-                        case type::STRING: throw std::runtime_error{"operation not applicable"};
-                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
-                        case type::UNDEFINED: break;
-                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
-                        default: throw std::runtime_error{"operation not applicable"};
-                    }
-                    break;
-                case type::U8:
-                    switch(thatt) {
-                        case type::BOOL: as_u8() += thatref.as_bool(); break;
-                        case type::CHAR: as_u8() += thatref.as_char(); break;
-                        case type::S8: as_u8() += thatref.as_s8(); break;
-                        case type::U8: as_u8() += thatref.as_u8(); break;
-                        case type::S16: as_u8() += thatref.as_s16(); break;
-                        case type::U16: as_u8() += thatref.as_u16(); break;
-                        case type::WCHAR: as_u8() += thatref.as_wchar(); break;
-                        case type::S32: as_u8() += thatref.as_s32(); break;
-                        case type::U32: as_u8() += thatref.as_u32(); break;
-                        case type::S64: as_u8() += thatref.as_s64(); break;
-                        case type::U64: as_u8() += thatref.as_u64(); break;
-                        case type::FLOAT: as_u8() += thatref.as_float(); break;
-                        case type::DOUBLE: as_u8() += thatref.as_double(); break;
-                        case type::LONG_DOUBLE: as_u8() += thatref.as_long_double(); break;
-                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
-                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
-                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
-                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
-                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
-                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
-                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
-                        case type::STRING: throw std::runtime_error{"operation not applicable"};
-                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
-                        case type::UNDEFINED: break;
-                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
-                        default: throw std::runtime_error{"operation not applicable"};
-                    }
-                    break;
-                case type::S16:
-                    switch(thatt) {
-                        case type::BOOL: as_s16() += thatref.as_bool(); break;
-                        case type::CHAR: as_s16() += thatref.as_char(); break;
-                        case type::S8: as_s16() += thatref.as_s8(); break;
-                        case type::U8: as_s16() += thatref.as_u8(); break;
-                        case type::S16: as_s16() += thatref.as_s16(); break;
-                        case type::U16: as_s16() += thatref.as_u16(); break;
-                        case type::WCHAR: as_s16() += thatref.as_wchar(); break;
-                        case type::S32: as_s16() += thatref.as_s32(); break;
-                        case type::U32: as_s16() += thatref.as_u32(); break;
-                        case type::S64: as_s16() += thatref.as_s64(); break;
-                        case type::U64: as_s16() += thatref.as_u64(); break;
-                        case type::FLOAT: as_s16() += thatref.as_float(); break;
-                        case type::DOUBLE: as_s16() += thatref.as_double(); break;
-                        case type::LONG_DOUBLE: as_s16() += thatref.as_long_double(); break;
-                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
-                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
-                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
-                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
-                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
-                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
-                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
-                        case type::STRING: throw std::runtime_error{"operation not applicable"};
-                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
-                        case type::UNDEFINED: break;
-                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
-                        default: throw std::runtime_error{"operation not applicable"};
-                    }
-                    break;
-                case type::U16:
-                    switch(thatt) {
-                        case type::BOOL: as_u16() += thatref.as_bool(); break;
-                        case type::CHAR: as_u16() += thatref.as_char(); break;
-                        case type::S8: as_u16() += thatref.as_s8(); break;
-                        case type::U8: as_u16() += thatref.as_u8(); break;
-                        case type::S16: as_u16() += thatref.as_s16(); break;
-                        case type::U16: as_u16() += thatref.as_u16(); break;
-                        case type::WCHAR: as_u16() += thatref.as_wchar(); break;
-                        case type::S32: as_u16() += thatref.as_s32(); break;
-                        case type::U32: as_u16() += thatref.as_u32(); break;
-                        case type::S64: as_u16() += thatref.as_s64(); break;
-                        case type::U64: as_u16() += thatref.as_u64(); break;
-                        case type::FLOAT: as_u16() += thatref.as_float(); break;
-                        case type::DOUBLE: as_u16() += thatref.as_double(); break;
-                        case type::LONG_DOUBLE: as_u16() += thatref.as_long_double(); break;
-                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
-                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
-                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
-                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
-                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
-                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
-                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
-                        case type::STRING: throw std::runtime_error{"operation not applicable"};
-                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
-                        case type::UNDEFINED: break;
-                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
-                        default: throw std::runtime_error{"operation not applicable"};
-                    }
-                    break;
-                case type::WCHAR:
-                    switch(thatt) {
-                        case type::BOOL: as_wchar() += thatref.as_bool(); break;
-                        case type::CHAR: as_wchar() += thatref.as_char(); break;
-                        case type::S8: as_wchar() += thatref.as_s8(); break;
-                        case type::U8: as_wchar() += thatref.as_u8(); break;
-                        case type::S16: as_wchar() += thatref.as_s16(); break;
-                        case type::U16: as_wchar() += thatref.as_u16(); break;
-                        case type::WCHAR: as_wchar() += thatref.as_wchar(); break;
-                        case type::S32: as_wchar() += thatref.as_s32(); break;
-                        case type::U32: as_wchar() += thatref.as_u32(); break;
-                        case type::S64: as_wchar() += thatref.as_s64(); break;
-                        case type::U64: as_wchar() += thatref.as_u64(); break;
-                        case type::FLOAT: as_wchar() += thatref.as_float(); break;
-                        case type::DOUBLE: as_wchar() += thatref.as_double(); break;
-                        case type::LONG_DOUBLE: as_wchar() += thatref.as_long_double(); break;
-                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
-                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
-                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
-                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
-                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
-                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
-                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
-                        case type::STRING: throw std::runtime_error{"operation not applicable"};
-                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
-                        case type::UNDEFINED: break;
-                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
-                        default: throw std::runtime_error{"operation not applicable"};
-                    }
-                    break;
-                case type::S32:
-                    switch(thatt) {
-                        case type::BOOL: as_s32() += thatref.as_bool(); break;
-                        case type::CHAR: as_s32() += thatref.as_char(); break;
-                        case type::S8: as_s32() += thatref.as_s8(); break;
-                        case type::U8: as_s32() += thatref.as_u8(); break;
-                        case type::S16: as_s32() += thatref.as_s16(); break;
-                        case type::U16: as_s32() += thatref.as_u16(); break;
-                        case type::WCHAR: as_s32() += thatref.as_wchar(); break;
-                        case type::S32: as_s32() += thatref.as_s32(); break;
-                        case type::U32: as_s32() += thatref.as_u32(); break;
-                        case type::S64: as_s32() += thatref.as_s64(); break;
-                        case type::U64: as_s32() += thatref.as_u64(); break;
-                        case type::FLOAT: as_s32() += thatref.as_float(); break;
-                        case type::DOUBLE: as_s32() += thatref.as_double(); break;
-                        case type::LONG_DOUBLE: as_s32() += thatref.as_long_double(); break;
-                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
-                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
-                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
-                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
-                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
-                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
-                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
-                        case type::STRING: throw std::runtime_error{"operation not applicable"};
-                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
-                        case type::UNDEFINED: break;
-                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
-                        default: throw std::runtime_error{"operation not applicable"};
-                    }
-                    break;
-                case type::U32:
-                    switch(thatt) {
-                        case type::BOOL: as_u32() += thatref.as_bool(); break;
-                        case type::CHAR: as_u32() += thatref.as_char(); break;
-                        case type::S8: as_u32() += thatref.as_s8(); break;
-                        case type::U8: as_u32() += thatref.as_u8(); break;
-                        case type::S16: as_u32() += thatref.as_s16(); break;
-                        case type::U16: as_u32() += thatref.as_u16(); break;
-                        case type::WCHAR: as_u32() += thatref.as_wchar(); break;
-                        case type::S32: as_u32() += thatref.as_s32(); break;
-                        case type::U32: as_u32() += thatref.as_u32(); break;
-                        case type::S64: as_u32() += thatref.as_s64(); break;
-                        case type::U64: as_u32() += thatref.as_u64(); break;
-                        case type::FLOAT: as_u32() += thatref.as_float(); break;
-                        case type::DOUBLE: as_u32() += thatref.as_double(); break;
-                        case type::LONG_DOUBLE: as_u32() += thatref.as_long_double(); break;
-                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
-                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
-                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
-                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
-                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
-                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
-                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
-                        case type::STRING: throw std::runtime_error{"operation not applicable"};
-                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
-                        case type::UNDEFINED: break;
-                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
-                        default: throw std::runtime_error{"operation not applicable"};
-                    }
-                    break;
-                case type::S64:
-                    switch(thatt) {
-                        case type::BOOL: as_s64() += thatref.as_bool(); break;
-                        case type::CHAR: as_s64() += thatref.as_char(); break;
-                        case type::S8: as_s64() += thatref.as_s8(); break;
-                        case type::U8: as_s64() += thatref.as_u8(); break;
-                        case type::S16: as_s64() += thatref.as_s16(); break;
-                        case type::U16: as_s64() += thatref.as_u16(); break;
-                        case type::WCHAR: as_s64() += thatref.as_wchar(); break;
-                        case type::S32: as_s64() += thatref.as_s32(); break;
-                        case type::U32: as_s64() += thatref.as_u32(); break;
-                        case type::S64: as_s64() += thatref.as_s64(); break;
-                        case type::U64: as_s64() += thatref.as_u64(); break;
-                        case type::FLOAT: as_s64() += thatref.as_float(); break;
-                        case type::DOUBLE: as_s64() += thatref.as_double(); break;
-                        case type::LONG_DOUBLE: as_s64() += thatref.as_long_double(); break;
-                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
-                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
-                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
-                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
-                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
-                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
-                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
-                        case type::STRING: throw std::runtime_error{"operation not applicable"};
-                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
-                        case type::UNDEFINED: break;
-                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
-                        default: throw std::runtime_error{"operation not applicable"};
-                    }
-                    break;
-                case type::U64:
-                    switch(thatt) {
-                        case type::BOOL: as_u64() += thatref.as_bool(); break;
-                        case type::CHAR: as_u64() += thatref.as_char(); break;
-                        case type::S8: as_u64() += thatref.as_s8(); break;
-                        case type::U8: as_u64() += thatref.as_u8(); break;
-                        case type::S16: as_u64() += thatref.as_s16(); break;
-                        case type::U16: as_u64() += thatref.as_u16(); break;
-                        case type::WCHAR: as_u64() += thatref.as_wchar(); break;
-                        case type::S32: as_u64() += thatref.as_s32(); break;
-                        case type::U32: as_u64() += thatref.as_u32(); break;
-                        case type::S64: as_u64() += thatref.as_s64(); break;
-                        case type::U64: as_u64() += thatref.as_u64(); break;
-                        case type::FLOAT: as_u64() += thatref.as_float(); break;
-                        case type::DOUBLE: as_u64() += thatref.as_double(); break;
-                        case type::LONG_DOUBLE: as_u64() += thatref.as_long_double(); break;
-                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
-                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
-                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
-                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
-                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
-                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
-                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
-                        case type::STRING: throw std::runtime_error{"operation not applicable"};
-                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
-                        case type::UNDEFINED: break;
-                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
-                        default: throw std::runtime_error{"operation not applicable"};
-                    }
-                    break;
-                case type::FLOAT:
-                    switch(thatt) {
-                        case type::BOOL: as_float() += thatref.as_bool(); break;
-                        case type::CHAR: as_float() += thatref.as_char(); break;
-                        case type::S8: as_float() += thatref.as_s8(); break;
-                        case type::U8: as_float() += thatref.as_u8(); break;
-                        case type::S16: as_float() += thatref.as_s16(); break;
-                        case type::U16: as_float() += thatref.as_u16(); break;
-                        case type::WCHAR: as_float() += thatref.as_wchar(); break;
-                        case type::S32: as_float() += thatref.as_s32(); break;
-                        case type::U32: as_float() += thatref.as_u32(); break;
-                        case type::S64: as_float() += thatref.as_s64(); break;
-                        case type::U64: as_float() += thatref.as_u64(); break;
-                        case type::FLOAT: as_float() += thatref.as_float(); break;
-                        case type::DOUBLE: as_float() += thatref.as_double(); break;
-                        case type::LONG_DOUBLE: as_float() += thatref.as_long_double(); break;
-                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
-                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
-                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
-                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
-                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
-                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
-                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
-                        case type::STRING: throw std::runtime_error{"operation not applicable"};
-                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
-                        case type::UNDEFINED: break;
-                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
-                        default: throw std::runtime_error{"operation not applicable"};
-                    }
-                    break;
-                case type::DOUBLE:
-                    switch(thatt) {
-                        case type::BOOL: as_double() += thatref.as_bool(); break;
-                        case type::CHAR: as_double() += thatref.as_char(); break;
-                        case type::S8: as_double() += thatref.as_s8(); break;
-                        case type::U8: as_double() += thatref.as_u8(); break;
-                        case type::S16: as_double() += thatref.as_s16(); break;
-                        case type::U16: as_double() += thatref.as_u16(); break;
-                        case type::WCHAR: as_double() += thatref.as_wchar(); break;
-                        case type::S32: as_double() += thatref.as_s32(); break;
-                        case type::U32: as_double() += thatref.as_u32(); break;
-                        case type::S64: as_double() += thatref.as_s64(); break;
-                        case type::U64: as_double() += thatref.as_u64(); break;
-                        case type::FLOAT: as_double() += thatref.as_float(); break;
-                        case type::DOUBLE: as_double() += thatref.as_double(); break;
-                        case type::LONG_DOUBLE: as_double() += thatref.as_long_double(); break;
-                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
-                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
-                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
-                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
-                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
-                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
-                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
-                        case type::STRING: throw std::runtime_error{"operation not applicable"};
-                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
-                        case type::UNDEFINED: break;
-                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
-                        default: throw std::runtime_error{"operation not applicable"};
-                    }
-                    break;
-                case type::LONG_DOUBLE:
-                    switch(thatt) {
-                        case type::BOOL: as_long_double() += thatref.as_bool(); break;
-                        case type::CHAR: as_long_double() += thatref.as_char(); break;
-                        case type::S8: as_long_double() += thatref.as_s8(); break;
-                        case type::U8: as_long_double() += thatref.as_u8(); break;
-                        case type::S16: as_long_double() += thatref.as_s16(); break;
-                        case type::U16: as_long_double() += thatref.as_u16(); break;
-                        case type::WCHAR: as_long_double() += thatref.as_wchar(); break;
-                        case type::S32: as_long_double() += thatref.as_s32(); break;
-                        case type::U32: as_long_double() += thatref.as_u32(); break;
-                        case type::S64: as_long_double() += thatref.as_s64(); break;
-                        case type::U64: as_long_double() += thatref.as_u64(); break;
-                        case type::FLOAT: as_long_double() += thatref.as_float(); break;
-                        case type::DOUBLE: as_long_double() += thatref.as_double(); break;
-                        case type::LONG_DOUBLE: as_long_double() += thatref.as_long_double(); break;
-                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
-                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
-                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
-                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
-                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
-                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
-                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
-                        case type::STRING: throw std::runtime_error{"operation not applicable"};
-                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
-                        case type::UNDEFINED: break;
-                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
-                        default: throw std::runtime_error{"operation not applicable"};
-                    }
-                    break;
-                case type::VEC4:
-                    switch(thatt) {
-                        case type::BOOL: as_vec4() += thatref.as_bool(); break;
-                        case type::CHAR: as_vec4() += thatref.as_char(); break;
-                        case type::S8: as_vec4() += thatref.as_s8(); break;
-                        case type::U8: as_vec4() += thatref.as_u8(); break;
-                        case type::S16: as_vec4() += thatref.as_s16(); break;
-                        case type::U16: as_vec4() += thatref.as_u16(); break;
-                        case type::WCHAR: as_vec4() += thatref.as_wchar(); break;
-                        case type::S32: as_vec4() += thatref.as_s32(); break;
-                        case type::U32: as_vec4() += thatref.as_u32(); break;
-                        case type::S64: as_vec4() += thatref.as_s64(); break;
-                        case type::U64: as_vec4() += thatref.as_u64(); break;
-                        case type::FLOAT: as_vec4() += thatref.as_float(); break;
-                        case type::DOUBLE: as_vec4() += thatref.as_double(); break;
-                        case type::LONG_DOUBLE: as_vec4() += thatref.as_long_double(); break;
-                        case type::VEC4: as_vec4() += thatref.as_vec4(); break;
-                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
-                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
-                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
-                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
-                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
-                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
-                        case type::STRING: throw std::runtime_error{"operation not applicable"};
-                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
-                        case type::UNDEFINED: break;
-                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
-                        default: throw std::runtime_error{"operation not applicable"};
-                    }
-                    break;
-                case type::MAT4:
-                    switch(thatt) {
-                        case type::BOOL: throw std::runtime_error{"operation not applicable"};
-                        case type::CHAR: throw std::runtime_error{"operation not applicable"};
-                        case type::S8: throw std::runtime_error{"operation not applicable"};
-                        case type::U8: throw std::runtime_error{"operation not applicable"};
-                        case type::S16: throw std::runtime_error{"operation not applicable"};
-                        case type::U16: throw std::runtime_error{"operation not applicable"};
-                        case type::WCHAR: throw std::runtime_error{"operation not applicable"};
-                        case type::S32: throw std::runtime_error{"operation not applicable"};
-                        case type::U32: throw std::runtime_error{"operation not applicable"};
-                        case type::S64: throw std::runtime_error{"operation not applicable"};
-                        case type::U64: throw std::runtime_error{"operation not applicable"};
-                        case type::FLOAT: throw std::runtime_error{"operation not applicable"};
-                        case type::DOUBLE: throw std::runtime_error{"operation not applicable"};
-                        case type::LONG_DOUBLE: throw std::runtime_error{"operation not applicable"};
-                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
-                        case type::MAT4: as_mat4() += thatref.as_mat4(); break;
-                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
-                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
-                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
-                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
-                        case type::OBJECT: throw std::runtime_error{"operation not applicable"};
-                        case type::STRING: throw std::runtime_error{"operation not applicable"};
-                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
-                        case type::UNDEFINED: break;
-                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
-                        default: throw std::runtime_error{"operation not applicable"};
-                    }
-                    break;
-                case type::POINTER: throw std::runtime_error{"operation not applicable"};
-                    break;
-                case type::CLASS: throw std::runtime_error{"operation not applicable"};
-                    break;
-                case type::FUNC: throw std::runtime_error{"operation not applicable"};
-                    break;
-                case type::ARRAY:
-                    switch(thatt) {
-                        case type::BOOL:
-                        case type::CHAR:
-                        case type::S8:
-                        case type::U8:
-                        case type::S16:
-                        case type::U16:
-                        case type::WCHAR:
-                        case type::S32:
-                        case type::U32:
-                        case type::S64:
-                        case type::U64:
-                        case type::FLOAT:
-                        case type::DOUBLE:
-                        case type::LONG_DOUBLE:
-                        case type::VEC4:
-                        case type::MAT4:
-                        case type::POINTER:
-                        case type::CLASS:
-                        case type::FUNC:
-                        case type::OBJECT:
-                        case type::STRING:
-                        case type::WSTRING:
-                        case type::UNDEFINED:
-                        case type::VALBOX:
-                            as_array().push_back(thatref.clone());
-                            break;
-                        case type::ARRAY:
-                            for(auto &&v: thatref.as_array()) {
-                                as_array().push_back(v.clone());
-                            }
-                            break;
-                        default: throw std::runtime_error{"operation not applicable"};
-                    }
-                    break;
-                case type::OBJECT:
-                    switch(thatt) {
-                        case type::BOOL: throw std::runtime_error{"operation not applicable"};
-                        case type::CHAR: throw std::runtime_error{"operation not applicable"};
-                        case type::S8: throw std::runtime_error{"operation not applicable"};
-                        case type::U8: throw std::runtime_error{"operation not applicable"};
-                        case type::S16: throw std::runtime_error{"operation not applicable"};
-                        case type::U16: throw std::runtime_error{"operation not applicable"};
-                        case type::WCHAR: throw std::runtime_error{"operation not applicable"};
-                        case type::S32: throw std::runtime_error{"operation not applicable"};
-                        case type::U32: throw std::runtime_error{"operation not applicable"};
-                        case type::S64: throw std::runtime_error{"operation not applicable"};
-                        case type::U64: throw std::runtime_error{"operation not applicable"};
-                        case type::FLOAT: throw std::runtime_error{"operation not applicable"};
-                        case type::DOUBLE: throw std::runtime_error{"operation not applicable"};
-                        case type::LONG_DOUBLE: throw std::runtime_error{"operation not applicable"};
-                        case type::VEC4: throw std::runtime_error{"operation not applicable"};
-                        case type::MAT4: throw std::runtime_error{"operation not applicable"};
-                        case type::POINTER: throw std::runtime_error{"operation not applicable"};
-                        case type::CLASS: throw std::runtime_error{"operation not applicable"};
-                        case type::FUNC: throw std::runtime_error{"operation not applicable"};
-                        case type::STRING: throw std::runtime_error{"operation not applicable"};
-                        case type::WSTRING: throw std::runtime_error{"operation not applicable"};
-                        case type::UNDEFINED: break;
-                        case type::VALBOX: throw std::runtime_error{"operation not applicable"};
-                        case type::ARRAY: throw std::runtime_error{"operation not applicable"};
-                        case type::OBJECT: {
-                            for(auto &&p: thatref.as_object()) {
-                                as_object()[p.first] = p.second.clone();
-                            }
-                            break;
-                        }
-                        default: throw std::runtime_error{"operation not applicable"};
-                    }
-                    break;
-                case type::STRING:
-                    if(thatt != type::UNDEFINED) {
-                        as_string() += thatref.cast_to_string();
-                    }
-                    break;
-                case type::WSTRING:
-                    if(thatt != type::UNDEFINED) {
-                        as_wstring() += thatref.cast_to_wstring();
-                    }
-                    break;
-                case type::UNDEFINED:
-                    if(thatt != type::UNDEFINED) {
-                        assign(thatref);
-                    }
-                    break;
-                case type::VALBOX:
-                    throw std::runtime_error{"operation not applicable"};
-                default:
-                    throw std::runtime_error{"operation not applicable"};
-            }
-            return *this;
         }
 
         friend valbox operator+(valbox const &larg, valbox const &rarg) {
