@@ -1417,7 +1417,7 @@ namespace teal {
                 increment_pos();
                 json res{get_expr()};
                 if(get_token(0).type_is_not(token::type::RPAREN)) {
-                    throw compilation_error{get_token(0).line(), get_token(0).col(), "expected parentesis"};
+                    throw compilation_error{get_token(0).line(), get_token(0).col(), "expected right parentesis"};
                 }
                 increment_pos();
                 return res;
@@ -1441,7 +1441,7 @@ namespace teal {
                     }
                 }
                 if(get_token(0).type_is_not(token::type::RBRACKET)) {
-                    throw compilation_error{get_token(0).line(), get_token(0).col(), "expected parentesis"};
+                    throw compilation_error{get_token(0).line(), get_token(0).col(), "expected right bracket"};
                 }
                 increment_pos();
                 return res;
