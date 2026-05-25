@@ -85,6 +85,7 @@ HEADERS += \
     ../../src/ext/crypto_ext.hpp \
     ../../src/ext/file_ext.hpp \
     ../../src/ext/math_ext.hpp \
+    ../../src/ext/quectoml_ext.hpp \
     ../../src/ext/rand_ext.hpp \
     ../../src/ext/time_ext.hpp \
     ../../src/tealscript_cells.hpp \

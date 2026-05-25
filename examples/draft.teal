@@ -71,16 +71,17 @@ my_drafts(host_data) {
     console.fixed();
     console.setprecision(0);
 
+    for(int = 0; int < 100; ++int) {
+        timestamp().println();
+    }
+    return exit();
+
     this.k = timestamp();
     return this.k;
-
 
     for(v = matrix(4, 1, [10, 0, 0, 0]); v; v.at(0) -= 1) {
         v.println();
     }
-
-
-
 
     m = identity_matrix(4);
     println(m);

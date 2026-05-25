@@ -1,1 +1,1 @@
-./bin/tealscript ./examples/perf_limit.teal ./examples/tap_lights.teal ./bin/libray.so
+./bin/tealscript ./examples/tap_lights.teal ./bin/libray.so

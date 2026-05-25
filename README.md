@@ -218,10 +218,16 @@ and4  alu_62(alu_58, alu_59, alu_60, alu_61)          'EQ';
 
 As you can see, the graph is composed of computation node instances whose implementations described above that graph. And the program itself turned out to be short, understandable and covering the logical circuit one to one.
 
+![ALU 74181 rendered demo](resources/alu74181_demo.png)
+
 
 ## Distributed Example
 
-Guess what? Nothing special, just spliting up our application into two parts communicating via the network. To make this possible, we have to turn the network server mode on. After that, ALL the computation nodes of the locally running script are automatically visible from the network. Ok, lets go ahead.
+Guess what? Nothing special, just spliting up our application into two parts communicating via the network. To make this possible, we have to turn the network server mode on. After that, ALL the computation nodes of the locally running script are automatically visible from the network.
+
+This is native (for the scripting language) distributed computations, transparent data routing between scripts on different hosts via a fault-tolerant UDP-based protocol, requiring no message brokers. The engine enables seamless system partitioning at the language level: for instance, a computational logic circuit model (ALU 74181) runs in one process and exposes its output pins to the network, while an independent raylib-based visualizer subscribes to them via extern URIs directly in the script graph. Zero sockets or serialization - just native language syntax.
+
+Ok, lets go ahead.
 
 ### Server part
 
@@ -327,7 +333,7 @@ and2  alu_38(alu_25, alu_28);
 and3  alu_39(alu_25, alu_27, alu_30);
 and4  alu_40(alu_25, alu_27, alu_29, alu_32);
 nand5 alu_41(alu_25, alu_27, alu_32, alu_31, c_in);
-nand4 alu_42(alu_25, alu_27, alu_32, alu_31)          'P';
+nand4 alu_42(alu_25, alu_27, alu_32, alu_31);
 and5  alu_43(c_in, alu_31, alu_32, alu_27, alu_4);
 and4  alu_44(alu_32, alu_27, alu_32, alu_4);
 and3  alu_45(alu_27, alu_30, alu_4);
@@ -338,18 +344,17 @@ and2  alu_49(alu_30, alu_4);
 and3  alu_50(c_in, alu_31, alu_4);
 and2  alu_51(alu_32, alu_4);
 nand2 alu_52(c_in, alu_4);
-nor4  alu_53(alu_37, alu_38, alu_39, alu_40)          'G';
+nor4  alu_53(alu_37, alu_38, alu_39, alu_40);
 nor4  alu_54(alu_43, alu_44, alu_45, alu_46);
 nor3  alu_55(alu_47, alu_48, alu_49);
 nor2  alu_56(alu_50, alu_51);
-i2or2 alu_57(alu_53, alu_41)                          'C_out';
-xor2  alu_58(alu_33, alu_54)                          'f3';
-xor2  alu_59(alu_34, alu_55)                          'f2';
-xor2  alu_60(alu_35, alu_56)                          'f1';
-xor2  alu_61(alu_36, alu_52)                          'f0';
-and4  alu_62(alu_58, alu_59, alu_60, alu_61)          'EQ';
+i2or2 alu_57(alu_53, alu_41);
+xor2  alu_58(alu_33, alu_54);
+xor2  alu_59(alu_34, alu_55);
+xor2  alu_60(alu_35, alu_56);
+xor2  alu_61(alu_36, alu_52);
+and4  alu_62(alu_58, alu_59, alu_60, alu_61);
 ```
-
 
 ### Client part
 
@@ -357,28 +362,28 @@ and4  alu_62(alu_58, alu_59, alu_60, alu_61)          'EQ';
 /////////////////////////////////////////////////////////////////////////////////
 //                             ALU 74181 view (renderer)
 /////////////////////////////////////////////////////////////////////////////////
-extern 'tealscript://localhost:43987/s0' s0;
-extern 'tealscript://localhost:43987/s1' s1;
-extern 'tealscript://localhost:43987/s2' s2;
-extern 'tealscript://localhost:43987/s3' s3;
-extern 'tealscript://localhost:43987/a0' a0;
-extern 'tealscript://localhost:43987/a1' a1;
-extern 'tealscript://localhost:43987/a2' a2;
-extern 'tealscript://localhost:43987/a3' a3;
-extern 'tealscript://localhost:43987/b0' b0;
-extern 'tealscript://localhost:43987/b1' b1;
-extern 'tealscript://localhost:43987/b2' b2;
-extern 'tealscript://localhost:43987/b3' b3;
-extern 'tealscript://localhost:43987/c_in' c_in;
-extern 'tealscript://localhost:43987/m' m;
-extern 'tealscript://localhost:43987/alu_61' alu_61;
-extern 'tealscript://localhost:43987/alu_60' alu_60;
-extern 'tealscript://localhost:43987/alu_59' alu_59;
-extern 'tealscript://localhost:43987/alu_58' alu_58;
-extern 'tealscript://localhost:43987/alu_57' alu_57;
-extern 'tealscript://localhost:43987/alu_42' alu_42;
-extern 'tealscript://localhost:43987/alu_53' alu_53;
-extern 'tealscript://localhost:43987/alu_62' alu_62;
+extern 'tealscript://some.host.name.org:43987/s0' s0;
+extern 'tealscript://some.host.name.org:43987/s1' s1;
+extern 'tealscript://some.host.name.org:43987/s2' s2;
+extern 'tealscript://some.host.name.org:43987/s3' s3;
+extern 'tealscript://some.host.name.org:43987/a0' a0;
+extern 'tealscript://some.host.name.org:43987/a1' a1;
+extern 'tealscript://some.host.name.org:43987/a2' a2;
+extern 'tealscript://some.host.name.org:43987/a3' a3;
+extern 'tealscript://some.host.name.org:43987/b0' b0;
+extern 'tealscript://some.host.name.org:43987/b1' b1;
+extern 'tealscript://some.host.name.org:43987/b2' b2;
+extern 'tealscript://some.host.name.org:43987/b3' b3;
+extern 'tealscript://some.host.name.org:43987/c_in' c_in;
+extern 'tealscript://some.host.name.org:43987/m' m;
+extern 'tealscript://some.host.name.org:43987/alu_61' alu_61;
+extern 'tealscript://some.host.name.org:43987/alu_60' alu_60;
+extern 'tealscript://some.host.name.org:43987/alu_59' alu_59;
+extern 'tealscript://some.host.name.org:43987/alu_58' alu_58;
+extern 'tealscript://some.host.name.org:43987/alu_57' alu_57;
+extern 'tealscript://some.host.name.org:43987/alu_42' alu_42;
+extern 'tealscript://some.host.name.org:43987/alu_53' alu_53;
+extern 'tealscript://some.host.name.org:43987/alu_62' alu_62;
 
 ///////////////////////// display
 ray_window() {

@@ -80,7 +80,9 @@ namespace teal {
 
     class runtime: public runtime_interface {
     public:
-        runtime() {
+        runtime(bool sequential_cells_execution = false):
+            sequential_cells_execution_traversal_{sequential_cells_execution}
+        {
             exctx_.set_runtime_interface(this);
 
             add_function("version_major", TEALFUN(/*args*/) { return version_major_; });
@@ -1616,6 +1618,7 @@ namespace teal {
 #ifndef TEAL_DEBUGGING
                     try {
 #endif
+                        bool sequential_cells_execution_traversal{sequential_cells_execution_traversal_};
                         std::shared_ptr<execution_context> exctx{std::make_shared<execution_context>()};
                         execution_context *exctx_ptr{exctx.get()};
                         exctx_ptr->set_runtime_interface(this);
@@ -1628,11 +1631,7 @@ namespace teal {
                         while(!termination_requested() && !failure_occured()) {
                             wc_indx = worker_cells_flat_array_index_.fetch_add(1);
                             worker_cell_instance *curr_cell{worker_cells_flat_array_[
-#ifdef LINEAR_CELLS_TRAVERSING
-                                    loop_ctr
-#else
-                                    wc_indx % worker_cells_cnt
-#endif
+                                    sequential_cells_execution_traversal ? loop_ctr : wc_indx % worker_cells_cnt
                                 ]
                             };
                             bool cell_executed{false};
@@ -2059,6 +2058,7 @@ namespace teal {
                 return it != user_functions_.end();
             }
         };
+        bool sequential_cells_execution_traversal_{false};
         std::function<valbox(std::vector<valbox> &)> user_function_selector_{
             [this](std::vector<valbox> &fargs) -> valbox {
                 execution_context *exctx{reinterpret_cast<execution_context *>(fargs[0].as_ptr())};
@@ -2135,7 +2135,7 @@ namespace teal {
         std::list<std::pair<std::shared_ptr<so>, extension_interface *>> loaded_extensions_{};
         static std::size_t constexpr version_major_{1};
         static std::size_t constexpr version_minor_{5};
-        static std::size_t constexpr version_patch_{14};
+        static std::size_t constexpr version_patch_{62};
 
         mutable shared_mutex cq_mtp_{};
         std::unique_ptr<command_queue> cq_{};
