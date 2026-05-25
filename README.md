@@ -225,7 +225,7 @@ As you can see, the graph is composed of computation node instances whose implem
 
 Guess what? Nothing special, just spliting up our application into two parts communicating via the network. To make this possible, we have to turn the network server mode on. After that, ALL the computation nodes of the locally running script are automatically visible from the network.
 
-This is native (for the scripting language) distributed computations, transparent data routing between scripts on different hosts via a fault-tolerant UDP-based protocol, requiring no message brokers. The engine enables seamless system partitioning at the language level: for instance, a computational logic circuit model (ALU 74181) runs in one process and exposes its output pins to the network, while an independent raylib-based visualizer subscribes to them via extern URIs directly in the script graph. Zero sockets or serialization - just native language syntax.
+This is native (for the scripting language) distributed computations - transparent data routing between scripts on different hosts via a fault-tolerant UDP-based protocol, requiring no message brokers. The engine enforces strict architectural boundaries at the language level: for instance, a computational model (ALU 74181) runs in one process and exposes all of its pins to the network, while an independent raylib-based visualizer subscribes via extern URIs directly in the script graph. Decoupled IPC without manual socket management or serialization overhead. Just scripting language syntax.
 
 Ok, lets go ahead.
 
