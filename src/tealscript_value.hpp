@@ -21,7 +21,7 @@ namespace teal {
 
     class valbox {
     public:
-        enum class type: std::uint8_t {
+        enum class type {
             BOOL,
             CHAR,
             S8,
@@ -166,8 +166,8 @@ namespace teal {
                 std::string const &c = {}, std::string const &func_name = {},
                 bool user_func = false
             ):
-                value_{v}, class_{c}, func_name_{func_name}, type_{t},
-                pointed_type_{pointed_type}, user_func_{user_func}
+                value_{v}, type_{t}, pointed_type_{pointed_type},
+                class_{c}, func_name_{func_name}, user_func_{user_func}
             {
             }
             box_data(
@@ -175,9 +175,8 @@ namespace teal {
                 std::string const &c = {}, std::string const &func_name = {},
                 bool user_func = false
             ):
-                value_{std::move(v)}, class_{c}, func_name_{func_name},
-                type_{t}, pointed_type_{pointed_type}, user_func_{user_func}
-            {
+                value_{std::move(v)}, type_{t}, pointed_type_{pointed_type},
+                class_{c}, func_name_{func_name}, user_func_{user_func}            {
             }
             void undefine() {
                 type_ = type::UNDEFINED;
@@ -220,12 +219,12 @@ namespace teal {
             }
 
             value_t value_{nullptr};
+            type type_{type::UNDEFINED};
+            type pointed_type_{type::UNDEFINED};
             std::string class_{};
             std::string func_name_{};
             std::atomic<std::int32_t> mtp_{0};
             std::atomic<std::int32_t> pwr_{0};
-            type type_{type::UNDEFINED};
-            type pointed_type_{type::UNDEFINED};
             bool user_func_{false};
         };
 
@@ -304,6 +303,7 @@ namespace teal {
         if(!ref.box_) { \
             ref.box_ = std::make_shared<box_data>(v, type::ARGTYPE); \
         } else { \
+            std::unique_lock lck{*ref.box_}; \
             ref.box_->value_ = v; \
             ref.box_->type_ = type::ARGTYPE; \
             ref.box_->pointed_type_ = type::UNDEFINED; \
@@ -317,6 +317,7 @@ namespace teal {
         if(!ref.box_) { \
             ref.box_ = std::make_shared<box_data>((void *)v, type::POINTER, type::ARGTYPE); \
         } else { \
+            std::unique_lock lck{*ref.box_}; \
             ref.box_->value_ = (void *)v; \
             ref.box_->type_ = type::POINTER; \
             ref.box_->pointed_type_ = type::ARGTYPE; \
@@ -346,6 +347,7 @@ namespace teal {
             if(!ref.box_) {
                 ref.box_ = std::make_shared<box_data>(std::string{v}, type::STRING);
             } else {
+                std::unique_lock lck{*ref.box_};
                 ref.box_->value_ = std::string{v};
                 ref.box_->type_ = type::STRING;
                 ref.box_->pointed_type_ = type::UNDEFINED;
@@ -363,6 +365,7 @@ namespace teal {
             if(!ref.box_) {
                 ref.box_ = std::make_shared<box_data>(std::wstring{v}, type::WSTRING);
             } else {
+                std::unique_lock lck{*ref.box_};
                 ref.box_->value_ = std::wstring{v};
                 ref.box_->type_ = type::WSTRING;
                 ref.box_->pointed_type_ = type::UNDEFINED;
@@ -378,6 +381,7 @@ namespace teal {
             if(!ref.box_) {
                 ref.box_ = std::make_shared<box_data>(std::move(v), type::STRING);
             } else {
+                std::unique_lock lck{*ref.box_};
                 ref.box_->value_ = std::move(v);
                 ref.box_->type_ = type::STRING;
                 ref.box_->pointed_type_ = type::UNDEFINED;
@@ -393,6 +397,7 @@ namespace teal {
             if(!ref.box_) {
                 ref.box_ = std::make_shared<box_data>(std::move(v), type::WSTRING);
             } else {
+                std::unique_lock lck{*ref.box_};
                 ref.box_->value_ = std::move(v);
                 ref.box_->type_ = type::WSTRING;
                 ref.box_->pointed_type_ = type::UNDEFINED;
@@ -430,6 +435,7 @@ namespace teal {
             if(!ref.box_) {
                 ref.box_ = std::make_shared<box_data>(value_t{}, type::UNDEFINED);
             } else {
+                std::unique_lock lck{*ref.box_};
                 ref.box_->value_ = value_t{};
                 ref.box_->type_ = type::UNDEFINED;
                 ref.box_->pointed_type_ = type::UNDEFINED;
@@ -5888,7 +5894,7 @@ namespace teal {
         valbox &assign(valbox const &that) {
             valbox const &that_ref{that.deref()};
             valbox &ref{deref()};
-            if(ref.box_.get() == that_ref.box_.get()) {
+            if(ref.box_.get() != nullptr && ref.box_.get() == that_ref.box_.get()) {
                 return *this;
             }
             if(that_ref.is_undefined()) {
@@ -5929,7 +5935,7 @@ namespace teal {
         valbox &fetch_from(valbox &&that) {
             valbox &that_ref{that.deref()};
             valbox &ref{deref()};
-            if(ref.box_.get() == that_ref.box_.get()) {
+            if(ref.box_.get() != nullptr && ref.box_.get() == that_ref.box_.get()) {
                 return *this;
             }
             ref.box_ = std::move(that_ref.box_);
