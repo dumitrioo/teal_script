@@ -1,3 +1,12 @@
+performance_limiter() {
+    if(this.initialized == undefined) {
+        this.initialized = true;
+        set_cycle_sleep_seconds(0.0001);
+        set_inactive_sleep_seconds(0.001);
+    }
+}
+performance_limiter performance_limiter_inst();
+
 extern 'tealscript://127.0.0.1:43987/just_a_regular_cell' value_from_net;
 
 ext_value_use(vname, exv) {

@@ -3,6 +3,9 @@ setup_cell() {
         if(!enable_external_values_server("0.0.0.0", 43987)) {
             throw error_str(last_error());
         }
+        set_extern_update_seconds(0.00001);
+        set_cycle_sleep_seconds(0.00001);
+        set_inactive_sleep_seconds(0.01);
     }
     return external_values_server_enabled();
 }
