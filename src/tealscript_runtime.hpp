@@ -2379,7 +2379,7 @@ namespace teal {
                             } while(false);
                             bool need_send{false};
                             if(cellptr != nullptr) {
-                                json vbsr{cellptr->value_clone().serialize(this)};
+                                json vbsr{cellptr->value().serialize(this)};
                                 std::vector<std::uint8_t> bs{vbsr.bserialize()};
                                 if(last_value != bs) {
                                     need_send = true;

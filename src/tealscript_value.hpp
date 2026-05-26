@@ -186,6 +186,7 @@ namespace teal {
                 func_name_.clear();
                 user_func_ = false;
             }
+            std::shared_mutex mtp_{};
             value_t value_{nullptr};
             type type_{type::UNDEFINED};
             type pointed_type_{type::UNDEFINED};
@@ -5098,6 +5099,12 @@ namespace teal {
 
         valbox &assign_preserving_type(valbox const &that) {
             valbox &thisref{deref()};
+            bool locked{false};
+            shut_on_destroy sod{[&]() { if(locked) { thisref.box_->mtp_.unlock(); } }};
+            if(thisref.box_) {
+                thisref.box_->mtp_.lock();
+                locked = true;
+            }
             valbox const &thatref{that.deref()};
             auto thist{thisref.val_or_pointed_type()};
             auto thatt{thatref.val_or_pointed_type()};
@@ -5852,6 +5859,7 @@ namespace teal {
             }
             if(that_ref.is_undefined()) {
                 if(ref.box_) {
+                    std::unique_lock l{ref.box_->mtp_};
                     ref.box_->value_ = value_t{};
                     ref.box_->type_ = type::UNDEFINED;
                     ref.box_->pointed_type_ = type::UNDEFINED;
@@ -5871,6 +5879,7 @@ namespace teal {
                         that_ref.box_->user_func_
                     );
                 } else {
+                    std::unique_lock l{ref.box_->mtp_};
                     ref.box_->value_ = that_ref.box_->value_;
                     ref.box_->type_ = that_ref.box_->type_;
                     ref.box_->pointed_type_ = that_ref.box_->pointed_type_;
@@ -6795,71 +6804,80 @@ namespace teal {
         template<typename T>
         json serialize(T *helper) const {
             json res{};
-            res["type"] = type_to_str(val_or_pointed_type());
+
+            valbox const &thisref{deref()};
+            bool locked{false};
+            shut_on_destroy sod{[&]() { if(locked) { thisref.box_->mtp_.unlock_shared(); } }};
+            if(thisref.box_) {
+                thisref.box_->mtp_.lock_shared();
+                locked = true;
+            }
+
+            res["type"] = type_to_str(thisref.val_or_pointed_type());
             json &v{res["value"]};
-            if(is_undefined_ref()) {
+            if(thisref.is_undefined_ref()) {
                 v = json{};
-            } else if(is_string_ref()) {
-                v = as_string();
-            } else if(is_bool_ref()) {
-                v = as_bool();
-            } else if(is_char_ref()) {
-                std::string s{}; s += as_char(); v = s;
-            } else if(is_wchar_ref()) {
-                std::wstring s{}; s += as_wchar(); v = s;
-            } else if(is_wstring_ref()) {
-                v = as_wstring();
-            } else if(is_s8_ref()) {
-                v = as_s8();
-            } else if(is_u8_ref()) {
-                v = as_u8();
-            } else if(is_s16_ref()) {
-                v = as_s16();
-            } else if(is_u16_ref()) {
-                v = as_u16();
-            } else if(is_s32_ref()) {
-                v = as_s32();
-            } else if(is_u32_ref()) {
-                v = as_u32();
-            } else if(is_s64_ref()) {
-                v = as_s64();
-            } else if(is_u64_ref()) {
-                v = as_u64();
-            } else if(is_any_fp_number()) {
-                v = cast_to_long_double();
-            } else if(is_vec4_ref()) {
-                v[0] = as_vec4()[0];
-                v[1] = as_vec4()[1];
-                v[2] = as_vec4()[2];
-                v[3] = as_vec4()[3];
-            } else if(is_mat4_ref()) {
-                mat4_t const &m{as_mat4()};
+            } else if(thisref.is_string_ref()) {
+                v = thisref.as_string();
+            } else if(thisref.is_bool_ref()) {
+                v = thisref.as_bool();
+            } else if(thisref.is_char_ref()) {
+                std::string s{}; s += thisref.as_char(); v = s;
+            } else if(thisref.is_wchar_ref()) {
+                std::wstring s{}; s += thisref.as_wchar(); v = s;
+            } else if(thisref.is_wstring_ref()) {
+                v = thisref.as_wstring();
+            } else if(thisref.is_s8_ref()) {
+                v = thisref.as_s8();
+            } else if(thisref.is_u8_ref()) {
+                v = thisref.as_u8();
+            } else if(thisref.is_s16_ref()) {
+                v = thisref.as_s16();
+            } else if(thisref.is_u16_ref()) {
+                v = thisref.as_u16();
+            } else if(thisref.is_s32_ref()) {
+                v = thisref.as_s32();
+            } else if(thisref.is_u32_ref()) {
+                v = thisref.as_u32();
+            } else if(thisref.is_s64_ref()) {
+                v = thisref.as_s64();
+            } else if(thisref.is_u64_ref()) {
+                v = thisref.as_u64();
+            } else if(thisref.is_any_fp_number()) {
+                v = thisref.cast_to_long_double();
+            } else if(thisref.is_vec4_ref()) {
+                v[0] = thisref.as_vec4()[0];
+                v[1] = thisref.as_vec4()[1];
+                v[2] = thisref.as_vec4()[2];
+                v[3] = thisref.as_vec4()[3];
+            } else if(thisref.is_mat4_ref()) {
+                mat4_t const &m{thisref.as_mat4()};
                 v[0][0] = m[0][0]; v[0][1] = m[0][1]; v[0][2] = m[0][2]; v[0][3] = m[0][3];
                 v[1][0] = m[1][0]; v[1][1] = m[1][1]; v[1][2] = m[1][2]; v[1][3] = m[1][3];
                 v[2][0] = m[2][0]; v[2][1] = m[2][1]; v[2][2] = m[2][2]; v[2][3] = m[2][3];
                 v[3][0] = m[3][0]; v[3][1] = m[3][1]; v[3][2] = m[3][2]; v[3][3] = m[3][3];
-            } else if(is_array_ref()) {
+            } else if(thisref.is_array_ref()) {
                 v.become_array();
-                for(auto &&val: as_array()) {
+                for(auto &&val: thisref.as_array()) {
                     v.push_back(val.serialize(helper));
                 }
-            } else if(is_object_ref()) {
+            } else if(thisref.is_object_ref()) {
                 v.become_object();
-                object_t const &o{as_object()};
+                object_t const &o{thisref.as_object()};
                 for(auto &&p: o) {
                     v[p.first] = p.second.serialize(helper);
                 }
-            } else if(is_class_ref()) {
-                auto s{helper->obj_svc_[class_name()].serializer(*this)};
+            } else if(thisref.is_class_ref()) {
+                auto s{helper->obj_svc_[thisref.class_name()].serializer(*this)};
                 if(s) {
-                    res["class"] = class_name();
+                    res["class"] = thisref.class_name();
                     v = *s;
                 }
-            } else if(is_func_ref()) {
-                res["is_user_func"] = deref().is_user_func();
-                v = deref().func_name();
-            } else if(as_valbox_ptr() != nullptr) {
-                v = deref().serialize(helper);
+            } else if(thisref.is_func_ref()) {
+                res["is_user_func"] = thisref.is_user_func();
+                v = thisref.func_name();
+            } else if(thisref.as_valbox_ptr() != nullptr) {
+                v = thisref.serialize(helper);
             }
             return res;
         }
@@ -7206,7 +7224,7 @@ namespace teal {
     private:
         valbox(std::shared_ptr<box_data> &&b): box_{std::move(b)} {}
 
-        std::shared_ptr<box_data> box_{};
+        mutable std::shared_ptr<box_data> box_{};
         std::shared_ptr<box_data> pointed_box_{};
     };
 
