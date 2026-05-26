@@ -21,7 +21,7 @@ namespace teal {
 
     class valbox {
     public:
-        enum class type {
+        enum class type: std::uint8_t {
             BOOL,
             CHAR,
             S8,
@@ -166,8 +166,8 @@ namespace teal {
                 std::string const &c = {}, std::string const &func_name = {},
                 bool user_func = false
             ):
-                value_{v}, type_{t}, pointed_type_{pointed_type},
-                class_{c}, func_name_{func_name}, user_func_{user_func}
+                value_{v}, class_{c}, func_name_{func_name}, type_{t},
+                pointed_type_{pointed_type}, user_func_{user_func}
             {
             }
             box_data(
@@ -175,8 +175,8 @@ namespace teal {
                 std::string const &c = {}, std::string const &func_name = {},
                 bool user_func = false
             ):
-                value_{std::move(v)}, type_{t}, pointed_type_{pointed_type},
-                class_{c}, func_name_{func_name}, user_func_{user_func}
+                value_{std::move(v)}, class_{c}, func_name_{func_name},
+                type_{t}, pointed_type_{pointed_type}, user_func_{user_func}
             {
             }
             void undefine() {
@@ -186,12 +186,46 @@ namespace teal {
                 func_name_.clear();
                 user_func_ = false;
             }
-            mt::atomic_rw_spin_mutex mtp_{};
+
+            void lock() {
+                pwr_.fetch_add(1, std::memory_order_acq_rel);
+                shut_on_destroy up{[this]() { pwr_.fetch_sub(1, std::memory_order_acq_rel); }};
+                std::int32_t wanted{0};
+                while(!mtp_.compare_exchange_weak(wanted, -1, std::memory_order_release, std::memory_order_acquire)) {
+                    wanted = 0;
+                }
+            }
+            void unlock() {
+                if(mtp_.fetch_add(1, std::memory_order_acq_rel) != -1) {
+                    throw std::runtime_error{"locking counting error"};
+                }
+            }
+            void lock_shared() {
+                std::int32_t curr{mtp_.load(std::memory_order_acquire)};
+                while(true) {
+                    if(pwr_.load(std::memory_order_acquire) > 0) { continue; }
+                    if(curr < 0) {
+                        curr = mtp_.load(std::memory_order_acquire);
+                    } else {
+                        if(mtp_.compare_exchange_weak(curr, curr + 1, std::memory_order_release, std::memory_order_acquire)) {
+                            break;
+                        }
+                    }
+                }
+            }
+            void unlock_shared() {
+                if(mtp_.fetch_sub(1, std::memory_order_acq_rel) <= 0) {
+                    throw std::runtime_error{"locking counting error"};
+                }
+            }
+
             value_t value_{nullptr};
-            type type_{type::UNDEFINED};
-            type pointed_type_{type::UNDEFINED};
             std::string class_{};
             std::string func_name_{};
+            std::atomic<std::int32_t> mtp_{0};
+            std::atomic<std::int32_t> pwr_{0};
+            type type_{type::UNDEFINED};
+            type pointed_type_{type::UNDEFINED};
             bool user_func_{false};
         };
 
@@ -5100,9 +5134,9 @@ namespace teal {
         valbox &assign_preserving_type(valbox const &that) {
             valbox &thisref{deref()};
             bool locked{false};
-            shut_on_destroy sod{[&]() { if(locked) { thisref.box_->mtp_.unlock(); } }};
+            shut_on_destroy sod{[&]() { if(locked) { thisref.box_->unlock(); } }};
             if(thisref.box_) {
-                thisref.box_->mtp_.lock();
+                thisref.box_->lock();
                 locked = true;
             }
             valbox const &thatref{that.deref()};
@@ -5859,7 +5893,7 @@ namespace teal {
             }
             if(that_ref.is_undefined()) {
                 if(ref.box_) {
-                    std::unique_lock l{ref.box_->mtp_};
+                    std::unique_lock l{*ref.box_};
                     ref.box_->value_ = value_t{};
                     ref.box_->type_ = type::UNDEFINED;
                     ref.box_->pointed_type_ = type::UNDEFINED;
@@ -5879,7 +5913,7 @@ namespace teal {
                         that_ref.box_->user_func_
                     );
                 } else {
-                    std::unique_lock l{ref.box_->mtp_};
+                    std::unique_lock l{*ref.box_};
                     ref.box_->value_ = that_ref.box_->value_;
                     ref.box_->type_ = that_ref.box_->type_;
                     ref.box_->pointed_type_ = that_ref.box_->pointed_type_;
@@ -6807,9 +6841,9 @@ namespace teal {
 
             valbox const &thisref{deref()};
             bool locked{false};
-            shut_on_destroy sod{[&]() { if(locked) { thisref.box_->mtp_.unlock_shared(); } }};
+            shut_on_destroy sod{[&]() { if(locked) { thisref.box_->unlock_shared(); } }};
             if(thisref.box_) {
-                thisref.box_->mtp_.lock_shared();
+                thisref.box_->lock_shared();
                 locked = true;
             }
 
