@@ -11,7 +11,7 @@ function serialize_tbbt_array(a) {
     as = a.size();
     res += "[" + a[0].name;
     j = 1;
-    for(i = 0; i < as; ++i) {
+    for(i = 1; i < as; ++i) {
         nm = a[i].name;
         nu = a[i].num;
         for(; j < nu; ++j) {
@@ -30,7 +30,7 @@ tbbt2cola(sg) {
     n = sg.next();
 
     outstr = "";
-    outstr.reserve(4096);
+    outstr.reserve(16384);
     outstr += "Target turn number: " + string(n) + "\n";
 
     a[0].name = "Sheldon"; a[0].num = 1;
@@ -62,7 +62,6 @@ tbbt2cola(sg) {
     console.print(outstr);
     return 0;
 }
-
 tbbt2cola duplicating_beverage_0(sqg);
 tbbt2cola duplicating_beverage_1(sqg);
 tbbt2cola duplicating_beverage_2(sqg);
