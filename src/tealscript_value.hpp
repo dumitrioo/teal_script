@@ -186,7 +186,7 @@ namespace teal {
                 func_name_.clear();
                 user_func_ = false;
             }
-            std::shared_mutex mtp_{};
+            mt::atomic_rw_spin_mutex mtp_{};
             value_t value_{nullptr};
             type type_{type::UNDEFINED};
             type pointed_type_{type::UNDEFINED};
