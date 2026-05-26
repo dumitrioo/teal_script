@@ -218,8 +218,6 @@ and4  alu_62(alu_58, alu_59, alu_60, alu_61)          'EQ';
 
 As you can see, the graph is composed of computation node instances whose implementations described above that graph. And the program itself turned out to be short, understandable and covering the logical circuit one to one.
 
-![ALU 74181 rendered demo](resources/alu74181_demo.png)
-
 
 ## Distributed Example
 
@@ -461,6 +459,8 @@ draw_bool dr_p(ray, alu_42, 20, 200, sfctr, " P", clr_pgeq);
 draw_bool dr_g(ray, alu_53, 60, 200, sfctr, " G", clr_pgeq);
 draw_bool dr_AeB(ray, alu_62, 120, 200, sfctr, "EQ", clr_pgeq);
 ```
+
+![ALU 74181 rendered demo](resources/alu74181_demo.png)
 
 In this example, we can see a several external nodes declarations:
 
