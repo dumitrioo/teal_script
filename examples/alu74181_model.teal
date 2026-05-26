@@ -12,7 +12,13 @@ setup_cell() {
 setup_cell setup();
 
 ///////////////////////// randomly generated inputs
-rand_bool() return randf() >= 0.5;
+rand_bool() {
+    if(this.res == undefined || steady_clock() > this.t) {
+        this.res = randf() >= 0.5;
+        this.t = steady_clock() + 0.3;
+    }
+    return this.res;
+}
 
 rand_bool s0();
 rand_bool s1();
