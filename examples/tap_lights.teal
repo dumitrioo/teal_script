@@ -1,8 +1,7 @@
 ray_window_lights() {
     if(!this.win_created) {
-        w = (i32)1280;
-        h = (i32)(w * (9.0 / 16.0));
-        h.println();
+        w = 1280;
+        h = (i64)(w * (9.0 / 16.0));
         ray_init_window(w, h, "Tap Lights");
         ray_set_target_fps(60);
         ray_begin_drawing();
