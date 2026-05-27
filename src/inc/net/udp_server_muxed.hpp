@@ -9,6 +9,7 @@
 #include "../crypto/gamma.hpp"
 #include "../sequence_generator.hpp"
 #include "../emhash/hash_table8.hpp"
+#include "../hash/crc.hpp"
 #include "net_utils.hpp"
 #include "socket_wrapper.hpp"
 #include "net_data_transfer.hpp"
@@ -319,6 +320,10 @@ namespace teal::net {
                         }
                         cnn->set_output_message(ser.data_vec());
                         while(auto och{cnn->fetch_out_chunk()}) {
+                            std::array<uint8_t, NET_PACKET_PAYLOAD_SIZE_MAX + 256> dts{};
+                            uint64_t crc{crc_chkr_.calculate(och->data(), och->size())};
+                            memcpy(dts.data(), &crc, 8);
+                            memcpy(dts.data() + 8, och->data(), och->size());
                             std::shared_lock l{sock_fd_mtp_};
                             if(sock_fd_ >= 0) {
                                 socklen_t socklen{
@@ -326,7 +331,7 @@ namespace teal::net {
                                         sizeof(sockaddr_in6) : sizeof(sockaddr_in))
                                 };
                                 res = ::sendto(
-                                          sock_fd_, och->data(), och->size(), 0,
+                                          sock_fd_, dts.data(), och->size() + 8, 0,
                                           (const struct sockaddr *)cnn->addr_ptr(), socklen
                                       ) != -1;
                             }
@@ -503,25 +508,29 @@ namespace teal::net {
             std::size_t insize{in_buff->second};
             std::shared_ptr<udp_connection> conn_ptr{process_new_connection(cliaddr)};
             if(conn_ptr) {
-                if(insize == 13 && std::string{in_buff->first.begin(), in_buff->first.begin() + 5} == "close") {
+                if(insize == 5 && std::string{in_buff->first.begin(), in_buff->first.begin() + 5} == "close") {
                     if(conn_ptr) {
                         remove_conn_dont_send_message(conn_ptr->conn_id());
                     }
-                } else if(insize > 0 && on_data_from_client_ != nullptr) {
+                } else if(insize > 8 && on_data_from_client_ != nullptr) {
                     if(conn_ptr) {
-                        std::optional<bytevec> msg{conn_ptr->set_incoming_data(in_buff->first.data() + 8, insize - 8)};
-                        if(msg) {
-                            serial_reader const ser{msg->data(), msg->size()};
-                            serial_reader::const_iterator iter{ser.cbegin()};
-                            if(iter->as_unumber() == 0) {
-                                ++iter;
-                                on_data_from_client_(conn_ptr->conn_id(), iter->data(), iter->size());
-                            } else {
-                                ++iter;
-                                std::uint64_t ctr_start{iter->as_unumber()};
-                                ++iter;
-                                std::vector<std::uint8_t> d{conn_ptr->decrypt_data(iter->data(), iter->size(), ctr_start)};
-                                on_data_from_client_(conn_ptr->conn_id(), d.data(), d.size());
+                        uint64_t crc_orig{*reinterpret_cast<uint64_t *>(in_buff->first.data())};
+                        uint64_t crc_calc{crc_chkr_.calculate(in_buff->first.data() + 8, insize - 8)};
+                        if(crc_calc == crc_orig) {
+                            std::optional<bytevec> msg{conn_ptr->set_incoming_data(in_buff->first.data() + 8, insize - 8)};
+                            if(msg) {
+                                serial_reader const ser{msg->data(), msg->size()};
+                                serial_reader::const_iterator iter{ser.cbegin()};
+                                if(iter->as_unumber() == 0) {
+                                    ++iter;
+                                    on_data_from_client_(conn_ptr->conn_id(), iter->data(), iter->size());
+                                } else {
+                                    ++iter;
+                                    std::uint64_t ctr_start{iter->as_unumber()};
+                                    ++iter;
+                                    std::vector<std::uint8_t> d{conn_ptr->decrypt_data(iter->data(), iter->size(), ctr_start)};
+                                    on_data_from_client_(conn_ptr->conn_id(), d.data(), d.size());
+                                }
                             }
                         }
                     }
@@ -758,6 +767,7 @@ namespace teal::net {
             return res;
         }
 
+        crc64 crc_chkr_{};
         std::function<void(std::uint64_t)> on_new_connection_{nullptr};
         std::function<void(std::uint64_t, void const *, std::size_t)> on_data_from_client_{nullptr};
         std::function<void(std::uint64_t)> on_connection_closed_{nullptr};

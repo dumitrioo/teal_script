@@ -7,6 +7,7 @@
 #include "../terminable.hpp"
 #include "../crypto/gamma.hpp"
 #include "../sequence_generator.hpp"
+#include "../hash/crc.hpp"
 #include "socket_poller.hpp"
 #include "net_utils.hpp"
 #include "socket_wrapper.hpp"
@@ -119,91 +120,91 @@ namespace teal::net {
             return result;
         }
 
-        bool connect(std::string const &addr, std::uint16_t port) {
-            bool result{false};
-            std::unique_lock l{sock_fd_mtp_};
-            if(sock_fd_ != -1) {
-                result = true;
-            } else {
-                std::string const conn_data{"con"};
-                socklen_t socklen{0};
-                if(sock_type_ == address_family::inet4) {
-                    if((sock_fd_ = ::socket(AF_INET, SOCK_DGRAM, 0)) != -1) {
-                        if(sock_fd_ != -1) {
-                            try {
-                                if(helpers::set_rcv_timeout(sock_fd_, 3)) {
-                                    in_addr dst_ip{teal::net::resolve(addr)};
-                                    std::memset(&serv_addr_.v4_, 0, sizeof(serv_addr_.v4_));
-                                    serv_addr_.v4_.sin_family = AF_INET;
-                                    serv_addr_.v4_.sin_port = ::htons(port);
-                                    serv_addr_.v4_.sin_addr.s_addr = dst_ip.s_addr;
-                                    socklen = static_cast<socklen_t>(
-                                        sock_type_ == address_family::inet6 ?
-                                            sizeof(sockaddr_in6) : sizeof(sockaddr_in)
-                                    );
-                                }
-                            } catch (...) {
-                            }
-                        }
-                    }
-                } else if(sock_type_ == address_family::inet6) {
-                    if((sock_fd_ = ::socket(AF_INET6, SOCK_DGRAM, 0)) != -1) {
-                        if(sock_fd_ != -1) {
-                            try {
-                                if(helpers::set_rcv_timeout(sock_fd_, 3)) {
-                                    in6_addr dst_ip{teal::net::resolve6(addr)};
-                                    std::memset(&serv_addr_.v6_, 0, sizeof(serv_addr_.v6_));
-                                    serv_addr_.v6_.sin6_family = AF_INET6;
-                                    serv_addr_.v6_.sin6_port = ::htons(port);
-                                    serv_addr_.v6_.sin6_addr = dst_ip;
-                                    socklen = static_cast<socklen_t>(
-                                        sock_type_ == address_family::inet6 ?
-                                            sizeof(sockaddr_in6) : sizeof(sockaddr_in)
-                                    );
-                                }
-                            } catch (...) {
-                            }
-                        }
-                    }
-                }
-                if(::sendto(sock_fd_, conn_data.data(), conn_data.size(), 0, serv_addr(), socklen) != -1) {
-                    std::array<std::uint8_t, NET_PACKET_PAYLOAD_SIZE_MAX + 256> buffer{};
-                    ssize_t n = ::recvfrom(sock_fd_, buffer.data(), buffer.size(), 0, serv_addr(), &socklen);
-                    helpers::set_rcv_timeout(sock_fd_, recv_timeout_);
-                    if(is_data_arrived_set()) {
-                        if(!helpers::make_nonblocking(sock_fd_)) {
-                            ::close(sock_fd_);
-                            sock_fd_ = -1;
-                        }
-                    }
-                    if(sock_fd_ != -1 && n > 0) {
-                        teal::serial_reader sr{buffer.data(), (std::size_t)n};
-                        teal::serial_reader::const_iterator it{sr.cbegin()};
-                        if(it->as_string() == "ok") {
-                            ++it;
-                            conn_id_ = bit_util::hnswap<std::uint64_t>{it->as<std::uint64_t>()}.val;
-                            if(
-                                poller_.create() &&
-                                poller_.add_event(sock_fd_, net::POLL_EVENT_IN)
-                            ) {
-                                unterminate();
-                                if(is_data_arrived_set()) {
-                                    worker_entry_procesing_ = true;
-                                    cq_->enqueue(worker_entry_);
-                                }
-                                result = true;
-                            }
-                        }
-                    }
-                }
-            }
-            if(!result) {
-                sock_fd_ = -1;
-                sock_type_ = address_family::unspecified;
-                conn_id_ = 0;
-            }
-            return result;
-        }
+        // bool connect(std::string const &addr, std::uint16_t port) {
+        //     bool result{false};
+        //     std::unique_lock l{sock_fd_mtp_};
+        //     if(sock_fd_ != -1) {
+        //         result = true;
+        //     } else {
+        //         std::string const conn_data{"con"};
+        //         socklen_t socklen{0};
+        //         if(sock_type_ == address_family::inet4) {
+        //             if((sock_fd_ = ::socket(AF_INET, SOCK_DGRAM, 0)) != -1) {
+        //                 if(sock_fd_ != -1) {
+        //                     try {
+        //                         if(helpers::set_rcv_timeout(sock_fd_, 3)) {
+        //                             in_addr dst_ip{teal::net::resolve(addr)};
+        //                             std::memset(&serv_addr_.v4_, 0, sizeof(serv_addr_.v4_));
+        //                             serv_addr_.v4_.sin_family = AF_INET;
+        //                             serv_addr_.v4_.sin_port = ::htons(port);
+        //                             serv_addr_.v4_.sin_addr.s_addr = dst_ip.s_addr;
+        //                             socklen = static_cast<socklen_t>(
+        //                                 sock_type_ == address_family::inet6 ?
+        //                                     sizeof(sockaddr_in6) : sizeof(sockaddr_in)
+        //                             );
+        //                         }
+        //                     } catch (...) {
+        //                     }
+        //                 }
+        //             }
+        //         } else if(sock_type_ == address_family::inet6) {
+        //             if((sock_fd_ = ::socket(AF_INET6, SOCK_DGRAM, 0)) != -1) {
+        //                 if(sock_fd_ != -1) {
+        //                     try {
+        //                         if(helpers::set_rcv_timeout(sock_fd_, 3)) {
+        //                             in6_addr dst_ip{teal::net::resolve6(addr)};
+        //                             std::memset(&serv_addr_.v6_, 0, sizeof(serv_addr_.v6_));
+        //                             serv_addr_.v6_.sin6_family = AF_INET6;
+        //                             serv_addr_.v6_.sin6_port = ::htons(port);
+        //                             serv_addr_.v6_.sin6_addr = dst_ip;
+        //                             socklen = static_cast<socklen_t>(
+        //                                 sock_type_ == address_family::inet6 ?
+        //                                     sizeof(sockaddr_in6) : sizeof(sockaddr_in)
+        //                             );
+        //                         }
+        //                     } catch (...) {
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //         if(::sendto(sock_fd_, conn_data.data(), conn_data.size(), 0, serv_addr(), socklen) != -1) {
+        //             std::array<std::uint8_t, NET_PACKET_PAYLOAD_SIZE_MAX + 256> buffer{};
+        //             ssize_t n = ::recvfrom(sock_fd_, buffer.data(), buffer.size(), 0, serv_addr(), &socklen);
+        //             helpers::set_rcv_timeout(sock_fd_, recv_timeout_);
+        //             if(is_data_arrived_set()) {
+        //                 if(!helpers::make_nonblocking(sock_fd_)) {
+        //                     ::close(sock_fd_);
+        //                     sock_fd_ = -1;
+        //                 }
+        //             }
+        //             if(sock_fd_ != -1 && n > 0) {
+        //                 teal::serial_reader sr{buffer.data(), (std::size_t)n};
+        //                 teal::serial_reader::const_iterator it{sr.cbegin()};
+        //                 if(it->as_string() == "ok") {
+        //                     ++it;
+        //                     conn_id_ = bit_util::hnswap<std::uint64_t>{it->as<std::uint64_t>()}.val;
+        //                     if(
+        //                         poller_.create() &&
+        //                         poller_.add_event(sock_fd_, net::POLL_EVENT_IN)
+        //                     ) {
+        //                         unterminate();
+        //                         if(is_data_arrived_set()) {
+        //                             worker_entry_procesing_ = true;
+        //                             cq_->enqueue(worker_entry_);
+        //                         }
+        //                         result = true;
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        //     if(!result) {
+        //         sock_fd_ = -1;
+        //         sock_type_ = address_family::unspecified;
+        //         conn_id_ = 0;
+        //     }
+        //     return result;
+        // }
 
         bool connected() const {
             return sock_fd_ != -1 && !conn_broken_.load(std::memory_order_acquire);
@@ -220,10 +221,9 @@ namespace teal::net {
                 std::this_thread::sleep_for(std::chrono::milliseconds{10});
             }
             poller_.close();
-            std::vector<std::uint8_t> close_data{'c', 'l', 'o', 's', 'e', 0, 0, 0, 0, 0, 0, 0, 0};
+            std::vector<std::uint8_t> close_data{'c', 'l', 'o', 's', 'e'};
             std::unique_lock l{sock_fd_mtp_};
             if(sock_fd_ >= 0) {
-                std::memcpy(&close_data[5], &conn_id_, 8);
                 ::sendto(sock_fd_, close_data.data(), close_data.size(), MSG_DONTWAIT, serv_addr(), sizeof(struct sockaddr_in));
                 ::close(sock_fd_);
                 sock_fd_ = -1;
@@ -254,7 +254,8 @@ namespace teal::net {
                     }
                     ch = std::move(*och);
                 }
-                std::memcpy(&buff[0], &conn_id_, 8);
+                std::uint64_t crc{crc_chkr_.calculate(ch.data(), ch.size())};
+                std::memcpy(&buff[0], &crc, 8);
                 std::memcpy(&buff[8], ch.data(), ch.size());
                 if(::sendto(sock_fd_, buff.data(), ch.size() + 8, MSG_DONTWAIT, serv_addr(), sizeof(struct sockaddr_in)) == -1) {
                     ::close(sock_fd_);
@@ -287,21 +288,25 @@ namespace teal::net {
                     ::close(sock_fd_);
                     sock_fd_ = -1;
                     sock_type_ = address_family::unspecified;
-                } else if(n > 0) {
-                    std::unique_lock l{demuxer_mtp_};
-                    if(auto demuxed{demuxer_.add_data(buffer.data(), (teal::serial_reader::size_type)n)}) {
-                        teal::serial_reader const ser{demuxed->data(), (teal::serial_reader::size_type)demuxed->size()};
-                        teal::serial_reader::const_iterator iter{ser.cbegin()};
-                        if(iter->as_unumber() == 0) {
-                            ++iter;
-                            result = iter->as_bytevec();
-                        } else {
-                            ++iter;
-                            std::uint64_t ctr_start{iter->as_unumber()};
-                            ++iter;
-                            result = decrypt_data(iter->data(), iter->size(), ctr_start);
+                } else if(n > 8) {
+                    uint64_t crc_orig{*reinterpret_cast<uint64_t *>(buffer.data())};
+                    uint64_t crc_calc{crc_chkr_.calculate(buffer.data() + 8, n - 8)};
+                    if(crc_orig == crc_calc) {
+                        std::unique_lock l{demuxer_mtp_};
+                        if(auto demuxed{demuxer_.add_data(buffer.data() + 8, (teal::serial_reader::size_type)n - 8)}) {
+                            teal::serial_reader const ser{demuxed->data(), (teal::serial_reader::size_type)demuxed->size()};
+                            teal::serial_reader::const_iterator iter{ser.cbegin()};
+                            if(iter->as_unumber() == 0) {
+                                ++iter;
+                                result = iter->as_bytevec();
+                            } else {
+                                ++iter;
+                                std::uint64_t ctr_start{iter->as_unumber()};
+                                ++iter;
+                                result = decrypt_data(iter->data(), iter->size(), ctr_start);
+                            }
+                            remove_stale_inputs_unlocked(180);
                         }
-                        remove_stale_inputs_unlocked(180);
                     }
                 }
             }
@@ -384,27 +389,31 @@ namespace teal::net {
                                     ::close(sock_fd_);
                                     sock_fd_ = -1;
                                     sock_type_ = address_family::unspecified;
-                                } else if(n > 0) {
-                                    std::unique_lock l{demuxer_mtp_};
-                                    if(auto demuxed{demuxer_.add_data(buffer.data(), (teal::serial_reader::size_type)n)}) {
-                                        teal::serial_reader const ser{
-                                            demuxed->data(), (teal::serial_reader::size_type)demuxed->size()
-                                        };
-                                        teal::serial_reader::const_iterator iter{ser.cbegin()};
-                                        if(iter->as_unumber() == 0) {
-                                            ++iter;
-                                            cq_->enqueue([this, bv = iter->as_bytevec()]() {
-                                                notify_on_data_arrived(bv);
-                                            });
-                                        } else {
-                                            ++iter;
-                                            std::uint64_t ctr_start{iter->as_unumber()};
-                                            ++iter;
-                                            cq_->enqueue([this, bv = decrypt_data(iter->data(), iter->size(), ctr_start)]() {
-                                                notify_on_data_arrived(bv);
-                                            });
+                                } else if(n > 8) {
+                                    uint64_t crc_orig{*reinterpret_cast<uint64_t *>(buffer.data())};
+                                    uint64_t crc_calc{crc_chkr_.calculate(buffer.data() + 8, n - 8)};
+                                    if(crc_orig == crc_calc) {
+                                        std::unique_lock l{demuxer_mtp_};
+                                        if(auto demuxed{demuxer_.add_data(buffer.data() + 8, (teal::serial_reader::size_type)n - 8)}) {
+                                            teal::serial_reader const ser{
+                                                demuxed->data(), (teal::serial_reader::size_type)demuxed->size()
+                                            };
+                                            teal::serial_reader::const_iterator iter{ser.cbegin()};
+                                            if(iter->as_unumber() == 0) {
+                                                ++iter;
+                                                cq_->enqueue([this, bv = iter->as_bytevec()]() {
+                                                    notify_on_data_arrived(bv);
+                                                });
+                                            } else {
+                                                ++iter;
+                                                std::uint64_t ctr_start{iter->as_unumber()};
+                                                ++iter;
+                                                cq_->enqueue([this, bv = decrypt_data(iter->data(), iter->size(), ctr_start)]() {
+                                                    notify_on_data_arrived(bv);
+                                                });
+                                            }
+                                            remove_stale_inputs_unlocked(180);
                                         }
-                                        remove_stale_inputs_unlocked(180);
                                     }
                                 }
                             }
@@ -443,6 +452,7 @@ namespace teal::net {
         std::atomic<std::uint64_t> crypto_ctr_{0};
         teal::crypt::gamma out_gamma_{};
         teal::crypt::gamma in_gamma_{};
+        crc64 crc_chkr_{};
         std::atomic<bool> encryption_on_{false};
         std::atomic<bool> conn_broken_{false};
     };
