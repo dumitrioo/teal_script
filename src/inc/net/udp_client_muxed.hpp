@@ -5,6 +5,7 @@
 #include "../timespec_wrapper.hpp"
 #include "../serialization.hpp"
 #include "../terminable.hpp"
+#include "../bit_util.hpp"
 #include "../crypto/gamma.hpp"
 #include "../sequence_generator.hpp"
 #include "../hash/crc.hpp"
@@ -254,7 +255,8 @@ namespace teal::net {
                     }
                     ch = std::move(*och);
                 }
-                std::uint64_t crc{crc_chkr_.calculate(ch.data(), ch.size())};
+                uint64_t crc{crc_chkr_.calculate(ch.data(), ch.size())};
+                crc = bit_util::swap_on_le<uint64_t>{crc}.val;
                 std::memcpy(&buff[0], &crc, 8);
                 std::memcpy(&buff[8], ch.data(), ch.size());
                 if(::sendto(sock_fd_, buff.data(), ch.size() + 8, MSG_DONTWAIT, serv_addr(), sizeof(struct sockaddr_in)) == -1) {
@@ -290,8 +292,8 @@ namespace teal::net {
                     sock_type_ = address_family::unspecified;
                 } else if(n > 8) {
                     uint64_t crc_orig{*reinterpret_cast<uint64_t *>(buffer.data())};
-                    uint64_t crc_calc{crc_chkr_.calculate(buffer.data() + 8, n - 8)};
-                    if(crc_orig == crc_calc) {
+                    bit_util::swap_on_le<uint64_t> crc_calc{crc_chkr_.calculate(buffer.data() + 8, n - 8)};
+                    if(crc_orig == crc_calc.val) {
                         std::unique_lock l{demuxer_mtp_};
                         if(auto demuxed{demuxer_.add_data(buffer.data() + 8, (teal::serial_reader::size_type)n - 8)}) {
                             teal::serial_reader const ser{demuxed->data(), (teal::serial_reader::size_type)demuxed->size()};
@@ -391,8 +393,8 @@ namespace teal::net {
                                     sock_type_ = address_family::unspecified;
                                 } else if(n > 8) {
                                     uint64_t crc_orig{*reinterpret_cast<uint64_t *>(buffer.data())};
-                                    uint64_t crc_calc{crc_chkr_.calculate(buffer.data() + 8, n - 8)};
-                                    if(crc_orig == crc_calc) {
+                                    bit_util::swap_on_le<uint64_t> crc_calc{crc_chkr_.calculate(buffer.data() + 8, n - 8)};
+                                    if(crc_orig == crc_calc.val) {
                                         std::unique_lock l{demuxer_mtp_};
                                         if(auto demuxed{demuxer_.add_data(buffer.data() + 8, (teal::serial_reader::size_type)n - 8)}) {
                                             teal::serial_reader const ser{

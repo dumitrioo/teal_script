@@ -322,6 +322,7 @@ namespace teal::net {
                         while(auto och{cnn->fetch_out_chunk()}) {
                             std::array<uint8_t, NET_PACKET_PAYLOAD_SIZE_MAX + 256> dts{};
                             uint64_t crc{crc_chkr_.calculate(och->data(), och->size())};
+                            crc = bit_util::swap_on_le<uint64_t>{crc}.val;
                             memcpy(dts.data(), &crc, 8);
                             memcpy(dts.data() + 8, och->data(), och->size());
                             std::shared_lock l{sock_fd_mtp_};
@@ -515,8 +516,8 @@ namespace teal::net {
                 } else if(insize > 8 && on_data_from_client_ != nullptr) {
                     if(conn_ptr) {
                         uint64_t crc_orig{*reinterpret_cast<uint64_t *>(in_buff->first.data())};
-                        uint64_t crc_calc{crc_chkr_.calculate(in_buff->first.data() + 8, insize - 8)};
-                        if(crc_calc == crc_orig) {
+                        bit_util::swap_on_le<uint64_t> crc_calc{crc_chkr_.calculate(in_buff->first.data() + 8, insize - 8)};
+                        if(crc_calc.val == crc_orig) {
                             std::optional<bytevec> msg{conn_ptr->set_incoming_data(in_buff->first.data() + 8, insize - 8)};
                             if(msg) {
                                 serial_reader const ser{msg->data(), msg->size()};
