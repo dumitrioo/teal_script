@@ -6,18 +6,6 @@
 
 #include <tealscript_runtime.hpp>
 
-// Just a regular C++ class to be added as an <<object type>> to the scripting runtime
-class example_object {
-public:
-    example_object() = default;
-    example_object(int v): v_{v} {}
-    void set_val(int v) { v_ = v; }
-    int get_val() const { return v_; }
-
-private:
-    int v_{};
-};
-
 #ifdef USE_CUSTOM_MEMORY_ALLOCATION
 
 static teal::binned_allocator<512 * 1024 * 1024, 16, 4096> glbl_alloc{};
@@ -57,6 +45,18 @@ void operator delete[](void* ptr, std::size_t size) noexcept {
 }
 
 #endif
+
+// Just a regular C++ class to be added as an <<object type>> to the scripting runtime
+class example_object {
+public:
+    example_object() = default;
+    example_object(int v): v_{v} {}
+    void set_val(int v) { v_ = v; }
+    int get_val() const { return v_; }
+
+private:
+    int v_{};
+};
 
 int main(int argc, char **argv) {
     std::vector<std::string> args{argv, argv + argc};
