@@ -111,7 +111,7 @@ namespace teal {
                         if(remote_host.empty() || !u.port()) {
                             throw compilation_error{cur["loc"]["line"].try_as_number(), cur["loc"]["col"].try_as_number(),
                                 rnm + ": host and port must present in URL"};
-                        }                        
+                        }
                         if(
                             worker_cells.find(cnm) != worker_cells.end() ||
                             input_cells.find(cnm) != input_cells.end() ||
