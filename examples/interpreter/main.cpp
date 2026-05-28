@@ -144,17 +144,30 @@ int main(int argc, char **argv) {
             throw std::runtime_error{"nothing to do - no working elements"};
         }
 
-        // rt.start_net_server(teal::net::address_family::inet4, "0.0.0.0", 43987, 0);
+#if 0
+        rt.start_net_server(teal::net::address_family::inet4, "0.0.0.0", 43987, 0);
+#endif
+
+        auto host_provided_data{rt.resolve_input("host_provided_data")};
 
 #ifdef TEAL_SINGLE_THREADED
         while(!rt.termination_requested()) {
+#if 0
+            host_provided_data = teal::timespec_wrapper{}.now().fseconds();
+#endif
             rt.run_cycle();
         }
 #else
+
         rt.run_mt(std::thread::hardware_concurrency());
         while(!rt.wait(0.1)) {
+            host_provided_data = teal::timespec_wrapper{}.now().fseconds();
         }
-        if(rt.failure_occured()) { throw std::runtime_error{rt.failure_description()}; }
+
+        if(rt.failure_occured()) {
+            throw std::runtime_error{rt.failure_description()};
+        }
+
 #endif
 
 #ifndef TEAL_DEBUGGING

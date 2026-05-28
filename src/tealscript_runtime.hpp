@@ -1818,6 +1818,39 @@ namespace teal {
             return outputs_[name];
         }
 
+        class input_value_proxy {
+            friend class runtime;
+
+        private:
+            input_value_proxy(input_cell *ic):
+                ic_{ic}
+            {
+            }
+
+        public:
+            input_value_proxy(input_value_proxy const &) = delete;
+            input_value_proxy(input_value_proxy &&) = default;
+            input_value_proxy &operator=(input_value_proxy const &) = delete;
+            input_value_proxy &operator=(input_value_proxy &&) = default;
+            ~input_value_proxy() = default;
+            input_value_proxy &operator=(valbox const &v) {
+                ic_->set_value(v);
+                return *this;
+            }
+
+        private:
+            input_cell *ic_{nullptr};
+        };
+
+        input_value_proxy resolve_input(std::string const &name) {
+            std::shared_lock l{input_cells_mtp_};
+            auto it{input_names_to_instances_mapping_.find(name)};
+            if(it == input_names_to_instances_mapping_.end()) {
+                throw std::runtime_error{name + ": input name not found"};
+            }
+            return input_value_proxy{input_cells_[it->second].get()};
+        }
+
         void set_input(std::string const &name, valbox const &val) override {
             std::unique_lock l{input_cells_mtp_};
             auto it{input_names_to_instances_mapping_.find(name)};
