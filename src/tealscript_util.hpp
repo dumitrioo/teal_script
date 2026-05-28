@@ -118,7 +118,11 @@ namespace teal {
     using shared_mutex = std::shared_mutex;
 #endif
 
+#ifdef TEAL_USE_CUSTOM_MUTEX
+    using mutex = mt::atomic_spin_mutex;
+#else
     using mutex = std::mutex;
+#endif
 
     static bool is_identifier(std::string const &ident) {
         if(ident.size() == 0) {

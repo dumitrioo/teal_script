@@ -315,80 +315,94 @@ namespace teal {
         }
 
         valbox find_func(std::string const &name, obj_type &sym_type) const {
-            if(sym_type == obj_type::user_fun) {
-                if((rt_ptr_->user_functions_search())(name)) {
-                    return valbox{rt_ptr_->user_function_selector(), name, true};
+            switch(sym_type) {
+                case obj_type::user_fun: {
+                    if((rt_ptr_->user_functions_search())(name)) {
+                        return valbox{rt_ptr_->user_function_selector(), name, true};
+                    }
+                    auto gvd_it{rt_ptr_->global_functions_dictionary()->find(name)};
+                    if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
+                        sym_type = obj_type::global_fun;
+                        return gvd_it->second;
+                    }
                 }
-                auto gvd_it{rt_ptr_->global_functions_dictionary()->find(name)};
-                if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
-                    sym_type = obj_type::global_fun;
-                    return gvd_it->second;
+                break;
+                case obj_type::global_fun: {
+                    auto gvd_it{rt_ptr_->global_functions_dictionary()->find(name)};
+                    if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
+                        return gvd_it->second;
+                    }
+                    if((rt_ptr_->user_functions_search())(name)) {
+                        sym_type = obj_type::user_fun;
+                        return valbox{rt_ptr_->user_function_selector(), name, true};
+                    }
                 }
-            } else if(sym_type == obj_type::global_fun) {
-                auto gvd_it{rt_ptr_->global_functions_dictionary()->find(name)};
-                if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
-                    return gvd_it->second;
+                break;
+                default: {
+                    if((rt_ptr_->user_functions_search())(name)) {
+                        sym_type = obj_type::user_fun;
+                        return valbox{rt_ptr_->user_function_selector(), name, true};
+                    }
+                    auto gvd_it{rt_ptr_->global_functions_dictionary()->find(name)};
+                    if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
+                        sym_type = obj_type::global_fun;
+                        return gvd_it->second;
+                    }
                 }
-                if((rt_ptr_->user_functions_search())(name)) {
-                    sym_type = obj_type::user_fun;
-                    return valbox{rt_ptr_->user_function_selector(), name, true};
-                }
-            } else {
-                if((rt_ptr_->user_functions_search())(name)) {
-                    sym_type = obj_type::user_fun;
-                    return valbox{rt_ptr_->user_function_selector(), name, true};
-                }
-                auto gvd_it{rt_ptr_->global_functions_dictionary()->find(name)};
-                if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
-                    sym_type = obj_type::global_fun;
-                    return gvd_it->second;
-                }
+                break;
             }
             sym_type = obj_type::unknown;
             return {};
         }
 
         bool find_func(std::string const &name, valbox &fn, obj_type &sym_type) const {
-            if(sym_type == obj_type::user_fun) {
-                if((rt_ptr_->user_functions_search())(name)) {
-                    fn = valbox{rt_ptr_->user_function_selector(), name, true};
-                    return true;
+            switch(sym_type) {
+                case obj_type::user_fun: {
+                    if((rt_ptr_->user_functions_search())(name)) {
+                        fn = valbox{rt_ptr_->user_function_selector(), name, true};
+                        return true;
+                    }
+                    auto gvd_it{rt_ptr_->global_functions_dictionary()->find(name)};
+                    if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
+                        fn = gvd_it->second;
+                        sym_type = obj_type::global_fun;
+                        return true;
+                    }
                 }
-                auto gvd_it{rt_ptr_->global_functions_dictionary()->find(name)};
-                if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
-                    fn = gvd_it->second;
-                    sym_type = obj_type::global_fun;
-                    return true;
+                break;
+                case obj_type::global_fun: {
+                    auto gvd_it{rt_ptr_->global_functions_dictionary()->find(name)};
+                    if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
+                        fn = gvd_it->second;
+                        return true;
+                    }
+                    if((rt_ptr_->user_functions_search())(name)) {
+                        sym_type = obj_type::user_fun;
+                        fn = valbox{rt_ptr_->user_function_selector(), name, true};
+                        return true;
+                    }
                 }
-            } else if(sym_type == obj_type::global_fun) {
-                auto gvd_it{rt_ptr_->global_functions_dictionary()->find(name)};
-                if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
-                    fn = gvd_it->second;
-                    return true;
+                break;
+                default: {
+                    if((rt_ptr_->user_functions_search())(name)) {
+                        sym_type = obj_type::user_fun;
+                        fn = valbox{rt_ptr_->user_function_selector(), name, true};
+                        return true;
+                    }
+                    auto gvd_it{rt_ptr_->global_functions_dictionary()->find(name)};
+                    if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
+                        fn = gvd_it->second;
+                        sym_type = obj_type::global_fun;
+                        return true;
+                    }
                 }
-                if((rt_ptr_->user_functions_search())(name)) {
-                    sym_type = obj_type::user_fun;
-                    fn = valbox{rt_ptr_->user_function_selector(), name, true};
-                    return true;
-                }
-            } else {
-                if((rt_ptr_->user_functions_search())(name)) {
-                    sym_type = obj_type::user_fun;
-                    fn = valbox{rt_ptr_->user_function_selector(), name, true};
-                    return true;
-                }
-                auto gvd_it{rt_ptr_->global_functions_dictionary()->find(name)};
-                if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
-                    fn = gvd_it->second;
-                    sym_type = obj_type::global_fun;
-                    return true;
-                }
+                break;
             }
             sym_type = obj_type::unknown;
             return false;
         }
 
-        valbox find_method(std::string const &class_name, std::string const &method_name, int64_t l, int64_t c) const {
+        valbox find_method(std::string const &class_name, std::string const &method_name) const {
             auto c_it{rt_ptr_->global_methods_dictionary()->find(class_name)};
             if(c_it != rt_ptr_->global_methods_dictionary()->end()) {
                 auto m_it{c_it->second.find(method_name)};
@@ -396,8 +410,6 @@ namespace teal {
                     return m_it->second;
                 }
             }
-            // std::string em{"method "}; em += class_name; em += "."; em += method_name; em += "() not found";
-            // throw teal_function_not_found{l, c, em};
             return valbox{valbox_no_initialize::dont_do_it};
         }
 

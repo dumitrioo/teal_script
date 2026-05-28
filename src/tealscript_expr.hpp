@@ -62,19 +62,7 @@ namespace teal {
     public:
         sym_expression(std::string const &name): name_{name} {}
 
-        bool primary() const override {
-            return primary_.load(std::memory_order_acquire);
-        }
-
-        void reset_primary() override {
-            primary_ = false;
-        }
-
         valbox eval(execution_context *ctx, eval_caller_type, valbox *) override {
-            if(primary()) {
-                std::shared_lock l{primary_val_mtp_};
-                return primary_val_;
-            }
             valbox res{valbox_no_initialize::dont_do_it};
             if(fun_ref()) {
                 execution_context::obj_type objtyp{objtyp_.load(std::memory_order_acquire)};
@@ -90,11 +78,6 @@ namespace teal {
                     execution_context::obj_type objtyp{objtyp_.load(std::memory_order_acquire)};
                     res = ctx->find_val_by_sym_name(name_, line(), col(), objtyp);
                     objtyp_.store(objtyp, std::memory_order_release);
-                    if(objtyp == execution_context::obj_type::global_var) {
-                        std::unique_lock l{primary_val_mtp_};
-                        primary_val_ = res;
-                        primary_ = true;
-                    }
                 } catch (runtime_error const &e) {
                     er = e;
                     excepted = true;
@@ -119,11 +102,8 @@ namespace teal {
         bool is_symbolic() const override { return true; }
 
     private:
-        mutable shared_mutex primary_val_mtp_{};
-        valbox primary_val_{};
         std::string name_{};
         std::atomic<execution_context::obj_type> objtyp_{execution_context::obj_type::unknown};
-        std::atomic<bool> primary_{false};
     };
 
     class prefix_unop_expression: public expression {
@@ -669,12 +649,13 @@ namespace teal {
         }
 
         void reset_primary() override {
+            cond_->reset_primary();
             on_true_->reset_primary();
             on_false_->reset_primary();
         }
 
         valbox eval(execution_context *ctx, eval_caller_type, valbox *) override {
-            if(cond_->eval(ctx, eval_caller_type::no_matter, nullptr).deref().cast_to_bool()) {
+            if(cond_->eval(ctx, eval_caller_type::no_matter, nullptr).cast_to_bool()) {
                 return on_true_->eval(ctx, eval_caller_type::no_matter, nullptr);
             } else {
                 return on_false_->eval(ctx, eval_caller_type::no_matter, nullptr);
@@ -2131,8 +2112,7 @@ namespace teal {
                             *dotlptr = l;
                         }
                         if(l.is_class_ref()) {
-                            res = ctx->find_method(l.ref_class_name(), this_->rval_->symbol(),
-                                                   this_->rval_->line(), this_->rval_->col());
+                            res = ctx->find_method(l.ref_class_name(), this_->rval_->symbol());
                             if(res.is_undefined_ref()) {
                                 valbox found_fn{};
                                 execution_context::obj_type objtyp{execution_context::obj_type::unknown};

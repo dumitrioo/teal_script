@@ -67,17 +67,24 @@ function k_update(ks, z) {
     ks.P = (1.0 - K * ks.H) * ks.P;
 }
 
+function apply(a, fn) {
+    if(a.typeof() != "array") { throw "not an array"; }
+    if(fn.typeof() != "func") { throw "not a function"; }
+    for(i = 0; i < a.size(); ++i) {
+        fn(a[i]);
+    }
+}
+
 my_drafts(host_data) {
     console.fixed();
-    console.setprecision(0);
+    console.setprecision(16);
 
-    for(int = 0; int < 100; ++int) {
-        timestamp().println();
-    }
-    return exit();
+    arr = [];
+    for(int = 0; int < 100; ++int)
+        arr.push_back(timestamp());
+    arr.apply(println);
 
     this.k = timestamp();
-    return this.k;
 
     for(v = matrix(4, 1, [10, 0, 0, 0]); v; v.at(0) -= 1) {
         v.println();
@@ -103,7 +110,7 @@ my_drafts(host_data) {
     mr.at(2) = 2124;
     println(mr);
 
-    println("--------------------");
+    "--------------------".println();
     t = matrix(4, 4,
         [
             1, 2, 3, 4,

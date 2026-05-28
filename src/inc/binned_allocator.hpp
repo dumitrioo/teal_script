@@ -6,7 +6,7 @@
 namespace teal {
 
     template<
-        std::size_t MEMORY_SIZE = 128 * 1024 * 1024,
+        std::size_t MEMORY_SIZE = 16 * 1024 * 1024,
         std::size_t ALIGNMENT = 16,
         std::size_t MAX_ALLOC_SIZE = 1024
     >
@@ -26,7 +26,7 @@ namespace teal {
 
         struct alignas(64) free_list {
             std::atomic<alloc_unit_hdr *> head{nullptr};
-            std::shared_mutex mtp{};
+            mt::atomic_rw_spin_mutex mtp{};
         };
 
         static size_t constexpr size_to_aligned(size_t n) {
@@ -155,7 +155,6 @@ namespace teal {
         alignas(64) std::array<free_list, NUM_BINS> free_lists_{};
         std::atomic<size_t> allocated_{0};
         std::atomic<size_t> offset_{0};
-        std::mutex mtp_{};
     };
 
 }

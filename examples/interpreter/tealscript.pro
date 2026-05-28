@@ -6,12 +6,13 @@ CONFIG   -= app_bundle
 TEMPLATE = app
 
 # DEFINES += TEAL_SINGLE_THREADED
-DEFINES += TEAL_DEBUGGING
+# DEFINES += TEAL_DEBUGGING
 
 # DEFINES += STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
 
 # DEFINES += USE_CUSTOM_MEMORY_ALLOCATION
 
+DEFINES += TEAL_USE_CUSTOM_SHARED_MUTEX
 DEFINES += RW_MUTEX_PRIORITIES
 # DEFINES += RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING
 
@@ -104,7 +105,7 @@ HEADERS += \
     ../../src/tealscript_value.hpp
 
 QMAKE_CXXFLAGS += -std=c++20 -march=native -Wno-unused-parameter -Wno-unused-function -Wl,-rpath,.
-QMAKE_CXXFLAGS += -ftree-vectorize -mavx2 -ftree-vectorizer-verbose=5
+# QMAKE_CXXFLAGS += -ftree-vectorize -mavx2 -ftree-vectorizer-verbose=5
 QMAKE_CXXFLAGS_RELEASE -= -O2
 QMAKE_CXXFLAGS_RELEASE += -O3
 QMAKE_CFLAGS_RELEASE -= -O2

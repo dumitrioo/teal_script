@@ -250,12 +250,7 @@ namespace teal::mt {
         }
 
         void read_unlock() {
-            std::int64_t curr{current_.load(std::memory_order_acquire)};
-            if(curr < 0) {
-                current_.store(0);
-            } else if(curr > 0) {
-                current_.fetch_sub(1);
-            } else {
+            if(current_.fetch_sub(1) <= 0) {
                 throw std::runtime_error{"locking counting error"};
             }
         }
