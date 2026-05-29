@@ -37,13 +37,7 @@ some_value_issuer() {
         if(choice == 5) { o = object(); o["key"] = 200.0 * (randf() - 0.5); this.res = o; }
         if(choice == 6) this.res = sin;
         if(choice == 7) this.res = timestamp();
-        if(choice == 8) this.res = matrix(
-                                       2, 2, 
-                                       [
-                                        1,2,
-                                        3,4
-                                       ]
-                                   );
+        if(choice == 8) this.res = matrix(2, 2, [1, 2, 3, 4]);
         console.print("original value changed to: ", this.res);
     }
     return this.res;
