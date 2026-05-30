@@ -62,7 +62,18 @@ namespace teal {
     public:
         sym_expression(std::string const &name): name_{name} {}
 
+        bool primary() const override {
+            return primary_.load(std::memory_order_acquire);
+        }
+
+        void reset_primary() override {
+            primary_ = false;
+        }
+
         valbox eval(execution_context *ctx, eval_caller_type, valbox *) override {
+            if(primary()) {
+                return primary_val_;
+            }
             valbox res{valbox_no_initialize::dont_do_it};
             if(fun_ref()) {
                 execution_context::obj_type objtyp{objtyp_.load(std::memory_order_acquire)};
@@ -71,6 +82,11 @@ namespace teal {
                     res = ctx->find_val_by_sym_name(name_, line(), col(), objtyp);
                 }
                 objtyp_.store(objtyp, std::memory_order_release);
+                std::unique_lock l{primary_val_mtp_};
+                if(!primary()) {
+                    primary_val_ = res;
+                    primary_ = true;
+                }
             } else {
                 bool excepted{false};
                 runtime_error er{{}, {}, {}};
@@ -78,6 +94,13 @@ namespace teal {
                     execution_context::obj_type objtyp{objtyp_.load(std::memory_order_acquire)};
                     res = ctx->find_val_by_sym_name(name_, line(), col(), objtyp);
                     objtyp_.store(objtyp, std::memory_order_release);
+                    if(objtyp == execution_context::obj_type::global_var) {
+                        std::unique_lock l{primary_val_mtp_};
+                        if(!primary()) {
+                            primary_val_ = res;
+                            primary_ = true;
+                        }
+                    }
                 } catch (runtime_error const &e) {
                     er = e;
                     excepted = true;
@@ -104,6 +127,9 @@ namespace teal {
     private:
         std::string name_{};
         std::atomic<execution_context::obj_type> objtyp_{execution_context::obj_type::unknown};
+        mutable shared_mutex primary_val_mtp_{};
+        valbox primary_val_{};
+        std::atomic<bool> primary_{false};
     };
 
     class prefix_unop_expression: public expression {
@@ -185,7 +211,9 @@ namespace teal {
                     }
                     if(val->primary()) {
                         std::unique_lock l{this_->primary_val_mtp_};
-                        this_->primary_val_ = res; this_->primary_ = true;
+                        if(!this_->primary()) {
+                            this_->primary_val_ = res; this_->primary_ = true;
+                        }
                     }
                     return res;
                 },
@@ -231,7 +259,9 @@ namespace teal {
                     }
                     if(val->primary()) {
                         std::unique_lock l{this_->primary_val_mtp_};
-                        this_->primary_val_ = res; this_->primary_ = true;
+                        if(!this_->primary()) {
+                            this_->primary_val_ = res; this_->primary_ = true;
+                        }
                     }
                     return res;
                 },
@@ -266,7 +296,9 @@ namespace teal {
                     }
                     if(val->primary()) {
                         std::unique_lock l{this_->primary_val_mtp_};
-                        this_->primary_val_ = res; this_->primary_ = true;
+                        if(!this_->primary()) {
+                            this_->primary_val_ = res; this_->primary_ = true;
+                        }
                     }
                     return res;
                 },
@@ -410,7 +442,9 @@ namespace teal {
                     }
                     if(val->primary()) {
                         std::unique_lock l{this_->primary_val_mtp_};
-                        this_->primary_val_ = res; this_->primary_ = true;
+                        if(!this_->primary()) {
+                            this_->primary_val_ = res; this_->primary_ = true;
+                        }
                     }
                     return res;
                 },
@@ -460,14 +494,15 @@ namespace teal {
                     }
                     if(expr->primary()) {
                         std::unique_lock l{this_->primary_val_mtp_};
-                        this_->primary_val_ = res; this_->primary_ = true;
+                        if(!this_->primary()) {
+                            this_->primary_val_ = res; this_->primary_ = true;
+                        }
                     }
                     return res;
                 },
                 /* ENDOFFILE */ nullptr,
             };
             if(primary()) {
-                std::shared_lock l{primary_val_mtp_};
                 return primary_val_;
             }
             auto &&fn{ops[static_cast<std::size_t>(opcode_)]};
@@ -2187,7 +2222,6 @@ namespace teal {
                 /* ENDOFFILE */ nullptr,
             };
             if(primary()) {
-                std::shared_lock l{primary_val_mtp_};
                 return primary_val_;
             }
             auto &&fn{ops[static_cast<std::size_t>(opcode_)]};
@@ -2197,8 +2231,10 @@ namespace teal {
             valbox res{fn(this, ctx, caller_type, dotlptr)};
             if(lval_->primary() && rval_->primary()) {
                 std::unique_lock l{primary_val_mtp_};
-                primary_val_ = res;
-                primary_ = true;
+                if(!primary()) {
+                    primary_val_ = res;
+                    primary_ = true;
+                }
             }
             return res;
         }
