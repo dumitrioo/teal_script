@@ -1186,9 +1186,9 @@ namespace teal {
         runtime &operator=(runtime &&) = delete;
         ~runtime() {
             terminate();
-            stop_mt();
             stop_net_server();
             stop_extcell_processing();
+            stop_mt();
             worker_cells_templates_.clear();
             global_constants_dictionary_.clear();
             global_functions_dictionary_.clear();

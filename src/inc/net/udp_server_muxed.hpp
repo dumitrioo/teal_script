@@ -139,18 +139,15 @@ namespace teal::net {
                 terminate();
                 wait();
                 remove_all_connections();
-                {
-                    if(sock_fd_ != -1) {
-                        {
-                        std::unique_lock pl{poller_mtp_};
-                        poller_.close();
-                        }
-                        std::unique_lock sl{sock_fd_mtp_};
-                        ::close(sock_fd_);
-                        sock_fd_ = -1;
+                if(sock_fd_ != -1) {
+                    {
+                    std::unique_lock pl{poller_mtp_};
+                    poller_.close();
                     }
+                    std::unique_lock sl{sock_fd_mtp_};
+                    ::close(sock_fd_);
+                    sock_fd_ = -1;
                 }
-                started_ = false;
             } catch(...) {
             }
             return res;
@@ -741,7 +738,9 @@ namespace teal::net {
             [this]() {
                 if(!termination()) {
                     worker();
-                    cq_->enqueue(worker_entry_);
+                    if(!cq_->enqueue(worker_entry_)) {
+                        started_ = false;
+                    }
                 } else {
                     started_ = false;
                 }

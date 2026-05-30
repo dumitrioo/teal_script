@@ -62,9 +62,9 @@ namespace teal {
             }
         }
 
-        void enqueue(QITEM_T &&f) {
+        bool enqueue(QITEM_T &&f) {
             if(termination()) {
-                return;
+               return false;
             }
             {
                 lp_q_.enqueue(std::move(f));
@@ -74,11 +74,12 @@ namespace teal {
             if(num_workers_.load(std::memory_order_acquire) == 0) {
                 create_worker();
             }
+            return true;
         }
 
-        void enqueue(QITEM_T const &f) {
+        bool enqueue(QITEM_T const &f) {
             if(termination()) {
-                return;
+                return false;
             }
             {
                 lp_q_.enqueue(f);
@@ -88,11 +89,12 @@ namespace teal {
             if(num_workers_.load(std::memory_order_acquire) == 0) {
                 create_worker();
             }
+            return true;
         }
 
-        void enqueue_urgent(QITEM_T &&f) {
+        bool enqueue_urgent(QITEM_T &&f) {
             if(termination()) {
-                return;
+                return false;
             }
             {
                 hp_q_.enqueue(std::move(f));
@@ -102,11 +104,12 @@ namespace teal {
             if(num_workers_.load(std::memory_order_acquire) == 0) {
                 create_worker();
             }
+            return true;
         }
 
-        void enqueue_urgent(QITEM_T const &f) {
+        bool enqueue_urgent(QITEM_T const &f) {
             if(termination()) {
-                return;
+                return false;
             }
             {
                 hp_q_.enqueue(f);
@@ -116,6 +119,7 @@ namespace teal {
             if(num_workers_.load(std::memory_order_acquire) == 0) {
                 create_worker();
             }
+            return true;
         }
 
         void set_workload_to_start_spawn_threads(long double val) noexcept {
@@ -286,7 +290,7 @@ namespace teal {
                     (
                         (wtn == 0 && enqueued_items > 0)
                         ||
-                        wtn < static_cast<std::size_t>(workers_for_works<double>(enqueued_items))
+                        wtn < static_cast<std::size_t>(workers_needed<double>(enqueued_items))
                         ||
                         avg_st_ld_.load(std::memory_order_acquire) >= load_to_start_spawn_
                     )
@@ -311,7 +315,7 @@ namespace teal {
             }
         }
 
-        template<typename T> static T workers_for_works(T num_works) {
+        template<typename T> static T workers_needed(T num_works) {
             return std::min(std::sqrt(num_works) * 3, num_works);
         }
 
