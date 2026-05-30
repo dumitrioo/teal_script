@@ -37,6 +37,7 @@
 #include "ext/rand_ext.hpp"
 #include "ext/time_ext.hpp"
 #include "ext/math_ext.hpp"
+#include "ext/pid_ext.hpp"
 #include "ext/socket_ext.hpp"
 
 #ifdef PLATFORM_WINDOWS
@@ -224,6 +225,7 @@ namespace teal {
 #ifndef TEALSCRIPT_NO_EIGEN
             eigen_ext_.register_runtime(this);
 #endif
+            pid_ext_.register_runtime(this);
             math_ext_.register_runtime(this);
             time_ext_.register_runtime(this);
             crypt_.register_runtime(this);
@@ -1215,6 +1217,7 @@ namespace teal {
             randlib_.unregister_runtime();
             time_ext_.unregister_runtime();
             math_ext_.unregister_runtime();
+            pid_ext_.unregister_runtime();
             array_buffer_ext_.unregister_runtime();
         }
 
@@ -2149,6 +2152,7 @@ namespace teal {
         }
 
         math_ext math_ext_{};
+        pid_ext pid_ext_{};
         time_ext time_ext_{};
         crypto_ext crypt_{};
         file_ext fpool_{};
