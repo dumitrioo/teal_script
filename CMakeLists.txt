@@ -17,7 +17,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_C_STANDARD 99)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -ftree-vectorize -mavx2 -ftree-vectorizer-verbose=5 -fstrict-aliasing -Wall -Wextra -rdynamic -fPIC -Wno-maybe-uninitialized -Wno-unused-function -Wno-unused-parameter -Wl,-rpath,.")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -ftree-vectorize -mavx2 -fstrict-aliasing -Wall -Wextra -rdynamic -fPIC -Wno-maybe-uninitialized -Wno-unused-function -Wno-unused-parameter -Wl,-rpath,.")
 
 add_definitions(-DTEAL_USE_CUSTOM_SHARED_MUTEX)
 add_definitions(-DRW_MUTEX_PRIORITIES)
