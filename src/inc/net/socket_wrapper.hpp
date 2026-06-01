@@ -330,18 +330,31 @@ namespace teal::net {
             return set_fd_flag(O_NONBLOCK);
 #endif
         }
-        bool set_reuse_addr() {
+        bool set_reuse_addr(bool v) {
             if(!ok()) {
                 throw socket_error("socket::set_reuse_addr(): socket not ready");
             }
 #ifdef PLATFORM_WINDOWS
-            int val{ 1 };
+            int val{v ? 1 : 0};
             return ::setsockopt(sock_fd_, SOL_SOCKET, SO_REUSEADDR, (char const *)&val, sizeof(int)) >= 0;
 #else
-            int val{1};
+            int val{v ? 1 : 0};
             return ::setsockopt(sock_fd_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(int)) >= 0;
 #endif
         }
+        bool set_reuse_port(bool v) {
+            if(!ok()) {
+                throw socket_error("socket::set_reuse_port(): socket not ready");
+            }
+#ifdef PLATFORM_WINDOWS
+            int val{v ? 1 : 0};
+            return ::setsockopt(sock_fd_, SOL_SOCKET, SO_REUSEPORT, (char const *)&val, sizeof(int)) >= 0;
+#else
+            int val{v ? 1 : 0};
+            return ::setsockopt(sock_fd_, SOL_SOCKET, SO_REUSEPORT, &val, sizeof(int)) >= 0;
+#endif
+        }
+
         bool make_nodelay() {
             if(!ok()) {
                 throw socket_error("socket::make_nodelay(): socket not ready");

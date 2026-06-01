@@ -21,21 +21,19 @@ namespace teal {
         virtual std::string const &symbol() const & { static const std::string res{}; return res; }
         virtual bool primary() const { return false; }
         virtual void reset_primary() {}
-        void mark_fun_ref() { fun_ref_ = true; }
-        bool fun_ref() const { return fun_ref_; }
+        virtual void mark_fun_ref() {}
+        virtual bool fun_ref() const { return false; }
+        virtual bool is_symbolic() const { return false; }
+        virtual bool is_binop() const { return false; }
+        virtual token::type binop_type() const { return token::type::NONE; }
 
         void set_loc(std::int64_t line, std::int64_t col) { line_ = line; col_ = col; }
         std::int64_t line() const { return line_; }
         std::int64_t col() const { return col_; }
 
-        virtual bool is_symbolic() const { return false; }
-        virtual bool is_binop() const { return false; }
-        virtual token::type binop_type() const { return token::type::NONE; }
-
     protected:
         std::int64_t line_{0};
         std::int64_t col_{0};
-        bool fun_ref_{false};
     };
 
     using expr_ptr = std::shared_ptr<expression>;
@@ -68,6 +66,14 @@ namespace teal {
 
         void reset_primary() override {
             primary_ = false;
+        }
+
+        void mark_fun_ref() override {
+            fun_ref_ = true;
+        }
+
+        bool fun_ref() const override {
+            return fun_ref_;
         }
 
         valbox eval(execution_context *ctx, eval_caller_type, valbox *) override {
@@ -130,6 +136,7 @@ namespace teal {
         mutable shared_mutex primary_val_mtp_{};
         valbox primary_val_{};
         std::atomic<bool> primary_{false};
+        bool fun_ref_{false};
     };
 
     class prefix_unop_expression: public expression {
@@ -619,53 +626,59 @@ namespace teal {
             std::string fsym{fn.func_name()};
             bool user_fn_seltor{fn.is_user_func()};
             std::vector<valbox> act_args{};
-            if(fsym == "exit" || fsym == "assert") {
-                if(fsym == "exit") {
-                    act_args.reserve(args_.size() + 2);
-                    act_args.push_back((void *)ctx);
-                } else if(fsym == "assert") {
-                    act_args.reserve(args_.size() + 3);
-                    act_args.push_back(line());
-                    act_args.push_back(col());
-                }
-            } else {
-                if(user_fn_seltor) {
-                    act_args.reserve(args_.size() + 3);
-                    act_args.push_back((void *)ctx);
-                    act_args.push_back(fsym);
-                } else {
-                    act_args.reserve(args_.size() + 1);
-                }
-            }
-            if(
-                func_->is_binop() &&
-                (
-                    func_->binop_type() == token::type::DOT ||
-                    func_->binop_type() == token::type::LBRACKET
-                )
-            ) {
-                act_args.push_back(left_of_dot);
-            }
-            for(auto &&ex: args_) {
-                valbox v{ex->eval(ctx, eval_caller_type::no_matter, nullptr)};
-                act_args.push_back(v);
-            }
             if(user_fn_seltor) {
+                act_args.reserve(args_.size() + 3);
+                act_args.push_back((void *)ctx);
+                act_args.push_back(fsym);
+                if(
+                    func_->is_binop() &&
+                    (
+                        func_->binop_type() == token::type::DOT ||
+                        func_->binop_type() == token::type::LBRACKET
+                    )
+                ) {
+                    act_args.push_back(left_of_dot);
+                }
+                for(auto &&ex: args_) {
+                    valbox v{ex->eval(ctx, eval_caller_type::no_matter, nullptr)};
+                    act_args.push_back(v);
+                }
                 ctx->set_stack_barrier();
                 teal::shut_on_destroy csb{[ctx]() { ctx->clear_stack_barrier(); }};
                 valbox res{fn.as_func()(act_args)};
                 ctx->clear_return_request();
                 return res;
             } else {
-                runtime_error rte{0, 0, ""};
+                act_args.reserve(args_.size() + 3);
+                if(fsym == "exit" || fsym == "assert") {
+                    if(fsym == "exit") {
+                        act_args.push_back((void *)ctx);
+                    } else if(fsym == "assert") {
+                        act_args.push_back(line());
+                        act_args.push_back(col());
+                    }
+                }
+                if(
+                    func_->is_binop() &&
+                    (
+                        func_->binop_type() == token::type::DOT ||
+                        func_->binop_type() == token::type::LBRACKET
+                    )
+                ) {
+                    act_args.push_back(left_of_dot);
+                }
+                for(auto &&ex: args_) {
+                    valbox v{ex->eval(ctx, eval_caller_type::no_matter, nullptr)};
+                    act_args.push_back(v);
+                }
                 try {
                     return fn.as_func()(act_args);
                 } catch (runtime_error const &e) {
-                    rte = e;
+                    ctx->rte() = e;
                 } catch (std::exception const &e) {
-                    rte = runtime_error{line(), col(), e.what()};
+                    ctx->rte() = runtime_error{line(), col(), e.what()};
                 }
-                throw rte;
+                throw ctx->rte();
             }
         }
 

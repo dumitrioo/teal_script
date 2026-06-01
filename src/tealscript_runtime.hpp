@@ -135,7 +135,8 @@ namespace teal {
             add_var("EDOM", EDOM);       // 33  Math argument out of domain of func
             add_var("ERANGE", ERANGE);   // 34  Math result not representable
 
-            add_function("last_error", TEALFUN() {
+            add_function("last_error", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 0)
                 return sys_util::last_error();
             });
             add_function("error_str", TEALFUN(args) {
@@ -147,74 +148,13 @@ namespace teal {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 return std::system(args[0].cast_to_string().c_str());
             });
-            add_function("load_from_file", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                auto fd{file_util::load_from_file(args[0].cast_to_string())};
-                return std::string{fd.begin(), fd.end()};
-            });
-            add_function("save_to_file", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                return file_util::save_to_file(args[0].cast_to_string(), args[1].cast_to_string());
-            });
-            add_function("delete_filesystem_entry", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                return file_util::delete_fs_entry(args[0].cast_to_string());
-            });
-            add_function("extract_file_dir", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                return file_util::extract_file_dir(args[0].cast_to_string());
-            });
-            add_function("extract_file_name", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                return file_util::extract_file_name(args[0].cast_to_string());
-            });
-            add_function("extract_file_ext", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                return file_util::extract_file_ext(args[0].cast_to_string());
-            });
 
-            add_function("file_exists", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                return file_util::file_exists(args[0].cast_to_string());
+            add_function("errno", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 0)
+                return sys_util::last_error();
             });
-            add_function("dir_exists", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                return file_util::dir_exists(args[0].cast_to_string());
-            });
-
-            add_function("native_path_seperator", TEALFUN() {
-                return file_util::native_path_separator<std::string>{}.sym();
-            });
-
-            add_function("native_path_seperator_str", TEALFUN() {
-                return file_util::native_path_separator<std::string>{}.val();
-            });
-
-            add_function("temp_directory_path", TEALFUN() {
-                return std::filesystem::temp_directory_path().string();
-            });
-
-            add_function("list_directory", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2)
-                bool recur{false};
-                if(args.size() >= 2) {
-                    recur = args[1].cast_to_bool();
-                }
-                valbox names{valbox_no_initialize::dont_do_it};
-                names.become_array();
-                file_util::for_dir_tree(
-                    args[0].cast_to_string(),
-                    [&](file_util::dir_entry const &de) {
-                        names.as_array().push_back(de.full_path());
-                        return true;
-                    },
-                    recur
-                );
-                return names;
-            });
-
-            add_function("errno", TEALFUN() { return sys_util::last_error(); });
             add_function("strerror", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_LE(args, 1)
                 if(args.size() > 0) {
                     return std::string{strerror(args[0].cast_num_to_num<int>())};
                 }
@@ -266,6 +206,14 @@ namespace teal {
 
             add_function("to_string", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                if(args[0].is_class_ref()) {
+                    std::function<valbox(valbox const &)> const &strfy{
+                        get_object_services(args[0].class_name())->stringify
+                    };
+                    if(strfy) {
+                        return strfy(args[0]);
+                    }
+                }
                 std::stringstream ss{};
                 ss << args[0];
                 return ss.str();
@@ -450,12 +398,12 @@ namespace teal {
             });
             add_function("array", TEALFUN(args) {
                 valbox res{valbox_no_initialize::dont_do_it};
-                res.become_array();
                 if(args.size() == 1 && (args[0].is_array_ref())) {
                     res.assign(args[0]);
                 } else if(args.size() == 1 && (args[0].is_string_ref() || args[0].is_wstring_ref())) {
-                    res.construct(args[0].cast_to_array());
+                    res.construct_array(args[0].cast_to_array());
                 } else {
+                    res.become_array();
                     for(std::size_t i = 0; i < args.size(); ++i) {
                         res.as_array().push_back(args[i]);
                     }
@@ -463,25 +411,41 @@ namespace teal {
                 return res;
             });
             add_function("object", TEALFUN(args) {
+                valbox res{valbox_no_initialize::dont_do_it};
                 if(args.empty()) {
-                    return valbox{valbox_no_initialize::dont_do_it}.become_object();
+                    res.become_object();
+                    return res;
                 }
                 if(args[0].is_object_ref()) {
-                    return args[0];
-                }
-                valbox res{valbox_no_initialize::dont_do_it};
-                res.become_object();
-                if(args[0].is_string_ref()) {
-                    res.from_json(json::deserialize(args[0].as_string()));
+                    res.assign(args[0]);
                     return res;
-                } else if(args[0].is_wstring_ref()) {
-                    return json::deserialize(args[0].as_wstring());
-                } else if(args[0].is_any_int_number()) {
-                    return json{args[0].cast_num_to_num<int64_t>()};
-                } else if(args[0].is_any_fp_number()) {
-                    return json{args[0].cast_num_to_num<long double>()};
-                } else if(args[0].is_bool_ref()) {
-                    return json{args[0].cast_num_to_num<long double>()};
+                }
+                res.become_object();
+                if(args.size() == 1) {
+                    if(args[0].is_string_ref()) {
+                        try {
+                            json j{json::deserialize(args[0].as_string())};
+                            if(j.is_object()) {
+                                return res.from_json(j);
+                            }
+                        } catch (...) {
+                        }
+                    } else if(args[0].is_wstring_ref()) {
+                        try {
+                            json j{json::deserialize(args[0].as_wstring())};
+                            if(j.is_object()) {
+                                return res.from_json(j);
+                            }
+                        } catch (...) {
+                        }
+                    }
+                } else {
+                    if(args.size() % 2 == 0) {
+                        valbox::object_t &o{res.as_object()};
+                        for(size_t i{}; i < args.size(); i += 2) {
+                            o[args[i].cast_to_string()] = args[i + 1].clone();
+                        }
+                    }
                 }
                 return res;
             });
@@ -949,9 +913,25 @@ namespace teal {
             add_function("ftoa", TEALFUN(args) {
                 if(args.size() > 0) {
                     if(args.size() > 1) {
-                        return str_util::ftoa(args[0].cast_to_long_double(), args[1].cast_to_u64());
+                        if(args[0].is_long_double_ref()) {
+                            return str_util::ftoa(args[0].as_long_double(), args[1].cast_to_size_t());
+                        } else if(args[0].is_double_ref()) {
+                            return str_util::ftoa(args[0].as_double(), args[1].cast_to_size_t());
+                        } else if(args[0].is_float_ref()) {
+                            return str_util::ftoa(args[0].as_float(), args[1].cast_to_size_t());
+                        } else if(args[0].is_numeric()) {
+                            return str_util::ftoa(args[0].cast_to_double(), args[1].cast_to_size_t());
+                        }
                     } else {
-                        return str_util::ftoa(args[0].cast_to_long_double());
+                        if(args[0].is_long_double_ref()) {
+                            return str_util::ftoa(args[0].as_long_double());
+                        } else if(args[0].is_double_ref()) {
+                            return str_util::ftoa(args[0].as_double());
+                        } else if(args[0].is_float_ref()) {
+                            return str_util::ftoa(args[0].as_float());
+                        } else if(args[0].is_numeric()) {
+                            return str_util::ftoa(args[0].cast_to_double());
+                        }
                     }
                 }
                 return std::string{"0.0"};
@@ -960,17 +940,17 @@ namespace teal {
             add_function("toupper", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 if(args[0].is_char_ref()) {
-                    return str_util::toupper(args[0].as_char());
+                    return str_util::fltr<std::string>::toupper(args[0].as_char());
                 } else {
-                    return str_util::towupper(args[0].cast_to_u64());
+                    return str_util::fltr<std::wstring>::toupper(args[0].cast_to_u64());
                 }
             });
             add_function("tolower", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 if(args[0].is_char_ref()) {
-                    return str_util::tolower(args[0].as_char());
+                    return str_util::fltr<std::string>::tolower(args[0].as_char());
                 } else {
-                    return str_util::towlower(args[0].cast_to_u64());
+                    return str_util::fltr<std::wstring>::tolower(args[0].cast_to_u64());
                 }
             });
 
@@ -981,15 +961,17 @@ namespace teal {
                 } else if(args[0].is_wstring_ref()) {
                     return str_util::fltr<std::wstring>::strtoupper(args[0].as_wstring());
                 } else {
-                    throw std::runtime_error{"invalid argument"};
+                    return str_util::fltr<std::string>::strtoupper(args[0].cast_to_string());
                 }
             });
             add_function("strtolower", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                if(args[0].is_char_ref()) {
-                    return str_util::tolower(args[0].as_char());
+                if(args[0].is_string_ref()) {
+                    return str_util::fltr<std::string>::strtolower(args[0].as_string());
+                } else if(args[0].is_wstring_ref()) {
+                    return str_util::fltr<std::wstring>::strtolower(args[0].as_wstring());
                 } else {
-                    return str_util::towlower(args[0].cast_to_u64());
+                    return str_util::fltr<std::string>::strtolower(args[0].cast_to_string());
                 }
             });
 

@@ -26,7 +26,7 @@ example13 ex13();
 
 
 example12() {
-    s = object("[1,2,\"333\",4,5]");
+    s = object("{\"1\":2,\"2\":[9,9,9,9],\"333\":4,\"5\":9}");
     console.print(s);
 
     console.print(typeof(s));
@@ -34,12 +34,12 @@ example12() {
 
     console.print(s[2].typeof());
 
-    s[2][1] = '5';
+    s["2"][1] = '5';
     console.print(s);
-    s[2][2] = '9';
+    s["2"][2] = '9';
     console.print(s);
 
-    s[2][1] += 2;
+    s["2"][1] += 2;
     console.print(s);
 }
 

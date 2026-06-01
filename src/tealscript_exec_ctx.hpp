@@ -66,6 +66,10 @@ namespace teal {
         {
         }
 
+        runtime_error &rte() {
+            return rte_;
+        }
+
         runtime_interface *rt_interface() {
             return rt_ptr_;
         }
@@ -505,6 +509,7 @@ namespace teal {
         std::uint64_t break_requested_{0};
         str_map_t<valbox> *self_fields_{nullptr};
         std::uint64_t create_if_not_exists_{0};
+        runtime_error rte_{0, 0, ""};
     };
 
 }

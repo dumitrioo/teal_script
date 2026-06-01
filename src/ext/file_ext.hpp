@@ -3,6 +3,7 @@
 #include "../inc/commondefs.hpp"
 #include "../inc/sequence_generator.hpp"
 #include "../inc/str_util.hpp"
+#include "../inc/file_util.hpp"
 
 #include "../tealscript_value.hpp"
 #include "../tealscript_util.hpp"
@@ -152,6 +153,79 @@ namespace teal {
                     return (std::int64_t)res;
                 }
                 return static_cast<std::int64_t>(0);
+            });
+
+
+            rt->add_function("load_from_file", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2)
+                if(args.size() == 1) {
+                    return file_util::load_str_from_file(args[0].cast_to_string());
+                } else {
+                    return file_util::load_str_from_file(args[0].cast_to_string(), args[1].cast_to_u64());
+                }
+            });
+            rt->add_function("save_to_file", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
+                return file_util::save_to_file(args[0].cast_to_string(), args[1].cast_to_string());
+            });
+            rt->add_function("delete_filesystem_entry", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                return file_util::delete_fs_entry(args[0].cast_to_string());
+            });
+            rt->add_function("extract_file_dir", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                return file_util::extract_file_dir(args[0].cast_to_string());
+            });
+            rt->add_function("extract_file_name", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                return file_util::extract_file_name(args[0].cast_to_string());
+            });
+            rt->add_function("extract_file_ext", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                return file_util::extract_file_ext(args[0].cast_to_string());
+            });
+
+            rt->add_function("file_exists", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                return file_util::file_exists(args[0].cast_to_string());
+            });
+            rt->add_function("dir_exists", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                return file_util::dir_exists(args[0].cast_to_string());
+            });
+
+            rt->add_function("native_path_seperator", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 0)
+                return file_util::native_path_separator<std::string>{}.sym();
+            });
+
+            rt->add_function("native_path_seperator_str", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 0)
+                return file_util::native_path_separator<std::string>{}.val();
+            });
+
+            rt->add_function("temp_directory_path", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 0)
+                return std::filesystem::temp_directory_path().string();
+            });
+
+            rt->add_function("list_directory", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2)
+                bool recur{false};
+                if(args.size() >= 2) {
+                    recur = args[1].cast_to_bool();
+                }
+                valbox names{valbox_no_initialize::dont_do_it};
+                names.become_array();
+                file_util::for_dir_tree(
+                    args[0].cast_to_string(),
+                    [&](file_util::dir_entry const &de) {
+                        names.as_array().push_back(de.full_path());
+                        return true;
+                    },
+                    recur
+                    );
+                return names;
             });
         }
 

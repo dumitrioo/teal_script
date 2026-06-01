@@ -77,12 +77,15 @@ function apply(a, fn) {
 
 my_drafts(host_data) {
     console.fixed();
-    console.setprecision(16);
+    console.setprecision(9);
 
-    arr = [];
-    for(int = 0; int < 100; ++int)
-        arr.push_back(timestamp());
-    arr.apply(println);
+    object(1,2).println();
+
+    timestamps = [];
+    for(i = 0; i < 100; ++i) {
+        timestamps.push_back(steady_clock());
+    }
+    timestamps.apply(println);
 
     this.k = timestamp();
 
@@ -135,8 +138,6 @@ my_drafts(host_data) {
     if(t) {
         println("t!");
     }
-
-    // return exit();
 
     arr = 3 + [12, undefined, '2', "122", 9090.9090, [],];
     arr.println();
@@ -353,8 +354,6 @@ my_drafts(host_data) {
         }
     }
 
-    exit();
-    return 0;
+    return exit();
 }
-
 my_drafts drf(host_provided_data);

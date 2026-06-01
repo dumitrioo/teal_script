@@ -131,7 +131,12 @@ namespace teal {
                 return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->make_nonblocking();
             });
             rt->add_method("socket", "set_reuse_addr", TEALFUN(args) {
-                return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->set_reuse_addr();
+                int val{true}; if(args.size() > 1) { val = args[1].cast_to_bool(); }
+                return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->set_reuse_addr(val);
+            });
+            rt->add_method("socket", "set_reuse_port", TEALFUN(args) {
+                int val{true}; if(args.size() > 1) { val = args[1].cast_to_bool(); }
+                return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->set_reuse_port(val);
             });
             rt->add_method("socket", "make_nodelay", TEALFUN(args) {
                 return TEALTHIS(args, std::shared_ptr<teal::net::socket>)->make_nodelay();

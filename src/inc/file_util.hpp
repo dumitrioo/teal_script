@@ -413,13 +413,17 @@ namespace teal::file_util {
     }
 
     static std::vector<std::uint8_t> load_from_file(const std::string &fn, std::uint64_t how_much = 0) {
-        std::deque<std::uint8_t> result{};
+        std::vector<std::uint8_t> result{};
         if(!file_exists(fn)) {
             throw file_loading_error{};
         }
         std::ifstream file{};
         file.open(fn.c_str(), std::ios_base::in | std::ios_base::binary);
         if(file.is_open()) {
+            file.seekg(0, std::ios_base::end);
+            auto fs{file.tellg()};
+            result.reserve(how_much == 0 ? static_cast<std::size_t>(fs) : std::min<std::size_t>(fs, how_much));
+            file.seekg(0);
             int c{};
             std::uint64_t total_read{0};
             while((c = file.get()) != -1) {
@@ -432,6 +436,32 @@ namespace teal::file_util {
             file.close();
         }
         return std::vector<std::uint8_t>{result.begin(), result.end()};
+    }
+
+    static std::string load_str_from_file(const std::string &fn, std::uint64_t how_much = 0) {
+        std::string result{};
+        if(!file_exists(fn)) {
+            throw file_loading_error{};
+        }
+        std::ifstream file{};
+        file.open(fn.c_str(), std::ios_base::in | std::ios_base::binary);
+        if(file.is_open()) {
+            file.seekg(0, std::ios_base::end);
+            auto fs{file.tellg()};
+            result.reserve(how_much == 0 ? static_cast<std::size_t>(fs) : std::min<std::size_t>(fs, how_much));
+            file.seekg(0);
+            int c{};
+            std::uint64_t total_read{0};
+            while((c = file.get()) != -1) {
+                result.push_back(static_cast<char>(c));
+                ++total_read;
+                if(how_much > 0 && total_read >= how_much) {
+                    break;
+                }
+            }
+            file.close();
+        }
+        return result;
     }
 
     static std::string load_text_file(const std::string &fn) {

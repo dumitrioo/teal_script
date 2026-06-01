@@ -452,7 +452,7 @@ namespace teal {
 #undef VALBOX_ASSIGN_OPERATOR_BODY
 #undef VALBOX_ASSIGN_PTR_OPERATOR_BODY
 
-        void construct(array_t const &arr) {
+        void construct_array(array_t const &arr) {
             box_ = std::make_shared<box_data>(arr, type::ARRAY);
             pointed_box_.reset();
             array_t &a{as_array()};
@@ -462,7 +462,7 @@ namespace teal {
             a.resize(arr.size());
         }
 
-        void construct(array_t &&arr) {
+        void construct_array(array_t &&arr) {
             box_ = std::make_shared<box_data>(std::move(arr), type::ARRAY);
         }
 
