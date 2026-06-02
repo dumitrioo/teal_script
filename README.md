@@ -10,12 +10,13 @@ While based on the data-centric discrete-time, clocked data-flow static declarat
 
 ## Why TealScript?
 
-When designing control logic, it is tempting to specify what the outcome should be, rather than describe how to achieve it step-by-step in detail. While C++ is imperative and requires detailed architectural design, TealScript allows you to broaden your programming approaches without changing your C++ toolchain. 
+The main pitfall when trying to implement a complex logic scheme in an imperative style is that the data-flow graph gets mapped onto a control-flow graph. These two graphs are not directly compatible, so you must artificially construct a control-flow graph that matches the data-flow graph. Because the execution-control graph is represented with conditional jumps, the resulting program code becomes much more complicated due to numerous conditional branches. Maintaining and extending such code becomes increasingly difficult as the control scheme grows. Thus, the need to move to a more suitable toolset becomes obvious. In addition, it is tempting to specify what the outcome should be, rather than describe how to achieve it step-by-step in detail. While C++ is imperative and requires detailed architectural design, TealScript allows you to broaden your programming approaches without changing your C++ toolchain.
 
 You get a problem-specific tool to handle complex control schemes for multiple actuators based on numerous sensor signals, drastically reducing the low-level C++ boilerplate required for wiring, state management, and multi-threading, while keeping full native extensibility.
 
 
 ## Key Features
+
  * Intuitive C-like sytax, conciseness and readability of the program, most of C math functions provided.
  * Zero Dependencies & Portable: Implemented as a custom execution tree interpreter (no LLVM/external lexers). It compiles into any C++20 codebase via CMake and is completely hardware-agnostic.
  * Memory Management: Since the script code is converted into a tree structure of native code selectors, there is no need for garbage collection. Thus, there is no GC in the system.
