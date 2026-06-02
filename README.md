@@ -26,6 +26,232 @@ You get a problem-specific tool to handle complex control schemes for multiple a
  * Network-Agnostic Distributed Graphs: Seamlessly link variables across different hosts using extern URIs. Built on a custom UDP multiplexing protocol (MTU-safe 1400 bytes) that eliminates Head-of-Line blocking without the overhead of TCP or heavy brokers like MQTT (see [example script](examples/external_value.teal)).
 
 
+## TealScript in 5 minutes
+
+The TealScript application consists of computational nodes, each of which is an execution unit. Computational nodes are declared as instances of node definitions whose syntax resembles a function declaration. A definition contains an identifier followed by arguments in parentheses (the argument list may be empty), then a body enclosed in braces (braces may be omitted if the body is a single expression). Any computational node may receive, as its arguments, the output values of other nodes, including itself. Nodes execute independently of one another and, on multiprocessor systems, even in parallel. Before executing a node’s body, the values of all its arguments are updated to the current computed values from other nodes. After the node’s body runs, the value returned by the body becomes the node’s output, is provided to other nodes, and the node becomes ready for the next execution cycle, repeating the same actions. Thus, after each completion every computational element restarts with updated arguments, returns a result, and repeats until the application terminates — implementing a clocked, data-oriented system.
+
+Example:
+
+```TealScript
+node_definition(arg) {
+    println(arg);
+    return arg + 1;
+}
+
+node_definition node1(node2);
+node_definition node2(node1);
+```
+
+Note that the number of parameters in a node definition must match the number of actual arguments provided when instantiating that definition.
+
+The proposed language — an implementation of the Data-flow Graph paradigm — introduces a practical modification that eases development at the cost of strict functional purity. That modification is instance-state storage via the keyword this. Unlike local variables, whose values are lost on every restart of a node body, instance variables live as long as the node instance does (i.e., until the application exits). Initially a node has no instance variables, but as identifiers are assigned values during execution, instance variables are created, retain values between restarts, and can be both read and overwritten.
+
+Example:
+
+```TealScript
+node_definition() {
+    if(this.t == undefined) {
+        this.t = timestamp();
+    }
+    if(this.t.fseconds() + 0.5 < timestamp().fseconds()) {
+        this.t = timestamp();
+        println(this.t);
+    }
+    return this.t;
+}
+
+node_definition node();
+```
+
+In this example this.t holds a timestamp. The language treats an uninitialized instance variable access as undefined, which can be used for one-time initialization. The instance variable this.t is updated every 0.5 seconds. Each node has its own instance variables because each node is a separate instance.
+
+The language is dynamically typed with permissive typing. Supported types include:
+
+bool, char, wchar, string, wstring, s8, u8, s16, u16, s32, u32, s64, u64, f32, f64, float, vec4, mat4, class, array, object.
+
+Type conversions may be implicit or achieved via explicit type casts (prefix or functional style, similar to C).
+
+Example:
+
+```
+function Q_rsqrt(x) {
+    i = 0x5fe6a09e667f3bcd - (f64(x).as_array_buffer().get_i64_at(0) >> 1);
+    y = i.as_array_buffer().get_f64_at(0);
+    x2 = (f64)x * 0.5;
+    y *= (f64)1.5 - x2 * y * y;
+    y *= (f64)1.5 - x2 * y * y;
+    y *= (f64)1.5 - x2 * y * y;
+    y *= (f64)1.5 - x2 * y * y;
+    return y;
+}
+
+node_definition() {
+    v = 1.0 / Q_rsqrt(900);
+    println(v);
+    return v;
+}
+
+node_definition node();
+```
+
+This shows both functional and prefix-style casts. The language supports functions as first-class objects and allows recursion; lambda expressions are not supported.
+
+One of the most important rules is that no declarations/definitions outside node and function definitions are allowed in the source code, keeping the global namespace empty. Host C++ code, however, may add functions and values of various types (including user types, such as the timestamp mentioned earlier) into the runtime global environment, making them accessible from scripts. This enables language extensibility while leveraging fast native code.
+
+The resulting model: the application structure is defined by interconnections between computational nodes and represented by the topology of a static graph, while inside functions and node bodies there is imperative code that may also persist state for nodes (functions do not have per-instance state).
+
+Data exchange with the external environment (the script’s host — the C++ code running the engine) happens via named nodes. For input nodes (from the script’s perspective) the host-provided name is written to the left of the identifier; for output nodes the name is written to the right. Input nodes are not instantiated — an input node simply receives an external value.
+
+Example:
+
+```
+'input_val' input;
+
+node_def(in) {
+    result = "";
+    if(in == undefined) {
+        result = "input undefined";
+        println(result);
+    } else {
+        println(in);
+        result = "input successfully printed";
+    }
+    return result;
+}
+
+node_def node_inst(input) 'output_string';
+```
+
+Here the native code writes an external value under the string name "input_val", which inside the script is available as the identifier input. The computational node node_inst (an instance of node_def) receives that input and returns a string available to native code under the name "output_string", placed to the right of the instance argument list and before the semicolon.
+
+Besides script–host data exchange, scripts can also interact directly across the network for monitoring between scripts by using URLs in the language syntax.
+
+Example:
+
+Server side
+```
+random_value() {
+    return rand();
+}
+random_value sample_val();
+```
+
+Client side
+```
+extern 'tealscript://hostname:43987/sample_val' remote_value;
+
+print_val(v) {
+    console.print("value to print: ", val);
+}
+
+print_val sample_val(remote_value);
+```
+
+The server script does not itself explicitly expose nodes over the network; the native host must enable the engine’s server capability. The client declares an external node by URL and assigns a local identifier to that value. After that, changes on the remote server are reflected on the client and can be used as ordinary input nodes.
+
+
+Now we need to look at what the native code looks like.
+
+```C++
+#include <tealscript_runtime.hpp>
+
+int main(int argc, char **argv) {
+    teal::runtime rt{};
+
+    try {
+        if(argc == 2) {
+            rt.load_file(args[1]);
+        }
+        rt.loading_complete();
+
+        if(rt.worker_cells_count() == 0) {
+            throw std::runtime_error{"nothing to do - no working elements"};
+        }
+
+        rt.start_net_server(teal::net::address_family::inet4, "0.0.0.0", 43987, 0);
+
+        rt.run_mt(std::thread::hardware_concurrency());
+
+        while(true) {
+            rt.set_input("hvac_cabin_temp", read_...());
+            rt.set_input("hvac_evap_temp", read_...());
+            rt.set_input("hvac_ext_temp", read_...());
+            rt.set_input("hvac_sun_load", read_...());
+            rt.set_input("hvac_humidity", read_...());
+            rt.set_input("rain_sensor", read_...());
+            rt.set_input("light_sensor", read_...());
+            rt.set_input("fl_door_stat", read_...());
+            rt.set_input("fr_door_stat", read_...());
+            rt.set_input("rl_door_stat", read_...());
+            rt.set_input("rr_door_stat", read_...());
+            rt.set_input("trunk_stat", read_...());
+            rt.set_input("hood_stat", read_...());
+            rt.set_input("fl_seat_occ", read_...());
+            rt.set_input("fr_seat_occ", read_...());
+            rt.set_input("rl_seat_occ", read_...());
+            rt.set_input("rr_seat_occ", read_...());
+            rt.set_input("fl_buckle_stat", read_...());
+            rt.set_input("fr_buckle_stat", read_...());
+            rt.set_input("rl_buckle_stat", read_...());
+            rt.set_input("rr_buckle_stat", read_...());
+            rt.set_input("cell_signal_str", read_...());
+            rt.set_input("wifi_signal_str", read_...());
+            rt.set_input("obd_ignition", read_...());
+            ...
+            ...
+            ...
+            ...
+            
+            
+            auto temperature_exceeds_limit{rt.get_output("temperature_exceeds_limit").cast_to_bool()};
+            auto collision_pending{rt.get_output("collision_pending").cast_to_bool()};
+            auto acc_status{rt.get_output("acc_status").cast_to_json()};
+            auto final_demand_torque{rt.get_output("final_demand_torque").cast_to_double()};
+            auto esp_intervention{rt.get_output("esp_intervention").cast_to_double()};
+            auto damper_force_val{rt.get_output("damper_force_val").cast_to_double()};
+            auto hvac_compressor{rt.get_output("hvac_compressor").cast_to_string()};
+            auto wiper_speed_val{rt.get_output("wiper_speed_val").cast_to_double()};
+            auto hvac_sun_load{rt.get_output("hvac_sun_load").cast_to_double()};
+            auto ecu_eng_rpm{rt.get_output("ecu_eng_rpm").cast_to_double()};
+            auto ecu_coolant_temp{rt.get_output("ecu_coolant_temp").cast_to_size_t()};
+            auto collision_warning{rt.get_output("collision_warning").cast_to_bool()};
+            auto precharge_brakes{rt.get_output("precharge_brakes").cast_to_bool()};
+            auto motor_torque_fl{rt.get_output("motor_torque_fl").cast_to_double()};
+            auto motor_torque_fr{rt.get_output("motor_torque_fr").cast_to_double()};
+            auto motor_torque_rl{rt.get_output("motor_torque_rl").cast_to_double()};
+            auto motor_torque_rr{rt.get_output("motor_torque_rr").cast_to_double()};
+            auto collision_warning{rt.get_output("collision_warning").cast_to_bool()};
+            auto precharge_brakes{rt.get_output("precharge_brakes").cast_to_bool()};
+            auto cooling_pump_speed_request{rt.get_output("cooling_pump_speed_request").cast_to_double()};
+            auto electric_motor_power_limit{rt.get_output("electric_motor_power_limit").cast_to_double()};
+            ...
+            ...
+
+
+            // use outputs
+            ...
+            ...
+
+        }
+    } catch(std::exception const &e) {
+        std::cerr << "error: " << e.what() << std::endl;
+        return 1;
+    } catch(...) {
+        std::cerr << "unknown error occured" << std::endl;
+        return 1;
+    }
+
+    return 0;
+}
+```
+
+It's including the header, creating an instance of the runtime, loading the source file, starting the engine's network server, and in a loop setting input values for the script and reading/using its output values.
+
+
+This set of language rules addresses many computational problems. The approach is especially well suited for implementing control schemes and parallel management of many actuators, relays, indicators and other consumers of data based on analysis of multiple parallel input data streams.
+
+
+
 ## Quick Example
 
 The Bullet Physics engine is used to model a cart with inverse pendulum. All the needed data, in real time, is read from physical simulation and passed to the Scripting Engine Runtime being executing a script. A logical schema, written in TealScript, manages physical simulation by analyzing in parallel the data passed from Bullet Engine and generating control data for the cart virtual actuator:
