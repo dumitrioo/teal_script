@@ -28,7 +28,7 @@ You get a problem-specific tool to handle complex control schemes for multiple a
 
 ## TealScript in 5 minutes
 
-The TealScript application consists of computational nodes, each of which is an execution unit. Computational nodes are declared as instances of node definitions whose syntax resembles a function declaration. A definition contains an identifier followed by arguments in parentheses (the argument list may be empty), then a body enclosed in braces (braces may be omitted if the body is a single expression). Any computational node may receive, as its arguments, the output values of other nodes, including itself. Nodes execute independently of one another and, on multiprocessor systems, even in parallel. Before executing a node’s body, the values of all its arguments are updated to the current computed values from other nodes. After the node’s body runs, the value returned by the body becomes the node’s output, is provided to other nodes, and the node becomes ready for the next execution cycle, repeating the same actions. Thus, after each completion every computational element restarts with updated arguments, returns a result, and repeats until the application terminates — implementing a clocked, data-oriented system.
+The TealScript application consists of computational nodes, each of which is an execution unit. Computational nodes are declared as instances of node definitions whose syntax resembles a function declaration. A definition contains an identifier followed by arguments in parentheses (the argument list may be empty), then a body enclosed in braces (braces may be omitted if the body is a single expression). Any computational node may receive, as its arguments, the output values of other nodes, including itself. Nodes execute independently of one another and, on multiprocessor systems, even in parallel. Before executing a node’s body, the values of all its arguments are updated to the current computed values from other nodes. After the node’s body runs, the value returned by the body becomes the node’s output, is provided to other nodes, and the node becomes ready for the next execution cycle, repeating the same actions. Thus, after each completion every computational element restarts with updated arguments, returns a result, and repeats until the application terminates - implementing a clocked, data-oriented system.
 
 Example:
 
@@ -44,7 +44,7 @@ node_definition node2(node1);
 
 Note that the number of parameters in a node definition must match the number of actual arguments provided when instantiating that definition.
 
-The proposed language — an implementation of the Data-flow Graph paradigm — introduces a practical modification that eases development at the cost of strict functional purity. That modification is instance-state storage via the keyword this. Unlike local variables, whose values are lost on every restart of a node body, instance variables live as long as the node instance does (i.e., until the application exits). Initially a node has no instance variables, but as identifiers are assigned values during execution, instance variables are created, retain values between restarts, and can be both read and overwritten.
+The proposed language - an implementation of the Data-flow Graph paradigm - introduces a practical modification that eases development at the cost of strict functional purity. That modification is instance-state storage via the keyword this. Unlike local variables, whose values are lost on every restart of a node body, instance variables live as long as the node instance does (i.e., until the application exits). Initially a node has no instance variables, but as identifiers are assigned values during execution, instance variables are created, retain values between restarts, and can be both read and overwritten.
 
 Example:
 
@@ -100,7 +100,7 @@ One of the most important rules is that no declarations/definitions outside node
 
 The resulting model: the application structure is defined by interconnections between computational nodes and represented by the topology of a static graph, while inside functions and node bodies there is imperative code that may also persist state for nodes (functions do not have per-instance state).
 
-Data exchange with the external environment (the script’s host — the C++ code running the engine) happens via named nodes. For input nodes (from the script’s perspective) the host-provided name is written to the left of the identifier; for output nodes the name is written to the right. Input nodes are not instantiated — an input node simply receives an external value.
+Data exchange with the external environment (the script’s host - the C++ code running the engine) happens via named nodes. For input nodes (from the script’s perspective) the host-provided name is written to the left of the identifier; for output nodes the name is written to the right. Input nodes are not instantiated - an input node simply receives an external value.
 
 Example:
 
