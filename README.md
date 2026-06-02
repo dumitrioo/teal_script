@@ -122,7 +122,7 @@ node_def(in) {
 node_def node_inst(input) 'output_string';
 ```
 
-Here the native code writes an external value under the string name "input_val", which inside the script is available as the identifier input. The computational node node_inst (an instance of node_def) receives that input and returns a string available to native code under the name "output_string", placed to the right of the instance argument list and before the semicolon.
+Here the native code writes an external value under the string name "input_val", which inside the script is available as the identifier "input". The computational node "node_inst" (an instance of "node_def") receives that "input" and returns a string available to native code under the name "output_string", placed to the right of the instance argument list and before the semicolon.
 
 Besides script–host data exchange, scripts can also interact directly across the network for monitoring between scripts by using URLs in the language syntax.
 
