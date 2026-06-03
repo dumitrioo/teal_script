@@ -1,5 +1,14 @@
 # TealScript
 
+
+## What's this all about?
+
+ * Multiple‑times faster development of complex control schemas compared to the imperative approach.
+ * Linear growth of scheme complexity proportional to the number of components in the controlled system.
+ * Instant script restart after modification without recompiling the host application.
+ * Transparent network interaction between scripts on different computer hosts.
+ * Easy integration into a C++ application and extension of the scripting engine’s capabilities using C++.
+
 TealScript is a programmable embedded control system for driving many actuators with command signals produced by parallel analysis of numerous continuously incoming data streams from sensors. It analyses with schema written in the embedded language. Lightweight and easily integrated with and extensible from C++, the system lets you conveniently combine physical devices, virtual devices, and software components into a single large controllable entity with intelligent behavior. It includes built‑in support for distributed processing over IP networks without requiring any message brokers. It runs without a garbage collector, avoiding periodic GC-induced pauses to reclaim memory. The programming language is intuitive, with a familiar C‑like syntax, yet implements the data‑flow graph paradigm and enforces clear declarative rules for composing schemes, which keeps complex logic readable, maintainable and extensible easily. Combined with seamless C++ host extensibility, the result is a cohesive hardware-software ecosystem driven entirely by data-flow graphs.
 
 
@@ -14,17 +23,12 @@ The main pitfall when trying to implement a complex logic scheme in an imperativ
 
 You get a problem-specific tool to handle complex control schemes for multiple actuators based on numerous sensor signals, drastically reducing the low-level C++ boilerplate required for wiring, state management, and multi-threading, while keeping full native extensibility.
 
- * Multiple‑times faster development of complex control schemas compared to the imperative approach.
- * Linear growth of scheme complexity proportional to the number of components in the controlled system.
- * Instant script restart after modification without recompiling the host application.
- * Transparent network interaction between scripts on different computer hosts.
-
 
 ## Key Features
 
  * Intuitive C-like sytax, conciseness and readability of the program, most of C math functions provided.
  * Zero Dependencies & Portable: Implemented as a custom execution tree interpreter (no LLVM/external lexers). It compiles into any C++20 codebase via CMake and is completely hardware-agnostic.
- * Memory Management: Since the script code is converted into a tree structure of native code selectors, there is no need for garbage collection. Thus, there is no GC in the system.
+ * Np Garbage Collector: Data processing in the script and its extensions uses smart pointers for memory management, so the engine is implemented without a Garbage Collector.
  * True Multi-Threading: Execute graph schemas in parallel across available CPU cores. The interpreter safely handles node execution without requiring the user to manage C++ threads or locks.
  * Turing Complete & Extensible: Handle general-purpose tasks, system interaction, math (functions, matrices), JSON, and custom host-provided types. Easily inject host functions into the scripting runtime. Simple integration, well defined rules of host-script interaction.
  * Partially Stateful: DFG computation nodes are able to store a state between execution cycles which gives the ability to perform imperative work inside the node while the overall structure of the program is static declarative.
