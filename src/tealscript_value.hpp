@@ -129,8 +129,8 @@ namespace teal {
         }
 
     public:
-        using vec4_t = teal::math::vector4<double>;
-        using mat4_t = teal::math::matrix4<double>;
+        using vec4_t = math::vector4<double>;
+        using mat4_t = math::matrix4<double>;
         using array_t = std::deque<valbox>;
         using object_t = str_map_t<valbox>;
 
@@ -1219,7 +1219,7 @@ namespace teal {
                     become_object();
                 }
                 if(t == type::OBJECT) {
-                    return as_object()[teal::str_util::to_utf8(indr.as_wstring())];
+                    return as_object()[str_util::to_utf8(indr.as_wstring())];
                 }
             } else if(is_numeric_type(t_of_indx)) {
                 std::uint64_t i{indr.cast_to_u64()};
@@ -6362,9 +6362,9 @@ namespace teal {
                 case type::DOUBLE:        { std::stringstream ss{}; ss << as_double(); return ss.str(); }
                 case type::LONG_DOUBLE:   { std::stringstream ss{}; ss << as_long_double(); return ss.str(); }
                 case type::BOOL:          { return as_bool() ? "true" : "false"; }
-                case type::WCHAR:         { std::wstring s{}; s += as_wchar(); return teal::str_util::to_utf8(s); }
+                case type::WCHAR:         { std::wstring s{}; s += as_wchar(); return str_util::to_utf8(s); }
                 case type::STRING:        return as_string();
-                case type::WSTRING:       return teal::str_util::to_utf8(as_wstring());
+                case type::WSTRING:       return str_util::to_utf8(as_wstring());
                 case type::OBJECT:        return to_json().serialize5(4);
                 case type::ARRAY: {
                     std::string res{};
@@ -6394,9 +6394,9 @@ namespace teal {
                 case type::LONG_DOUBLE:   { std::wstringstream ss{}; ss << as_long_double(); return ss.str(); }
                 case type::BOOL:          { return as_bool() ? L"true" : L"false"; }
                 case type::WCHAR:         { std::wstring s{}; s += as_wchar(); return s; }
-                case type::STRING:        return teal::str_util::from_utf8(as_string());
+                case type::STRING:        return str_util::from_utf8(as_string());
                 case type::WSTRING:       return as_wstring();
-                case type::OBJECT:        return teal::str_util::from_utf8(to_json().serialize5(4));
+                case type::OBJECT:        return str_util::from_utf8(to_json().serialize5(4));
                 case type::ARRAY: {
                     std::wstring res{};
                     for(auto &&v: as_array()) {
@@ -6711,9 +6711,9 @@ namespace teal {
                 case type::DOUBLE: os << as_double(); break;
                 case type::LONG_DOUBLE: os << as_long_double(); break;
                 case type::BOOL: os << (as_bool() ? "true" : "false"); break;
-                case type::WCHAR: { std::wstring ws{}; ws += as_wchar(); os << teal::str_util::to_utf8(ws); } break;
+                case type::WCHAR: { std::wstring ws{}; ws += as_wchar(); os << str_util::to_utf8(ws); } break;
                 case type::STRING: os << as_string(); break;
-                case type::WSTRING: os << teal::str_util::to_utf8(as_wstring()); break;
+                case type::WSTRING: os << str_util::to_utf8(as_wstring()); break;
                 case type::CLASS: os << "<" << deref().class_name() << ">"; break;
                 case type::POINTER: os << deref().dump(); break;
                 case type::UNDEFINED: os << "<undefined>"; break;
@@ -7283,9 +7283,9 @@ namespace teal {
             case valbox::type::DOUBLE: os << v.as_double(); break;
             case valbox::type::LONG_DOUBLE: os << v.as_long_double(); break;
             case valbox::type::BOOL: os << (v.as_bool() ? "true" : "false"); break;
-            case valbox::type::WCHAR: { std::wstring ws{}; ws += v.as_wchar(); os << teal::str_util::to_utf8(ws); } break;
+            case valbox::type::WCHAR: { std::wstring ws{}; ws += v.as_wchar(); os << str_util::to_utf8(ws); } break;
             case valbox::type::STRING: os << v.as_string(); break;
-            case valbox::type::WSTRING: os << teal::str_util::to_utf8(v.as_wstring()); break;
+            case valbox::type::WSTRING: os << str_util::to_utf8(v.as_wstring()); break;
             case valbox::type::CLASS: os << "<" << v.deref().class_name() << ">"; break;
             case valbox::type::POINTER: os << v.deref(); break;
             case valbox::type::UNDEFINED: os << "<undefined>"; break;

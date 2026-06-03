@@ -22,22 +22,25 @@ namespace teal {
         }
 
         void print(std::vector<valbox> const &args) {
-            cout_out((terminal_colours_ ? "\033[32mprint\033[0m" : "print"), args);
+            cout_out((terminal_colours_ ? "\033[32mprint\033[0m" : "print"), args, false);
+        }
+        void println(std::vector<valbox> const &args) {
+            cout_out((terminal_colours_ ? "\033[32mprint\033[0m" : "print"), args, true);
         }
         void info(std::vector<valbox> const &args) {
-            cout_out((terminal_colours_ ? "\033[34minfo\033[0m" : "info"), args);
+            cout_out((terminal_colours_ ? "\033[34minfo\033[0m" : "info"), args, false);
         }
         void log(std::vector<valbox> const &args) {
-            cout_out((terminal_colours_ ? "\033[32mlog\033[0m" : "log"), args);
+            cout_out((terminal_colours_ ? "\033[32mlog\033[0m" : "log"), args, false);
         }
         void warn(std::vector<valbox> const &args) {
-            cout_out((terminal_colours_ ? "\033[35mwarning\033[0m" : "warning"), args);
+            cout_out((terminal_colours_ ? "\033[35mwarning\033[0m" : "warning"), args, false);
         }
         void debug(std::vector<valbox> const &args) {
-            cout_out((terminal_colours_ ? "\033[93mdebug\033[0m" : "debug"), args);
+            cout_out((terminal_colours_ ? "\033[93mdebug\033[0m" : "debug"), args, false);
         }
         void error(std::vector<valbox> const &args) {
-            cout_out((terminal_colours_ ? "\033[91merror\033[0m" : "error"), args);
+            cout_out((terminal_colours_ ? "\033[91merror\033[0m" : "error"), args, false);
         }
 
         void rawprint(std::vector<valbox> const &args) {
@@ -67,10 +70,10 @@ namespace teal {
                 if(!printed) out << v;
             }
             std::unique_lock l{out_mtp_};
-            std::cout << out.str() << std::flush;
+            std::cout << out.str();
         }
 
-        void println(std::vector<valbox> const &args) {
+        void rawprintln(std::vector<valbox> const &args) {
             std::stringstream out{};
             if(setfill_) { out << std::setfill(fill_char_); }
             if(setw_) { out << std::setw(w_); }
@@ -118,7 +121,7 @@ namespace teal {
         bool setsync(bool v) const { return std::ios::sync_with_stdio(v); }
 
     private:
-        void cerr_out(std::string const &type, std::vector<valbox> const &args) {
+        void cerr_out(std::string const &type, std::vector<valbox> const &args, bool flush_out) {
             std::stringstream out{};
             if(setfill_) { out << std::setfill(fill_char_); }
             if(setw_) { out << std::setw(w_); }
@@ -146,10 +149,14 @@ namespace teal {
                 if(!printed) out << v;
             }
             std::unique_lock l{out_mtp_};
-            std::cerr << out.str() << std::endl;
+            if(flush_out) {
+                std::cerr << out.str() << std::endl;
+            } else {
+                std::cerr << out.str() << '\n';
+            }
         }
 
-        void cout_out(std::string const &type, std::vector<valbox> const &args) {
+        void cout_out(std::string const &type, std::vector<valbox> const &args, bool flush_out) {
             std::stringstream out{};
             if(setfill_) { out << std::setfill(fill_char_); }
             if(setw_) { out << std::setw(w_); }
@@ -177,7 +184,11 @@ namespace teal {
                 if(!printed) out << v;
             }
             std::unique_lock l{out_mtp_};
-            std::cout << out.str() << std::endl;
+            if(flush_out) {
+                std::cout << out.str() << std::endl;
+            } else {
+                std::cout << out.str() << '\n';
+            }
         }
 
     private:

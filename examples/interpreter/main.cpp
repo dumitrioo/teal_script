@@ -10,7 +10,7 @@
 
 static teal::binned_allocator<32 * 1024 * 1024, 16, 4096> glbl_alloc{};
 
-void* operator new(std::size_t sz) {
+void *operator new(std::size_t sz) {
     if(sz == 0) { ++sz; }
 
     if(void *ptr = glbl_alloc.allocate(sz)) {
@@ -20,7 +20,7 @@ void* operator new(std::size_t sz) {
     throw std::bad_alloc{};
 }
 
-void* operator new[](std::size_t sz) {
+void *operator new[](std::size_t sz) {
     if(sz == 0) { ++sz; }
     if(void *ptr = glbl_alloc.allocate(sz)) {
         return ptr;
@@ -28,19 +28,19 @@ void* operator new[](std::size_t sz) {
     throw std::bad_alloc{};
 }
 
-void operator delete(void* ptr) noexcept {
+void operator delete(void *ptr) noexcept {
     glbl_alloc.deallocate(ptr);
 }
 
-void operator delete(void* ptr, std::size_t size) noexcept {
+void operator delete(void *ptr, std::size_t size) noexcept {
     glbl_alloc.deallocate(ptr, size);
 }
 
-void operator delete[](void* ptr) noexcept {
+void operator delete[](void *ptr) noexcept {
     glbl_alloc.deallocate(ptr);
 }
 
-void operator delete[](void* ptr, std::size_t size) noexcept {
+void operator delete[](void *ptr, std::size_t size) noexcept {
     glbl_alloc.deallocate(ptr, size);
 }
 

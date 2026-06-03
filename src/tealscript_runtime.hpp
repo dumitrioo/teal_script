@@ -187,6 +187,7 @@ namespace teal {
             add_method("console", "debug", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, console *)->debug(args1); return {valbox_no_initialize::dont_do_it}; });
             add_method("console", "error", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, console *)->error(args1); return {valbox_no_initialize::dont_do_it}; });
             add_method("console", "print", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, console *)->print(args1); return {valbox_no_initialize::dont_do_it}; });
+            add_method("console", "println", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, console *)->println(args1); return {valbox_no_initialize::dont_do_it}; });
             add_method("console", "flush", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, console *)->flush(); return valbox{valbox_no_initialize::dont_do_it}; });
             add_method("console", "fixed", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, console *)->fixed(); return valbox{valbox_no_initialize::dont_do_it}; });
             add_method("console", "scientific", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, console *)->scientific(); return valbox{valbox_no_initialize::dont_do_it}; });
@@ -201,7 +202,7 @@ namespace teal {
             add_method("console", "colors_enabled", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return TEALTHIS(args, console *)->colors_enabled(); });
             add_method("console", "sync_stdio", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) return TEALTHIS(args, console *)->setsync(args[1].cast_to_bool()); });
             add_function("print", TEALFUN(args) { con_.rawprint(args); return {valbox_no_initialize::dont_do_it}; });
-            add_function("println", TEALFUN(args) { con_.println(args); return {valbox_no_initialize::dont_do_it}; });
+            add_function("println", TEALFUN(args) { con_.rawprintln(args); return {valbox_no_initialize::dont_do_it}; });
 
 
             add_function("to_string", TEALFUN(args) {
@@ -1444,7 +1445,8 @@ namespace teal {
                 exctx_.new_stack_frame();
 
                 auto &&args_info{curr_cell->actual_args_info()};
-                for(std::size_t curr_arg_number{0}; curr_arg_number < args_info.size(); ++curr_arg_number) {
+                auto ainfsiz{args_info.size()};
+                for(std::size_t curr_arg_number{0}; curr_arg_number < ainfsiz; ++curr_arg_number) {
                     auto &&ai{args_info[curr_arg_number]};
                     std::string curr_arg_name{ai.argname};
                     if(ai.is_cell) {
@@ -1642,43 +1644,44 @@ namespace teal {
                                 exctx_ptr->new_stack_frame();
 
                                 std::vector<worker_cell_instance::arg_info> &args_info{curr_cell->actual_args_info()};
-                                for(std::size_t curr_arg_number{0}; curr_arg_number < args_info.size(); ++curr_arg_number) {
+                                auto ainfsiz{args_info.size()};
+                                for(std::size_t curr_arg_number{0}; curr_arg_number < ainfsiz; ++curr_arg_number) {
                                     worker_cell_instance::arg_info &ai{args_info[curr_arg_number]};
                                     std::string curr_arg_name{ai.argname};
-                                    if(ai.is_cell) {
-                                        if(ai.cell_ptr != nullptr) {
-                                            exctx_ptr->set_local_value(curr_arg_name, ai.cell_ptr->value());
-                                        } else {
-                                            auto w_it{worker_cells_.find(ai.cell_name)};
-                                            if(w_it != worker_cells_.end()) {
-                                                ai.cell_ptr = w_it->second.get();
-                                                exctx_ptr->set_local_value(curr_arg_name, ai.cell_ptr->value());
-                                            } else {
-                                                auto in_it{input_cells_.find(ai.cell_name)};
-                                                if(in_it != input_cells_.end()) {
-                                                    ai.cell_ptr = in_it->second.get();
-                                                    exctx_ptr->set_local_value(curr_arg_name, ai.cell_ptr->value());
-                                                } else {
-                                                    auto ex_it{extern_cells_.find(ai.cell_name)};
-                                                    if(ex_it != extern_cells_.end()) {
-                                                        ai.cell_ptr = ex_it->second.get();
-                                                        exctx_ptr->set_local_value(curr_arg_name, ai.cell_ptr->value());
-                                                    } else {
-                                                        throw runtime_error{
-                                                            curr_cell->line(), curr_cell->col(),
-                                                            std::string{"input value not found for compute element \""} +
-                                                                curr_cell->inst_name() + "\""
-                                                        };
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    } else {
+                                    if(!ai.is_cell) {
                                         if(ai.expr_val.is_undefined_ref()) {
                                             ai.expr_val = ai.expr->eval(exctx_ptr, eval_caller_type::no_matter, nullptr);
                                         }
                                         valbox vb{ai.expr_val};
                                         exctx_ptr->set_local_value(curr_arg_name, vb);
+                                    } else {
+                                        if(ai.cell_ptr == nullptr) {
+                                            auto w_it{worker_cells_.find(ai.cell_name)};
+                                            if(w_it == worker_cells_.end()) {
+                                                auto in_it{input_cells_.find(ai.cell_name)};
+                                                if(in_it == input_cells_.end()) {
+                                                    auto ex_it{extern_cells_.find(ai.cell_name)};
+                                                    if(ex_it == extern_cells_.end()) {
+                                                        throw runtime_error{
+                                                            curr_cell->line(), curr_cell->col(),
+                                                            std::string{"input value not found for compute element \""} +
+                                                                curr_cell->inst_name() + "\""
+                                                        };
+                                                    } else {
+                                                        ai.cell_ptr = ex_it->second.get();
+                                                        exctx_ptr->set_local_value(curr_arg_name, ai.cell_ptr->value());
+                                                    }
+                                                } else {
+                                                    ai.cell_ptr = in_it->second.get();
+                                                    exctx_ptr->set_local_value(curr_arg_name, ai.cell_ptr->value());
+                                                }
+                                            } else {
+                                                ai.cell_ptr = w_it->second.get();
+                                                exctx_ptr->set_local_value(curr_arg_name, ai.cell_ptr->value());
+                                            }
+                                        } else {
+                                            exctx_ptr->set_local_value(curr_arg_name, ai.cell_ptr->value());
+                                        }
                                     }
                                 }
 
