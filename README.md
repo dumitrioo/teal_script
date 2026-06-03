@@ -185,26 +185,15 @@ int main(int argc, char **argv) {
 
         while(true) {
             rt.set_input("hvac_cabin_temp", read_...());
-            rt.set_input("hvac_evap_temp", read_...());
-            rt.set_input("hvac_ext_temp", read_...());
             rt.set_input("hvac_sun_load", read_...());
             rt.set_input("hvac_humidity", read_...());
             rt.set_input("rain_sensor", read_...());
             rt.set_input("light_sensor", read_...());
             rt.set_input("fl_door_stat", read_...());
-            rt.set_input("fr_door_stat", read_...());
-            rt.set_input("rl_door_stat", read_...());
-            rt.set_input("rr_door_stat", read_...());
             rt.set_input("trunk_stat", read_...());
             rt.set_input("hood_stat", read_...());
             rt.set_input("fl_seat_occ", read_...());
-            rt.set_input("fr_seat_occ", read_...());
-            rt.set_input("rl_seat_occ", read_...());
-            rt.set_input("rr_seat_occ", read_...());
             rt.set_input("fl_buckle_stat", read_...());
-            rt.set_input("fr_buckle_stat", read_...());
-            rt.set_input("rl_buckle_stat", read_...());
-            rt.set_input("rr_buckle_stat", read_...());
             rt.set_input("cell_signal_str", read_...());
             rt.set_input("wifi_signal_str", read_...());
             rt.set_input("obd_ignition", read_...());
@@ -258,6 +247,30 @@ int main(int argc, char **argv) {
 
 It's including the header, creating an instance of the runtime, loading the source file, starting the engine's network server, and in a loop setting input values for the script and reading/using its output values.
 
+In addition to the regulated data exchange between the host C++ code and the script, and the direct network interaction between scripts on different machines, data exchange between computational nodes and the external environment is also possible via extensions, because each node encapsulates imperative code capable of producing side effects. Thus any computational node can read data from disk, network, or memory and return it as its result — so the system’s data-exchange capabilities are not limited to the host application. Input nodes can obtain values on their own, and output nodes can independently write their results anywhere using extensions instead of returning them as their output value.
+
+Example:
+
+```TealScript
+input_node() { return data_read_extension.read_some_value(); }
+input_node in();
+
+readiness_check_node() { return system_extension.ready_for_output(); }
+readiness_check_node ready_for_output();
+
+output_node(input, out_ready) {
+    if(out_ready && input != undefined) {
+        another_extension.write_some_value(input);
+        return true;
+    }
+    return false;
+}
+output_node out(in, ready_for_output);
+```
+
+In this case input and output nodes do not exchange data with the host code. Essentially, the host code is only needed to start the scripting engine; no data exchange with it is required. The rest of the processing is performed entirely by the script, which uses extension libraries.
+
+Conclusion:
 
 This set of language rules addresses many computational problems. The approach is especially well suited for implementing control schemes and parallel management of many actuators, relays, indicators and other consumers of data based on analysis of multiple parallel input data streams.
 
