@@ -3,13 +3,13 @@
 
 ## What's this all about?
 
+TealScript is a programmable embedded control system for driving many actuators with command signals produced by parallel analysis of numerous continuously incoming data streams from sensors. It analyses with schema written in the embedded language. Lightweight and easily integrated with and extensible from C++, the system lets you conveniently combine physical devices, virtual devices, and software components into a single large controllable entity with intelligent behavior. It includes built‑in support for distributed processing over IP networks without requiring any message brokers. It runs without a garbage collector, avoiding periodic GC-induced pauses to reclaim memory. The programming language is intuitive, with a familiar C‑like syntax, yet implements the data‑flow graph paradigm and enforces clear declarative rules for composing schemes, which keeps complex logic readable, maintainable and extensible easily. Combined with seamless C++ host extensibility, the result is a cohesive hardware-software ecosystem driven entirely by data-flow graphs.
+
  * Multiple‑times faster development of complex control schemas compared to the imperative approach.
  * Linear growth of scheme complexity proportional to the number of components in the controlled system.
  * Instant script restart after modification without recompiling the host application.
  * Transparent network interaction between scripts on different computer hosts.
  * Easy integration into a C++ application and extension of the scripting engine’s capabilities using C++.
-
-TealScript is a programmable embedded control system for driving many actuators with command signals produced by parallel analysis of numerous continuously incoming data streams from sensors. It analyses with schema written in the embedded language. Lightweight and easily integrated with and extensible from C++, the system lets you conveniently combine physical devices, virtual devices, and software components into a single large controllable entity with intelligent behavior. It includes built‑in support for distributed processing over IP networks without requiring any message brokers. It runs without a garbage collector, avoiding periodic GC-induced pauses to reclaim memory. The programming language is intuitive, with a familiar C‑like syntax, yet implements the data‑flow graph paradigm and enforces clear declarative rules for composing schemes, which keeps complex logic readable, maintainable and extensible easily. Combined with seamless C++ host extensibility, the result is a cohesive hardware-software ecosystem driven entirely by data-flow graphs.
 
 
 ## Data-Flow Graph
