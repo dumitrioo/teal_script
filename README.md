@@ -1,9 +1,13 @@
+# Preface
+
+Despite the imperative and OOP programming languages Turing completeness, there is at least one area of programming where usage of them ​​is impractical: they are not suited to solving a particular class of computation problems in a developer-friendly manner.
+
+This class of computational problems is the creation of control schemas by controlling multiple actuators based on the analysis of data from multiple sensors in parallel. The analysis and decision-making process for such systems is conveniently described in terms of computing nodes and data paths between that nodes. Using imperative methods, however, requires mapping multiple data flow signals onto a control flow diagram, a very complex and intricate task.
+
+
 # TealScript
 
-
-## What's this all about?
-
-TealScript is a programmable embedded control system for driving many actuators with command signals produced by parallel analysis of numerous continuously incoming data streams from sensors. It analyses with schema written in the embedded language. Lightweight and easily integrated with and extensible from C++, the system lets you conveniently combine physical devices, virtual devices, and software components into a single large controllable entity with intelligent behavior. It includes built‑in support for distributed processing over IP networks without requiring any message brokers. It runs without a garbage collector, avoiding periodic GC-induced pauses to reclaim memory. The programming language is intuitive, with a familiar C‑like syntax, yet implements the data‑flow graph paradigm and enforces clear declarative rules for composing schemes, which keeps complex logic readable, maintainable and extensible easily. Combined with seamless C++ host extensibility, the result is a cohesive hardware-software ecosystem driven entirely by data-flow graphs.
+TealScript is a programmable easy-to-use embedded control system for driving many actuators with command signals produced by parallel analysis of numerous continuously incoming data streams from sensors. It analyses with schema written in the embedded language. Lightweight and easily integrated with and extensible from C++, the system lets you conveniently combine physical devices, virtual devices, and software components into a single large controllable entity with intelligent behavior. It includes built‑in support for distributed processing over IP networks without requiring any message brokers. It runs without a garbage collector, avoiding periodic GC-induced pauses to reclaim memory. The programming language is intuitive, with a familiar C‑like syntax, yet implements the data‑flow graph paradigm and enforces clear declarative rules for composing schemes, which keeps complex logic readable, maintainable and extensible easily. Combined with seamless C++ host extensibility, the result is a cohesive hardware-software ecosystem driven entirely by data-flow graphs.
 
  * Multiple‑times faster development of complex control schemas compared to the imperative approach.
  * Linear growth of scheme complexity proportional to the number of components in the controlled system.
