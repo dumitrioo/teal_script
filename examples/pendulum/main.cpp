@@ -8,7 +8,7 @@
 
 #ifdef USE_CUSTOM_MEMORY_ALLOCATION
 
-static teal::binned_allocator<32 * 1024 * 1024, 16, 4096> glbl_alloc{};
+static teal::binned_allocator<16, 4096> glbl_alloc{};
 
 void* operator new(std::size_t sz) {
     if(sz == 0) { ++sz; }

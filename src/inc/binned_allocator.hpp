@@ -5,11 +5,7 @@
 
 namespace teal {
 
-    template<
-        std::size_t MEMORY_SIZE,
-        std::size_t ALIGNMENT = 16,
-        std::size_t MAX_ALLOC_SIZE = 1024
-    >
+    template<std::size_t ALIGNMENT = 16, std::size_t MAX_ALLOC_SIZE = 1024>
     class binned_allocator {
         static_assert((ALIGNMENT & (ALIGNMENT - 1)) == 0, "ALIGNMENT must be a power of 2");
         static_assert((MAX_ALLOC_SIZE & (MAX_ALLOC_SIZE - 1)) == 0, "MAX_ALLOC_SIZE must be a power of 2 for this implementation");
@@ -61,9 +57,9 @@ namespace teal {
             if(aligned_size > MAX_ALLOC_SIZE) {
                 alloc_unit_hdr *full_chnk{(alloc_unit_hdr *)::malloc(full_size)};
                 full_chnk->size = aligned_size;
+                allocated_.fetch_add(aligned_size);
                 return full_chnk->user_ptr();
             }
-
             alloc_unit_hdr *res_ptr{nullptr};
             free_list &fl{free_lists_[bin_index(aligned_size)]};
             {
@@ -73,12 +69,7 @@ namespace teal {
                 }
             }
             if(res_ptr == nullptr) {
-                size_t prev_offs{offset_.fetch_add(full_size)};
-                if(prev_offs + full_size > MEMORY_SIZE) {
-                    offset_.fetch_sub(full_size);
-                    return nullptr;
-                }
-                res_ptr = (alloc_unit_hdr *)(buffer_.data() + prev_offs);
+                res_ptr = (alloc_unit_hdr *)::malloc(full_size);
                 res_ptr->size = aligned_size;
             }
             allocated_.fetch_add(aligned_size);
@@ -99,16 +90,15 @@ namespace teal {
             }
             if(aligned_size > MAX_ALLOC_SIZE) {
                 ::free(res_ptr);
+                allocated_.fetch_sub(stored_size);
                 return true;
             }
             free_list &fl{free_lists_[bin_index(aligned_size)]};
-            {
-                for(
-                    res_ptr->next = fl.head.load();
-                    !fl.head.compare_exchange_strong(res_ptr->next, res_ptr)
-                    ;
-                );
-            }
+            for(
+                res_ptr->next = fl.head.load();
+                !fl.head.compare_exchange_strong(res_ptr->next, res_ptr)
+                ;
+            );
             allocated_.fetch_sub(stored_size);
             return true;
         }
@@ -123,17 +113,16 @@ namespace teal {
             size_t const stored_size{res_ptr->size};
             if(stored_size > MAX_ALLOC_SIZE) {
                 ::free(res_ptr);
+                allocated_.fetch_sub(stored_size);
                 return true;
             }
             free_list &fl{free_lists_[bin_index(stored_size)]};
-            {
-                for(
-                    res_ptr->next = fl.head.load()
-                    ;
-                    !fl.head.compare_exchange_strong(res_ptr->next, res_ptr)
-                    ;
-                );
-            }
+            for(
+                res_ptr->next = fl.head.load()
+                ;
+                !fl.head.compare_exchange_strong(res_ptr->next, res_ptr)
+                ;
+            );
             allocated_.fetch_sub(stored_size);
             return true;
         }
@@ -151,7 +140,6 @@ namespace teal {
         }
 
     private:
-        alignas(ALIGNMENT) std::array<uint8_t, MEMORY_SIZE> buffer_{};
         alignas(64) std::array<free_list, NUM_BINS> free_lists_{};
         std::atomic<size_t> allocated_{0};
         std::atomic<size_t> offset_{0};
