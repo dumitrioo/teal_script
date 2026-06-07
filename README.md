@@ -34,7 +34,7 @@ You get a problem-specific tool to handle complex control schemes for multiple a
 ## Key Features
 
  * Intuitive C-like sytax, conciseness and readability of the program, most of C math functions provided.
- * Zero Dependencies & Portable: Implemented as a custom execution tree interpreter (no LLVM/external lexers). It compiles into any C++20 codebase via CMake and is completely hardware-agnostic.
+ * Zero Dependencies & Portable: Implemented as a custom execution tree interpreter (no LLVM/external lexers). It compiles into any C++17 codebase via CMake and is completely hardware-agnostic.
  * Np Garbage Collector: Data processing in the script and its extensions uses smart pointers for memory management, so the engine is implemented without a Garbage Collector.
  * True Multi-Threading: Execute graph schemas in parallel across available CPU cores. The interpreter safely handles node execution without requiring the user to manage C++ threads or locks.
  * Turing Complete & Extensible: Handle general-purpose tasks, system interaction, math (functions, matrices), JSON, and custom host-provided types. Easily inject host functions into the scripting runtime. Simple integration, well defined rules of host-script interaction.
@@ -817,4 +817,4 @@ Explore the [examples](examples/), directory for advanced use cases like the ALU
 
 ## More Information
 
-For the complete language specification, type system, and host API reference, see the [Documentation](doc/tealscript_overview.pdf). (PDF - Migrating to Markdown docs is in progress).
+For the complete language specification, type system, and host API reference, see the [Documentation](doc/tealscript_overview.pdf). (PDF).
