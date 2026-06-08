@@ -10,10 +10,11 @@ This class of computational problems is the creation of control schemas controll
 
 ## TealScript
 
-TealScript is a programmable easy-to-use embedded control system for driving many actuators with command signals produced by parallel analysis of numerous continuously incoming data streams from sensors. Analysis is performed by a network schema written in an embedded programming language. Lightweight and easily integrated with and extensible from C++, the system lets you conveniently combine physical devices, virtual devices, and software components into a single large controllable entity with intelligent behavior. It includes built‑in support for distributed processing over IP networks without requiring any message brokers. It runs without a garbage collector, avoiding periodic GC-induced freezes to reclaim memory. The programming language is intuitive, with a familiar C‑like syntax and rich type system, yet implements the data‑flow graph paradigm and enforces clear declarative rules for composing schemes, which keeps complex logic readable, maintainable and extensible easily. Combined with seamless C++ host extensibility, the result is a cohesive hardware-software ecosystem driven entirely by data-flow graphs.
+TealScript is a programmable easy-to-use embedded control system for driving many actuators with command signals produced by parallel analysis of numerous continuously incoming data streams from sensors. Analysis is performed by a network schema written in an embedded programming language. Lightweight and easily integrated with and extensible from C++, the system lets you conveniently combine physical devices, virtual devices, and software components into a single large controllable entity with intelligent behavior. It includes built‑in support for distributed processing over IP networks without requiring any message brokers. It runs without a garbage collector, avoiding periodic GC-induced freezes to reclaim memory. The programming language is intuitive, with a familiar C‑like syntax and rich type system, yet implements the data‑flow graph paradigm and enforces clear declarative rules for composing schemas, which keeps complex logic readable, maintainable and extensible easily. Combined with seamless C++ host extensibility, the result is a cohesive hardware-software ecosystem driven entirely by data-flow graphs.
 
  * Multiple‑times faster development of complex control schemas compared to the imperative approach.
- * Linear growth of scheme complexity proportional to the number of components in the controlled system.
+ * Crafting the schema directly from the list of system requirements.
+ * Linear growth of schema complexity proportional to the number of components in the controlled system.
  * Instant script restart after modification without recompiling the host application.
  * Transparent network interaction between scripts on different computer hosts.
  * Easy integration into a C++ application and extension of the scripting engine’s capabilities using C++.
@@ -26,9 +27,9 @@ While based on the data-centric discrete-time, clocked data-flow static declarat
 
 ## Why TealScript?
 
-The main pitfall when trying to implement a complex logic scheme in an imperative style is that the data-flow graph gets mapped onto a control-flow graph. These two graphs are not directly compatible, so you must artificially construct a control-flow graph that matches the data-flow graph. Because the execution-control graph is represented with conditional jumps, the resulting program code becomes much more complicated due to numerous conditional branches. Maintaining and extending such code becomes increasingly difficult as the control scheme grows. Thus, the need to move to a more suitable toolset becomes obvious. In addition, it is tempting to specify what the outcome should be, rather than describe how to achieve it step-by-step in detail. While C++ is imperative and requires detailed architectural design, TealScript allows you to broaden your programming approaches without changing your C++ toolchain.
+The main pitfall when trying to implement a complex logic schema in an imperative style is that the data-flow graph gets mapped onto a control-flow graph. These two graphs are not directly compatible, so you must artificially construct a control-flow graph that matches the data-flow graph. Because the execution-control graph is represented with conditional jumps, the resulting program code becomes much more complicated due to numerous conditional branches. Maintaining and extending such code becomes increasingly difficult as the control schema grows. Thus, the need to move to a more suitable toolset becomes obvious. In addition, it is tempting to specify what the outcome should be, rather than describe how to achieve it step-by-step in detail. While C++ is imperative and requires detailed architectural design, TealScript allows you to broaden your programming approaches without changing your C++ toolchain.
 
-You get a problem-specific tool to handle complex control schemes for multiple actuators based on numerous sensor signals, drastically reducing the low-level C++ boilerplate required for wiring, state management, and multi-threading, while keeping full native extensibility.
+You get a problem-specific tool to handle complex control schemas for multiple actuators based on numerous sensor signals, drastically reducing the low-level C++ boilerplate required for wiring, state management, and multi-threading, while keeping full native extensibility.
 
 
 ## Key Features
@@ -279,7 +280,7 @@ In this case input and output nodes do not exchange data with the host code. Ess
 
 Conclusion:
 
-This set of language rules addresses many computational problems. The approach is especially well suited for implementing control schemes and parallel management of many actuators, relays, indicators and other consumers of data based on analysis of multiple parallel input data streams.
+This set of language rules addresses many computational problems. The approach is especially well suited for implementing control schemas and parallel management of many actuators, relays, indicators and other consumers of data based on analysis of multiple parallel input data streams.
 
 
 
