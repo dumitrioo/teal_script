@@ -65,6 +65,7 @@ namespace teal {
         std::string remote_host_{};
     };
 
+
     class worker_cell_definition_info {
     public:
         void set_arg_name(std::size_t indx, std::string const &name) {

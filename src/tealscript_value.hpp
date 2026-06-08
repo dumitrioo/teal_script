@@ -1367,7 +1367,6 @@ namespace teal {
                 thisref.box_->type_ = type::UNDEFINED;
                 thisref.box_->pointed_type_ = type::UNDEFINED;
                 thisref.box_->class_.clear();
-                thisref.box_->value_ = value_t{nullptr};
                 thisref.box_->func_name_.clear();
                 thisref.box_->user_func_ = false;
                 thisref.pointed_box_.reset();

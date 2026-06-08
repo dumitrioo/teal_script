@@ -487,12 +487,6 @@ namespace teal {
                 m_.clear();
             }
 
-            void undefine() {
-                for(auto &&p: m_) {
-                    p.second.become_undefined();
-                }
-            }
-
         private:
             str_map_t<valbox> m_{};
         };

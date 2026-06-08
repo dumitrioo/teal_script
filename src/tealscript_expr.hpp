@@ -86,12 +86,13 @@ namespace teal {
                 res = ctx->find_func(name_, objtyp);
                 if(!res.is_func_ref()) {
                     res = ctx->find_val_by_sym_name(name_, line(), col(), objtyp);
-                }
-                objtyp_.store(objtyp, std::memory_order_release);
-                std::unique_lock l{primary_val_mtp_};
-                if(!primary()) {
-                    primary_val_ = res;
-                    primary_ = true;
+                } else {
+                    objtyp_.store(objtyp, std::memory_order_release);
+                    std::unique_lock l{primary_val_mtp_};
+                    if(!primary()) {
+                        primary_val_ = res;
+                        primary_ = true;
+                    }
                 }
             } else {
                 bool excepted{false};

@@ -1449,40 +1449,36 @@ namespace teal {
                 for(std::size_t curr_arg_number{0}; curr_arg_number < ainfsiz; ++curr_arg_number) {
                     auto &&ai{args_info[curr_arg_number]};
                     std::string curr_arg_name{ai.argname};
-                    if(ai.is_cell) {
-                        if(ai.cell_ptr != nullptr) {
-                            exctx_.set_local_value(curr_arg_name, ai.cell_ptr->value());
-                        } else {
-                            auto w_it{worker_cells_.find(ai.cell_name)};
-                            if(w_it != worker_cells_.end()) {
-                                ai.cell_ptr = w_it->second.get();
-                                exctx_.set_local_value(curr_arg_name, w_it->second->value());
-                            } else {
-                                auto in_it{input_cells_.find(ai.cell_name)};
-                                if(in_it != input_cells_.end()) {
-                                    ai.cell_ptr = in_it->second.get();
-                                    exctx_.set_local_value(curr_arg_name, in_it->second->value());
-                                } else {
-                                    auto ex_it{extern_cells_.find(ai.cell_name)};
-                                    if(ex_it != extern_cells_.end()) {
-                                        ai.cell_ptr = ex_it->second.get();
-                                        exctx_.set_local_value(curr_arg_name, ex_it->second->value());
-                                    } else {
-                                        throw runtime_error{
-                                            curr_cell->line(), curr_cell->col(),
-                                            std::string{"input value not found for compute element \""} +
-                                                curr_cell->inst_name() + "\""
-                                        };
-                                    }
-                                }
-                            }
-                        }
-                    } else {
+                    if(!ai.is_cell) {
                         if(ai.expr_val.is_undefined_ref()) {
                             ai.expr_val = ai.expr->eval(&exctx_, eval_caller_type::no_matter, nullptr);
                         }
                         valbox vb{ai.expr_val};
                         exctx_.set_local_value(curr_arg_name, vb);
+                    } else {
+                        if(ai.cell_ptr == nullptr) {
+                            auto w_it{worker_cells_.find(ai.cell_name)};
+                            if(w_it == worker_cells_.end()) {
+                                auto in_it{input_cells_.find(ai.cell_name)};
+                                if(in_it == input_cells_.end()) {
+                                    auto ex_it{extern_cells_.find(ai.cell_name)};
+                                    if(ex_it == extern_cells_.end()) {
+                                        throw runtime_error{
+                                            curr_cell->line(), curr_cell->col(),
+                                            std::string{"input value not found for compute element \""} +
+                                                curr_cell->inst_name() + "\""
+                                        };
+                                    } else {
+                                        ai.cell_ptr = ex_it->second.get();
+                                    }
+                                } else {
+                                    ai.cell_ptr = in_it->second.get();
+                                }
+                            } else {
+                                ai.cell_ptr = w_it->second.get();
+                            }
+                        }
+                        exctx_.set_local_value(curr_arg_name, ai.cell_ptr->value());
                     }
                 }
 
@@ -1669,19 +1665,15 @@ namespace teal {
                                                         };
                                                     } else {
                                                         ai.cell_ptr = ex_it->second.get();
-                                                        exctx_ptr->set_local_value(curr_arg_name, ai.cell_ptr->value());
                                                     }
                                                 } else {
                                                     ai.cell_ptr = in_it->second.get();
-                                                    exctx_ptr->set_local_value(curr_arg_name, ai.cell_ptr->value());
                                                 }
                                             } else {
                                                 ai.cell_ptr = w_it->second.get();
-                                                exctx_ptr->set_local_value(curr_arg_name, ai.cell_ptr->value());
                                             }
-                                        } else {
-                                            exctx_ptr->set_local_value(curr_arg_name, ai.cell_ptr->value());
                                         }
+                                        exctx_ptr->set_local_value(curr_arg_name, ai.cell_ptr->value());
                                     }
                                 }
 
