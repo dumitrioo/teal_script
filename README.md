@@ -214,7 +214,7 @@ int main(int argc, char **argv) {
             auto temperature_exceeds_limit{rt.get_output("temperature_exceeds_limit").cast_to_bool()};
             auto collision_pending{rt.get_output("collision_pending").cast_to_bool()};
             auto acc_status{rt.get_output("acc_status").cast_to_json()};
-            auto final_demand_torque{rt.get_output("final_demand_torque").cast_to_double()};
+            auto torque_request{rt.get_output("torque_request").cast_to_double()};
             auto esp_intervention{rt.get_output("esp_intervention").cast_to_double()};
             auto damper_force_val{rt.get_output("damper_force_val").cast_to_double()};
             auto hvac_compressor{rt.get_output("hvac_compressor").cast_to_string()};
