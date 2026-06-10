@@ -14,7 +14,7 @@ namespace teal {
     namespace detail {
 
         static std::optional<Eigen::MatrixXd> mb_construct_from(valbox const &vb) {
-            if(vb.is_mat4_ref()) {
+            if(vb.is_mat4()) {
                 Eigen::MatrixXd res;
                 res.resize(4, 4);
                 for(int r{}; r < 4; ++r) {
@@ -49,7 +49,7 @@ namespace teal {
             rt->add_function("matrix", TEALFUN(args) {
                 Eigen::MatrixXd res;
                 if(args.size() > 0) {
-                    if(args.size() == 1 && args[0].is_array_ref()) {
+                    if(args.size() == 1 && args[0].is_array()) {
                         for(auto &&v: args[0].as_array()) { res << v.cast_to_double(); }
                     } else if(args.size() == 2 && (args[0].is_any_int_number()) && (args[1].is_any_int_number())) {
                         res.resize(args[0].cast_to_int(), args[1].cast_to_int());
@@ -57,7 +57,7 @@ namespace teal {
                         args.size() == 3 &&
                         args[0].is_numeric() &&
                         args[1].is_numeric() &&
-                        args[2].is_mat4_ref()
+                        args[2].is_mat4()
                     ) {
                         res.resize(args[0].cast_to_int(), args[1].cast_to_int());
                         for(int r{}; r < args[0].cast_to_int(); ++r) {
@@ -69,7 +69,7 @@ namespace teal {
                         args.size() == 3 &&
                         args[0].is_numeric() &&
                         args[1].is_numeric() &&
-                        args[2].is_array_ref()
+                        args[2].is_array()
                     ) {
                         res.resize(args[0].cast_to_int(), args[1].cast_to_int());
                         for(int r{}; r < args[0].cast_to_int(); ++r) {
@@ -242,7 +242,7 @@ namespace teal {
 
             rt->add_object_serializer("matrix",
                 [](valbox const &v) -> std::optional<std::string> {
-                    if(v.is_class_ref() && v.class_name() == "matrix") {
+                    if(v.is_class() && v.class_name() == "matrix") {
                         serializer ser{};
                         ser << "matrix" << v.as_class<Eigen::MatrixXd>().rows() << v.as_class<Eigen::MatrixXd>().cols();
                         for(int r{}; r < v.as_class<Eigen::MatrixXd>().rows(); ++r) {

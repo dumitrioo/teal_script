@@ -28,9 +28,9 @@ namespace teal {
             rt->add_function("timestamp", TEALFUN(args) {
                 std::string s{};
                 if(args.size() > 0) {
-                    if(args[0].is_string_ref()) {
+                    if(args[0].is_string()) {
                         return teal::valbox{timespec_wrapper{args[0].as_string()}, "timestamp"};
-                    } else if(args[0].is_wstring_ref()) {
+                    } else if(args[0].is_wstring()) {
                         return teal::valbox{timespec_wrapper{args[0].as_wstring()}, "timestamp"};
                     } else if(args[0].is_any_fp_number()) {
                         return teal::valbox{timespec_wrapper{args[0].cast_to_long_double()}, "timestamp"};
@@ -43,7 +43,7 @@ namespace teal {
 
             rt->add_object_serializer("timestamp",
                 [](valbox const &vb) -> std::optional<std::string> {
-                    if(vb.is_class_ref() && vb.class_name() == "timestamp") {
+                    if(vb.is_class() && vb.class_name() == "timestamp") {
                         return vb.as_class<timespec_wrapper>().as_iso_8601_str();
                     }
                     return {};
@@ -73,8 +73,8 @@ namespace teal {
                     static const auto mb_constr{[](valbox const &vb) -> std::optional<timespec_wrapper> {
                         if(vb.is_any_int_number()) { return timespec_wrapper{vb.cast_to_s64()};
                         } else if(vb.is_any_fp_number()) { return timespec_wrapper{vb.cast_to_long_double()};
-                        } else if(vb.is_string_ref()) { return timespec_wrapper{vb.as_string()};
-                        } else if(vb.is_wstring_ref()) { return timespec_wrapper{vb.cast_to_string()};
+                        } else if(vb.is_string()) { return timespec_wrapper{vb.as_string()};
+                        } else if(vb.is_wstring()) { return timespec_wrapper{vb.cast_to_string()};
                         } else if(vb.is_undefined()) { return timespec_wrapper{};
                         }
                         return {};
@@ -101,8 +101,8 @@ namespace teal {
                     static const auto mb_constr{[](valbox const &vb) -> std::optional<timespec_wrapper> {
                         if(vb.is_any_int_number()) { return timespec_wrapper{vb.cast_to_s64()};
                         } else if(vb.is_any_fp_number()) { return timespec_wrapper{vb.cast_to_long_double()};
-                        } else if(vb.is_string_ref()) { return timespec_wrapper{vb.as_string()};
-                        } else if(vb.is_wstring_ref()) { return timespec_wrapper{vb.cast_to_string()};
+                        } else if(vb.is_string()) { return timespec_wrapper{vb.as_string()};
+                        } else if(vb.is_wstring()) { return timespec_wrapper{vb.cast_to_string()};
                         } else if(vb.is_undefined()) { return timespec_wrapper{};
                         }
                         return {};

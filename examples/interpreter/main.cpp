@@ -46,6 +46,7 @@ void operator delete[](void *ptr, std::size_t size) noexcept {
 
 #endif
 
+
 // Just a regular C++ class to be added as an <<object type>> to the scripting runtime
 class example_object {
 public:
@@ -57,6 +58,7 @@ public:
 private:
     int v_{};
 };
+
 
 int main(int argc, char **argv) {
     std::vector<std::string> args{argv, argv + argc};

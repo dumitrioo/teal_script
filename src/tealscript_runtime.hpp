@@ -207,7 +207,7 @@ namespace teal {
 
             add_function("to_string", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                if(args[0].is_class_ref()) {
+                if(args[0].is_class()) {
                     std::function<valbox(valbox const &)> const &strfy{
                         get_object_services(args[0].class_name())->stringify
                     };
@@ -233,98 +233,98 @@ namespace teal {
                 return sizeof_func_(args[0]);
             });
 
-            add_function("is_i64", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_s64_ref(); });
-            add_function("is_u64", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_u64_ref(); });
-            add_function("is_i32", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_s32_ref(); });
-            add_function("is_u32", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_u32_ref(); });
-            add_function("is_i16", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_s16_ref(); });
-            add_function("is_u16", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_u16_ref(); });
-            add_function("is_i8", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_s8_ref(); });
-            add_function("is_u8", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_u8_ref(); });
-            add_function("is_f32", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_float_ref(); });
-            add_function("is_f64", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_double_ref(); });
-            add_function("is_float", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_long_double_ref(); });
-            add_function("is_char", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_char_ref(); });
-            add_function("is_wchar", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_wchar_ref(); });
-            add_function("is_bool", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_bool_ref(); });
-            add_function("is_string", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_string_ref(); });
-            add_function("is_wstring", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_wstring_ref(); });
-            add_function("is_mat4", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_mat4_ref(); });
-            add_function("is_vec4", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_vec4_ref(); });
-            add_function("is_array", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_array_ref(); });
-            add_function("is_object", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_object_ref(); });
+            add_function("is_i64", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_s64(); });
+            add_function("is_u64", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_u64(); });
+            add_function("is_i32", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_s32(); });
+            add_function("is_u32", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_u32(); });
+            add_function("is_i16", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_s16(); });
+            add_function("is_u16", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_u16(); });
+            add_function("is_i8", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_s8(); });
+            add_function("is_u8", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_u8(); });
+            add_function("is_f32", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_float(); });
+            add_function("is_f64", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_double(); });
+            add_function("is_float", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_long_double(); });
+            add_function("is_char", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_char(); });
+            add_function("is_wchar", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_wchar(); });
+            add_function("is_bool", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_bool(); });
+            add_function("is_string", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_string(); });
+            add_function("is_wstring", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_wstring(); });
+            add_function("is_mat4", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_mat4(); });
+            add_function("is_vec4", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_vec4(); });
+            add_function("is_array", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_array(); });
+            add_function("is_object", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return args[0].is_object(); });
 
             add_function("hton", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                if(args[0].is_char_ref()) { return args[0].as_char(); }
-                if(args[0].is_bool_ref()) { return args[0].as_bool(); }
-                if(args[0].is_s64_ref()) { return bit_util::swap_on_le<int64_t>{args[0].as_s64()}.val; }
-                if(args[0].is_u64_ref()) { return bit_util::swap_on_le<uint64_t>{args[0].as_u64()}.val; }
-                if(args[0].is_s32_ref()) { return bit_util::swap_on_le<int32_t>{args[0].as_s32()}.val; }
-                if(args[0].is_u32_ref()) { return bit_util::swap_on_le<uint64_t>{args[0].as_u32()}.val; }
-                if(args[0].is_s16_ref()) { return bit_util::swap_on_le<int16_t>{args[0].as_s16()}.val; }
-                if(args[0].is_u16_ref()) { return bit_util::swap_on_le<uint16_t>{args[0].as_u16()}.val; }
-                if(args[0].is_s8_ref()) { return bit_util::swap_on_le<int8_t>{args[0].as_s8()}.val; }
-                if(args[0].is_u8_ref()) { return bit_util::swap_on_le<uint8_t>{args[0].as_u8()}.val; }
-                if(args[0].is_float_ref()) { return bit_util::swap_on_le<float>{args[0].as_float()}.val; }
-                if(args[0].is_double_ref()) { return bit_util::swap_on_le<double>{args[0].as_double()}.val; }
-                if(args[0].is_long_double_ref()) { return bit_util::swap_on_le<long double>{args[0].as_long_double()}.val; }
-                if(args[0].is_wchar_ref()) { return bit_util::swap_on_le<wchar_t>{args[0].as_wchar()}.val; }
+                if(args[0].is_char()) { return args[0].as_char(); }
+                if(args[0].is_bool()) { return args[0].as_bool(); }
+                if(args[0].is_s64()) { return bit_util::swap_on_le<int64_t>{args[0].as_s64()}.val; }
+                if(args[0].is_u64()) { return bit_util::swap_on_le<uint64_t>{args[0].as_u64()}.val; }
+                if(args[0].is_s32()) { return bit_util::swap_on_le<int32_t>{args[0].as_s32()}.val; }
+                if(args[0].is_u32()) { return bit_util::swap_on_le<uint64_t>{args[0].as_u32()}.val; }
+                if(args[0].is_s16()) { return bit_util::swap_on_le<int16_t>{args[0].as_s16()}.val; }
+                if(args[0].is_u16()) { return bit_util::swap_on_le<uint16_t>{args[0].as_u16()}.val; }
+                if(args[0].is_s8()) { return bit_util::swap_on_le<int8_t>{args[0].as_s8()}.val; }
+                if(args[0].is_u8()) { return bit_util::swap_on_le<uint8_t>{args[0].as_u8()}.val; }
+                if(args[0].is_float()) { return bit_util::swap_on_le<float>{args[0].as_float()}.val; }
+                if(args[0].is_double()) { return bit_util::swap_on_le<double>{args[0].as_double()}.val; }
+                if(args[0].is_long_double()) { return bit_util::swap_on_le<long double>{args[0].as_long_double()}.val; }
+                if(args[0].is_wchar()) { return bit_util::swap_on_le<wchar_t>{args[0].as_wchar()}.val; }
                 throw std::runtime_error{"invalid argument type"};
             });
             add_function("ntoh", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                if(args[0].is_char_ref()) { return args[0].as_char(); }
-                if(args[0].is_bool_ref()) { return args[0].as_bool(); }
-                if(args[0].is_s64_ref()) { return bit_util::swap_on_le<int64_t>{args[0].as_s64()}.val; }
-                if(args[0].is_u64_ref()) { return bit_util::swap_on_le<uint64_t>{args[0].as_u64()}.val; }
-                if(args[0].is_s32_ref()) { return bit_util::swap_on_le<int32_t>{args[0].as_s32()}.val; }
-                if(args[0].is_u32_ref()) { return bit_util::swap_on_le<uint64_t>{args[0].as_u32()}.val; }
-                if(args[0].is_s16_ref()) { return bit_util::swap_on_le<int16_t>{args[0].as_s16()}.val; }
-                if(args[0].is_u16_ref()) { return bit_util::swap_on_le<uint16_t>{args[0].as_u16()}.val; }
-                if(args[0].is_s8_ref()) { return bit_util::swap_on_le<int8_t>{args[0].as_s8()}.val; }
-                if(args[0].is_u8_ref()) { return bit_util::swap_on_le<uint8_t>{args[0].as_u8()}.val; }
-                if(args[0].is_float_ref()) { return bit_util::swap_on_le<float>{args[0].as_float()}.val; }
-                if(args[0].is_double_ref()) { return bit_util::swap_on_le<double>{args[0].as_double()}.val; }
-                if(args[0].is_long_double_ref()) { return bit_util::swap_on_le<long double>{args[0].as_long_double()}.val; }
-                if(args[0].is_wchar_ref()) { return bit_util::swap_on_le<wchar_t>{args[0].as_wchar()}.val; }
+                if(args[0].is_char()) { return args[0].as_char(); }
+                if(args[0].is_bool()) { return args[0].as_bool(); }
+                if(args[0].is_s64()) { return bit_util::swap_on_le<int64_t>{args[0].as_s64()}.val; }
+                if(args[0].is_u64()) { return bit_util::swap_on_le<uint64_t>{args[0].as_u64()}.val; }
+                if(args[0].is_s32()) { return bit_util::swap_on_le<int32_t>{args[0].as_s32()}.val; }
+                if(args[0].is_u32()) { return bit_util::swap_on_le<uint64_t>{args[0].as_u32()}.val; }
+                if(args[0].is_s16()) { return bit_util::swap_on_le<int16_t>{args[0].as_s16()}.val; }
+                if(args[0].is_u16()) { return bit_util::swap_on_le<uint16_t>{args[0].as_u16()}.val; }
+                if(args[0].is_s8()) { return bit_util::swap_on_le<int8_t>{args[0].as_s8()}.val; }
+                if(args[0].is_u8()) { return bit_util::swap_on_le<uint8_t>{args[0].as_u8()}.val; }
+                if(args[0].is_float()) { return bit_util::swap_on_le<float>{args[0].as_float()}.val; }
+                if(args[0].is_double()) { return bit_util::swap_on_le<double>{args[0].as_double()}.val; }
+                if(args[0].is_long_double()) { return bit_util::swap_on_le<long double>{args[0].as_long_double()}.val; }
+                if(args[0].is_wchar()) { return bit_util::swap_on_le<wchar_t>{args[0].as_wchar()}.val; }
                 throw std::runtime_error{"invalid argument type"};
             });
 
             add_function("tole", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                if(args[0].is_char_ref()) { return args[0].as_char(); }
-                if(args[0].is_bool_ref()) { return args[0].as_bool(); }
-                if(args[0].is_s64_ref()) { return bit_util::swap_on_be<int64_t>{args[0].as_s64()}.val; }
-                if(args[0].is_u64_ref()) { return bit_util::swap_on_be<uint64_t>{args[0].as_u64()}.val; }
-                if(args[0].is_s32_ref()) { return bit_util::swap_on_be<int32_t>{args[0].as_s32()}.val; }
-                if(args[0].is_u32_ref()) { return bit_util::swap_on_be<uint64_t>{args[0].as_u32()}.val; }
-                if(args[0].is_s16_ref()) { return bit_util::swap_on_be<int16_t>{args[0].as_s16()}.val; }
-                if(args[0].is_u16_ref()) { return bit_util::swap_on_be<uint16_t>{args[0].as_u16()}.val; }
-                if(args[0].is_s8_ref()) { return bit_util::swap_on_be<int8_t>{args[0].as_s8()}.val; }
-                if(args[0].is_u8_ref()) { return bit_util::swap_on_be<uint8_t>{args[0].as_u8()}.val; }
-                if(args[0].is_float_ref()) { return bit_util::swap_on_be<float>{args[0].as_float()}.val; }
-                if(args[0].is_double_ref()) { return bit_util::swap_on_be<double>{args[0].as_double()}.val; }
-                if(args[0].is_long_double_ref()) { return bit_util::swap_on_be<long double>{args[0].as_long_double()}.val; }
-                if(args[0].is_wchar_ref()) { return bit_util::swap_on_be<wchar_t>{args[0].as_wchar()}.val; }
+                if(args[0].is_char()) { return args[0].as_char(); }
+                if(args[0].is_bool()) { return args[0].as_bool(); }
+                if(args[0].is_s64()) { return bit_util::swap_on_be<int64_t>{args[0].as_s64()}.val; }
+                if(args[0].is_u64()) { return bit_util::swap_on_be<uint64_t>{args[0].as_u64()}.val; }
+                if(args[0].is_s32()) { return bit_util::swap_on_be<int32_t>{args[0].as_s32()}.val; }
+                if(args[0].is_u32()) { return bit_util::swap_on_be<uint64_t>{args[0].as_u32()}.val; }
+                if(args[0].is_s16()) { return bit_util::swap_on_be<int16_t>{args[0].as_s16()}.val; }
+                if(args[0].is_u16()) { return bit_util::swap_on_be<uint16_t>{args[0].as_u16()}.val; }
+                if(args[0].is_s8()) { return bit_util::swap_on_be<int8_t>{args[0].as_s8()}.val; }
+                if(args[0].is_u8()) { return bit_util::swap_on_be<uint8_t>{args[0].as_u8()}.val; }
+                if(args[0].is_float()) { return bit_util::swap_on_be<float>{args[0].as_float()}.val; }
+                if(args[0].is_double()) { return bit_util::swap_on_be<double>{args[0].as_double()}.val; }
+                if(args[0].is_long_double()) { return bit_util::swap_on_be<long double>{args[0].as_long_double()}.val; }
+                if(args[0].is_wchar()) { return bit_util::swap_on_be<wchar_t>{args[0].as_wchar()}.val; }
                 throw std::runtime_error{"invalid argument type"};
             });
             add_function("tobe", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                if(args[0].is_char_ref()) { return args[0].as_char(); }
-                if(args[0].is_bool_ref()) { return args[0].as_bool(); }
-                if(args[0].is_s64_ref()) { return bit_util::swap_on_le<int64_t>{args[0].as_s64()}.val; }
-                if(args[0].is_u64_ref()) { return bit_util::swap_on_le<uint64_t>{args[0].as_u64()}.val; }
-                if(args[0].is_s32_ref()) { return bit_util::swap_on_le<int32_t>{args[0].as_s32()}.val; }
-                if(args[0].is_u32_ref()) { return bit_util::swap_on_le<uint64_t>{args[0].as_u32()}.val; }
-                if(args[0].is_s16_ref()) { return bit_util::swap_on_le<int16_t>{args[0].as_s16()}.val; }
-                if(args[0].is_u16_ref()) { return bit_util::swap_on_le<uint16_t>{args[0].as_u16()}.val; }
-                if(args[0].is_s8_ref()) { return bit_util::swap_on_le<int8_t>{args[0].as_s8()}.val; }
-                if(args[0].is_u8_ref()) { return bit_util::swap_on_le<uint8_t>{args[0].as_u8()}.val; }
-                if(args[0].is_float_ref()) { return bit_util::swap_on_le<float>{args[0].as_float()}.val; }
-                if(args[0].is_double_ref()) { return bit_util::swap_on_le<double>{args[0].as_double()}.val; }
-                if(args[0].is_long_double_ref()) { return bit_util::swap_on_le<long double>{args[0].as_long_double()}.val; }
-                if(args[0].is_wchar_ref()) { return bit_util::swap_on_le<wchar_t>{args[0].as_wchar()}.val; }
+                if(args[0].is_char()) { return args[0].as_char(); }
+                if(args[0].is_bool()) { return args[0].as_bool(); }
+                if(args[0].is_s64()) { return bit_util::swap_on_le<int64_t>{args[0].as_s64()}.val; }
+                if(args[0].is_u64()) { return bit_util::swap_on_le<uint64_t>{args[0].as_u64()}.val; }
+                if(args[0].is_s32()) { return bit_util::swap_on_le<int32_t>{args[0].as_s32()}.val; }
+                if(args[0].is_u32()) { return bit_util::swap_on_le<uint64_t>{args[0].as_u32()}.val; }
+                if(args[0].is_s16()) { return bit_util::swap_on_le<int16_t>{args[0].as_s16()}.val; }
+                if(args[0].is_u16()) { return bit_util::swap_on_le<uint16_t>{args[0].as_u16()}.val; }
+                if(args[0].is_s8()) { return bit_util::swap_on_le<int8_t>{args[0].as_s8()}.val; }
+                if(args[0].is_u8()) { return bit_util::swap_on_le<uint8_t>{args[0].as_u8()}.val; }
+                if(args[0].is_float()) { return bit_util::swap_on_le<float>{args[0].as_float()}.val; }
+                if(args[0].is_double()) { return bit_util::swap_on_le<double>{args[0].as_double()}.val; }
+                if(args[0].is_long_double()) { return bit_util::swap_on_le<long double>{args[0].as_long_double()}.val; }
+                if(args[0].is_wchar()) { return bit_util::swap_on_le<wchar_t>{args[0].as_wchar()}.val; }
                 throw std::runtime_error{"invalid argument type"};
             });
 
@@ -347,10 +347,10 @@ namespace teal {
             add_function("vec4", TEALFUN(args) {
                 valbox res{valbox::vec4_t{0, 0, 0, 1}};
                 if(args.size() == 1) {
-                    if(args[0].is_array_ref() || args[0].is_object_ref()) {
+                    if(args[0].is_array() || args[0].is_object()) {
                         res = vec4_from_json<double>(args[0].to_json());
-                    } else if(args[0].is_string_ref() || args[0].is_wstring_ref()) {
-                        if(args[0].is_string_ref()) {
+                    } else if(args[0].is_string() || args[0].is_wstring()) {
+                        if(args[0].is_string()) {
                             res = vec4_from_str<double>(args[0].as_string());
                         } else {
                             res = vec4_from_str<double>(args[0].as_wstring());
@@ -374,11 +374,11 @@ namespace teal {
                 } else if(args.size() < 16) {
                     std::size_t row_no{0};
                     for(std::size_t i{0}; row_no < 4 && i < args.size(); ++i) {
-                        if(args[i].is_array_ref()) {
+                        if(args[i].is_array()) {
                             for(std::size_t j{0}; j < 4 && j < args[i].as_array().size(); ++j) {
                                 res.as_mat4()[row_no][j] = args[i].as_array()[j].cast_to_long_double();
                             }
-                        } else if(args[i].is_vec4_ref()) {
+                        } else if(args[i].is_vec4()) {
                             for(std::size_t j{0}; j < 4; ++j) {
                                 res.as_mat4()[row_no][j] = args[i].as_vec4()[j];
                             }
@@ -399,9 +399,9 @@ namespace teal {
             });
             add_function("array", TEALFUN(args) {
                 valbox res{valbox_no_initialize::dont_do_it};
-                if(args.size() == 1 && (args[0].is_array_ref())) {
+                if(args.size() == 1 && (args[0].is_array())) {
                     res.assign(args[0]);
-                } else if(args.size() == 1 && (args[0].is_string_ref() || args[0].is_wstring_ref())) {
+                } else if(args.size() == 1 && (args[0].is_string() || args[0].is_wstring())) {
                     res.construct_array(args[0].cast_to_array());
                 } else {
                     res.become_array();
@@ -417,13 +417,13 @@ namespace teal {
                     res.become_object();
                     return res;
                 }
-                if(args[0].is_object_ref()) {
+                if(args[0].is_object()) {
                     res.assign(args[0]);
                     return res;
                 }
                 res.become_object();
                 if(args.size() == 1) {
-                    if(args[0].is_string_ref()) {
+                    if(args[0].is_string()) {
                         try {
                             json j{json::deserialize(args[0].as_string())};
                             if(j.is_object()) {
@@ -431,7 +431,7 @@ namespace teal {
                             }
                         } catch (...) {
                         }
-                    } else if(args[0].is_wstring_ref()) {
+                    } else if(args[0].is_wstring()) {
                         try {
                             json j{json::deserialize(args[0].as_wstring())};
                             if(j.is_object()) {
@@ -453,10 +453,10 @@ namespace teal {
             add_function("deserialize", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 valbox res{valbox_no_initialize::dont_do_it};
-                if(args[0].is_string_ref()) {
+                if(args[0].is_string()) {
                     res.from_json(json::deserialize(args[0].as_string()));
                     return res;
-                } else if(args[0].is_wstring_ref()) {
+                } else if(args[0].is_wstring()) {
                     res.from_json(json::deserialize(args[0].as_wstring()));
                 }
                 return res;
@@ -483,9 +483,9 @@ namespace teal {
             add_function("contains", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 auto a1r{args[0].deref()};
-                if(a1r.is_object_ref()) {
+                if(a1r.is_object()) {
                     return a1r.as_object().find(args[1].cast_to_string()) != a1r.as_object().end();
-                } else if(a1r.is_array_ref()) {
+                } else if(a1r.is_array()) {
                     auto idx{args[1].cast_to_u64()};
                     return idx < a1r.as_array().size();
                 }
@@ -495,7 +495,7 @@ namespace teal {
             add_function("key_exists", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 auto a1r{args[0].deref()};
-                if(a1r.is_object_ref()) {
+                if(a1r.is_object()) {
                     return a1r.as_object().find(args[1].cast_to_string()) != a1r.as_object().end();
                 }
                 throw std::runtime_error{"not object"};
@@ -503,9 +503,9 @@ namespace teal {
             add_function("string_field_exists", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 auto a1r{args[0].deref()};
-                if(a1r.is_object_ref()) {
+                if(a1r.is_object()) {
                     return a1r.as_object().find(args[1].cast_to_string()) != a1r.as_object().end() &&
-                           a1r.as_object().at(args[1].cast_to_string()).is_string_ref();
+                           a1r.as_object().at(args[1].cast_to_string()).is_string();
                 }
                 throw std::runtime_error{"not object"};
             });
@@ -513,7 +513,7 @@ namespace teal {
             add_function("key_at", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 auto a1r{args[0].deref()};
-                if(a1r.is_object_ref()) {
+                if(a1r.is_object()) {
                     return a1r.object_key_at(args[1].cast_to_u64());
                 }
                 throw std::runtime_error{"not object"};
@@ -522,7 +522,7 @@ namespace teal {
             add_function("value_at", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 auto a1r{args[0].deref()};
-                if(a1r.is_object_ref()) {
+                if(a1r.is_object()) {
                     return a1r.object_value_at(args[1].cast_to_u64());
                 }
                 throw std::runtime_error{"not object"};
@@ -531,15 +531,15 @@ namespace teal {
             add_function("resize", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 valbox &a1r{args[0].deref()};
-                if(a1r.is_array_ref()) {
+                if(a1r.is_array()) {
                     auto &vec{a1r.as_array()};
                     vec.resize(args[1].cast_to_u64());
                     return true;
-                } else if(a1r.is_string_ref()) {
+                } else if(a1r.is_string()) {
                     auto &str{a1r.as_string()};
                     str.resize(args[1].cast_to_u64());
                     return true;
-                } else if(a1r.is_wstring_ref()) {
+                } else if(a1r.is_wstring()) {
                     auto &str{a1r.as_wstring()};
                     str.resize(args[1].cast_to_u64());
                     return true;
@@ -549,7 +549,7 @@ namespace teal {
             add_function("push_back", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 valbox &a1r{args[0].deref()};
-                if(a1r.is_undefined_ref()) {
+                if(a1r.is_undefined()) {
                     a1r.become_array();
                 }
                 a1r.as_array().push_back(args[1]);
@@ -560,7 +560,7 @@ namespace teal {
             add_function("push_front", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 valbox &a1r{args[0].deref()};
-                if(a1r.is_undefined_ref()) {
+                if(a1r.is_undefined()) {
                     a1r.become_array();
                 }
                 a1r.as_array().insert(a1r.as_array().begin(), args[1]);
@@ -569,7 +569,7 @@ namespace teal {
             add_function("pop_front", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 valbox &a1r{args[0].deref()};
-                if(a1r.is_array_ref()) {
+                if(a1r.is_array()) {
                     if(a1r.as_array().empty()) {
                         throw std::runtime_error{"array empty"};
                     }
@@ -585,7 +585,7 @@ namespace teal {
             add_function("pop_back", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
                 valbox &a1r{args[0].deref()};
-                if(a1r.is_array_ref()) {
+                if(a1r.is_array()) {
                     if(a1r.as_array().empty()) {
                         throw std::runtime_error{"array empty"};
                     }
@@ -604,12 +604,12 @@ namespace teal {
 
             add_function("is_undefined", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                return args[0].is_undefined_ref();
+                return args[0].is_undefined();
             });
 
             add_function("is_defined", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                return !args[0].is_undefined_ref();
+                return !args[0].is_undefined();
             });
 
             add_function("replace_substr", TEALFUN(args) {
@@ -629,10 +629,10 @@ namespace teal {
 
             add_function("reserve", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                if(args[0].is_string_ref()) {
+                if(args[0].is_string()) {
                     args[0].as_string().reserve(args[1].cast_to_size_t());
                     return true;
-                } else if(args[0].is_wstring_ref()) {
+                } else if(args[0].is_wstring()) {
                     args[0].as_wstring().reserve(args[1].cast_to_size_t());
                     return true;
                 }
@@ -660,7 +660,7 @@ namespace teal {
 
             add_function("slice", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 3)
-                if(args[0].is_array_ref()) {
+                if(args[0].is_array()) {
                     if(args.size() == 1) {
                         return args[0];
                     } else if(args.size() == 2) {
@@ -674,7 +674,7 @@ namespace teal {
                         res = args[0].subarray(args[1].cast_to_u64(), args[2].cast_to_u64());
                         return res;
                     }
-                } else if(args[0].is_string_ref()) {
+                } else if(args[0].is_string()) {
                     if(args.size() == 1) {
                         return args[0];
                     } else if(args.size() == 2) {
@@ -684,7 +684,7 @@ namespace teal {
                     } else if(args.size() > 3) {
                         return args[0].cast_to_string();
                     }
-                } else if(args[0].is_wstring_ref()) {
+                } else if(args[0].is_wstring()) {
                     if(args.size() == 1) {
                         return args[0];
                     } else if(args.size() == 2) {
@@ -702,12 +702,12 @@ namespace teal {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 valbox res{valbox_no_initialize::dont_do_it};
                 res.become_array();
-                if(args[0].is_string_ref()) {
+                if(args[0].is_string()) {
                     std::vector<std::string> sv{str_util::str_tok(args[0].cast_to_string(), args[1].cast_to_string())};
                     for(auto &&s: sv) {
                         res.as_array().push_back(s);
                     }
-                } else if(args[0].is_wstring_ref()) {
+                } else if(args[0].is_wstring()) {
                     std::vector<std::wstring> sv{str_util::str_tok(args[0].cast_to_wstring(), args[1].cast_to_wstring())};
                     for(auto &&s: sv) {
                         res.as_array().push_back(s);
@@ -718,9 +718,9 @@ namespace teal {
 
             add_function("ltrim", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                if(args[0].is_string_ref()) {
+                if(args[0].is_string()) {
                     return str_util::ltrim<std::string>(args[0].as_string());
-                } else if(args[0].is_wstring_ref()) {
+                } else if(args[0].is_wstring()) {
                     return str_util::ltrim<std::wstring>(args[0].as_wstring());
                 } else {
                     return args[0];
@@ -729,9 +729,9 @@ namespace teal {
 
             add_function("rtrim", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                if(args[0].is_string_ref()) {
+                if(args[0].is_string()) {
                     return str_util::rtrim<std::string>(args[0].as_string());
-                } else if(args[0].is_wstring_ref()) {
+                } else if(args[0].is_wstring()) {
                     return str_util::rtrim<std::wstring>(args[0].as_wstring());
                 } else {
                     return args[0];
@@ -739,9 +739,9 @@ namespace teal {
             });
             add_function("trim", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                if(args[0].is_string_ref()) {
+                if(args[0].is_string()) {
                     return str_util::trim<std::string>(args[0].as_string());
-                } else if(args[0].is_wstring_ref()) {
+                } else if(args[0].is_wstring()) {
                     return str_util::trim<std::wstring>(args[0].as_wstring());
                 } else {
                     return args[0];
@@ -760,7 +760,7 @@ namespace teal {
 
             add_function("subarray", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 3)
-                if(args[0].is_array_ref()) {
+                if(args[0].is_array()) {
                     if(args.size() == 1) {
                         return args[0].subarray();
                     } else if(args.size() == 2) {
@@ -914,21 +914,21 @@ namespace teal {
             add_function("ftoa", TEALFUN(args) {
                 if(args.size() > 0) {
                     if(args.size() > 1) {
-                        if(args[0].is_long_double_ref()) {
+                        if(args[0].is_long_double()) {
                             return str_util::ftoa(args[0].as_long_double(), args[1].cast_to_size_t());
-                        } else if(args[0].is_double_ref()) {
+                        } else if(args[0].is_double()) {
                             return str_util::ftoa(args[0].as_double(), args[1].cast_to_size_t());
-                        } else if(args[0].is_float_ref()) {
+                        } else if(args[0].is_float()) {
                             return str_util::ftoa(args[0].as_float(), args[1].cast_to_size_t());
                         } else if(args[0].is_numeric()) {
                             return str_util::ftoa(args[0].cast_to_double(), args[1].cast_to_size_t());
                         }
                     } else {
-                        if(args[0].is_long_double_ref()) {
+                        if(args[0].is_long_double()) {
                             return str_util::ftoa(args[0].as_long_double());
-                        } else if(args[0].is_double_ref()) {
+                        } else if(args[0].is_double()) {
                             return str_util::ftoa(args[0].as_double());
-                        } else if(args[0].is_float_ref()) {
+                        } else if(args[0].is_float()) {
                             return str_util::ftoa(args[0].as_float());
                         } else if(args[0].is_numeric()) {
                             return str_util::ftoa(args[0].cast_to_double());
@@ -940,7 +940,7 @@ namespace teal {
 
             add_function("toupper", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                if(args[0].is_char_ref()) {
+                if(args[0].is_char()) {
                     return str_util::fltr<std::string>::toupper(args[0].as_char());
                 } else {
                     return str_util::fltr<std::wstring>::toupper(args[0].cast_to_u64());
@@ -948,7 +948,7 @@ namespace teal {
             });
             add_function("tolower", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                if(args[0].is_char_ref()) {
+                if(args[0].is_char()) {
                     return str_util::fltr<std::string>::tolower(args[0].as_char());
                 } else {
                     return str_util::fltr<std::wstring>::tolower(args[0].cast_to_u64());
@@ -957,9 +957,9 @@ namespace teal {
 
             add_function("strtoupper", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                if(args[0].is_string_ref()) {
+                if(args[0].is_string()) {
                     return str_util::fltr<std::string>::strtoupper(args[0].as_string());
-                } else if(args[0].is_wstring_ref()) {
+                } else if(args[0].is_wstring()) {
                     return str_util::fltr<std::wstring>::strtoupper(args[0].as_wstring());
                 } else {
                     return str_util::fltr<std::string>::strtoupper(args[0].cast_to_string());
@@ -967,9 +967,9 @@ namespace teal {
             });
             add_function("strtolower", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                if(args[0].is_string_ref()) {
+                if(args[0].is_string()) {
                     return str_util::fltr<std::string>::strtolower(args[0].as_string());
-                } else if(args[0].is_wstring_ref()) {
+                } else if(args[0].is_wstring()) {
                     return str_util::fltr<std::wstring>::strtolower(args[0].as_wstring());
                 } else {
                     return str_util::fltr<std::string>::strtolower(args[0].cast_to_string());
@@ -979,28 +979,28 @@ namespace teal {
 
             add_function("get_bit_field", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 3)
-                if(args[0].is_u64_ref()) {
+                if(args[0].is_u64()) {
                     bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
                     return bf.get(args[1].cast_to_u64(), args[2].cast_to_u64());
-                } else if(args[0].is_s64_ref()) {
+                } else if(args[0].is_s64()) {
                     bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
                     return bf.get(args[1].cast_to_u64(), args[2].cast_to_u64());
-                } else if(args[0].is_u32_ref()) {
+                } else if(args[0].is_u32()) {
                     bit_util::bits<std::uint32_t> bf{args[0].cast_to_u32()};
                     return bf.get(args[1].cast_to_u64(), args[2].cast_to_u64());
-                } else if(args[0].is_s32_ref()) {
+                } else if(args[0].is_s32()) {
                     bit_util::bits<std::uint32_t> bf{args[0].cast_to_u32()};
                     return bf.get(args[1].cast_to_u64(), args[2].cast_to_u64());
-                } else if(args[0].is_u16_ref()) {
+                } else if(args[0].is_u16()) {
                     bit_util::bits<std::uint16_t> bf{args[0].cast_to_u16()};
                     return bf.get(args[1].cast_to_u64(), args[2].cast_to_u64());
-                } else if(args[0].is_s16_ref()) {
+                } else if(args[0].is_s16()) {
                     bit_util::bits<std::uint16_t> bf{args[0].cast_to_u16()};
                     return bf.get(args[1].cast_to_u64(), args[2].cast_to_u64());
-                } else if(args[0].is_u8_ref()) {
+                } else if(args[0].is_u8()) {
                     bit_util::bits<std::uint8_t> bf{args[0].cast_to_u8()};
                     return bf.get(args[1].cast_to_u64(), args[2].cast_to_u64());
-                } else if(args[0].is_s8_ref()) {
+                } else if(args[0].is_s8()) {
                     bit_util::bits<std::uint8_t> bf{args[0].cast_to_u8()};
                     return bf.get(args[1].cast_to_u64(), args[2].cast_to_u64());
                 }
@@ -1074,24 +1074,6 @@ namespace teal {
             add_function("inactive_nanosleep", TEALFUN() {
                 return sleep_inactive_thread_nanoseconds();
             });
-            add_function("exit", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2);
-                if(programmatic_termination_enabled_ != 0) {
-                    exit_status_ = args.size() == 2 ? args[1].cast_num_to_num<int>() : 0;
-                    terminate();
-                    execution_context *ctx{(execution_context *)args[0].as_ptr()};
-                    ctx->request_return();
-                }
-                return programmatic_termination_enabled_ != 0;
-            });
-
-            add_function("assert", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_GE(args, 3);
-                if(!args[2].cast_to_bool()) {
-                    throw runtime_error{args[0].cast_to_s64(), args[0].cast_to_s64(), std::string{"assertion failed"}};
-                }
-                return true;
-            });
 
             add_function("assign", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2);
@@ -1099,7 +1081,21 @@ namespace teal {
                 return args[0];
             });
 
-
+            add_function("exit", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 0, 1);
+                if(programmatic_termination_enabled_ != 0) {
+                    exit_status_ = args.size() == 1 ? args[0].cast_num_to_num<int>() : 0;
+                    terminate();
+                }
+                return programmatic_termination_enabled_ != 0;
+            });
+            add_function("assert", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_GE(args, 3);
+                if(!args[2].cast_to_bool()) {
+                    throw runtime_error{args[0].cast_to_s64(), args[1].cast_to_s64(), std::string{"assertion failed"}};
+                }
+                return true;
+            });
             add_function("thread_id", TEALFUN() {
                 std::stringstream ss{};
                 ss << std::this_thread::get_id();
@@ -1124,6 +1120,7 @@ namespace teal {
                 return start_net_server(teal::net::address_family::inet4, bind_addr, port, stale_connections_removal_timeout);
             });
 
+
             add_function("disable_external_values_server", TEALFUN(args) {
                 stop_net_server();
                 return !net_server_running();
@@ -1143,6 +1140,7 @@ namespace teal {
                 return ext_cells_refresh_interval_nanos_;
             });
 
+
             add_function("size", TEALFUN(args) {
                 valbox &der{args[0].deref()};
                 switch(der.val_type()) {
@@ -1156,11 +1154,11 @@ namespace teal {
 
             add_function("empty", TEALFUN(args) {
                 valbox arg0{args[0]};
-                return arg0.is_undefined_ref() ||
-                       (arg0.is_object_ref() && arg0.as_object().empty()) ||
-                       (arg0.is_array_ref() && arg0.as_array().empty()) ||
-                       (arg0.is_string_ref() && arg0.as_string().empty()) ||
-                       (arg0.is_wstring_ref() && arg0.as_wstring().empty());
+                return arg0.is_undefined() ||
+                       (arg0.is_object() && arg0.as_object().empty()) ||
+                       (arg0.is_array() && arg0.as_array().empty()) ||
+                       (arg0.is_string() && arg0.as_string().empty()) ||
+                       (arg0.is_wstring() && arg0.as_wstring().empty());
             });
             check_func_kw_ = true;
         }
@@ -1206,9 +1204,9 @@ namespace teal {
 
         timespec_wrapper valbox_to_timestamp(std::vector<valbox> const &args) const {
             if(args.size() >= 1) {
-                if(args[0].is_string_ref()) {
+                if(args[0].is_string()) {
                     return timespec_wrapper{args[0].as_string()};
-                } else if(args[0].is_wstring_ref()) {
+                } else if(args[0].is_wstring()) {
                     return timespec_wrapper{args[0].as_wstring()};
                 } else if(args[0].is_any_fp_number()) {
                     return timespec_wrapper{args[0].cast_to_long_double()};
@@ -1450,7 +1448,7 @@ namespace teal {
                     auto &&ai{args_info[curr_arg_number]};
                     std::string curr_arg_name{ai.argname};
                     if(!ai.is_cell) {
-                        if(ai.expr_val.is_undefined_ref()) {
+                        if(ai.expr_val.is_undefined()) {
                             ai.expr_val = ai.expr->eval(&exctx_, eval_caller_type::no_matter, nullptr);
                         }
                         valbox vb{ai.expr_val};
@@ -1504,15 +1502,15 @@ namespace teal {
             }
         }
 
-        void terminate() {
+        void terminate() override {
             termination_requested_.store(1, std::memory_order_release);
         }
 
-        void unterminate() {
+        void unterminate() override {
             termination_requested_.store(0, std::memory_order_release);
         }
 
-        bool termination_requested() const {
+        bool termination_requested() const override {
             return termination_requested_.load(std::memory_order_relaxed) != 0;
         }
 
@@ -1537,7 +1535,11 @@ namespace teal {
             return failure_description_;
         }
 
-        bool programmatic_termination_enabled() const {
+        void set_exit_status(int v) override {
+            exit_status_ = v;
+        }
+
+        bool programmatic_termination_enabled() const override {
             return programmatic_termination_enabled_ != 0;
         }
 
@@ -1645,7 +1647,7 @@ namespace teal {
                                     worker_cell_instance::arg_info &ai{args_info[curr_arg_number]};
                                     std::string curr_arg_name{ai.argname};
                                     if(!ai.is_cell) {
-                                        if(ai.expr_val.is_undefined_ref()) {
+                                        if(ai.expr_val.is_undefined()) {
                                             ai.expr_val = ai.expr->eval(exctx_ptr, eval_caller_type::no_matter, nullptr);
                                         }
                                         valbox vb{ai.expr_val};

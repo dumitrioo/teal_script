@@ -129,7 +129,7 @@ namespace teal {
             }};
             bool bcond{false};
             valbox cond{cond_expr_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-            if(cond.is_class_ref()) {
+            if(cond.is_class()) {
                 str_map_t<std::function<valbox(valbox &)>> const *unops{
                     &(ctx->rt_interface()->get_object_services(cond.class_name())->unops)
                 };
@@ -238,7 +238,7 @@ namespace teal {
             std::string classname{};
             str_map_t<std::function<valbox(valbox &)>> const *unops{nullptr};
             std::function<valbox(valbox &)> converter{};
-            if(cond.is_class_ref()) {
+            if(cond.is_class()) {
                 classname = cond.class_name();
                 unops = &(ctx->rt_interface()->get_object_services(classname)->unops);
                 if(unops == nullptr) {
@@ -259,7 +259,7 @@ namespace teal {
                 if(ctx->continue_requested()) { ctx->clear_continue_request(); }
                 if(ctx->break_requested()) { ctx->clear_break_request(); break; }
                 cond = cond_expr_->eval(ctx, eval_caller_type::no_matter, nullptr).deref();
-                if(cond.is_class_ref()) {
+                if(cond.is_class()) {
                     if(cond.class_name() != classname) {
                         classname = cond.class_name();
                         unops = &(ctx->rt_interface()->get_object_services(classname)->unops);
@@ -314,7 +314,7 @@ namespace teal {
                 std::string classname{};
                 str_map_t<std::function<valbox(valbox &)>> const *unops{nullptr};
                 std::function<valbox(valbox &)> converter{};
-                if(cond.is_class_ref()) {
+                if(cond.is_class()) {
                     classname = cond.class_name();
                     unops = &(ctx->rt_interface()->get_object_services(classname)->unops);
                     if(unops == nullptr) {
@@ -336,7 +336,7 @@ namespace teal {
                     if(ctx->break_requested()) { ctx->clear_break_request(); break; }
                     incr_expr_->eval(ctx, eval_caller_type::no_matter, nullptr);
                     cond = cond_expr_->eval(ctx, eval_caller_type::no_matter, nullptr).deref();
-                    if(cond.is_class_ref()) {
+                    if(cond.is_class()) {
                         if(cond.class_name() != classname) {
                             classname = cond.class_name();
                             unops = &(ctx->rt_interface()->get_object_services(classname)->unops);
@@ -361,7 +361,7 @@ namespace teal {
                 std::string classname{};
                 str_map_t<std::function<valbox(valbox &)>> const *unops{nullptr};
                 std::function<valbox(valbox &)> converter{};
-                if(cond.is_class_ref()) {
+                if(cond.is_class()) {
                     classname = cond.class_name();
                     unops = &(ctx->rt_interface()->get_object_services(classname)->unops);
                     if(unops == nullptr) {
@@ -383,7 +383,7 @@ namespace teal {
                     if(ctx->break_requested()) { ctx->clear_break_request(); break; }
                     incr_expr_->eval(ctx, eval_caller_type::no_matter, nullptr);
                     cond = cond_expr_->eval(ctx, eval_caller_type::no_matter, nullptr).deref();
-                    if(cond.is_class_ref()) {
+                    if(cond.is_class()) {
                         if(cond.class_name() != classname) {
                             classname = cond.class_name();
                             unops = &(ctx->rt_interface()->get_object_services(classname)->unops);

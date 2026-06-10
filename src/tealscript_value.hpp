@@ -10,9 +10,6 @@
 
 #include "tealscript_util.hpp"
 
-using std::any_cast;
-using std::any;
-
 namespace teal {
 
     enum class valbox_no_initialize {
@@ -156,7 +153,7 @@ namespace teal {
             object_t,
             std::string,
             std::wstring,
-            any
+            std::any
         >;
 
         struct box_data {
@@ -267,8 +264,8 @@ namespace teal {
         valbox(std::int64_t *v): box_{std::make_shared<box_data>((void *)v, type::POINTER, type::S64)} {}
         valbox(std::uint64_t v): box_{std::make_shared<box_data>(v, type::U64)} {}
         valbox(std::uint64_t *v): box_{std::make_shared<box_data>((void *)v, type::POINTER, type::U64)} {}
-        valbox(vec4_t const &v): box_{std::make_shared<box_data>(any{v}, type::VEC4)} {}
-        valbox(mat4_t const &v): box_{std::make_shared<box_data>(any{v}, type::MAT4)} {}
+        valbox(vec4_t const &v): box_{std::make_shared<box_data>(std::any{v}, type::VEC4)} {}
+        valbox(mat4_t const &v): box_{std::make_shared<box_data>(std::any{v}, type::MAT4)} {}
         valbox(long long v): box_{std::make_shared<box_data>((std::int64_t)v, type::S64)} {}
         valbox(long long *v): box_{std::make_shared<box_data>((void *)v, type::POINTER, type::S64)} {}
         valbox(unsigned long long v): box_{std::make_shared<box_data>((std::uint64_t)v, type::U64)} {}
@@ -279,7 +276,7 @@ namespace teal {
         valbox(valbox *v): box_{std::make_shared<box_data>((void *)v, type::POINTER, type::VALBOX)} {}
         template<typename T>
         valbox(T &&v, std::string const &classname):
-            box_{std::make_shared<box_data>(any{std::forward<T>(v)}, type::CLASS, type::UNDEFINED, classname)}
+            box_{std::make_shared<box_data>(std::any{std::forward<T>(v)}, type::CLASS, type::UNDEFINED, classname)}
         {
         }
         valbox(std::function<valbox(std::vector<valbox> &)> const &v, std::string const &func_name, bool user_func):
@@ -671,25 +668,25 @@ namespace teal {
         }
         valbox &deref() {
             box_data *bptr{as_valbox_ptr()};
-            if(bptr != nullptr) {
-                void *p{std::get<void *>(bptr->value_)};
-                if(p == reinterpret_cast<void *>(this)) {
-                    throw std::runtime_error{"reference loop"};
-                }
-                return reinterpret_cast<valbox *>(p)->deref();
+            if(bptr == nullptr) {
+                return *this;
             }
-            return *this;
+            void *p{std::get<void *>(bptr->value_)};
+            if(p == reinterpret_cast<void *>(this)) {
+                throw std::runtime_error{"reference loop"};
+            }
+            return reinterpret_cast<valbox *>(p)->deref();
         }
         valbox const &deref() const {
             box_data *bptr{as_valbox_ptr()};
-            if(bptr != nullptr) {
-                void *p{std::get<void *>(bptr->value_)};
-                if(p == reinterpret_cast<void const *>(this)) {
-                    throw std::runtime_error{"reference loop"};
-                }
-                return reinterpret_cast<valbox const *>(p)->deref();
+            if(bptr == nullptr) {
+                return *this;
             }
-            return *this;
+            void *p{std::get<void *>(bptr->value_)};
+            if(p == reinterpret_cast<void const *>(this)) {
+                throw std::runtime_error{"reference loop"};
+            }
+            return reinterpret_cast<valbox const *>(p)->deref();
         }
 
         template<typename T>
@@ -697,19 +694,19 @@ namespace teal {
             if(!box_) {
                 throw std::runtime_error{"not an object"};
             }
-            return any_cast<T &>(std::get<any>(deref().box_->value_));
+            return std::any_cast<T &>(std::get<std::any>(deref().box_->value_));
         }
         template<typename T>
         T const &as_class() const {
             if(!box_) {
                 throw std::runtime_error{"not an object"};
             }
-            return any_cast<T &>(std::get<any>(deref().box_->value_));
+            return std::any_cast<T &>(std::get<std::any>(deref().box_->value_));
         }
-        bool is_class_ref() const { return val_or_pointed_type() == type::CLASS; }
+        bool is_class() const { return val_or_pointed_type() == type::CLASS; }
         std::string class_name() const { return box_ ? deref().box_->class_ : std::string{}; }
 
-        bool is_string_ref() const { return val_or_pointed_type() == type::STRING; }
+        bool is_string() const { return val_or_pointed_type() == type::STRING; }
         std::string &as_string() {
             valbox &dr{deref()};
             if(!dr.box_ || !(dr.box_->type_ == type::STRING || dr.box_->pointed_type_ == type::STRING))
@@ -727,7 +724,7 @@ namespace teal {
                         std::get<std::string>(dr.box_->value_);
         }
 
-        bool is_wstring_ref() const { return val_or_pointed_type() == type::WSTRING; }
+        bool is_wstring() const { return val_or_pointed_type() == type::WSTRING; }
         std::wstring &as_wstring() {
             valbox &dr{deref()};
             if(!dr.box_ || !(dr.box_->type_ == type::WSTRING || dr.box_->pointed_type_ == type::WSTRING))
@@ -745,7 +742,7 @@ namespace teal {
                         std::get<std::wstring>(dr.box_->value_);
         }
 
-        bool is_long_double_ref() const { return val_or_pointed_type() == type::LONG_DOUBLE; }
+        bool is_long_double() const { return val_or_pointed_type() == type::LONG_DOUBLE; }
         long double &as_long_double() {
             valbox &dr{deref()};
             if(!dr.box_ || !(dr.box_->type_ == type::LONG_DOUBLE || dr.box_->pointed_type_ == type::LONG_DOUBLE))
@@ -763,7 +760,7 @@ namespace teal {
                         std::get<long double>(dr.box_->value_);
         }
 
-        bool is_double_ref() const { return val_or_pointed_type() == type::DOUBLE; }
+        bool is_double() const { return val_or_pointed_type() == type::DOUBLE; }
         double &as_double() {
             valbox &dr{deref()};
             if(!dr.box_ || !(dr.box_->type_ == type::DOUBLE || dr.box_->pointed_type_ == type::DOUBLE))
@@ -781,7 +778,7 @@ namespace teal {
                         std::get<double>(dr.box_->value_);
         }
 
-        bool is_float_ref() const { return val_or_pointed_type() == type::FLOAT; }
+        bool is_float() const { return val_or_pointed_type() == type::FLOAT; }
         float &as_float() {
             valbox &dr{deref()};
             if(!dr.box_ || !(dr.box_->type_ == type::FLOAT || dr.box_->pointed_type_ == type::FLOAT))
@@ -799,7 +796,7 @@ namespace teal {
                         std::get<float>(dr.box_->value_);
         }
 
-        bool is_bool_ref() const { return val_or_pointed_type() == type::BOOL; }
+        bool is_bool() const { return val_or_pointed_type() == type::BOOL; }
         bool &as_bool() {
             valbox &dr{deref()};
             if(!dr.box_ || !(dr.box_->type_ == type::BOOL || dr.box_->pointed_type_ == type::BOOL))
@@ -817,7 +814,7 @@ namespace teal {
                         std::get<bool>(dr.box_->value_);
         }
 
-        bool is_char_ref() const { return val_or_pointed_type() == type::CHAR; }
+        bool is_char() const { return val_or_pointed_type() == type::CHAR; }
         char &as_char() {
             valbox &dr{deref()};
             if(!dr.box_ || !(dr.box_->type_ == type::CHAR || dr.box_->pointed_type_ == type::CHAR))
@@ -835,7 +832,7 @@ namespace teal {
                         std::get<char>(dr.box_->value_);
         }
 
-        bool is_wchar_ref() const { return val_or_pointed_type() == type::WCHAR; }
+        bool is_wchar() const { return val_or_pointed_type() == type::WCHAR; }
         wchar_t &as_wchar() {
             valbox &dr{deref()};
             if(!dr.box_ || !(dr.box_->type_ == type::WCHAR || dr.box_->pointed_type_ == type::WCHAR))
@@ -853,7 +850,7 @@ namespace teal {
                         std::get<wchar_t>(dr.box_->value_);
         }
 
-        bool is_u8_ref() const { return val_or_pointed_type() == type::U8; }
+        bool is_u8() const { return val_or_pointed_type() == type::U8; }
         std::uint8_t &as_u8() {
             valbox &dr{deref()};
             if(!dr.box_ || !(dr.box_->type_ == type::U8 || dr.box_->pointed_type_ == type::U8))
@@ -871,7 +868,7 @@ namespace teal {
                         std::get<std::uint8_t>(dr.box_->value_);
         }
 
-        bool is_s8_ref() const { return val_or_pointed_type() == type::S8; }
+        bool is_s8() const { return val_or_pointed_type() == type::S8; }
         std::int8_t &as_s8() {
             valbox &dr{deref()};
             if(!dr.box_ || !(dr.box_->type_ == type::S8 || dr.box_->pointed_type_ == type::S8))
@@ -889,7 +886,7 @@ namespace teal {
                         std::get<std::int8_t>(dr.box_->value_);
         }
 
-        bool is_u16_ref() const { return val_or_pointed_type() == type::U16; }
+        bool is_u16() const { return val_or_pointed_type() == type::U16; }
         std::uint16_t &as_u16() {
             valbox &dr{deref()};
             if(!dr.box_ || !(dr.box_->type_ == type::U16 || dr.box_->pointed_type_ == type::U16))
@@ -907,7 +904,7 @@ namespace teal {
                         std::get<std::uint16_t>(dr.box_->value_);
         }
 
-        bool is_s16_ref() const { return val_or_pointed_type() == type::S16; }
+        bool is_s16() const { return val_or_pointed_type() == type::S16; }
         std::int16_t &as_s16() {
             valbox &dr{deref()};
             if(!dr.box_ || !(dr.box_->type_ == type::S16 || dr.box_->pointed_type_ == type::S16))
@@ -925,7 +922,7 @@ namespace teal {
                         std::get<std::int16_t>(dr.box_->value_);
         }
 
-        bool is_u32_ref() const { return val_or_pointed_type() == type::U32; }
+        bool is_u32() const { return val_or_pointed_type() == type::U32; }
         std::uint32_t &as_u32() {
             valbox &dr{deref()};
             if(!dr.box_ || !(dr.box_->type_ == type::U32 || dr.box_->pointed_type_ == type::U32))
@@ -943,7 +940,7 @@ namespace teal {
                         std::get<std::uint32_t>(dr.box_->value_);
         }
 
-        bool is_s32_ref() const { return val_or_pointed_type() == type::S32; }
+        bool is_s32() const { return val_or_pointed_type() == type::S32; }
         std::int32_t &as_s32() {
             valbox &dr{deref()};
             if(!dr.box_ || !(dr.box_->type_ == type::S32 || dr.box_->pointed_type_ == type::S32))
@@ -961,7 +958,7 @@ namespace teal {
                         std::get<std::int32_t>(dr.box_->value_);
         }
 
-        bool is_u64_ref() const { return val_or_pointed_type() == type::U64; }
+        bool is_u64() const { return val_or_pointed_type() == type::U64; }
         std::uint64_t &as_u64() {
             valbox &dr{deref()};
             if(!dr.box_ || !(dr.box_->type_ == type::U64 || dr.box_->pointed_type_ == type::U64))
@@ -979,7 +976,7 @@ namespace teal {
                         std::get<std::uint64_t>(dr.box_->value_);
         }
 
-        bool is_s64_ref() const { return val_or_pointed_type() == type::S64; }
+        bool is_s64() const { return val_or_pointed_type() == type::S64; }
         std::int64_t &as_s64() {
             valbox &dr{deref()};
             if(!dr.box_ || !(dr.box_->type_ == type::S64 || dr.box_->pointed_type_ == type::S64))
@@ -999,19 +996,19 @@ namespace teal {
 
         std::string func_name() const {
             valbox const &dr{deref()};
-            if(!dr.box_ || !dr.is_func_ref()) {
+            if(!dr.box_ || !dr.is_func()) {
                 throw std::runtime_error{"not a function"};
             }
             return dr.box_->func_name_;
         }
         bool is_user_func() const {
             valbox const &dr{deref()};
-            if(!dr.box_ || !dr.is_func_ref()) {
+            if(!dr.box_ || !dr.is_func()) {
                 return false;
             }
             return dr.box_->user_func_;
         }
-        bool is_func_ref() const { return val_or_pointed_type() == type::FUNC; }
+        bool is_func() const { return val_or_pointed_type() == type::FUNC; }
         std::function<valbox(std::vector<valbox> &)> const &as_func() {
             valbox &dr{deref()};
             if(!dr.box_) { throw std::runtime_error{"not a function"}; }
@@ -1023,43 +1020,43 @@ namespace teal {
             return std::get<std::function<valbox(std::vector<valbox> &)>>(dr.box_->value_);
         }
 
-        bool is_vec4_ref() const { return val_or_pointed_type() == type::VEC4; }
+        bool is_vec4() const { return val_or_pointed_type() == type::VEC4; }
         vec4_t &as_vec4() {
             valbox &dr{deref()};
             if(!dr.box_ || !(dr.box_->type_ == type::VEC4 || dr.box_->pointed_type_ == type::VEC4))
                 throw std::runtime_error{"not a vec4"};
             return dr.box_->pointed_type_ == type::VEC4 ?
-                        std::any_cast<vec4_t &>(dr.deref_ptr<any>()) :
-                        std::any_cast<vec4_t &>(std::get<any>(dr.box_->value_));
+                        std::any_cast<vec4_t &>(dr.deref_ptr<std::any>()) :
+                        std::any_cast<vec4_t &>(std::get<std::any>(dr.box_->value_));
         }
         vec4_t const &as_vec4() const {
             valbox const &dr{deref()};
             if(!dr.box_ || !(dr.box_->type_ == type::VEC4 || dr.box_->pointed_type_ == type::VEC4))
                 throw std::runtime_error{"not a vec4"};
             return dr.box_->pointed_type_ == type::VEC4 ?
-                        std::any_cast<vec4_t const &>(dr.deref_ptr<any>()) :
-                        std::any_cast<vec4_t const &>(std::get<any>(dr.box_->value_));
+                        std::any_cast<vec4_t const &>(dr.deref_ptr<std::any>()) :
+                        std::any_cast<vec4_t const &>(std::get<std::any>(dr.box_->value_));
         }
 
-        bool is_mat4_ref() const { return val_or_pointed_type() == type::MAT4; }
+        bool is_mat4() const { return val_or_pointed_type() == type::MAT4; }
         mat4_t &as_mat4() {
             valbox &dr{deref()};
             if(!dr.box_ || !(dr.box_->type_ == type::MAT4 || dr.box_->pointed_type_ == type::MAT4))
                 throw std::runtime_error{"not a mat4"};
             return dr.box_->pointed_type_ == type::MAT4 ?
-                        std::any_cast<mat4_t &>(dr.deref_ptr<any>()) :
-                        std::any_cast<mat4_t &>(std::get<any>(dr.box_->value_));
+                        std::any_cast<mat4_t &>(dr.deref_ptr<std::any>()) :
+                        std::any_cast<mat4_t &>(std::get<std::any>(dr.box_->value_));
         }
         mat4_t const &as_mat4() const {
             valbox const &dr{deref()};
             if(!dr.box_ || !(dr.box_->type_ == type::MAT4 || dr.box_->pointed_type_ == type::MAT4))
                 throw std::runtime_error{"not a mat4"};
             return dr.box_->pointed_type_ == type::MAT4 ?
-                        std::any_cast<mat4_t const &>(dr.deref_ptr<any>()) :
-                        std::any_cast<mat4_t const &>(std::get<any>(dr.box_->value_));
+                        std::any_cast<mat4_t const &>(dr.deref_ptr<std::any>()) :
+                        std::any_cast<mat4_t const &>(std::get<std::any>(dr.box_->value_));
         }
 
-        bool is_array_ref() const { return val_or_pointed_type() == type::ARRAY; }
+        bool is_array() const { return val_or_pointed_type() == type::ARRAY; }
         array_t &as_array() {
             valbox &dr{deref()};
             if(!dr.box_ || !(dr.box_->type_ == type::ARRAY || dr.box_->pointed_type_ == type::ARRAY))
@@ -1078,7 +1075,7 @@ namespace teal {
         }
 
         valbox subarray(std::size_t start = 0, std::size_t n = std::numeric_limits<std::size_t>::max()) const {
-            if(!is_array_ref()) {
+            if(!is_array()) {
                 throw std::runtime_error{"not na array"};
             }
             array_t const &a{as_array()};
@@ -1095,7 +1092,7 @@ namespace teal {
             return res;
         }
 
-        bool is_object_ref() const { return val_or_pointed_type() == type::OBJECT; }
+        bool is_object() const { return val_or_pointed_type() == type::OBJECT; }
         object_t &as_object() & {
             valbox &dr{deref()};
             if(!dr.box_ || !(dr.box_->type_ == type::OBJECT || dr.box_->pointed_type_ == type::OBJECT))
@@ -1113,8 +1110,7 @@ namespace teal {
                         std::get<object_t>(dr.box_->value_);
         }
 
-        bool is_undefined() const { return !box_ || box_->type_ == type::UNDEFINED; }
-        bool is_undefined_ref() const { return val_or_pointed_type() == type::UNDEFINED; }
+        bool is_undefined() const { return val_or_pointed_type() == type::UNDEFINED; }
 
         valbox &become_array() {
             valbox &dr{deref()};
@@ -1208,10 +1204,10 @@ namespace teal {
             auto t_of_indx{indr.val_or_pointed_type()};
             auto t{val_or_pointed_type()};
             if(t_of_indx == type::STRING) {
-                if(is_undefined_ref()) {
+                if(is_undefined()) {
                     become_object();
                 }
-                if(is_object_ref()) {
+                if(is_object()) {
                     return as_object()[indr.as_string()];
                 }
             } else if(t_of_indx == type::WSTRING) {
@@ -1342,7 +1338,7 @@ namespace teal {
             throw std::runtime_error{"operation not applicable"};
         }
 
-        valbox object_value_at(uint64_t indx) {
+        valbox object_value_at(std::size_t indx) {
             valbox &der{deref()};
             if(der.val_or_pointed_type() == type::OBJECT) {
                 object_t &o{as_object()};
@@ -1414,6 +1410,7 @@ namespace teal {
             thisref.box_->type_ = thatt;
             thisref.box_->func_name_.clear();
             thisref.box_->user_func_ = false;
+            thisref.box_->class_.clear();
             return *this;
         }
 
@@ -1694,6 +1691,125 @@ namespace teal {
 
         static type stronger_type(type t1, type t2) {
             return static_cast<int>(t1) > static_cast<int>(t2) ? t1 : t2;
+        }
+
+        valbox &operator+=(valbox const &rarg) {
+            valbox &lr{deref()};
+            valbox const &rr{rarg.deref()};
+            auto lt{lr.val_or_pointed_type()};
+            auto rt{rr.val_or_pointed_type()};
+            switch(lt) {
+                case type::BOOL: lr.as_bool() += rr.cast_to_bool(); return *this;
+                case type::CHAR: lr.as_char() += rr.cast_to_char(); return *this;
+                case type::S8: lr.as_s8() += rr.cast_to_s8(); return *this;
+                case type::U8: lr.as_u8() += rr.cast_to_u8(); return *this;
+                case type::S16: lr.as_s16() += rr.cast_to_s16(); return *this;
+                case type::U16: lr.as_u16() += rr.cast_to_u16(); return *this;
+                case type::WCHAR: lr.as_wchar() += rr.cast_to_wchar(); return *this;
+                case type::S32: lr.as_s32() += rr.cast_to_s32(); return *this;
+                case type::U32: lr.as_u32() += rr.cast_to_u32(); return *this;
+                case type::S64: lr.as_s64() += rr.cast_to_s64(); return *this;
+                case type::U64: lr.as_u64() += rr.cast_to_u64(); return *this;
+                case type::FLOAT: lr.as_float() += rr.cast_to_float(); return *this;
+                case type::DOUBLE: lr.as_double() += rr.cast_to_double(); return *this;
+                case type::LONG_DOUBLE: lr.as_long_double() += rr.cast_to_double(); return *this;
+                case type::VEC4: {
+                        if(rr.is_numeric()) {
+                            lr.as_vec4() += rr.cast_to_double(); return *this;
+                        } else if(rr.is_vec4()) {
+                            lr.as_vec4() += rr.as_vec4(); return *this;
+                        }
+                    }
+                    break;
+                case type::MAT4: {
+                        if(rr.is_numeric()) {
+                            lr.as_mat4() += rr.cast_to_double(); return *this;
+                        } else if(rr.is_mat4()) {
+                            lr.as_mat4() += rr.as_mat4(); return *this;
+                        }
+                    }
+                    break;
+                case type::POINTER:
+                    break;
+                case type::FUNC:
+                    break;
+                case type::ARRAY:
+                    switch(rt) {
+                        case type::BOOL:
+                        case type::CHAR:
+                        case type::S8:
+                        case type::U8:
+                        case type::S16:
+                        case type::U16:
+                        case type::WCHAR:
+                        case type::S32:
+                        case type::U32:
+                        case type::S64:
+                        case type::U64:
+                        case type::FLOAT:
+                        case type::DOUBLE:
+                        case type::LONG_DOUBLE:
+                        case type::VEC4:
+                        case type::MAT4:
+                        case type::POINTER:
+                        case type::CLASS:
+                        case type::FUNC:
+                        case type::OBJECT:
+                        case type::STRING:
+                        case type::WSTRING:
+                        case type::UNDEFINED:
+                        case type::VALBOX:
+                            lr.as_array().push_back(rr.clone()); return *this;
+                        case type::ARRAY:
+                            for(auto &&v: rr.as_array()) {
+                                lr.as_array().push_back(v.clone());
+                            }
+                            return *this;
+                        default:
+                            break;
+                    }
+                    break;
+                case type::OBJECT:
+                    switch(rt) {
+                        case type::STRING: {
+                                json j{json::deserialize(rr.as_string())};
+                                valbox vb{valbox_no_initialize::dont_do_it};
+                                vb.from_json(j);
+                                if(vb.is_object()) {
+                                    for(auto &&p: vb.as_object()) {
+                                        lr.as_object()[p.first] = p.second.clone();
+                                    }
+                                }
+                            }
+                            return *this;
+                        case type::WSTRING: {
+                                json j{json::deserialize(rr.as_wstring())};
+                                valbox vb{valbox_no_initialize::dont_do_it};
+                                vb.from_json(j);
+                                if(vb.is_object()) {
+                                    for(auto &&p: vb.as_object()) {
+                                        lr.as_object()[p.first] = p.second.clone();
+                                    }
+                                }
+                                return *this;
+                            }
+                        case type::OBJECT: {
+                                for(auto &&p: rr.as_object()) {
+                                    lr.as_object()[p.first] = p.second.clone();
+                                }
+                                return *this;
+                            }
+                        default:
+                            break;
+                    }
+                    break;
+                case type::STRING: lr.as_string() += rr.cast_to_string(); return *this;
+                case type::WSTRING: lr.as_wstring() += rr.cast_to_wstring(); return *this;
+                case type::UNDEFINED: lr.assign(rr); return *this;
+                default:
+                    break;
+            }
+            throw std::runtime_error{"operation not applicable"};
         }
 
         friend valbox operator+(valbox const &larg, valbox const &rarg) {
@@ -2872,6 +2988,62 @@ namespace teal {
             return !(lr == rr);
         }
 
+        valbox &operator-=(valbox const &rarg) {
+            valbox &lr{deref()};
+            valbox const &rr{rarg.deref()};
+            auto lt{lr.val_or_pointed_type()};
+            auto rt{rr.val_or_pointed_type()};
+            switch(lt) {
+                case type::BOOL: lr.as_bool() -= rr.cast_to_bool(); return *this;
+                case type::CHAR: lr.as_char() -= rr.cast_to_char(); return *this;
+                case type::S8: lr.as_s8() -= rr.cast_to_s8(); return *this;
+                case type::U8: lr.as_u8() -= rr.cast_to_u8(); return *this;
+                case type::S16: lr.as_s16() -= rr.cast_to_s16(); return *this;
+                case type::U16: lr.as_u16() -= rr.cast_to_u16(); return *this;
+                case type::WCHAR: lr.as_wchar() -= rr.cast_to_wchar(); return *this;
+                case type::S32: lr.as_s32() -= rr.cast_to_s32(); return *this;
+                case type::U32: lr.as_u32() -= rr.cast_to_u32(); return *this;
+                case type::S64: lr.as_s64() -= rr.cast_to_s64(); return *this;
+                case type::U64: lr.as_u64() -= rr.cast_to_u64(); return *this;
+                case type::FLOAT: lr.as_float() -= rr.cast_to_float(); return *this;
+                case type::DOUBLE: lr.as_double() -= rr.cast_to_double(); return *this;
+                case type::LONG_DOUBLE: lr.as_long_double() -= rr.cast_to_double(); return *this;
+                case type::VEC4: {
+                        if(rr.is_numeric()) {
+                            lr.as_vec4() -= rr.cast_to_double(); return *this;
+                        } else if(rr.is_vec4()) {
+                            lr.as_vec4() -= rr.as_vec4(); return *this;
+                        }
+                    }
+                    break;
+                case type::MAT4: {
+                        if(rr.is_numeric()) {
+                            lr.as_mat4() += -rr.cast_to_double(); return *this;
+                        } else if(rr.is_mat4()) {
+                            lr.as_mat4() += -rr.as_mat4(); return *this;
+                        }
+                    }
+                    break;
+                case type::POINTER:
+                    break;
+                case type::FUNC:
+                    break;
+                case type::ARRAY:
+                    break;
+                case type::OBJECT:
+                    break;
+                case type::STRING:
+                    break;
+                case type::WSTRING:
+                    break;
+                case type::UNDEFINED:
+                    break;
+                default:
+                    break;
+            }
+            throw std::runtime_error{"operation not applicable"};
+        }
+
         friend valbox operator-(valbox const &lr, valbox const &rr) {
             auto lt{lr.val_or_pointed_type()};
             auto rt{rr.val_or_pointed_type()};
@@ -3402,6 +3574,61 @@ namespace teal {
                     break;
                 case type::VALBOX:
                     break;
+                default:
+                    break;
+            }
+            throw std::runtime_error{"operation not applicable"};
+        }
+
+        valbox &operator*=(valbox const &rarg) {
+            valbox &lr{deref()};
+            valbox const &rr{rarg.deref()};
+            auto lt{lr.val_or_pointed_type()};
+            auto rt{rr.val_or_pointed_type()};
+            switch(lt) {
+                case type::BOOL: lr.as_bool() *= rr.cast_to_bool(); return *this;
+                case type::CHAR: lr.as_char() *= rr.cast_to_char(); return *this;
+                case type::S8: lr.as_s8() *= rr.cast_to_s8(); return *this;
+                case type::U8: lr.as_u8() *= rr.cast_to_u8(); return *this;
+                case type::S16: lr.as_s16() *= rr.cast_to_s16(); return *this;
+                case type::U16: lr.as_u16() *= rr.cast_to_u16(); return *this;
+                case type::WCHAR: lr.as_wchar() *= rr.cast_to_wchar(); return *this;
+                case type::S32: lr.as_s32() *= rr.cast_to_s32(); return *this;
+                case type::U32: lr.as_u32() *= rr.cast_to_u32(); return *this;
+                case type::S64: lr.as_s64() *= rr.cast_to_s64(); return *this;
+                case type::U64: lr.as_u64() *= rr.cast_to_u64(); return *this;
+                case type::FLOAT: lr.as_float() *= rr.cast_to_float(); return *this;
+                case type::DOUBLE: lr.as_double() *= rr.cast_to_double(); return *this;
+                case type::LONG_DOUBLE: lr.as_long_double() *= rr.cast_to_double(); return *this;
+                case type::VEC4: {
+                        if(rr.is_numeric()) {
+                            lr.as_vec4() *= rr.cast_to_double(); return *this;
+                        } else if(rr.is_vec4()) {
+                            lr.as_vec4() = lr.as_vec4() * rr.as_vec4(); return *this;
+                        } else if(rr.is_mat4()) {
+                            lr.as_vec4() = lr.as_vec4() * rr.as_mat4(); return *this;
+                        }
+                    }
+                    break;
+                case type::MAT4: {
+                        if(rr.is_numeric()) {
+                            lr.as_mat4() *= rr.cast_to_double(); return *this;
+                        } else if(rr.is_mat4()) {
+                            lr.as_mat4() *= rr.as_mat4(); return *this;
+                        }
+                    }
+                    break;
+                case type::POINTER:
+                    break;
+                case type::FUNC:
+                    break;
+                case type::ARRAY:
+                    break;
+                case type::OBJECT:
+                    break;
+                case type::STRING: lr.as_string() += rr.cast_to_string(); return *this;
+                case type::WSTRING: lr.as_wstring() += rr.cast_to_wstring(); return *this;
+                case type::UNDEFINED: lr.assign(rr); return *this;
                 default:
                     break;
             }
@@ -6557,32 +6784,32 @@ namespace teal {
         }
 
         json to_json() const {
-            if(is_undefined_ref()) {
+            if(is_undefined()) {
                 return json{};
-            } else if(is_string_ref()) {
+            } else if(is_string()) {
                 return json{as_string()};
-            } else if(is_bool_ref()) {
+            } else if(is_bool()) {
                 return json{as_bool()};
-            } else if(is_char_ref()) {
+            } else if(is_char()) {
                 std::string s{}; s += as_char();
                 return json{s};
-            } else if(is_wchar_ref()) {
+            } else if(is_wchar()) {
                 std::wstring s{}; s += as_wchar();
                 return json{s};
-            } else if(is_wstring_ref()) {
+            } else if(is_wstring()) {
                 return json{as_wstring()};
             } else if(is_any_int_number()) {
                 return json{cast_num_to_num<std::int64_t>()};
             } else if(is_any_fp_number()) {
                 return json{cast_num_to_num<long double>()};
-            } else if(is_array_ref()) {
+            } else if(is_array()) {
                 json res{};
                 res.become_array();
                 for(auto &&v: as_array()) {
                     res.push_back(v.to_json());
                 }
                 return res;
-            } else if(is_object_ref()) {
+            } else if(is_object()) {
                 json res{};
                 res.become_object();
                 object_t const &o{as_object()};
@@ -6854,65 +7081,65 @@ namespace teal {
 
             res["type"] = type_to_str(thisref.val_or_pointed_type());
             json &v{res["value"]};
-            if(thisref.is_undefined_ref()) {
+            if(thisref.is_undefined()) {
                 v = json{};
-            } else if(thisref.is_string_ref()) {
+            } else if(thisref.is_string()) {
                 v = thisref.as_string();
-            } else if(thisref.is_bool_ref()) {
+            } else if(thisref.is_bool()) {
                 v = thisref.as_bool();
-            } else if(thisref.is_char_ref()) {
+            } else if(thisref.is_char()) {
                 std::string s{}; s += thisref.as_char(); v = s;
-            } else if(thisref.is_wchar_ref()) {
+            } else if(thisref.is_wchar()) {
                 std::wstring s{}; s += thisref.as_wchar(); v = s;
-            } else if(thisref.is_wstring_ref()) {
+            } else if(thisref.is_wstring()) {
                 v = thisref.as_wstring();
-            } else if(thisref.is_s8_ref()) {
+            } else if(thisref.is_s8()) {
                 v = thisref.as_s8();
-            } else if(thisref.is_u8_ref()) {
+            } else if(thisref.is_u8()) {
                 v = thisref.as_u8();
-            } else if(thisref.is_s16_ref()) {
+            } else if(thisref.is_s16()) {
                 v = thisref.as_s16();
-            } else if(thisref.is_u16_ref()) {
+            } else if(thisref.is_u16()) {
                 v = thisref.as_u16();
-            } else if(thisref.is_s32_ref()) {
+            } else if(thisref.is_s32()) {
                 v = thisref.as_s32();
-            } else if(thisref.is_u32_ref()) {
+            } else if(thisref.is_u32()) {
                 v = thisref.as_u32();
-            } else if(thisref.is_s64_ref()) {
+            } else if(thisref.is_s64()) {
                 v = thisref.as_s64();
-            } else if(thisref.is_u64_ref()) {
+            } else if(thisref.is_u64()) {
                 v = thisref.as_u64();
             } else if(thisref.is_any_fp_number()) {
                 v = thisref.cast_to_long_double();
-            } else if(thisref.is_vec4_ref()) {
+            } else if(thisref.is_vec4()) {
                 v[0] = thisref.as_vec4()[0];
                 v[1] = thisref.as_vec4()[1];
                 v[2] = thisref.as_vec4()[2];
                 v[3] = thisref.as_vec4()[3];
-            } else if(thisref.is_mat4_ref()) {
+            } else if(thisref.is_mat4()) {
                 mat4_t const &m{thisref.as_mat4()};
                 v[0][0] = m[0][0]; v[0][1] = m[0][1]; v[0][2] = m[0][2]; v[0][3] = m[0][3];
                 v[1][0] = m[1][0]; v[1][1] = m[1][1]; v[1][2] = m[1][2]; v[1][3] = m[1][3];
                 v[2][0] = m[2][0]; v[2][1] = m[2][1]; v[2][2] = m[2][2]; v[2][3] = m[2][3];
                 v[3][0] = m[3][0]; v[3][1] = m[3][1]; v[3][2] = m[3][2]; v[3][3] = m[3][3];
-            } else if(thisref.is_array_ref()) {
+            } else if(thisref.is_array()) {
                 v.become_array();
                 for(auto &&val: thisref.as_array()) {
                     v.push_back(val.serialize(helper));
                 }
-            } else if(thisref.is_object_ref()) {
+            } else if(thisref.is_object()) {
                 v.become_object();
                 object_t const &o{thisref.as_object()};
                 for(auto &&p: o) {
                     v[p.first] = p.second.serialize(helper);
                 }
-            } else if(thisref.is_class_ref()) {
+            } else if(thisref.is_class()) {
                 auto s{helper->obj_svc_[thisref.class_name()].serializer(*this)};
                 if(s) {
                     res["class"] = thisref.class_name();
                     v = *s;
                 }
-            } else if(thisref.is_func_ref()) {
+            } else if(thisref.is_func()) {
                 res["is_user_func"] = thisref.is_user_func();
                 v = thisref.func_name();
             } else if(thisref.as_valbox_ptr() != nullptr) {
@@ -7181,7 +7408,7 @@ namespace teal {
                 case type::FUNC: {
                        json const &v{jv["value"]};
                         valbox fn{helper->find_func(v.as_string())};
-                        if(fn.is_func_ref()) {
+                        if(fn.is_func()) {
                             if(!vr.box_) {
                                 vr.box_ = std::move(fn.box_);
                             } else {

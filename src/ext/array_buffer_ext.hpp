@@ -34,9 +34,9 @@ namespace teal {
                 if(args.size() == 0) {
                     return teal::valbox{std::make_shared<array_buffer>(), "array_buffer"};
                 } else if(args.size() == 1) {
-                    if(args[0].is_string_ref()) {
+                    if(args[0].is_string()) {
                         return teal::valbox{std::make_shared<array_buffer>(args[0].as_string()), "array_buffer"};
-                    } else if(args[0].is_class_ref() && args[0].class_name() == "array_buffer") {
+                    } else if(args[0].is_class() && args[0].class_name() == "array_buffer") {
                         return teal::valbox{std::make_shared<array_buffer>(*TEALTHIS(args, std::shared_ptr<array_buffer>)), "array_buffer"};
                     } else if(args[0].is_numeric()) {
                         std::shared_ptr<array_buffer> res{std::make_shared<array_buffer>()};
@@ -48,26 +48,26 @@ namespace teal {
             });
             rt->add_function("as_array_buffer", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                if(args[0].is_string_ref()) {
+                if(args[0].is_string()) {
                     return teal::valbox{std::make_shared<array_buffer>(args[0].as_string()), "array_buffer"};
-                } else if(args[0].is_class_ref() && args[0].class_name() == "array_buffer") {
+                } else if(args[0].is_class() && args[0].class_name() == "array_buffer") {
                     return teal::valbox{std::make_shared<array_buffer>(*TEALTHIS(args, std::shared_ptr<array_buffer>)), "array_buffer"};
                 } else if(args[0].is_numeric()) {
                     std::shared_ptr<array_buffer> res{std::make_shared<array_buffer>()};
-                    if(args[0].is_bool_ref()) { res->assign_from_value(args[0].as_bool()); } else
-                    if(args[0].is_char_ref()) { res->assign_from_value(args[0].as_char()); } else
-                    if(args[0].is_wchar_ref()) { res->assign_from_value(args[0].as_wchar()); } else
-                    if(args[0].is_s8_ref()) { res->assign_from_value(args[0].as_s8()); } else
-                    if(args[0].is_u8_ref()) { res->assign_from_value(args[0].as_u8()); } else
-                    if(args[0].is_s16_ref()) { res->assign_from_value(args[0].as_s16()); } else
-                    if(args[0].is_u16_ref()) { res->assign_from_value(args[0].as_u16()); } else
-                    if(args[0].is_s32_ref()) { res->assign_from_value(args[0].as_s32()); } else
-                    if(args[0].is_u32_ref()) { res->assign_from_value(args[0].as_u32()); } else
-                    if(args[0].is_s64_ref()) { res->assign_from_value(args[0].as_s64()); } else
-                    if(args[0].is_u64_ref()) { res->assign_from_value(args[0].as_u64()); } else
-                    if(args[0].is_float_ref()) { res->assign_from_value(args[0].as_float()); } else
-                    if(args[0].is_double_ref()) { res->assign_from_value(args[0].as_double()); } else
-                    if(args[0].is_long_double_ref()) { res->assign_from_value(args[0].as_long_double()); } else {
+                    if(args[0].is_bool()) { res->assign_from_value(args[0].as_bool()); } else
+                    if(args[0].is_char()) { res->assign_from_value(args[0].as_char()); } else
+                    if(args[0].is_wchar()) { res->assign_from_value(args[0].as_wchar()); } else
+                    if(args[0].is_s8()) { res->assign_from_value(args[0].as_s8()); } else
+                    if(args[0].is_u8()) { res->assign_from_value(args[0].as_u8()); } else
+                    if(args[0].is_s16()) { res->assign_from_value(args[0].as_s16()); } else
+                    if(args[0].is_u16()) { res->assign_from_value(args[0].as_u16()); } else
+                    if(args[0].is_s32()) { res->assign_from_value(args[0].as_s32()); } else
+                    if(args[0].is_u32()) { res->assign_from_value(args[0].as_u32()); } else
+                    if(args[0].is_s64()) { res->assign_from_value(args[0].as_s64()); } else
+                    if(args[0].is_u64()) { res->assign_from_value(args[0].as_u64()); } else
+                    if(args[0].is_float()) { res->assign_from_value(args[0].as_float()); } else
+                    if(args[0].is_double()) { res->assign_from_value(args[0].as_double()); } else
+                    if(args[0].is_long_double()) { res->assign_from_value(args[0].as_long_double()); } else {
                         throw std::runtime_error{"invalid argument(s)"};
                     }
                     return teal::valbox{res, "array_buffer"};
@@ -95,41 +95,41 @@ namespace teal {
             });
             rt->add_method("array_buffer", "assign", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                if(args[1].is_string_ref()) {
+                if(args[1].is_string()) {
                     TEALTHIS(args, std::shared_ptr<array_buffer>)->assign(args[1].as_string());
                     return true;
-                } else if(args[1].is_class_ref() && args[1].class_name() == "array_buffer") {
+                } else if(args[1].is_class() && args[1].class_name() == "array_buffer") {
                     TEALTHIS(args, std::shared_ptr<array_buffer>)->assign(*TEALCLASSARG(args, 1, std::shared_ptr<array_buffer>));
                     return true;
                 } else if(args[1].is_any_int_number()) {
-                    if(args[1].is_char_ref()) {
+                    if(args[1].is_char()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->assign(args[1].as_char());
                         return true;
-                    } else if(args[1].is_wchar_ref()) {
+                    } else if(args[1].is_wchar()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->assign(args[1].as_wchar());
                         return true;
-                    } else if(args[1].is_s8_ref()) {
+                    } else if(args[1].is_s8()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->assign(args[1].as_s8());
                         return true;
-                    } else if(args[1].is_u8_ref()) {
+                    } else if(args[1].is_u8()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->assign(args[1].as_u8());
                         return true;
-                    } else if(args[1].is_s16_ref()) {
+                    } else if(args[1].is_s16()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->assign(args[1].as_s16());
                         return true;
-                    } else if(args[1].is_u16_ref()) {
+                    } else if(args[1].is_u16()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->assign(args[1].as_u16());
                         return true;
-                    } else if(args[1].is_s32_ref()) {
+                    } else if(args[1].is_s32()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->assign(args[1].as_s32());
                         return true;
-                    } else if(args[1].is_u32_ref()) {
+                    } else if(args[1].is_u32()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->assign(args[1].as_u32());
                         return true;
-                    } else if(args[1].is_s64_ref()) {
+                    } else if(args[1].is_s64()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->assign(args[1].as_s64());
                         return true;
-                    } else if(args[1].is_u64_ref()) {
+                    } else if(args[1].is_u64()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->assign(args[1].as_u64());
                         return true;
                     }
@@ -152,53 +152,53 @@ namespace teal {
             });
             rt->add_method("array_buffer", "append", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                if(args[1].is_string_ref()) {
+                if(args[1].is_string()) {
                     TEALTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_string());
                     return true;
-                } else if(args[1].is_class_ref() && args[1].class_name() == "array_buffer") {
+                } else if(args[1].is_class() && args[1].class_name() == "array_buffer") {
                     TEALTHIS(args, std::shared_ptr<array_buffer>)->append(*TEALCLASSARG(args, 1, std::shared_ptr<array_buffer>));
                     return true;
                 } else if(args[1].is_numeric()) {
-                    if(args[1].is_bool_ref()) {
+                    if(args[1].is_bool()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_bool());
                         return true;
-                    } else if(args[1].is_char_ref()) {
+                    } else if(args[1].is_char()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_char());
                         return true;
-                    } else if(args[1].is_wchar_ref()) {
+                    } else if(args[1].is_wchar()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_wchar());
                         return true;
-                    } else if(args[1].is_s8_ref()) {
+                    } else if(args[1].is_s8()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_s8());
                         return true;
-                    } else if(args[1].is_u8_ref()) {
+                    } else if(args[1].is_u8()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_u8());
                         return true;
-                    } else if(args[1].is_s16_ref()) {
+                    } else if(args[1].is_s16()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_s16());
                         return true;
-                    } else if(args[1].is_u16_ref()) {
+                    } else if(args[1].is_u16()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_u16());
                         return true;
-                    } else if(args[1].is_s32_ref()) {
+                    } else if(args[1].is_s32()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_s32());
                         return true;
-                    } else if(args[1].is_u32_ref()) {
+                    } else if(args[1].is_u32()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_u32());
                         return true;
-                    } else if(args[1].is_s64_ref()) {
+                    } else if(args[1].is_s64()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_s64());
                         return true;
-                    } else if(args[1].is_u64_ref()) {
+                    } else if(args[1].is_u64()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_u64());
                         return true;
-                    } else if(args[1].is_float_ref()) {
+                    } else if(args[1].is_float()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_float());
                         return true;
-                    } else if(args[1].is_double_ref()) {
+                    } else if(args[1].is_double()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_double());
                         return true;
-                    } else if(args[1].is_long_double_ref()) {
+                    } else if(args[1].is_long_double()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->append(args[1].as_long_double());
                         return true;
                     }
@@ -207,50 +207,50 @@ namespace teal {
             });
             rt->add_method("array_buffer", "put_at", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 3)
-                if(args[1].is_string_ref()) {
+                if(args[1].is_string()) {
                     TEALTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_string(), args[2].cast_to_size_t());
                     return true;
                 } else if(args[1].is_numeric()) {
-                    if(args[1].is_bool_ref()) {
+                    if(args[1].is_bool()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_bool(), args[2].cast_to_size_t());
                         return true;
-                    } else if(args[1].is_char_ref()) {
+                    } else if(args[1].is_char()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_char(), args[2].cast_to_size_t());
                         return true;
-                    } else if(args[1].is_wchar_ref()) {
+                    } else if(args[1].is_wchar()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_wchar(), args[2].cast_to_size_t());
                         return true;
-                    } else if(args[1].is_s8_ref()) {
+                    } else if(args[1].is_s8()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_s8(), args[2].cast_to_size_t());
                         return true;
-                    } else if(args[1].is_u8_ref()) {
+                    } else if(args[1].is_u8()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_u8(), args[2].cast_to_size_t());
                         return true;
-                    } else if(args[1].is_s16_ref()) {
+                    } else if(args[1].is_s16()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_s16(), args[2].cast_to_size_t());
                         return true;
-                    } else if(args[1].is_u16_ref()) {
+                    } else if(args[1].is_u16()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_u16(), args[2].cast_to_size_t());
                         return true;
-                    } else if(args[1].is_s32_ref()) {
+                    } else if(args[1].is_s32()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_s32(), args[2].cast_to_size_t());
                         return true;
-                    } else if(args[1].is_u32_ref()) {
+                    } else if(args[1].is_u32()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_u32(), args[2].cast_to_size_t());
                         return true;
-                    } else if(args[1].is_s64_ref()) {
+                    } else if(args[1].is_s64()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_s64(), args[2].cast_to_size_t());
                         return true;
-                    } else if(args[1].is_u64_ref()) {
+                    } else if(args[1].is_u64()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_u64(), args[2].cast_to_size_t());
                         return true;
-                    } else if(args[1].is_float_ref()) {
+                    } else if(args[1].is_float()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_float(), args[2].cast_to_size_t());
                         return true;
-                    } else if(args[1].is_double_ref()) {
+                    } else if(args[1].is_double()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_double(), args[2].cast_to_size_t());
                         return true;
-                    } else if(args[1].is_long_double_ref()) {
+                    } else if(args[1].is_long_double()) {
                         TEALTHIS(args, std::shared_ptr<array_buffer>)->put_at(args[1].as_long_double(), args[2].cast_to_size_t());
                         return true;
                     }

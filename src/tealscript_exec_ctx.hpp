@@ -138,7 +138,11 @@ namespace teal {
         }
 
         bool some_jump_requested() const {
-            return return_requested_ != 0 || break_requested_ != 0 || continue_requested_ != 0;
+            return return_requested_ != 0 || break_requested_ != 0 || continue_requested_ != 0 || rt_ptr_->termination_requested();
+        }
+
+        bool termination_requested() const {
+            return rt_ptr_->termination_requested();
         }
 
         void clear_all_jumps_request() {
@@ -301,9 +305,7 @@ namespace teal {
                 objtyp = obj_type::user_fun;
                 return valbox{rt_ptr_->user_function_selector(), name, true};
             }
-            throw teal_identifier_not_found{l, c,
-                std::string{"identifier \""} + name + "\" not found"
-            };
+            throw teal_identifier_not_found{l, c, std::string{"identifier \""} + name + "\" not found"};
         }
 
         bool is_rt_func_selector(valbox const &fn) const {

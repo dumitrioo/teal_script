@@ -33,7 +33,11 @@ namespace teal {
         virtual void clear_output(std::string const &) = 0;
         virtual void clear_inputs() = 0;
         virtual void clear_outputs() = 0;
-
+        virtual bool programmatic_termination_enabled() const = 0;
+        virtual void set_exit_status(int) = 0;
+        virtual void terminate() = 0;
+        virtual void unterminate() = 0;
+        virtual bool termination_requested() const = 0;
 
         virtual void add_object_serializer(
             std::string const &,

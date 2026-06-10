@@ -1561,15 +1561,15 @@ namespace teal {
                 if(
                     args.size() == 2 &&
                     (args[0].is_any_fp_number() || args[0].is_any_int_number()) &&
-                    (args[1].is_array_ref() || args[1].is_vec4_ref())
+                    (args[1].is_array() || args[1].is_vec4())
                 ) {
                     ang = args[0].cast_to_double();
-                    if(args[1].is_array_ref()) {
+                    if(args[1].is_array()) {
                         auto const &a{args[1].as_array()};
                         if(a.size() > 0) { vx = a.at(0).cast_to_double(); }
                         if(a.size() > 1) { vy = a.at(1).cast_to_double(); }
                         if(a.size() > 2) { vz = a.at(2).cast_to_double(); }
-                    } else if(args[1].is_vec4_ref()) {
+                    } else if(args[1].is_vec4()) {
                         auto const &a{args[1].as_vec4()};
                         vx = a[0];
                         vy = a[1];
@@ -1614,7 +1614,7 @@ namespace teal {
 
             rt->add_function("spheric_to_cartesian", TEALFUN(args) {
                 if(args.size() == 1) {
-                    if(args[0].is_array_ref()) {
+                    if(args[0].is_array()) {
                         double vx{};
                         double vy{};
                         double vz{};
@@ -1623,7 +1623,7 @@ namespace teal {
                         if(a.size() > 1) { vy = a.at(1).cast_to_double(); }
                         if(a.size() > 2) { vz = a.at(2).cast_to_double(); }
                         return teal::math::spheric_to_cartesian<double>(vx, vy, vz);
-                    } else if(args[0].is_vec4_ref()) {
+                    } else if(args[0].is_vec4()) {
                         auto const &a{args[0].as_vec4()};
                         return teal::math::spheric_to_cartesian<double>(a.x(), a.y(), a.z());
                     }
@@ -1638,7 +1638,7 @@ namespace teal {
             });
             rt->add_function("cartesian_to_spheric", TEALFUN(args) {
                 if(args.size() == 1) {
-                    if(args[0].is_array_ref()) {
+                    if(args[0].is_array()) {
                         double vx{};
                         double vy{};
                         double vz{};
@@ -1647,7 +1647,7 @@ namespace teal {
                         if(a.size() > 1) { vy = a.at(1).cast_to_double(); }
                         if(a.size() > 2) { vz = a.at(2).cast_to_double(); }
                         return teal::math::cartesian_to_spheric<double>(vx, vy, vz);
-                    } else if(args[0].is_vec4_ref()) {
+                    } else if(args[0].is_vec4()) {
                         auto const &a{args[0].as_vec4()};
                         return teal::math::cartesian_to_spheric<double>(a.x(), a.y(), a.z());
                     }
@@ -1675,13 +1675,13 @@ namespace teal {
                 double dx{0.0};
                 double dy{0.0};
                 double dz{0.0};
-                if(args.size() == 1 && (args[0].is_array_ref() || args[0].is_vec4_ref())) {
-                    if(args[0].is_array_ref()) {
+                if(args.size() == 1 && (args[0].is_array() || args[0].is_vec4())) {
+                    if(args[0].is_array()) {
                         auto const &a{args[0].as_array()};
                         if(a.size() > 0) { dx = a.at(0).cast_to_double(); }
                         if(a.size() > 1) { dy = a.at(1).cast_to_double(); }
                         if(a.size() > 2) { dz = a.at(2).cast_to_double(); }
-                    } else if(args[0].is_vec4_ref()) {
+                    } else if(args[0].is_vec4()) {
                         auto const &a{args[0].as_vec4()};
                         dx = a[0];
                         dy = a[1];

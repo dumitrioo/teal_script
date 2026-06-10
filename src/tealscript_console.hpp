@@ -58,7 +58,7 @@ namespace teal {
             }
             for(auto &&v: args) {
                 auto printed{false};
-                if(v.is_class_ref()) {
+                if(v.is_class()) {
                     obj_services const *osvc{rt_->get_object_services(v.class_name())};
                     if(osvc != nullptr) {
                         auto srgngr{osvc->stringify};
@@ -88,7 +88,7 @@ namespace teal {
             }
             for(auto &&v: args) {
                 auto printed{false};
-                if(v.is_class_ref()) {
+                if(v.is_class()) {
                     obj_services const *osvc{rt_->get_object_services(v.class_name())};
                     if(osvc != nullptr) {
                         auto srgngr{osvc->stringify};
@@ -137,7 +137,7 @@ namespace teal {
             out << str_util::from_utf8(timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
             for(auto &&v: args) {
                 auto printed{false};
-                if(v.is_class_ref()) {
+                if(v.is_class()) {
                     obj_services const *osvc{rt_->get_object_services(v.class_name())};
                     if(osvc != nullptr) {
                         auto srgngr{osvc->stringify};
@@ -172,7 +172,7 @@ namespace teal {
             out << str_util::from_utf8(timespec_wrapper::now().as_iso_8601_str()) << " " << type << ": ";
             for(auto &&v: args) {
                 auto printed{false};
-                if(v.is_class_ref()) {
+                if(v.is_class()) {
                     obj_services const *osvc{rt_->get_object_services(v.class_name())};
                     if(osvc != nullptr) {
                         auto srgngr{osvc->stringify};
