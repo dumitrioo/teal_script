@@ -10,7 +10,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 endif()
 
-set(CMAKE_CXX_COMPILER g++)
+set(CMAKE_CXX_COMPILER c++)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 20)
@@ -19,7 +19,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -ftree-vectorize -mavx2 -fstrict-aliasing -Wall -Wextra -rdynamic -fPIC -Wno-maybe-uninitialized -Wno-unused-function -Wno-unused-parameter -Wl,-rpath,.")
 
-add_definitions(-DTEAL_USE_CUSTOM_SHARED_MUTEX)
+#add_definitions(-DTEAL_USE_CUSTOM_SHARED_MUTEX)
 add_definitions(-DRW_MUTEX_PRIORITIES)
 
 add_subdirectory(examples/interpreter)
