@@ -3626,9 +3626,13 @@ namespace teal {
                     break;
                 case type::OBJECT:
                     break;
-                case type::STRING: lr.as_string() += rr.cast_to_string(); return *this;
-                case type::WSTRING: lr.as_wstring() += rr.cast_to_wstring(); return *this;
-                case type::UNDEFINED: lr.assign(rr); return *this;
+                case type::STRING: break;
+                case type::WSTRING: break;
+                case type::UNDEFINED:
+                    if(is_numeric_type(rt)) {
+                        lr.become_type(rt); return *this;
+                    }
+                    break;
                 default:
                     break;
             }
@@ -4164,6 +4168,106 @@ namespace teal {
                     }
                     break;
                 case type::VALBOX:
+                    break;
+                default:
+                    break;
+            }
+            throw std::runtime_error{"operation not applicable"};
+        }
+
+        valbox &operator/=(valbox const &rarg) {
+            valbox &lr{deref()};
+            valbox const &rr{rarg.deref()};
+            auto lt{lr.val_or_pointed_type()};
+            auto rt{rr.val_or_pointed_type()};
+            switch(lt) {
+                case type::BOOL: {
+                        auto dvzr{rr.cast_to_bool() };
+                        if(dvzr == 0) { throw std::runtime_error{"integer division by zero"}; } else { lr.as_bool() /= rr.cast_to_bool(); return *this; }
+                    }
+                    break;
+                case type::CHAR: {
+                        auto dvzr{rr.cast_to_char() };
+                        if(dvzr == 0) { throw std::runtime_error{"integer division by zero"}; } else { lr.as_char() /= rr.cast_to_char(); return *this; }
+                    }
+                    break;
+                case type::S8: {
+                        auto dvzr{rr.cast_to_s8()};
+                        if(dvzr == 0) { throw std::runtime_error{"integer division by zero"}; } else { lr.as_s8() /= rr.cast_to_s8(); return *this; }
+                    }
+                    break;
+                case type::U8: {
+                        auto dvzr{rr.cast_to_u8()};
+                        if(dvzr == 0) { throw std::runtime_error{"integer division by zero"}; } else { lr.as_u8() /= rr.cast_to_u8(); return *this; }
+                    }
+                    break;
+                case type::S16: {
+                        auto dvzr{rr.cast_to_s16()};
+                        if(dvzr == 0) { throw std::runtime_error{"integer division by zero"}; } else { lr.as_s16() /= rr.cast_to_s16(); return *this; }
+                    }
+                    break;
+                case type::U16: {
+                        auto dvzr{rr.cast_to_u16()};
+                        if(dvzr == 0) { throw std::runtime_error{"integer division by zero"}; } else { lr.as_u16() /= rr.cast_to_u16(); return *this; }
+                    }
+                    break;
+                case type::WCHAR: {
+                        auto dvzr{rr.cast_to_wchar()};
+                        if(dvzr == 0) { throw std::runtime_error{"integer division by zero"}; } else { lr.as_wchar() /= rr.cast_to_wchar(); return *this; }
+                    }
+                    break;
+                case type::S32: {
+                        auto dvzr{rr.cast_to_s32()};
+                        if(dvzr == 0) { throw std::runtime_error{"integer division by zero"}; } else { lr.as_s32() /= rr.cast_to_s32(); return *this; }
+                    }
+                    break;
+                case type::U32: {
+                        auto dvzr{rr.cast_to_u32()};
+                        if(dvzr == 0) { throw std::runtime_error{"integer division by zero"}; } else { lr.as_u32() /= rr.cast_to_u32(); return *this; }
+                    }
+                    break;
+                case type::S64: {
+                        auto dvzr{rr.cast_to_s64()};
+                        if(dvzr == 0) { throw std::runtime_error{"integer division by zero"}; } else { lr.as_s64() /= rr.cast_to_s64(); return *this; }
+                    }
+                    break;
+                case type::U64: {
+                        auto dvzr{rr.cast_to_u64()};
+                        if(dvzr == 0) { throw std::runtime_error{"integer division by zero"}; } else { lr.as_u64() /= rr.cast_to_u64(); return *this; }
+                    }
+                    break;
+                case type::FLOAT: { lr.as_float() /= rr.cast_to_float();  return *this; }
+                case type::DOUBLE: { lr.as_double() /= rr.cast_to_double(); return *this; }
+                case type::LONG_DOUBLE: { lr.as_long_double() /= rr.cast_to_double(); return *this; }
+                case type::VEC4: {
+                        if(rr.is_numeric()) {
+                            lr.as_vec4() /= rr.cast_to_double(); return *this;
+                        }
+                    }
+                    break;
+                case type::MAT4: {
+                        if(rr.is_numeric()) {
+                            lr.as_mat4() /= rr.cast_to_double(); return *this;
+                        }
+                    }
+                    break;
+                case type::POINTER:
+                    break;
+                case type::FUNC:
+                    break;
+                case type::ARRAY:
+                    break;
+                case type::OBJECT:
+                    break;
+                case type::STRING: break;
+                case type::WSTRING: break;
+                case type::UNDEFINED:
+                    if(is_any_int_number_type(rt)) {
+                        if(rr.cast_to_u64() == 0) { throw std::runtime_error{"integer division by zero"}; }
+                        lr.become_type(rt); return *this;
+                    } else if(is_any_fp_number_type(rt)) {
+                        lr.become_type(rt); return *this;
+                    }
                     break;
                 default:
                     break;

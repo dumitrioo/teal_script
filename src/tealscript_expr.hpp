@@ -1414,10 +1414,10 @@ namespace teal {
                                         valbox res{add_it->second(l, r)};
                                         assign_it->second(l, res);
                                     } else {
-                                        l.assign_preserving_type(l * r);
+                                        l *= r;
                                     }
                                 } else {
-                                    l.assign_preserving_type(l * r);
+                                    l *= r;
                                 }
                             } catch (runtime_error const &e) {
                                 er = e;
@@ -1462,10 +1462,10 @@ namespace teal {
                                     valbox res{add_it->second(l, r)};
                                     assign_it->second(l, res);
                                 } else {
-                                    l.assign_preserving_type(l / r);
+                                    l /= r;
                                 }
                             } else {
-                                l.assign_preserving_type(l / r);
+                                l /= r;
                             }
                         } catch (runtime_error const &e) {
                             er = e;
