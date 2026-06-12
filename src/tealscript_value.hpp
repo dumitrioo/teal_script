@@ -216,12 +216,12 @@ namespace teal {
             }
 
             value_t value_{nullptr};
-            type type_{type::UNDEFINED};
-            type pointed_type_{type::UNDEFINED};
             std::string class_{};
             std::string func_name_{};
             std::atomic<std::int32_t> mtp_{0};
             std::atomic<std::int32_t> pwr_{0};
+            type type_{type::UNDEFINED};
+            type pointed_type_{type::UNDEFINED};
             bool user_func_{false};
         };
 
@@ -1316,7 +1316,7 @@ namespace teal {
                     }
                 }
             }
-            throw std::runtime_error{"operation not applicable"};
+            throw std::runtime_error{"invalid indirection"};
         }
 
         valbox object_key_at(uint64_t indx) {

@@ -1302,8 +1302,6 @@ namespace teal {
                                 str_map_t<std::function<valbox(valbox &, valbox &)>> const *binops{nullptr};
                                 if(l.is_class()) {
                                     binops = &(ctx->rt_interface()->get_object_services(l.class_name())->binops);
-                                } else if(r.is_class()) {
-                                    binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
                                 }
                                 if(binops != nullptr) {
                                     auto add_it{binops->find("+")};
@@ -1351,8 +1349,6 @@ namespace teal {
                                 str_map_t<std::function<valbox(valbox &, valbox &)>> const *binops{nullptr};
                                 if(l.is_class()) {
                                     binops = &(ctx->rt_interface()->get_object_services(l.class_name())->binops);
-                                } else if(r.is_class()) {
-                                    binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
                                 }
                                 if(binops != nullptr) {
                                     auto add_it{binops->find("-")};
@@ -1404,8 +1400,6 @@ namespace teal {
                                 str_map_t<std::function<valbox(valbox &, valbox &)>> const *binops{nullptr};
                                 if(l.is_class()) {
                                     binops = &(ctx->rt_interface()->get_object_services(l.class_name())->binops);
-                                } else if(r.is_class()) {
-                                    binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
                                 }
                                 if(binops != nullptr) {
                                     auto add_it{binops->find("*")};
@@ -1452,8 +1446,6 @@ namespace teal {
                             str_map_t<std::function<valbox(valbox &, valbox &)>> const *binops{nullptr};
                             if(l.is_class()) {
                                 binops = &(ctx->rt_interface()->get_object_services(l.class_name())->binops);
-                            } else if(r.is_class()) {
-                                binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
                             }
                             if(binops != nullptr) {
                                 auto add_it{binops->find("/")};
@@ -1499,8 +1491,6 @@ namespace teal {
                             str_map_t<std::function<valbox(valbox &, valbox &)>> const *binops{nullptr};
                             if(l.is_class()) {
                                 binops = &(ctx->rt_interface()->get_object_services(l.class_name())->binops);
-                            } else if(r.is_class()) {
-                                binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
                             }
                             if(binops != nullptr) {
                                 auto add_it{binops->find("%")};
@@ -1550,8 +1540,6 @@ namespace teal {
                                 str_map_t<std::function<valbox(valbox &, valbox &)>> const *binops{nullptr};
                                 if(l.is_class()) {
                                     binops = &(ctx->rt_interface()->get_object_services(l.class_name())->binops);
-                                } else if(r.is_class()) {
-                                    binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
                                 }
                                 if(binops != nullptr) {
                                     auto add_it{binops->find("&")};
@@ -1601,8 +1589,6 @@ namespace teal {
                             str_map_t<std::function<valbox(valbox &, valbox &)>> const *binops{nullptr};
                             if(l.is_class()) {
                                 binops = &(ctx->rt_interface()->get_object_services(l.class_name())->binops);
-                            } else if(r.is_class()) {
-                                binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
                             }
                             if(binops != nullptr) {
                                 auto add_it{binops->find("^")};
@@ -1650,8 +1636,6 @@ namespace teal {
                             str_map_t<std::function<valbox(valbox &, valbox &)>> const *binops{nullptr};
                             if(l.is_class()) {
                                 binops = &(ctx->rt_interface()->get_object_services(l.class_name())->binops);
-                            } else if(r.is_class()) {
-                                binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
                             }
                             if(binops != nullptr) {
                                 auto add_it{binops->find("|")};
@@ -1700,8 +1684,6 @@ namespace teal {
                                 str_map_t<std::function<valbox(valbox &, valbox &)>> const *binops{nullptr};
                                 if(l.is_class()) {
                                     binops = &(ctx->rt_interface()->get_object_services(l.class_name())->binops);
-                                } else if(r.is_class()) {
-                                    binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
                                 }
                                 if(binops != nullptr) {
                                     auto add_it{binops->find("<<")};
@@ -1749,8 +1731,6 @@ namespace teal {
                                 str_map_t<std::function<valbox(valbox &, valbox &)>> const *binops{nullptr};
                                 if(l.is_class()) {
                                     binops = &(ctx->rt_interface()->get_object_services(l.class_name())->binops);
-                                } else if(r.is_class()) {
-                                    binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
                                 }
                                 if(binops != nullptr) {
                                     auto add_it{binops->find(">>")};
