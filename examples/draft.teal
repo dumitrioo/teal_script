@@ -68,7 +68,6 @@ my_drafts(host_data) {
     k = [[1,2,3], [1,2,3], [obj]];
     k.apply_func(assert);
     assert(k.typeof() == "array").println();
-    k.exit();
 
     timestamps = [];
     for(i = 0; i < 100; ++i) {
@@ -343,7 +342,7 @@ my_drafts(host_data) {
         }
     }
 
-    // return exit(9);
+    return exit(9);
 }
 
 my_drafts drf(host_provided_data);
