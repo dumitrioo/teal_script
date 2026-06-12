@@ -1463,7 +1463,7 @@ namespace teal {
                                     if(ex_it == extern_cells_.end()) {
                                         throw runtime_error{
                                             curr_cell->line(), curr_cell->col(),
-                                            std::string{"input value not found for compute element \""} +
+                                            std::string{"input value \"" + curr_arg_name + "\" not found for compute element \""} +
                                                 curr_cell->inst_name() + "\""
                                         };
                                     } else {
@@ -1662,7 +1662,7 @@ namespace teal {
                                                     if(ex_it == extern_cells_.end()) {
                                                         throw runtime_error{
                                                             curr_cell->line(), curr_cell->col(),
-                                                            std::string{"input value not found for compute element \""} +
+                                                            std::string{"input value \"" + curr_arg_name + "\" not found for compute element \""} +
                                                                 curr_cell->inst_name() + "\""
                                                         };
                                                     } else {
