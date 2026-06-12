@@ -1,0 +1,142 @@
+function first_defined(v1, v2) {
+    return v1 != undefined ? v1 : v2;
+}
+
+function clamp(v, vmin, vmax) {
+    return v < vmin ? vmin : v > vmax ? vmax : v;
+}
+
+function min(v1, v2) {
+    return v1 < v2 ? v1 : v2;
+}
+
+function max(v1, v2) {
+    return v2 < v1 ? v1 : v2;
+}
+
+function arr_min(arr) {
+    res = undefined;
+    for(i = 0; i < arr.size(); ++i) {
+        if(res == undefined || arr[i] < res) {
+            res = arr[i];
+        }
+    }
+    return res;
+}
+
+function arr_max(arr) {
+    res = undefined;
+    for(i = 0; i < arr.size(); ++i) {
+        if(res == undefined || res < arr[i]) {
+            res = arr[i];
+        }
+    }
+    return res;
+}
+
+negation_def(v) {
+    return !v;
+}
+
+forward_def(v) {
+    return v;
+}
+
+logical_or_def(a, b) {
+    return a || b;
+}
+
+logical_and_def(a, b) {
+    return a && b;
+}
+
+keep_true_for_some_time_def(curr_signal, t) {
+    cursig = (bool)curr_signal;
+    if(this.value == undefined) {
+        this.value = cursig;
+        if(cursig) {
+            this.t = steady_clock() + t;
+        }
+    }
+    if(this.t < steady_clock() || cursig) {
+        this.value = cursig;
+        if(cursig) {
+            this.t = steady_clock() + t;
+        }
+    }
+    return this.value;
+}
+
+button_press_switcher_def(curr_signal, reset_signal) {
+    cursig = (bool)curr_signal;
+    if(this.value == undefined) {
+        this.value = false;
+        this.prev_sig_val = cursig;
+    }
+    if(this.prev_sig_val != cursig) {
+        if(cursig) {
+            this.value = !this.value;
+        }
+        this.prev_sig_val = cursig;
+    }
+    if(this.reset_signal != reset_signal) {
+        if(reset_signal) {
+            this.value = false;
+        }
+        this.reset_signal = reset_signal;
+    }
+    return this.value;
+}
+
+pressed_def(curr_signal, reset_signal) {
+    cursig = (bool)curr_signal;
+    if(this.value == undefined) {
+        this.value = false;
+        this.prev_sig_val = cursig;
+    }
+    if(this.prev_sig_val != cursig) {
+        this.value = true;
+        this.prev_sig_val = cursig;
+    }
+    if(this.reset_signal != reset_signal) {
+        if(reset_signal) {
+            this.value = false;
+        }
+        this.reset_signal = reset_signal;
+    }
+    return this.value;
+}
+
+uphill_triggering_short_retention_def(curr_signal, keep_time) {
+    cursig = (bool)curr_signal;
+    if(this.value == undefined) {
+        this.value = false;
+        this.t = 0.0;
+        this.prev_sig_val = cursig;
+    }
+    if(this.prev_sig_val != cursig) {
+        if(cursig) {
+            this.value = true;
+            this.t = steady_clock() + keep_time;
+        }
+        this.prev_sig_val = cursig;
+    }
+    if(steady_clock() > this.t) {
+        this.value = false;
+    }
+    return this.value;
+}
+
+triggering_timepoint_def(curr_value) {
+    if(this.t == undefined) {
+        this.t = steady_clock();
+    }
+    if(this.prev_value == undefined) {
+        this.prev_value = curr_value;
+    }
+    if(this.prev_value != curr_value) {
+        this.t = steady_clock();
+        this.prev_value = curr_value;
+    }
+    return this.t;
+}

@@ -1,0 +1,327 @@
+/////////////////////////////////////////////////////////////////////////////////
+//                     FAKE VEHICLE ORCHESTRATION DFG SCHEMA
+/////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////////
+// LOGIC NODES (Imperative Encapsulation inside Isolated Computation Nodes
+// with intentionally simplified code for demonstrational purposes)
+/////////////////////////////////////////////////////////////////////////////////
+
+
+battery_soc_drops_below_threshold(battery_soc) {
+    return battery_soc < 10;
+}
+battery_soc_drops_below_threshold battery_low(battery_soc);
+
+
+battery_power_consumption_calc(u, i) {
+    return u * i;
+}
+battery_power_consumption_calc battery_power_consumption(battery_voltage, battery_current);
+
+
+engine_temp_limit_watchdog(coolant, oil, exhaust) {
+    return coolant > 110 || oil > 150 || exhaust > 300;
+}
+engine_temp_limit_watchdog temperature_exceeds_limit(engine_coolant_temp, engine_oil_temp, exhaust_temp) 'temperature_exceeds_limit';
+
+
+understeer_detector(
+    steering_angle,
+    gps_speed,
+    yaw_rate,
+    wheelbase,
+    steering_ratio,
+    lateral_accel
+) {
+    if(wheelbase <= 0.0 || steering_ratio <= 0.0) { return false; }
+    expected_yaw_rate = (gps_speed * steering_angle * steering_ratio) / wheelbase;
+    lateral_accel_min = 0.3;
+    if(lateral_accel < lateral_accel_min) { return false; }
+    base_threshold = 0.95;
+    accel_scale = 0.05;
+    adaptive_threshold = base_threshold - accel_scale * (lateral_accel - lateral_accel_min);
+    if(adaptive_threshold < 0.7) adaptive_threshold = 0.7;
+    if(adaptive_threshold > 0.99) adaptive_threshold = 0.99;
+    return yaw_rate < (adaptive_threshold * expected_yaw_rate);
+}
+understeer_detector understeer_detected(steering_angle, gps_speed, yaw_rate, wheelbase, steering_ratio, lateral_accel);
+
+
+forward_pending_collision_detector(dist) {
+    t = steady_clock();
+    if(this.last_dist == undefined) {
+        this.prev_dist = dist;
+        this.prev_t = t;
+    }
+    dt = t - this.prev_t;
+    if(dt > 0.01) {
+        this.prev_t = t;
+        ddist = dist - this.prev_dist;
+        this.prev_dist = dist;
+        proximity_speed = -ddist / dt;
+        time_to_collision = 1000000.0;
+        if(proximity_speed > 0) {
+            time_to_collision = dist / proximity_speed;
+        }
+        return proximity_speed > 0 && (dist < 3 || time_to_collision < 3); // 3 m or 3 sec
+    }
+}
+forward_pending_collision_detector coll_pending(radar_long_dist) 'collision_pending';
+
+
+// --- ADAPTIVE CRUISE CONTROL (ACC) intentionally simplified ---
+cruise_controller(
+    in_vehicle_speed_mps,
+    in_wheel_speed_mps,
+    in_accel_pedal_active,
+    in_brake_pedal_active,
+    in_cruise_enable,
+    in_cruise_set,
+    in_cruise_resume,
+    in_set_speed_mps,
+    in_speed_limit_mps,
+    in_lead_vehicle_rel_speed_mps,
+    in_lead_vehicle_dist_m,
+    in_max_throttle,
+    in_max_brake
+) {
+    if(this.active_ == undefined) {
+        this.integrator_ = 0.0; this.last_error_ = 0.0;
+        this.active_ = false; this.set_speed_mps_ = 0.0;
+
+        this.Kp = 0.6; this.Ki = 0.2; this.Kd = 0.05;
+        this.integrator_limit = 5.0;
+        this.speed_deadband = 0.3; /* m/s */
+        this.min_engage_speed = 2.0; /* m/s */
+        this.t = steady_clock();
+    }
+
+    dt_s = (f64)(steady_clock() - this.t);
+
+    res = object();
+    res.throttle_cmd = 0.0;
+    res.brake_cmd = 0.0;
+    res.active = false;
+    res.active_set_speed = 0.0;
+
+    // выбор используемой скорости (предпочитаем wheel_speed если доступна)
+    speed = first_defined(in_vehicle_speed_mps, in_wheel_speed_mps);
+
+    // обработка включения/установки/резюма
+    if (in_cruise_set && speed > min_engage_speed) {
+        this.set_speed_mps_ = speed;
+        this.integrator_ = 0.0;
+        this.last_error_ = 0.0;
+        this.active_ = true;
+    }
+    if (in_cruise_resume && in_set_speed_mps > 0.0) {
+        this.set_speed_mps_ = in_set_speed_mps;
+        this.integrator_ = 0.0;
+        this.last_error_ = 0.0;
+        this.active_ = true;
+    }
+    if (!in_cruise_enable) {
+        this.active_ = false;
+    }
+
+    // отмена круиза при действиях водителя или на низкой скорости
+    if (in_brake_pedal_active > 0 || in_accel_pedal_active > 0 || speed < this.min_engage_speed) {
+        this.active_ = false;
+    }
+
+    // ограничение целевой скорости ограничителем дороги или заданной цели
+    if (this.active_) {
+        this.set_speed_mps_ = min(this.set_speed_mps_, in_speed_limit_mps);
+        if (in_set_speed_mps > 0.0) {
+            this.set_speed_mps_ = in_set_speed_mps;
+        }
+    }
+
+    res.active = this.active_;
+    res.active_set_speed = this.set_speed_mps_;
+
+    if (!this.active_) return res;
+
+    // адаптивная логика: если впереди автомобиль слишком близко и медленнее — притормаживаем/занижаем цель
+    safe_speed_target = this.set_speed_mps_;
+    if (in_lead_vehicle_dist_m < 30.0) {
+        // простая дистанционная логика: приближаясь к лидеру, снижаем цель пропорционально
+        desired_gap = 2.0 + 0.5 * speed; // секунда/модель: 2s + ...
+        time_gap = in_lead_vehicle_dist_m / max(0.1, -in_lead_vehicle_rel_speed_mps + 1e-6);
+        if (time_gap < desired_gap && in_lead_vehicle_rel_speed_mps < 0.0) {
+            safe_speed_target = min(safe_speed_target, speed + in_lead_vehicle_rel_speed_mps); // замедлиться
+        }
+    }
+
+    // PID на регулировку скорости
+    err = safe_speed_target - speed;
+
+    // пропуск ошибки, если в пределах мёртвой зоны
+    if (abs(err) < speed_deadband) {
+        err = 0.0;
+    }
+
+    // интегратор с антивиндом
+    this.integrator_ += err * dt_s;
+    this.integrator_ = clamp(this.integrator_, -this.integrator_limit, this.integrator_limit);
+
+    derivative = (error - this.last_error_) / max(1e-6, dt_s);
+    this.last_error_ = err;
+
+    u = this.Kp * err + this.Ki * this.integrator_ + this.Kd * derivative;
+
+    // карта выхода на тромбоз/газ
+    if (u >= 0.0) {
+        // требуем ускорение -> газ
+        res.throttle_cmd = clamp(u, 0.0, in_max_throttle);
+    } else {
+        // требуем замедление -> тормоз (или рекуперация)
+        brake_req = clamp(-u, 0.0, in_max_brake);
+        // если сильное замедление — применяем тормоз, иначе лёгкий тормоз/рекуперация
+        res.brake_cmd = brake_req;
+    }
+
+    // safety: при резком снижении цели или очень близкой дистанции — навязное торможение
+    if (in_lead_vehicle_dist_m < 5.0) {
+        res.brake_cmd = 1.0; // максимально
+    }
+
+    return res;
+}
+cruise_controller acc_output(
+    gps_speed,                        // текущая скорость (m/s)
+    wheel_speed_rl,                   // альтернативная скорость от ABS (m/s)
+    accelerator_pos_signal,           // водитель нажал акселератор (override)
+    brake_pos_signal,                 // водитель нажал тормоз (cancel)
+    steering_cruise_toggle,           // включение круиза (toggle ON)
+    steering_cruise_set,              // кнопка SET (задать текущую скорость)
+    steering_cruise_resume,           // кнопка RESUME
+    acc_target_speed,                 // желаемая скорость (если задана, m/s)
+    tsr_speed_limit,                  // ограничение скорости (m/s), NaN если нет
+    radar_long_speed,                 // относит. скорость впереди (m/s), NaN если нет
+    radar_long_dist,                  // дистанция до впереди идущего (m), NaN если нет
+    1.0,                              // in_max_throttle [0..1]
+    1.0                               // in_max_brake [0..1]
+) 'acc_status';
+
+
+// --- DRIVER DEMAND & TORQUE ARBITRATION ---
+driver_demand(tempexlim, pedal, brake, acc, understeer) {
+    if(brake > 0.05) return -brake * 100.0;
+    if(acc.active && acc.throttle_cmd > 0.0) return acc.throttle_cmd;
+    return tempexlim ? (pedal * 100.0) * 0.2 : pedal * 100.0;
+}
+driver_demand torque_request(
+    temperature_exceeds_limit, throttle_pos_signal, brake_pos_signal, acc_output, understeer_detected
+) 'torque_request';
+
+
+// --- ELECTRONIC STABILITY PROGRAM (ESP) intentionally simplified ---
+esp_logic(steer, yaw, speed, torqeq) {
+    if(speed < 2.0) return torqeq;
+
+    expected_yaw = (steer / 400.0) * speed * 0.5;
+    yaw_error = expected_yaw - yaw;
+
+    if(yaw_error < -5.0) {
+        return torqeq - 20.0;
+    }
+    if(yaw_error > 5.0) {
+        return torqeq - 10.0;
+    }
+
+    return torqeq;
+}
+esp_logic stabilized_demand(steering_angle, yaw_rate, gps_speed, torque_request) 'esp_intervention';
+
+
+// --- TRACTION & BRAKE FORCE DISTRIBUTION intentionally simplified ---
+torque_splitter(torqeq, steer) {
+    base_torque = torqeq / 4.0;
+    if(steer > 10.0) return [base_torque * 0.8, base_torque * 1.2, base_torque * 0.9, base_torque * 1.1];
+    if(steer < -10.0) return [base_torque * 1.2, base_torque * 0.8, base_torque * 1.1, base_torque * 0.9];
+    return [base_torque, base_torque, base_torque, base_torque];
+}
+torque_splitter wheel_torques(stabilized_demand, steering_angle);
+
+
+get_fl(arr) return arr[0];
+get_fr(arr) return arr[1];
+get_rl(arr) return arr[2];
+get_rr(arr) return arr[3];
+
+get_fl motor_torque_fl(wheel_torques) 'motor_torque_fl';
+get_fr motor_torque_fr(wheel_torques) 'motor_torque_fr';
+get_rl motor_torque_rl(wheel_torques) 'motor_torque_rl';
+get_rr motor_torque_rr(wheel_torques) 'motor_torque_rr';
+
+
+// --- ACTIVE SUSPENSION (Magneride-like) intentionally simplified ---
+suspension_control(accel, steer, mode) {
+    stiffness_mult = 1.0;
+    if(mode == 2) stiffness_mult = 2.5;
+    if(mode == 1) stiffness_mult = 1.5;
+
+    body_roll = abs(steer) / 400.0 + abs(accel) / 100.0;
+    return stiffness_mult * (1.0 + body_roll * 3.0);
+}
+suspension_control damper_force(lateral_accel, steering_angle, drive_mode_switch) 'damper_force_val';
+
+
+// --- COMFORT & BODY LOGIC intentionally simplified ---
+hvac_logic(temp) {
+    if(temp < 20.0) return 1.0;
+    if(temp > 24.0) return 0.0;
+    return 0.5;
+}
+hvac_logic hvac_power(cabin_temp) 'hvac_compressor';
+
+wiper_logic(rain) {
+    if(rain > 0.8) return 3;
+    if(rain > 0.3) return 2;
+    if(rain > 0.05) return 1;
+    return 0;
+}
+wiper_logic wiper_speed(rain_intensity) 'wiper_speed_val';
+
+
+keep_true_for_some_time_def collision_warning(coll_pending, 2) 'collision_warning';
+
+
+keep_true_for_some_time_def precharge_brakes(coll_pending, 10) 'precharge_brakes';
+
+
+brake_mapper(brakes_pedal, front_collision_warn) {
+    if(front_collision_warn) return 1.0;
+    if(brakes_pedal > 0.0) return brakes_pedal;
+    return 0.0;
+}
+brake_mapper brake_request(
+    brake_pos_signal, coll_pending
+) 'brake_request';
+
+
+cooling_pump_speed(engine_rpm, tempexlim) {
+    res_speed = engine_rpm * 0.1;
+    if(tempexlim) res_speed *= 1.2;
+    return res_speed;
+}
+cooling_pump_speed cooling_pump_speed_request(
+    engine_rpm, temperature_exceeds_limit
+) 'cooling_pump_speed_request';
+
+
+electric_motor_power_limitter(battery_low) { return battery_low ? 0.5 : 1.0; }
+electric_motor_power_limitter electric_motor_power_limit(
+    battery_low
+) 'electric_motor_power_limit';
+
+
+negation_def climate_control_enabled(battery_low) 'climate_control_enabled';
+negation_def seat_warming_control_enabled(battery_low) 'seat_warming_control_enabled';
+negation_def multimedia_enabled(battery_low) 'multimedia_enabled';
+
+forward_def network_on(ignition_status) 'network_on';
+forward_def run_self_tests(ignition_status) 'run_self_tests';
+forward_def engage_contactors(ignition_status) 'engage_contactors';

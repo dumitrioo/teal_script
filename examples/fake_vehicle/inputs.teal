@@ -1,0 +1,176 @@
+// --- CONFIG & CALIBRATION ---
+'cfg_steering_side' steering_side;             // Возможные значения: LEFT (LHD) или RIGHT (RHD)
+'front_rear_axles_dist' wheelbase;             // Расстояние между передней и задней осями (м)
+'cfg_track_width' track_width;                 // Колея (мм)
+'cfg_curb_weight' curb_weight;                 // Снаряженная масса (кг)
+'cfg_max_steer_angle' max_steer_angle;         // Максимальный угол поворота руля (град)
+'cfg_tire_circumference' tire_circumference;   // Длина окружности шины (мм)
+'steering_ratio' steering_ratio;               // Передаточное отношение рулевого управления (угол колеса : угол рулевой колонки)
+
+// --- POWERTRAIN (ICE / Hybrid / EV) ---
+'ecu_eng_rpm' engine_rpm;                      // Обороты двигателя (RPM)
+'ecu_coolant_temp' engine_coolant_temp;        // Температура охлаждающей жидкости двигателя (°C)
+'ecu_oil_temp' engine_oil_temp;                // Температура моторного масла (°C)
+'accelerator_pedal_position' accelerator_pos_signal;
+'ecu_throttle_pos' throttle_pos_signal;        // Положение дроссельной заслонки (0–100% или ADC значение)
+'ecu_brake_pos' brake_pos_signal;              // Положение (ход) педали тормоза (0–100% или сенсорный сигнал)
+'ecu_brake_press' brake_pressure;              // Давление в тормозной системе (бар или кПа)
+'ecu_fuel_level' fuel_level;                   // Уровень топлива в баке (литры или %)
+'ecu_exhaust_temp' exhaust_temp;               // Температура выхлопных газов (°C)
+'tcu_gear_pos' current_gear;                   // Текущее положение/номер передачи (P, R, N, 1..N)
+'tcu_trans_temp' transmission_temp;            // Температура трансмиссионного масла/коробки (°C)
+'inv_ph_current_r' inverter_phase_r;           // Ток по фазе R инвертора (A) — электромотор/EV
+'inv_ph_current_s' inverter_phase_s;           // Ток по фазе S инвертора (A)
+'inv_ph_current_t' inverter_phase_t;           // Ток по фазе T инвертора (A)
+'inv_rotor_pos' rotor_angle;                   // Положение ротора/угол ротора (рад или град) в электродвигателе
+'inv_motor_temp' inverter_temp;                // Температура инвертора/мотора (°C)
+'inv_dc_link_v' dc_link_voltage;               // Напряжение постоянной шины DC‑link (V)
+'bms_pack_v' battery_voltage;                  // Напряжение батарейного пакета (V)
+'bms_pack_i' battery_current;                  // Ток батарейного пакета (A) — заряд/разряд
+'bms_soc' battery_soc;                         // State Of Charge — уровень заряда батареи (%)
+'bms_max_temp' battery_max_temp;               // Максимальная температура в ячейках батареи (°C)
+'bms_min_temp' battery_min_temp;               // Минимальная температура в ячейках батареи (°C)
+'bms_health_pct' battery_health;               // State Of Health — состояние батареи (% от номинала)
+'chg_plug_stat' charge_plug_status;            // Статус подключения зарядного разъёма (отключён/подключён/зарядка)
+
+// --- CHASSIS & DYNAMICS ---
+'sas_steer_angle' steering_angle;              // Угол поворота рулевого колеса (рад или град)
+'sas_steer_rate' steering_rate;                // Скорость изменения угла руля (рад/с или град/с)
+'sas_steer_torque' steering_torque;            // Крутящий момент на руле/с ассистом (Н·м)
+'abs_ws_fl' wheel_speed_fl;                    // Скорость колеса переднего левого (м/с или км/ч)
+'abs_ws_fr' wheel_speed_fr;                    // Скорость колеса переднего правого
+'abs_ws_rl' wheel_speed_rl;                    // Скорость колеса заднего левого
+'abs_ws_rr' wheel_speed_rr;                    // Скорость колеса заднего правого
+'abs_brake_press_mc' master_cylinder_pressure; // Давление в главном тормозном цилиндре (бар или кПа)
+'abs_fluid_temp' brake_fluid_temp;             // Температура тормозной жидкости (°C)
+'imu_yaw_rate' yaw_rate;                       // Угловая скорость по курсу (рысканье) (рад/с или град/с)
+'imu_lat_accel' lateral_accel;                 // Поперечное (латеральное) ускорение (m/s^2)
+'imu_lon_accel' longitudinal_accel;            // Продольное ускорение (m/s^2)
+'imu_vert_accel' vertical_accel;               // Вертикальное ускорение (m/s^2)
+'imu_roll_rate' roll_rate;                     // Скорость крена (рад/с или град/с)
+'imu_pitch_rate' pitch_rate;                   // Скорость тангажа (рад/с или град/с)
+'eps_motor_temp' eps_motor_temp;               // Температура электромотора EPS (°C)
+'eps_torque_actual' eps_actual_torque;         // Фактический момент, выдаваемый EPS (Н·м)
+'susp_fl_accel' suspension_accel_fl;           // Ускорение подвески переднего левого колеса (m/s^2)
+'susp_fr_accel' suspension_accel_fr;           // Ускорение подвески переднего правого
+'susp_rl_accel' suspension_accel_rl;           // Ускорение подвески заднего левого
+'susp_rr_accel' suspension_accel_rr;           // Ускорение подвески заднего правого
+'susp_fl_height' ride_height_fl;               // Высота подвески / клиренс переднего левого (м)
+'susp_fr_height' ride_height_fr;               // Высота подвески переднего правого
+'susp_rl_height' ride_height_rl;               // Высота подвески заднего левого
+'susp_rr_height' ride_height_rr;               // Высота подвески заднего правого
+'tpms_fl_press' tire_pressure_fl;              // Давление в шине переднего левого (бар или кПа)
+'tpms_fr_press' tire_pressure_fr;              // Давление в шине переднего правого
+'tpms_rl_press' tire_pressure_rl;              // Давление в шине заднего левого
+'tpms_rr_press' tire_pressure_rr;              // Давление в шине заднего правого
+'airbag_deployed' airbag_deployed_stat;        // Статус срабатывания подушек безопасности
+'tpms_fl_temp' tire_temp_fl;                   // Температура шины переднего левого (°C)
+'tpms_fr_temp' tire_temp_fr;                   // Температура шины переднего правого
+'tpms_rl_temp' tire_temp_rl;                   // Температура шины заднего левого
+'tpms_rr_temp' tire_temp_rr;                   // Температура шины заднего правого
+
+// --- ADAS / AUTONOMY ---
+'rad_lrr_dist' radar_long_dist;                // Дистанция, измеренная длинноволновым/дальним радаром (м)
+'rad_lrr_speed' radar_long_speed;              // Относительная скорость цели по дальнему радару (м/с)
+'rad_lrr_angle' radar_long_angle;              // Угол обнаруженной цели относительно продольной оси (рад/°)
+'rad_srr_left_dist' radar_left_dist;           // Дистанция, измеренная ближним/боковым радаром слева (м)
+'rad_srr_right_dist' radar_right_dist;         // Дистанция, измеренная ближним/боковым радаром справа (м)
+'cam_front_video' front_cam_stream;            // Поток/триггер фронтальной камеры (видеоданные или флаг кадра)
+'cam_front_latency' front_cam_latency_ms;      // Задержка/латентность фронтальной камеры (мс)
+'lidar_point_cloud' lidar_stream;              // Точка/облако точек лидар‑датчика (структурированный поток)
+'us_fl_dist' ultrasonic_fl_dist;               // Дистанция от ультразвукового датчика переднего левого (м)
+'us_fc_dist' ultrasonic_fc_dist;               // Дистанция центрального переднего ультразвукового сенсора (м)
+'us_fr_dist' ultrasonic_fr_dist;               // Дистанция ультразвукового датчика переднего правого (м)
+'us_rl_dist' ultrasonic_rl_dist;               // Дистанция ультразвукового датчика заднего левого (м)
+'us_rc_dist' ultrasonic_rc_dist;               // Дистанция центрального заднего ультразвукового сенсора (м)
+'us_rr_dist' ultrasonic_rr_dist;               // Дистанция ультразвукового датчика заднего правого (м)
+'gnss_latitude' gps_lat;                       // Широта из GNSS (десятичные градусы)
+'gnss_longitude' gps_lon;                      // Долгота из GNSS (десятичные градусы)
+'gnss_altitude' gps_alt;                       // Высота над уровнем моря из GNSS (м)
+'gnss_speed' gps_speed;                        // Скорость по GNSS (м/с или км/ч)
+'gnss_heading' gps_heading;                    // Курс/направление движения из GNSS (град)
+'gnss_sat_count' gps_satellites;               // Количество видимых спутников GNSS
+
+// --- BODY & COMFORT ---
+'hvac_cabin_temp' cabin_temp;                  // Температура в салоне (°C)
+'hvac_evap_temp' evaporator_temp;              // Температура испарителя кондиционера (°C)
+'hvac_ext_temp' ambient_temp;                  // Внешняя/окружающая температура (°C)
+'hvac_sun_load' sun_load;                      // Нагрузка от солнечного излучения / солнечный поток (услов. ед.)
+'hvac_humidity' cabin_humidity;                // Влажность внутри салона (% RH)
+'hvac_fan_speed_stat' hvac_fan_speed_status;   // Текущая скорость вентилятора (0-7)
+'hvac_target_temp_stat' hvac_target_temp;      // Заданная температура (°C)
+'rain_sensor' rain_intensity;                  // Интенсивность дождя/статус датчика дождя (лог./аналог)
+'light_sensor' ambient_light;                  // Уровень внешней освещённости (люкс или ADC значение)
+'fl_door_stat' door_fl_status;                 // Статус передней левой двери (открыта/закрыта)
+'fr_door_stat' door_fr_status;                 // Статус передней правой двери
+'rl_door_stat' door_rl_status;                 // Статус задней левой двери
+'rr_door_stat' door_rr_status;                 // Статус задней правой двери
+'trunk_stat' trunk_status;                     // Статус багажника (открыт/закрыт)
+'hood_stat' hood_status;                       // Статус капота (открыт/закрыт)
+'fl_door_lock_stat' door_fl_lock_status;       // ЗАБЛОКИРОВАНА/РАЗБЛОКИРОВАНА
+'fr_door_lock_stat' door_fr_lock_status;
+'rl_door_lock_stat' door_rl_lock_status;
+'rr_door_lock_stat' door_rr_lock_status;
+'trunk_lock_stat' trunk_lock_status;
+'fl_window_pos' window_fl_pos;                // Положение стекла (0% = закрыто, 100% = открыто)
+'fr_window_pos' window_fr_pos;
+'rl_window_pos' window_rl_pos;
+'rr_window_pos' window_rr_pos;
+'lt_switch_pos' light_switch_position;        // Положение переключателя света (OFF, PARK, ON, AUTO)
+'lt_low_beam_stat' low_beam_status;           // Статус ближнего света
+'lt_high_beam_stat' high_beam_status;         // Статус дальнего света
+'lt_fog_f_stat' fog_front_status;
+'lt_fog_r_stat' fog_rear_status;
+'lt_turn_l_stat' turn_left_status;
+'lt_turn_r_stat' turn_right_status;
+'lt_hazard_stat' hazard_status;               // Аварийка
+'lt_brake_stat' brake_light_status;           // Стоп-сигналы
+'lt_reverse_stat' reverse_light_status;       // Задний ход
+'wiper_front_stat' wiper_front_status;        // Статус дворников (0: off, 1: slow, 2: fast)
+'wiper_rear_stat' wiper_rear_status;
+'fl_seat_occ' seat_fl_occupied;               // Наличие пассажира на переднем левом сиденье (булево/датчик давления)
+'fr_seat_occ' seat_fr_occupied;               // Наличие пассажира на переднем правом
+'rl_seat_occ' seat_rl_occupied;               // Наличие пассажира на заднем левом
+'rr_seat_occ' seat_rr_occupied;               // Наличие пассажира на заднем правом
+'fl_buckle_stat' seatbelt_fl;                 // Статус ремня безопасности переднего левого (застёгнут/нет)
+'fr_buckle_stat' seatbelt_fr;                 // Статус ремня переднего правого
+'rl_buckle_stat' seatbelt_rl;                 // Статус ремня заднего левого
+'rr_buckle_stat' seatbelt_rr;                 // Статус ремня заднего правого
+'cell_signal_str' cellular_signal;            // Уровень сотового сигнала (RSSI или услов. шкала)
+'wifi_signal_str' wifi_signal;                // Уровень Wi‑Fi сигнала (RSSI или услов. шкала)
+'obd_ign_state' power_mode;                   // Enum: OFF, ACC, ON, CRANK
+// 'obd_ignition' ignition_status;            // Статус зажигания/включения (ON/OFF) вычисляется из power_mode (power_mode(ON или CRANK) -> ignition_status(true))
+'ecu_supply_v' system_supply_voltage;         // Напряжение питания ЭБУ (бортсеть, В)
+'ecu_odometer' odometer_val;                  // Пробег (км)
+'can_bus1_load' can1_bus_load;                // Загрузка CAN-шины 1 (%)
+'can_bus2_load' can2_bus_load;                // Загрузка CAN-шины 2 (%)
+'dtc_active_cnt' active_dtc_count;            // Количество активных ошибок (DTC)
+'int_light_stat' interior_light_status;       // Свет в салоне включен (забыли выключить или открыли дверь)
+'infotainment_active' radio_active;           // Медиасистема активна (музыка играет, экран включен)
+'sw_door_lock' door_lock_sw;                  // Кнопки блокировки на подлокотнике
+'sw_door_unlock' door_unlock_sw;
+'key_fob_inside' key_inside_car;              // Ключ(смартфон) лежит внутри салона (PEPS датчик)
+'climate_fan_cmd' hvac_fan_cmd;
+'climate_temp_cmd' hvac_temp_cmd;
+'climate_ac_cmd' hvac_ac_cmd;
+
+// --- DRIVER INPUTS / HMI ---
+'swc_vol_up' steering_vol_up;                  // Нажатие кнопки увеличения громкости на руле (событие/статус)
+'swc_vol_down' steering_vol_down;              // Нажатие кнопки уменьшения громкости на руле
+'swc_cruise_toggle' steering_cruise_toggle;    // Кнопка включения/выключения круиз‑контроля
+'swc_cruise_set' steering_cruise_set;          // Кнопка установки скорости круиза (SET)
+'swc_cruise_resume' steering_cruise_resume;    // Кнопка восстановления скорости круиза (RESUME)
+'swc_lane_assist' steering_lane_assist;        // Кнопка включения/выключения помощи по полосе
+'swc_voice' steering_voice_cmd;                // Кнопка активации голосового управления
+'drv_mode_sw' drive_mode_switch;               // Режим вождения (0: Comfort, 1: Sport, 2: Race, 3: EV)
+'start_btn' engine_start_btn;                  // Кнопка запуска/старт двигателя (статус нажатия)
+'epb_sw' parking_brake_switch;                 // Электронный стояночный тормоз — переключатель/статус
+'hud_brightness' hud_brightness;               // Яркость HUD/дисплея (уровень 0–100)
+'acc_target_speed_sw' acc_target_speed;        // Выбранная цель скорости для ACC (км/ч или м/с)
+'acc_gap_sw' acc_gap_setting;                  // Настройка дистанции/интервала для ACC (уровни 1..N)
+'doors_lock_btn' doors_lock_btn;               // Нажатие кнопки "Lock/Unlock" (булево/событие)
+'hmi_display_mode_cmd' cluster_display_cmd;    // Переключение вида приборки
+'hmi_chime_cmd' chime_cmd;                     // Команда издать звуковой сигнал (предупреждение)
+
+// --- Traffic Sign Recognition (TSR) ---
+'tsr_speed_limit' tsr_speed_limit;             // ограничение скорости
