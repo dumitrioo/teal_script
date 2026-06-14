@@ -17,15 +17,15 @@ namespace teal {
     class code_generator {
     public:
         void chop(
-            json const &ast
-            , str_map_t<std::shared_ptr<input_cell>> &input_cells
-            , str_map_t<std::string> &input_names_to_instances_mapping
-            , str_map_t<worker_cell_definition_info> &worker_cells_templates
-            , str_map_t<std::shared_ptr<worker_cell_instance>> &worker_cells
-            , str_map_t<statement_ptr> &worker_bodies
-            , str_map_t<function_definition> &user_functions
-            , str_map_t<valbox> const &global_functions_dictionary
-            , str_map_t<std::shared_ptr<extern_cell>> &extern_cells
+            json const &ast,
+            str_map_t<std::shared_ptr<input_cell>> &input_cells,
+            str_map_t<std::string> &input_names_to_instances_mapping,
+            str_map_t<worker_cell_definition_info> &worker_cells_templates,
+            str_map_t<std::shared_ptr<worker_cell_instance>> &worker_cells,
+            str_map_t<statement_ptr> &worker_bodies,
+            str_map_t<function_definition> &user_functions,
+            str_map_t<valbox> const &global_functions_dictionary,
+            str_map_t<std::shared_ptr<extern_cell>> &extern_cells
         ) {
             for(std::size_t i = 0; i < ast.size(); ++i) {
                 json const &cur{ast[i]};
@@ -80,7 +80,7 @@ namespace teal {
                         }
                         std::string p{u.path()};
                         while(!p.empty() && p[0] == '/') { p = p.substr(1); }
-                        if(!is_valid_dentifier(p)) {
+                        if(!is_valid_identifier(p)) {
                             throw compilation_error{cur["loc"]["line"].try_as_number(), cur["loc"]["col"].try_as_number(),
                                                     rnm + ": path must be a valid identifier after \"/\""};
                         }
@@ -199,7 +199,7 @@ namespace teal {
             return is_ident_start(c) || teal::str_util::fltr<std::wstring>::isdigit(c);
         }
 
-        static bool is_valid_dentifier(std::string const &id) {
+        static bool is_valid_identifier(std::string const &id) {
             if(id.empty()) { return false; }
             if(!is_ident_start(id[0])) { return false; }
             for(size_t i{1}; i < id.size(); ++i) { if(!is_ident_tail(id[i])) { return false; } }
