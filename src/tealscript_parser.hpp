@@ -463,38 +463,20 @@ namespace teal {
                 };
                 increment_pos();
                 check_eof();
-                if(get_token(0).type_is(token::type::LPAREN)) {
-                    increment_pos();
-                    json expr{get_expr()};
-                    if(expr.is_object()) {
-                        check_eof();
-                        if(get_token(0).type_is(token::type::RPAREN)) {
-                            increment_pos();
-                            auto stmt{get_statement()};
-                            if(stmt.is_object()) {
-                                res["type"] = "statement";
-                                res["subtype"] = "while";
-                                res["content"]["cond"] = expr;
-                                res["content"]["statement"] = stmt;
-                            } else {
-                                throw compilation_error{
-                                    get_token(0).line(),
-                                    get_token(0).col(),
-                                    "invalid \"while\": statement expected"
-                                };
-                            }
-                        } else {
-                            throw compilation_error{
-                                get_token(0).line(),
-                                get_token(0).col(),
-                                "invalid \"while\": condition expected"
-                            };
-                        }
+                json expr{get_expr()};
+                if(expr.is_object()) {
+                    check_eof();
+                    auto stmt{get_statement()};
+                    if(stmt.is_object()) {
+                        res["type"] = "statement";
+                        res["subtype"] = "while";
+                        res["content"]["cond"] = expr;
+                        res["content"]["statement"] = stmt;
                     } else {
                         throw compilation_error{
                             get_token(0).line(),
                             get_token(0).col(),
-                            "invalid \"while\": condition expected"
+                            "invalid \"while\": statement expected"
                         };
                     }
                 } else {
