@@ -487,7 +487,7 @@ namespace teal {
             }
 
         private:
-            str_map_t<valbox> m_{};
+            std::map<std::string, valbox> m_{};
         };
 
         valbox_pool vals_pool_{};
