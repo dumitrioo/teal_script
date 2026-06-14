@@ -255,7 +255,7 @@ namespace teal {
             }
             while(bcond) {
                 if(stat_) { stat_->exec(ctx); }
-                if(ctx->return_requested()) { return; }
+                if(ctx->return_requested() || ctx->termination_requested()) { return; }
                 if(ctx->continue_requested()) { ctx->clear_continue_request(); }
                 if(ctx->break_requested()) { ctx->clear_break_request(); break; }
                 cond = cond_expr_->eval(ctx, eval_caller_type::no_matter, nullptr).deref();
@@ -331,7 +331,7 @@ namespace teal {
                 }
                 while(bcond) {
                     stat_->exec(ctx);
-                    if(ctx->return_requested()) { return; }
+                    if(ctx->return_requested() || ctx->termination_requested()) { return; }
                     if(ctx->continue_requested()) { ctx->clear_continue_request(); }
                     if(ctx->break_requested()) { ctx->clear_break_request(); break; }
                     incr_expr_->eval(ctx, eval_caller_type::no_matter, nullptr);
@@ -378,8 +378,8 @@ namespace teal {
                 }
                 while(bcond) {
                     stat_->exec(ctx);
+                    if(ctx->return_requested() || ctx->termination_requested()) { return; }
                     if(ctx->continue_requested()) { ctx->clear_continue_request(); }
-                    if(ctx->return_requested()) { return; }
                     if(ctx->break_requested()) { ctx->clear_break_request(); break; }
                     incr_expr_->eval(ctx, eval_caller_type::no_matter, nullptr);
                     cond = cond_expr_->eval(ctx, eval_caller_type::no_matter, nullptr).deref();

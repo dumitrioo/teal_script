@@ -555,7 +555,7 @@ namespace teal {
                                     increment_pos();
                                     json incr_expr{};
                                     check_eof();
-                                    if(get_token(0).type_is(token::type::SEMICOLON)) {
+                                    if(get_token(0).type_is(token::type::RPAREN)) {
                                         incr_expr["type"] = "expression";
                                         incr_expr["subtype"] = "literal";
                                         incr_expr["literal"] = "bool";

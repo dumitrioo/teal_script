@@ -14,25 +14,6 @@
 
 namespace teal {
 
-    namespace detail {
-
-        static bool is_ident_start(std::int64_t c) {
-            return teal::str_util::fltr<std::wstring>::isalpha(c) || c == '_' || c == '$';
-        }
-
-        static bool is_ident_tail(std::int64_t c) {
-            return is_ident_start(c) || teal::str_util::fltr<std::wstring>::isdigit(c);
-        }
-
-        static bool is_valid_dentifier(std::string const &id) {
-            if(id.empty()) { return false; }
-            if(!is_ident_start(id[0])) { return false; }
-            for(size_t i{1}; i < id.size(); ++i) { if(!is_ident_tail(id[i])) { return false; } }
-            return true;
-        }
-
-    }
-
     class code_generator {
     public:
         void chop(
@@ -99,7 +80,7 @@ namespace teal {
                         }
                         std::string p{u.path()};
                         while(!p.empty() && p[0] == '/') { p = p.substr(1); }
-                        if(!detail::is_valid_dentifier(p)) {
+                        if(!is_valid_dentifier(p)) {
                             throw compilation_error{cur["loc"]["line"].try_as_number(), cur["loc"]["col"].try_as_number(),
                                                     rnm + ": path must be a valid identifier after \"/\""};
                         }
@@ -210,6 +191,21 @@ namespace teal {
         }
 
     private:
+        static bool is_ident_start(std::int64_t c) {
+            return teal::str_util::fltr<std::wstring>::isalpha(c) || c == '_' || c == '$';
+        }
+
+        static bool is_ident_tail(std::int64_t c) {
+            return is_ident_start(c) || teal::str_util::fltr<std::wstring>::isdigit(c);
+        }
+
+        static bool is_valid_dentifier(std::string const &id) {
+            if(id.empty()) { return false; }
+            if(!is_ident_start(id[0])) { return false; }
+            for(size_t i{1}; i < id.size(); ++i) { if(!is_ident_tail(id[i])) { return false; } }
+            return true;
+        }
+
         static bool array_contains_str(json const &arr, std::string const &s) {
             if(!arr.is_array()) {
                 return false;

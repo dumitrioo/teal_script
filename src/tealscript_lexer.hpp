@@ -197,11 +197,11 @@ namespace teal {
             }
         }
 
-        bool is_ident_start(std::int64_t c) {
+        static bool is_ident_start(std::int64_t c) {
             return teal::str_util::fltr<std::wstring>::isalpha(c) || c == '_' || c == '$';
         }
 
-        bool is_ident_tail(std::int64_t c) {
+        static bool is_ident_tail(std::int64_t c) {
             return is_ident_start(c) || teal::str_util::fltr<std::wstring>::isdigit(c);
         }
 
