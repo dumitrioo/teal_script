@@ -12,7 +12,7 @@ TEMPLATE = app
 
 # DEFINES += USE_CUSTOM_MEMORY_ALLOCATION
 
-DEFINES += TEAL_USE_CUSTOM_SHARED_MUTEX
+# DEFINES += TEAL_USE_CUSTOM_SHARED_MUTEX
 DEFINES += RW_MUTEX_PRIORITIES
 # DEFINES += RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING
 
@@ -129,6 +129,12 @@ DISTFILES += \
     ../external_client.teal \
     ../external_server.teal \
     ../external_value.teal \
+    ../fake_vehicle/doors.teal \
+    ../fake_vehicle/sleep_mode.teal \
+    ../fake_vehicle/inputs.teal \
+    ../fake_vehicle/intermediate.teal \
+    ../fake_vehicle/utils.teal \
+    ../fake_vehicle/x_vehicle.teal \
     ../kalman_1D_example.teal \
     ../one_second_limit.teal \
     ../perf_limit.teal \

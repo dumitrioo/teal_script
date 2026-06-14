@@ -26,6 +26,7 @@ namespace teal {
         virtual bool is_symbolic() const { return false; }
         virtual bool is_binop() const { return false; }
         virtual token::type binop_type() const { return token::type::NONE; }
+        virtual bool is_this_dot() const { return false; }
 
         void set_loc(std::int64_t line, std::int64_t col) { line_ = line; col_ = col; }
         std::int64_t line() const { return line_; }
@@ -41,7 +42,7 @@ namespace teal {
     class void_expression: public expression {
     public:
         void_expression() {}
-        valbox eval(execution_context *ctx, eval_caller_type, valbox *) override {
+        valbox eval(execution_context *, eval_caller_type, valbox *) override {
             return valbox{valbox_no_initialize::dont_do_it};
         }
     };
@@ -186,7 +187,6 @@ namespace teal {
                 ctx->set_stack_barrier();
                 teal::shut_on_destroy csb{[ctx]() { ctx->clear_stack_barrier(); }};
                 valbox res{fn.as_func()(act_args)};
-                ctx->clear_return_request();
                 return res;
             } else {
                 if(
@@ -2235,6 +2235,10 @@ namespace teal {
 
         std::string const &symbol() const & override {
             return sym_;
+        }
+
+        virtual bool is_this_dot() const override {
+            return opcode_ == token::type::DOT && lval_->symbol() == "this";
         }
 
     private:

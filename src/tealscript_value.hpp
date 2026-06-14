@@ -18,7 +18,7 @@ namespace teal {
 
     class valbox {
     public:
-        enum class type {
+        enum class type: std::uint8_t {
             BOOL,
             CHAR,
             S8,
@@ -128,7 +128,7 @@ namespace teal {
     public:
         using vec4_t = math::vector4<double>;
         using mat4_t = math::matrix4<double>;
-        using array_t = std::deque<valbox>;
+        using array_t = std::vector<valbox>;
         using object_t = str_map_t<valbox>;
 
     private:
@@ -163,8 +163,7 @@ namespace teal {
                 std::string const &c = {}, std::string const &func_name = {},
                 bool user_func = false
             ):
-                value_{v}, type_{t}, pointed_type_{pointed_type},
-                class_{c}, func_name_{func_name}, user_func_{user_func}
+                value_{v}, class_{c}, func_name_{func_name}, type_{t}, pointed_type_{pointed_type}, user_func_{user_func}
             {
             }
             box_data(
@@ -172,8 +171,8 @@ namespace teal {
                 std::string const &c = {}, std::string const &func_name = {},
                 bool user_func = false
             ):
-                value_{std::move(v)}, type_{t}, pointed_type_{pointed_type},
-                class_{c}, func_name_{func_name}, user_func_{user_func}            {
+                value_{std::move(v)}, class_{c}, func_name_{func_name}, type_{t}, pointed_type_{pointed_type}, user_func_{user_func}
+            {
             }
             void undefine() {
                 type_ = type::UNDEFINED;
@@ -183,43 +182,9 @@ namespace teal {
                 user_func_ = false;
             }
 
-            void lock() {
-                pwr_.fetch_add(1, std::memory_order_acq_rel);
-                shut_on_destroy up{[this]() { pwr_.fetch_sub(1, std::memory_order_acq_rel); }};
-                std::int32_t wanted{0};
-                while(!mtp_.compare_exchange_weak(wanted, -1, std::memory_order_release, std::memory_order_acquire)) {
-                    wanted = 0;
-                }
-            }
-            void unlock() {
-                if(mtp_.fetch_add(1, std::memory_order_acq_rel) != -1) {
-                    throw std::runtime_error{"locking counting error"};
-                }
-            }
-            void lock_shared() {
-                std::int32_t curr{mtp_.load(std::memory_order_acquire)};
-                while(true) {
-                    if(pwr_.load(std::memory_order_acquire) > 0) { continue; }
-                    if(curr < 0) {
-                        curr = mtp_.load(std::memory_order_acquire);
-                    } else {
-                        if(mtp_.compare_exchange_weak(curr, curr + 1, std::memory_order_release, std::memory_order_acquire)) {
-                            break;
-                        }
-                    }
-                }
-            }
-            void unlock_shared() {
-                if(mtp_.fetch_sub(1, std::memory_order_acq_rel) <= 0) {
-                    throw std::runtime_error{"locking counting error"};
-                }
-            }
-
             value_t value_{nullptr};
             std::string class_{};
             std::string func_name_{};
-            std::atomic<std::int32_t> mtp_{0};
-            std::atomic<std::int32_t> pwr_{0};
             type type_{type::UNDEFINED};
             type pointed_type_{type::UNDEFINED};
             bool user_func_{false};
@@ -300,7 +265,6 @@ namespace teal {
         if(!ref.box_) { \
             ref.box_ = std::make_shared<box_data>(v, type::ARGTYPE); \
         } else { \
-            std::unique_lock lck{*ref.box_}; \
             ref.box_->value_ = v; \
             ref.box_->type_ = type::ARGTYPE; \
             ref.box_->pointed_type_ = type::UNDEFINED; \
@@ -308,13 +272,11 @@ namespace teal {
             ref.box_->func_name_.clear(); \
             ref.box_->user_func_ = false; \
         } \
-        ref.pointed_box_.reset(); \
         return *this;
 #define VALBOX_ASSIGN_PTR_OPERATOR_BODY(ARGTYPE) valbox &ref{deref()}; \
         if(!ref.box_) { \
             ref.box_ = std::make_shared<box_data>((void *)v, type::POINTER, type::ARGTYPE); \
         } else { \
-            std::unique_lock lck{*ref.box_}; \
             ref.box_->value_ = (void *)v; \
             ref.box_->type_ = type::POINTER; \
             ref.box_->pointed_type_ = type::ARGTYPE; \
@@ -322,7 +284,6 @@ namespace teal {
             ref.box_->func_name_.clear(); \
             ref.box_->user_func_ = false; \
         } \
-        ref.pointed_box_.reset(); \
         return *this;
 
         valbox &operator=(bool v) { VALBOX_ASSIGN_OPERATOR_BODY(BOOL) }
@@ -344,7 +305,6 @@ namespace teal {
             if(!ref.box_) {
                 ref.box_ = std::make_shared<box_data>(std::string{v}, type::STRING);
             } else {
-                std::unique_lock lck{*ref.box_};
                 ref.box_->value_ = std::string{v};
                 ref.box_->type_ = type::STRING;
                 ref.box_->pointed_type_ = type::UNDEFINED;
@@ -352,7 +312,6 @@ namespace teal {
                 ref.box_->func_name_.clear();
                 ref.box_->user_func_ = false;
             }
-            ref.pointed_box_.reset();
             return *this;
         }
         valbox &operator=(std::wstring const &v) { VALBOX_ASSIGN_OPERATOR_BODY(WSTRING) }
@@ -362,7 +321,6 @@ namespace teal {
             if(!ref.box_) {
                 ref.box_ = std::make_shared<box_data>(std::wstring{v}, type::WSTRING);
             } else {
-                std::unique_lock lck{*ref.box_};
                 ref.box_->value_ = std::wstring{v};
                 ref.box_->type_ = type::WSTRING;
                 ref.box_->pointed_type_ = type::UNDEFINED;
@@ -370,7 +328,6 @@ namespace teal {
                 ref.box_->func_name_.clear();
                 ref.box_->user_func_ = false;
             }
-            ref.pointed_box_.reset();
             return *this;
         }
         valbox &operator=(std::string &&v) {
@@ -378,7 +335,6 @@ namespace teal {
             if(!ref.box_) {
                 ref.box_ = std::make_shared<box_data>(std::move(v), type::STRING);
             } else {
-                std::unique_lock lck{*ref.box_};
                 ref.box_->value_ = std::move(v);
                 ref.box_->type_ = type::STRING;
                 ref.box_->pointed_type_ = type::UNDEFINED;
@@ -386,7 +342,6 @@ namespace teal {
                 ref.box_->func_name_.clear();
                 ref.box_->user_func_ = false;
             }
-            ref.pointed_box_.reset();
             return *this;
         }
         valbox &operator=(std::wstring &&v) {
@@ -394,7 +349,6 @@ namespace teal {
             if(!ref.box_) {
                 ref.box_ = std::make_shared<box_data>(std::move(v), type::WSTRING);
             } else {
-                std::unique_lock lck{*ref.box_};
                 ref.box_->value_ = std::move(v);
                 ref.box_->type_ = type::WSTRING;
                 ref.box_->pointed_type_ = type::UNDEFINED;
@@ -402,7 +356,6 @@ namespace teal {
                 ref.box_->func_name_.clear();
                 ref.box_->user_func_ = false;
             }
-            ref.pointed_box_.reset();
             return *this;
         }
         valbox &operator=(std::int8_t v) { VALBOX_ASSIGN_OPERATOR_BODY(S8) }
@@ -432,7 +385,6 @@ namespace teal {
             if(!ref.box_) {
                 ref.box_ = std::make_shared<box_data>(value_t{}, type::UNDEFINED);
             } else {
-                std::unique_lock lck{*ref.box_};
                 ref.box_->value_ = value_t{};
                 ref.box_->type_ = type::UNDEFINED;
                 ref.box_->pointed_type_ = type::UNDEFINED;
@@ -441,7 +393,6 @@ namespace teal {
                 ref.box_->user_func_ = false;
             }
             from_json(v);
-            ref.pointed_box_.reset();
             return *this;
         }
         valbox &operator=(object_t const &v) { VALBOX_ASSIGN_OPERATOR_BODY(OBJECT) }
@@ -451,7 +402,6 @@ namespace teal {
 
         void construct_array(array_t const &arr) {
             box_ = std::make_shared<box_data>(arr, type::ARRAY);
-            pointed_box_.reset();
             array_t &a{as_array()};
             for(auto &&v: arr) {
                 a.push_back(v.clone());
@@ -512,26 +462,22 @@ namespace teal {
 #endif
         ~valbox() = default;
         valbox(valbox const &that):
-            box_{that.box_},
-            pointed_box_{that.pointed_box_}
+            box_{that.box_}
         {
         }
         valbox(valbox &&that) noexcept:
-            box_{std::move(that.box_)},
-            pointed_box_{std::move(that.pointed_box_)}
+            box_{std::move(that.box_)}
         {
         }
         valbox &operator=(valbox const &that) {
             if(&that != this) {
-                pointed_box_ = that.pointed_box_;
                 box_ = that.box_;
             }
             return *this;
         }
         valbox &operator=(valbox &&that) noexcept {
             if(&that != this) {
-                std::swap(box_, that.box_);
-                std::swap(pointed_box_, that.pointed_box_);
+                box_ = std::move(that.box_);
             }
             return *this;
         }
@@ -548,16 +494,7 @@ namespace teal {
                 for(auto &&p: dr.as_object()) {
                     o[p.first] = p.second.clone();
                 }
-                valbox res{std::make_shared<box_data>(
-                        std::move(o),
-                        dr.box_->type_,
-                        dr.box_->pointed_type_,
-                        dr.box_->class_,
-                        dr.box_->func_name_,
-                        dr.box_->user_func_
-                    )
-                };
-                res.pointed_box_ = dr.pointed_box_;
+                valbox res{std::make_shared<box_data>(std::move(o), type::OBJECT)};
                 return res;
             } else if(drt == type::ARRAY) {
                 array_t a{};
@@ -565,16 +502,7 @@ namespace teal {
                     a.push_back(i.clone());
                 }
                 a.resize(dr.as_array().size());
-                valbox res{std::make_shared<box_data>(
-                        std::move(a),
-                        dr.box_->type_,
-                        dr.box_->pointed_type_,
-                        dr.box_->class_,
-                        dr.box_->func_name_,
-                        dr.box_->user_func_
-                    )
-                };
-                res.pointed_box_ = dr.pointed_box_;
+                valbox res{std::make_shared<box_data>(std::move(a), type::ARRAY)};
                 return res;
             } else if(dr.box_) {
                 valbox res{std::make_shared<box_data>(
@@ -586,7 +514,6 @@ namespace teal {
                         dr.box_->user_func_
                     )
                 };
-                res.pointed_box_ = dr.pointed_box_;
                 return res;
             } else {
                 return valbox{valbox_no_initialize::dont_do_it};
@@ -597,7 +524,6 @@ namespace teal {
             if(box_) {
                 box_->undefine();
             }
-            pointed_box_.reset();
         }
 
         type val_type() const { return box_ ? box_->type_ : type::UNDEFINED; }
@@ -1116,7 +1042,6 @@ namespace teal {
             valbox &dr{deref()};
             if(!dr.box_) {
                 dr.box_ = std::make_shared<box_data>(array_t{}, type::ARRAY);
-                dr.pointed_box_.reset();
             } else if(dr.val_or_pointed_type() != type::ARRAY) {
                 dr.box_->value_ = array_t{};
                 dr.box_->type_ = type::ARRAY;
@@ -1124,7 +1049,6 @@ namespace teal {
                 dr.box_->pointed_type_ = type::UNDEFINED;
                 dr.box_->func_name_.clear();
                 dr.box_->user_func_ = false;
-                dr.pointed_box_.reset();
             }
             return *this;
         }
@@ -1140,7 +1064,6 @@ namespace teal {
                 dr.box_->pointed_type_ = type::UNDEFINED;
                 dr.box_->func_name_.clear();
                 dr.box_->user_func_ = false;
-                dr.pointed_box_.reset();
             }
             return *this;
         }
@@ -1365,7 +1288,6 @@ namespace teal {
                 thisref.box_->class_.clear();
                 thisref.box_->func_name_.clear();
                 thisref.box_->user_func_ = false;
-                thisref.pointed_box_.reset();
             }
             return *this;
         }
@@ -1406,7 +1328,6 @@ namespace teal {
                 case type::MAT4:        thisref.box_->value_ = mat4_t{}; break;
                 default: throw std::runtime_error{"assigning is needed to become a given type"};;
             }
-            thisref.pointed_box_.reset();
             thisref.box_->type_ = thatt;
             thisref.box_->func_name_.clear();
             thisref.box_->user_func_ = false;
@@ -1443,7 +1364,6 @@ namespace teal {
                     case type::MAT4:        vref.box_ = std::make_shared<box_data>(mat4_t{}, type::MAT4); break; break;
                     default: throw std::runtime_error{"assigning is needed to become a given type"};
                 }
-                vref.pointed_box_.reset();
                 return *this;
             }
             switch(t) {
@@ -1470,7 +1390,6 @@ namespace teal {
                 case type::MAT4:        vref.box_->value_ = mat4_t(); break;
                 default: throw std::runtime_error{"assigning is needed to become a given type"};
             }
-            vref.pointed_box_.reset();
             vref.box_->type_ = t;
             return *this;
         }
@@ -1577,7 +1496,6 @@ namespace teal {
                 case type::UNDEFINED: {
                     valbox res{static_cast<std::int64_t>(0)};
                     valbox &dr{deref()};
-                    dr.pointed_box_.reset();
                     if(!dr.box_) {
                         dr.box_ = std::make_shared<box_data>(static_cast<std::int64_t>(1), type::S64);
                     } else {
@@ -1607,7 +1525,6 @@ namespace teal {
                 case type::BOOL: as_bool() = false; break;
                 case type::UNDEFINED: {
                     auto dr{deref()};
-                    dr.pointed_box_.reset();
                     if(!dr.box_) {
                         dr.box_ = std::make_shared<box_data>(static_cast<std::int64_t>(-1), type::S64);
                     } else {
@@ -1639,7 +1556,6 @@ namespace teal {
                 case type::UNDEFINED: {
                     valbox res{static_cast<std::int64_t>(0)};
                     valbox &dr{deref()};
-                    dr.pointed_box_.reset();
                     if(!dr.box_) {
                         dr.box_ = std::make_shared<box_data>(static_cast<std::int64_t>(-1), type::S64);
                     } else {
@@ -1839,7 +1755,14 @@ namespace teal {
                         case type::POINTER: break;
                         case type::CLASS: break;
                         case type::FUNC: break;
-                        case type::ARRAY: { auto res{rr.clone()}; res.as_array().push_front(lr.as_bool()); return res; }
+                        case type::ARRAY: {
+                            valbox res{};
+                            res.become_array();
+                            res.as_array().push_back(lr.as_bool());
+                            auto r{rr.clone()};
+                            res.as_array().insert(res.as_array().end(), r.as_array().begin(), r.as_array().end());
+                            return res;
+                        }
                         case type::OBJECT: break;
                         case type::STRING: return (lr.as_bool() ? std::string{"true"} : std::string{"false"}) + rr.as_string();
                         case type::WSTRING: return (lr.as_bool() ? std::wstring{L"true"} : std::wstring{L"false"}) + rr.as_wstring();
@@ -1869,7 +1792,14 @@ namespace teal {
                         case type::POINTER: break;
                         case type::CLASS: break;
                         case type::FUNC: break;
-                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.as_char()); return res; }
+                        case type::ARRAY: {
+                            valbox res{};
+                            res.become_array();
+                            res.as_array().push_back(lr.as_char());
+                            auto r{rr.clone()};
+                            res.as_array().insert(res.as_array().end(), r.as_array().begin(), r.as_array().end());
+                            return res;
+                        }
                         case type::OBJECT: break;
                         case type::STRING: return std::string{} + lr.as_char() + rr.as_string();
                         case type::WSTRING: return std::wstring{} + (wchar_t)lr.as_char() + rr.as_wstring();
@@ -1899,7 +1829,14 @@ namespace teal {
                         case type::POINTER: break;
                         case type::CLASS: break;
                         case type::FUNC: break;
-                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.as_s8()); return res; }
+                        case type::ARRAY: {
+                            valbox res{};
+                            res.become_array();
+                            res.as_array().push_back(lr.as_s8());
+                            auto r{rr.clone()};
+                            res.as_array().insert(res.as_array().end(), r.as_array().begin(), r.as_array().end());
+                            return res;
+                        }
                         case type::OBJECT: break;
                         case type::STRING: return str_util::itoa<std::string>(lr.as_s8()) + rr.as_string();
                         case type::WSTRING: return str_util::itoa<std::wstring>(lr.as_s8()) + rr.as_wstring();
@@ -1929,7 +1866,14 @@ namespace teal {
                         case type::POINTER: break;
                         case type::CLASS: break;
                         case type::FUNC: break;
-                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.as_u8()); return res; }
+                        case type::ARRAY: {
+                            valbox res{};
+                            res.become_array();
+                            res.as_array().push_back(lr.as_u8());
+                            auto r{rr.clone()};
+                            res.as_array().insert(res.as_array().end(), r.as_array().begin(), r.as_array().end());
+                            return res;
+                        }
                         case type::OBJECT: break;
                         case type::STRING: return str_util::utoa<std::string>(lr.as_u8()) + rr.as_string();
                         case type::WSTRING: return str_util::utoa<std::wstring>(lr.as_u8()) + rr.as_wstring();
@@ -1959,7 +1903,14 @@ namespace teal {
                         case type::POINTER: break;
                         case type::CLASS: break;
                         case type::FUNC: break;
-                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.as_s16()); return res; }
+                        case type::ARRAY: {
+                            valbox res{};
+                            res.become_array();
+                            res.as_array().push_back(lr.as_s16());
+                            auto r{rr.clone()};
+                            res.as_array().insert(res.as_array().end(), r.as_array().begin(), r.as_array().end());
+                            return res;
+                        }
                         case type::OBJECT: break;
                         case type::STRING: return str_util::itoa<std::string>(lr.as_s16()) + rr.as_string();
                         case type::WSTRING: return str_util::itoa<std::wstring>(lr.as_s16()) + rr.as_wstring();
@@ -1989,7 +1940,14 @@ namespace teal {
                         case type::POINTER: break;
                         case type::CLASS: break;
                         case type::FUNC: break;
-                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.as_u16()); return res; }
+                        case type::ARRAY: {
+                            valbox res{};
+                            res.become_array();
+                            res.as_array().push_back(lr.as_u16());
+                            auto r{rr.clone()};
+                            res.as_array().insert(res.as_array().end(), r.as_array().begin(), r.as_array().end());
+                            return res;
+                        }
                         case type::OBJECT: break;
                         case type::STRING: return str_util::utoa<std::string>(lr.as_u16()) + rr.as_string();
                         case type::WSTRING: return str_util::utoa<std::wstring>(lr.as_u16()) + rr.as_wstring();
@@ -2019,7 +1977,14 @@ namespace teal {
                         case type::POINTER: break;
                         case type::CLASS: break;
                         case type::FUNC: break;
-                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.as_char()); return res; }
+                        case type::ARRAY: {
+                            valbox res{};
+                            res.become_array();
+                            res.as_array().push_back(lr.as_wchar());
+                            auto r{rr.clone()};
+                            res.as_array().insert(res.as_array().end(), r.as_array().begin(), r.as_array().end());
+                            return res;
+                        }
                         case type::OBJECT: break;
                         case type::STRING: return std::string{} + str_util::ucs_to_utf8(lr.as_wchar()) + rr.as_string();
                         case type::WSTRING: return std::wstring{} + lr.as_wchar() + rr.as_wstring();
@@ -2049,7 +2014,14 @@ namespace teal {
                         case type::POINTER: break;
                         case type::CLASS: break;
                         case type::FUNC: break;
-                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.as_s32()); return res; }
+                        case type::ARRAY: {
+                            valbox res{};
+                            res.become_array();
+                            res.as_array().push_back(lr.as_s32());
+                            auto r{rr.clone()};
+                            res.as_array().insert(res.as_array().end(), r.as_array().begin(), r.as_array().end());
+                            return res;
+                        }
                         case type::OBJECT: break;
                         case type::STRING: return str_util::itoa<std::string>(lr.as_s32()) + rr.as_string();
                         case type::WSTRING: return str_util::itoa<std::wstring>(lr.as_s32()) + rr.as_wstring();
@@ -2079,7 +2051,14 @@ namespace teal {
                         case type::POINTER: break;
                         case type::CLASS: break;
                         case type::FUNC: break;
-                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.as_u32()); return res; }
+                        case type::ARRAY: {
+                            valbox res{};
+                            res.become_array();
+                            res.as_array().push_back(lr.as_u32());
+                            auto r{rr.clone()};
+                            res.as_array().insert(res.as_array().end(), r.as_array().begin(), r.as_array().end());
+                            return res;
+                        }
                         case type::OBJECT: break;
                         case type::STRING: return str_util::utoa<std::string>(lr.as_u32()) + rr.as_string();
                         case type::WSTRING: return str_util::utoa<std::wstring>(lr.as_u32()) + rr.as_wstring();
@@ -2109,7 +2088,14 @@ namespace teal {
                         case type::POINTER: break;
                         case type::CLASS: break;
                         case type::FUNC: break;
-                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.as_s64()); return res; }
+                        case type::ARRAY: {
+                            valbox res{};
+                            res.become_array();
+                            res.as_array().push_back(lr.as_s64());
+                            auto r{rr.clone()};
+                            res.as_array().insert(res.as_array().end(), r.as_array().begin(), r.as_array().end());
+                            return res;
+                        }
                         case type::OBJECT: break;
                         case type::STRING: return str_util::itoa<std::string>(lr.as_s64()) + rr.as_string();
                         case type::WSTRING: return str_util::itoa<std::wstring>(lr.as_s64()) + rr.as_wstring();
@@ -2139,7 +2125,14 @@ namespace teal {
                         case type::POINTER: break;
                         case type::CLASS: break;
                         case type::FUNC: break;
-                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.as_u64()); return res; }
+                        case type::ARRAY: {
+                            valbox res{};
+                            res.become_array();
+                            res.as_array().push_back(lr.as_u64());
+                            auto r{rr.clone()};
+                            res.as_array().insert(res.as_array().end(), r.as_array().begin(), r.as_array().end());
+                            return res;
+                        }
                         case type::OBJECT: break;
                         case type::STRING: return str_util::utoa<std::string>(lr.as_u64()) + rr.as_string();
                         case type::WSTRING: return str_util::utoa<std::wstring>(lr.as_u64()) + rr.as_wstring();
@@ -2169,7 +2162,14 @@ namespace teal {
                         case type::POINTER: break;
                         case type::CLASS: break;
                         case type::FUNC: break;
-                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.as_float()); return res; }
+                        case type::ARRAY: {
+                            valbox res{};
+                            res.become_array();
+                            res.as_array().push_back(lr.as_float());
+                            auto r{rr.clone()};
+                            res.as_array().insert(res.as_array().end(), r.as_array().begin(), r.as_array().end());
+                            return res;
+                        }
                         case type::OBJECT: break;
                         case type::STRING: return str_util::ftoa(lr.as_float()) + rr.as_string();
                         case type::WSTRING: return str_util::from_utf8(str_util::ftoa(lr.as_float())) + rr.as_wstring();
@@ -2199,7 +2199,14 @@ namespace teal {
                         case type::POINTER: break;
                         case type::CLASS: break;
                         case type::FUNC: break;
-                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.as_double()); return res; }
+                        case type::ARRAY: {
+                            valbox res{};
+                            res.become_array();
+                            res.as_array().push_back(lr.as_double());
+                            auto r{rr.clone()};
+                            res.as_array().insert(res.as_array().end(), r.as_array().begin(), r.as_array().end());
+                            return res;
+                        }
                         case type::OBJECT: break;
                         case type::STRING: return str_util::ftoa(lr.as_double()) + rr.as_string();
                         case type::WSTRING: return str_util::from_utf8(str_util::ftoa(lr.as_double())) + rr.as_wstring();
@@ -2229,7 +2236,14 @@ namespace teal {
                         case type::POINTER: break;
                         case type::CLASS: break;
                         case type::FUNC: break;
-                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.as_long_double()); return res; }
+                        case type::ARRAY: {
+                            valbox res{};
+                            res.become_array();
+                            res.as_array().push_back(lr.as_long_double());
+                            auto r{rr.clone()};
+                            res.as_array().insert(res.as_array().end(), r.as_array().begin(), r.as_array().end());
+                            return res;
+                        }
                         case type::OBJECT: break;
                         case type::STRING: return str_util::ftoa(lr.as_long_double()) + rr.as_string();
                         case type::WSTRING: return str_util::from_utf8(str_util::ftoa(lr.as_long_double())) + rr.as_wstring();
@@ -2259,7 +2273,14 @@ namespace teal {
                         case type::POINTER: break;
                         case type::CLASS: break;
                         case type::FUNC: break;
-                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.clone()); return res; }
+                        case type::ARRAY: {
+                            valbox res{};
+                            res.become_array();
+                            res.as_array().push_back(lr.as_vec4());
+                            auto r{rr.clone()};
+                            res.as_array().insert(res.as_array().end(), r.as_array().begin(), r.as_array().end());
+                            return res;
+                        }
                         case type::OBJECT: break;
                         case type::STRING: return lr.cast_to_string() + rr.as_string();
                         case type::WSTRING: return lr.cast_to_wstring() + rr.as_wstring();
@@ -2289,7 +2310,14 @@ namespace teal {
                         case type::POINTER: break;
                         case type::CLASS: break;
                         case type::FUNC: break;
-                        case type::ARRAY:  { auto res{rr.clone()}; res.as_array().push_front(lr.clone()); return res; }
+                        case type::ARRAY: {
+                            valbox res{};
+                            res.become_array();
+                            res.as_array().push_back(lr.as_mat4());
+                            auto r{rr.clone()};
+                            res.as_array().insert(res.as_array().end(), r.as_array().begin(), r.as_array().end());
+                            return res;
+                        }
                         case type::OBJECT: break;
                         case type::STRING: return lr.cast_to_string() + rr.as_string();
                         case type::WSTRING: return lr.cast_to_wstring() + rr.as_wstring();
@@ -2329,7 +2357,11 @@ namespace teal {
                         case type::STRING:
                         case type::WSTRING:
                         case type::UNDEFINED:
-                        case type::VALBOX: { auto res{lr.clone()}; res.as_array().push_back(rr.clone()); return res; }
+                        case type::VALBOX: {
+                            auto res{lr.clone()};
+                            res.as_array().push_back(rr.clone());
+                            return res;
+                        }
                         case type::ARRAY: { auto res{lr.clone()}; for(auto &&v: rr.as_array()) { res.as_array().push_back(v.clone()); } return res; }
                         default: break;
                     }
@@ -2992,7 +3024,6 @@ namespace teal {
             valbox &lr{deref()};
             valbox const &rr{rarg.deref()};
             auto lt{lr.val_or_pointed_type()};
-            auto rt{rr.val_or_pointed_type()};
             switch(lt) {
                 case type::BOOL: lr.as_bool() -= rr.cast_to_bool(); return *this;
                 case type::CHAR: lr.as_char() -= rr.cast_to_char(); return *this;
@@ -5685,12 +5716,6 @@ namespace teal {
 
         valbox &assign_preserving_type(valbox const &that) {
             valbox &thisref{deref()};
-            bool locked{false};
-            shut_on_destroy sod{[&]() { if(locked) { thisref.box_->unlock(); } }};
-            if(thisref.box_) {
-                thisref.box_->lock();
-                locked = true;
-            }
             valbox const &thatref{that.deref()};
             auto thist{thisref.val_or_pointed_type()};
             auto thatt{thatref.val_or_pointed_type()};
@@ -6278,7 +6303,6 @@ namespace teal {
                             break;
                         case type::ARRAY:
                             thisref.box_->value_ = thatref.box_->value_;
-                            thisref.pointed_box_ = thatref.pointed_box_;
                             break;
                         case type::STRING: {
                                 array_t &thisarr{thisref.as_array()};
@@ -6358,7 +6382,7 @@ namespace teal {
                         case type::U8: thisref.as_string() = str_util::utoa<std::string>(thatref.as_u8()); break;
                         case type::S16: thisref.as_string() = str_util::itoa<std::string>(thatref.as_s16()); break;
                         case type::U16: thisref.as_string() = str_util::utoa<std::string>(thatref.as_u16()); break;
-                        case type::WCHAR: thisref.as_string() = str_util::ucs_to_utf8(thatref.cast_to_u64()); break; // throw std::runtime_error{"inappropriate value"};
+                        case type::WCHAR: thisref.as_string() = str_util::ucs_to_utf8(thatref.cast_to_u64()); break;
                         case type::S32: thisref.as_string() = str_util::itoa<std::string>(thatref.as_s32()); break;
                         case type::U32: thisref.as_string() = str_util::utoa<std::string>(thatref.as_u32()); break;
                         case type::S64: thisref.as_string() = str_util::itoa<std::string>(thatref.as_s64()); break;
@@ -6445,15 +6469,12 @@ namespace teal {
             }
             if(that_ref.is_undefined()) {
                 if(ref.box_) {
-                    std::unique_lock l{*ref.box_};
-                    ref.box_->value_ = value_t{};
                     ref.box_->type_ = type::UNDEFINED;
                     ref.box_->pointed_type_ = type::UNDEFINED;
                     ref.box_->class_.clear();
                     ref.box_->func_name_.clear();
                     ref.box_->user_func_ = false;
                 }
-                ref.pointed_box_.reset();
             } else {
                 if(!ref.box_) {
                     ref.box_ = std::make_shared<box_data>(
@@ -6465,7 +6486,6 @@ namespace teal {
                         that_ref.box_->user_func_
                     );
                 } else {
-                    std::unique_lock l{*ref.box_};
                     ref.box_->value_ = that_ref.box_->value_;
                     ref.box_->type_ = that_ref.box_->type_;
                     ref.box_->pointed_type_ = that_ref.box_->pointed_type_;
@@ -6473,7 +6493,6 @@ namespace teal {
                     ref.box_->func_name_ = that_ref.box_->func_name_;
                     ref.box_->user_func_ = that_ref.box_->user_func_;
                 }
-                ref.pointed_box_ = that_ref.pointed_box_;
             }
             return *this;
         }
@@ -6485,7 +6504,6 @@ namespace teal {
                 return *this;
             }
             ref.box_ = std::move(that_ref.box_);
-            ref.pointed_box_ = std::move(that_ref.pointed_box_);
             return *this;
         }
 
@@ -7145,7 +7163,6 @@ namespace teal {
 
         valbox &from_json(json const &v) {
             valbox &vr{deref()};
-            vr.pointed_box_.reset();
             if(v.is_float()) {
                 if(!vr.box_) {
                     vr.box_ = std::make_shared<box_data>(v.as_longdouble(), type::LONG_DOUBLE);
@@ -7157,7 +7174,6 @@ namespace teal {
                     vr.box_->func_name_.clear();
                     vr.box_->user_func_ = false;
                 }
-                vr.pointed_box_.reset();
             } else if(v.is_number()) {
                 if(!vr.box_) {
                     vr.box_ = std::make_shared<box_data>(v.as_number(), type::S64);
@@ -7169,7 +7185,6 @@ namespace teal {
                     vr.box_->func_name_.clear();
                     vr.box_->user_func_ = false;
                 }
-                vr.pointed_box_.reset();
             } else if(v.is_string()) {
                 if(!vr.box_) {
                     vr.box_ = std::make_shared<box_data>(v.as_string(), type::STRING);
@@ -7181,7 +7196,6 @@ namespace teal {
                     vr.box_->func_name_.clear();
                     vr.box_->user_func_ = false;
                 }
-                vr.pointed_box_.reset();
             } else if(v.is_bool()) {
                 if(!vr.box_) {
                     vr.box_ = std::make_shared<box_data>(v.as_boolean(), type::BOOL);
@@ -7193,7 +7207,6 @@ namespace teal {
                     vr.box_->func_name_.clear();
                     vr.box_->user_func_ = false;
                 }
-                vr.pointed_box_.reset();
             } else if(v.is_array()) {
                 if(!vr.box_) {
                     vr.box_ = std::make_shared<box_data>(array_t{}, type::ARRAY);
@@ -7205,7 +7218,6 @@ namespace teal {
                     vr.box_->func_name_.clear();
                     vr.box_->user_func_ = false;
                 }
-                vr.pointed_box_.reset();
                 for(std::size_t i{0}; i < v.size(); ++i) {
                     valbox item{};
                     item.from_json(v[i]);
@@ -7222,7 +7234,6 @@ namespace teal {
                     vr.box_->func_name_.clear();
                     vr.box_->user_func_ = false;
                 }
-                vr.pointed_box_.reset();
                 v.traverse_object([&](std::string const &key, json const &val) {
                     vr.as_object()[key].from_json(val);
                 });
@@ -7232,8 +7243,7 @@ namespace teal {
             return *this;
         }
 
-        void set_pointed(valbox &vbp) {
-            pointed_box_ = vbp.box_;
+        void set_pointed(valbox &) {
         }
 
         std::size_t num_refs() const {
@@ -7390,15 +7400,7 @@ namespace teal {
         template<typename T>
         json serialize(T *helper) const {
             json res{};
-
             valbox const &thisref{deref()};
-            bool locked{false};
-            shut_on_destroy sod{[&]() { if(locked) { thisref.box_->unlock_shared(); } }};
-            if(thisref.box_) {
-                thisref.box_->lock_shared();
-                locked = true;
-            }
-
             res["type"] = type_to_str(thisref.val_or_pointed_type());
             json &v{res["value"]};
             if(thisref.is_undefined()) {
@@ -7811,7 +7813,6 @@ namespace teal {
         valbox(std::shared_ptr<box_data> &&b): box_{std::move(b)} {}
 
         mutable std::shared_ptr<box_data> box_{};
-        std::shared_ptr<box_data> pointed_box_{};
     };
 
     static std::ostream &operator<<(std::ostream &os, valbox const &v) {

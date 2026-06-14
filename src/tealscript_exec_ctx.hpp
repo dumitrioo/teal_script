@@ -188,10 +188,7 @@ namespace teal {
         }
 
         void clear_stack_soft() {
-            while(stack_ptr_ >= 0) {
-                stack_[stack_ptr_].clear();
-                --stack_ptr_;
-            }
+            for(; stack_ptr_ >= 0; --stack_ptr_) { stack_[stack_ptr_].clear(); }
             stack_barriers_.clear();
             clear_frame_ignore_stack();
         }

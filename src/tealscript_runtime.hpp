@@ -612,6 +612,11 @@ namespace teal {
                 return !args[0].is_undefined();
             });
 
+            add_function("clone", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                return args[0].clone();
+            });
+
             add_function("replace_substr", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 2, 3)
                 if(args.size() == 2) {
@@ -1446,13 +1451,12 @@ namespace teal {
                 auto ainfsiz{args_info.size()};
                 for(std::size_t curr_arg_number{0}; curr_arg_number < ainfsiz; ++curr_arg_number) {
                     auto &&ai{args_info[curr_arg_number]};
-                    std::string curr_arg_name{ai.argname};
                     if(!ai.is_cell) {
                         if(ai.expr_val.is_undefined()) {
                             ai.expr_val = ai.expr->eval(&exctx_, eval_caller_type::no_matter, nullptr);
                         }
                         valbox vb{ai.expr_val};
-                        exctx_.set_local_value(curr_arg_name, vb);
+                        exctx_.set_local_value(ai.argname, vb);
                     } else {
                         if(ai.cell_ptr == nullptr) {
                             auto w_it{worker_cells_.find(ai.cell_name)};
@@ -1463,7 +1467,7 @@ namespace teal {
                                     if(ex_it == extern_cells_.end()) {
                                         throw runtime_error{
                                             curr_cell->line(), curr_cell->col(),
-                                            std::string{"input value \"" + curr_arg_name + "\" not found for compute element \""} +
+                                            std::string{"input value \"" + ai.argname + "\" not found for compute element \""} +
                                                 curr_cell->inst_name() + "\""
                                         };
                                     } else {
@@ -1476,14 +1480,19 @@ namespace teal {
                                 ai.cell_ptr = w_it->second.get();
                             }
                         }
-                        exctx_.set_local_value(curr_arg_name, ai.cell_ptr->value());
+                        exctx_.set_local_value(ai.argname, ai.cell_ptr->value());
                     }
                 }
 
                 if(!curr_cell->body()) {
                     auto body_it{worker_bodies_.find(curr_cell_type_name)};
                     if(body_it == worker_bodies_.end()) {
-                        throw runtime_error{curr_cell->line(), curr_cell->col(), "cell not found"};
+                        throw runtime_error{
+                            curr_cell->line(), curr_cell->col(),
+                            std::string{"\""} + curr_cell_type_name +
+                                "\" definition not found for instantiation of \"" +
+                                curr_cell->inst_name() + "\""
+                        };
                     }
                     curr_cell->set_body(body_it->second);
                 }
@@ -1645,13 +1654,12 @@ namespace teal {
                                 auto ainfsiz{args_info.size()};
                                 for(std::size_t curr_arg_number{0}; curr_arg_number < ainfsiz; ++curr_arg_number) {
                                     worker_cell_instance::arg_info &ai{args_info[curr_arg_number]};
-                                    std::string curr_arg_name{ai.argname};
                                     if(!ai.is_cell) {
                                         if(ai.expr_val.is_undefined()) {
                                             ai.expr_val = ai.expr->eval(exctx_ptr, eval_caller_type::no_matter, nullptr);
                                         }
                                         valbox vb{ai.expr_val};
-                                        exctx_ptr->set_local_value(curr_arg_name, vb);
+                                        exctx_ptr->set_local_value(ai.argname, vb);
                                     } else {
                                         if(ai.cell_ptr == nullptr) {
                                             auto w_it{worker_cells_.find(ai.cell_name)};
@@ -1662,7 +1670,7 @@ namespace teal {
                                                     if(ex_it == extern_cells_.end()) {
                                                         throw runtime_error{
                                                             curr_cell->line(), curr_cell->col(),
-                                                            std::string{"input value \"" + curr_arg_name + "\" not found for compute element \""} +
+                                                            std::string{"input value \"" + ai.argname + "\" not found for compute element \""} +
                                                                 curr_cell->inst_name() + "\""
                                                         };
                                                     } else {
@@ -1675,14 +1683,19 @@ namespace teal {
                                                 ai.cell_ptr = w_it->second.get();
                                             }
                                         }
-                                        exctx_ptr->set_local_value(curr_arg_name, ai.cell_ptr->value());
+                                        exctx_ptr->set_local_value(ai.argname, ai.cell_ptr->value());
                                     }
                                 }
 
                                 if(!curr_cell->body()) {
                                     auto body_it{worker_bodies_.find(curr_cell_type_name)};
                                     if(body_it == worker_bodies_.end()) {
-                                        throw runtime_error{curr_cell->line(), curr_cell->col(), "cell not found"};
+                                        throw runtime_error{
+                                            curr_cell->line(), curr_cell->col(),
+                                            std::string{"\""} + curr_cell_type_name +
+                                                "\" definition not found for instantiation of \"" +
+                                                curr_cell->inst_name() + "\""
+                                        };
                                     }
                                     curr_cell->set_body(body_it->second);
                                 }
