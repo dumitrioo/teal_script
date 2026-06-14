@@ -38,7 +38,7 @@ some_value_issuer() {
         if(choice == 6) this.res = sin;
         if(choice == 7) this.res = timestamp();
         if(choice == 8) this.res = matrix(2, 2, [1, 2, 3, 4]);
-        console.print("original value changed to: ", this.res);
+        console.println("original value changed to: ", this.res);
     }
     return this.res;
 }
@@ -66,7 +66,7 @@ extern 'tealscript://127.0.0.1:43987/value_from_net' value_from_net_copy;
 ext_value_use(vname, exv) {
     if(exv != this.exv) {
         this.exv = exv;
-        console.print("remote ", typeof(exv), " \"", vname, "\": ", this.exv);
+        console.println("remote ", typeof(exv), " \"", vname, "\": ", this.exv);
     }
     return 0;
 }

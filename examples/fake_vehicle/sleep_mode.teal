@@ -16,7 +16,7 @@ human_recent_activity_timepoint_def(
     door_lock_sw_changed_timepoint,
     door_unlock_sw_changed_timepoint
 ) {
-    mrt = arr_max([ignition_status_changed_timepoint,
+    hrat = arr_max([ignition_status_changed_timepoint,
         doors_closed_state_changed_timepoint,
         windows_closed_state_changed_timepoint,
         hood_status_changed_timepoint,
@@ -31,7 +31,7 @@ human_recent_activity_timepoint_def(
         hud_brightness_changed_timepoint,
         cluster_display_cmd_changed_timepoint
     ]);
-    return mrt;
+    return hrat;
 }
 
 have_activated_elements_def(
@@ -42,10 +42,9 @@ have_activated_elements_def(
     return hazard_status || interior_light_status || radio_active;
 }
 
-may_vehicle_sleep_def(human_recent_activity_timepoint, have_activated_elements) {
-    time_without_human_activity = steady_clock() - human_recent_activity_timepoint;
-    println("may_vehicle_sleep_def: no_human_activity ", time_without_human_activity, " sec.");
-    res = have_activated_elements ? time_without_human_activity > 3600 * 2 : time_without_human_activity > 60 * 5;
+may_vehicle_sleep_def(human_act_tp, have_activated_elements) {
+    time_without_human_activity = human_act_tp != undefined ? steady_clock() - human_act_tp : 0.0;
+    res = have_activated_elements ? time_without_human_activity > 3600 : time_without_human_activity > 60 * 5;
     return res;
 }
 
@@ -69,5 +68,5 @@ human_recent_activity_timepoint_def     human_recent_activity_timepoint(
     door_lock_sw_changed_timepoint,
     door_unlock_sw_changed_timepoint
 );
-have_activated_elements_def        have_activated_elements(hazard_status, interior_light_status, radio_active);
-may_vehicle_sleep_def              vehicle_may_sleep(human_recent_activity_timepoint, have_activated_elements) 'vehicle_may_sleep';
+have_activated_elements_def             have_activated_elements(hazard_status, interior_light_status, radio_active);
+may_vehicle_sleep_def                   vehicle_may_sleep(human_recent_activity_timepoint, have_activated_elements) 'vehicle_may_sleep';

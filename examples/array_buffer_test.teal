@@ -22,45 +22,36 @@ function parttblentry(e) {
 }
 
 mbr_parser() {
-    // replace as needed
+    // replace with your drive or file name
     devname = "/dev/sda";
-    // probably, root access is needed for direct read from the hardware device
-    ab = array_buffer(file(devname).read(512));
 
+    // probably, the root access is needed for direct read from the hardware device
+    arrbuf = array_buffer(file(devname).read(512));
 
-    ///////////////////////////////////////////////////////////////
-    println(hexdump(ab.to_string()));
-    ab.u16_at(510).ntoh().itoa(16).println();
-    ab.u16_at(510) = 0x3322;
-    println(hexdump(ab.to_string()));
-    exit();
-    return 0;
-    ///////////////////////////////////////////////////////////////
-
-
-    if(ab.size() != 512) {
-        console.error("invalid data size for MBR: ", ab.size());
+    if(arrbuf.size() != 512) {
+        console.error("invalid data size for MBR: ", arrbuf.size());
         return exit(1);
     }
 
-    println("The whole MBR data");
-    println(hexdump(ab.to_string()));
+    println("The whole MBR data:");
+    println(hexdump(arrbuf.to_string()));
+    println();
+
+    println("Boot signature: 0x", itoa(ntoh(arrbuf.u16_at(510)), 16, 4));
     println();
 
     println("Aassuming classical generic MBR,");
     println("Bootstrap code area");
-    println(hexdump(ab.sub_buffer(0, 446).to_string()));
+    println(hexdump(arrbuf.sub_buffer(0, 446).to_string()));
 
     println("Partition entry №1");
-    parttblentry(ab.sub_buffer(446, 16));
+    parttblentry(arrbuf.sub_buffer(446, 16));
     println("Partition entry №2");
-    parttblentry(ab.sub_buffer(462, 16));
+    parttblentry(arrbuf.sub_buffer(462, 16));
     println("Partition entry №3");
-    parttblentry(ab.sub_buffer(478, 16));
+    parttblentry(arrbuf.sub_buffer(478, 16));
     println("Partition entry №4");
-    parttblentry(ab.sub_buffer(494, 16));
-
-    println("Boot signature: 0x", itoa(ntoh(ab.u16_at(510)), 16, 4));
+    parttblentry(arrbuf.sub_buffer(494, 16));
 
     return exit(0);
 }

@@ -59,10 +59,12 @@ function apply_func(a, fn) {
     }
 }
 
-
 my_drafts(host_data) {
     console.fixed();
     console.setprecision(9);
+
+    float().sizeof().println();
+    return exit();
 
     obj = object(1, 2);
     k = [[1,2,3], [1,2,3], [obj]];

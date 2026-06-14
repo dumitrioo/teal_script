@@ -1,3 +1,25 @@
+performance_limiter_def() {
+    if(this.initialized == undefined) {
+        this.initialized = true;
+        set_cycle_sleep_seconds(0.0001);
+        set_inactive_sleep_seconds(0.01);
+    }
+}
+performance_limiter_def schema_perflimit();
+
+
+exmpl_exec_time_limiter_def(dt) {
+    if(this.t == undefined) {
+        this.t = timestamp().fseconds() + dt;
+    }
+    if(timestamp().fseconds() > this.t) {
+        exit();
+    }
+    return 0;
+}
+exmpl_exec_time_limiter_def one_second_lim(0.1);
+
+
 function first_defined(v1, v2) {
     return v1 != undefined ? v1 : v2;
 }
@@ -16,9 +38,11 @@ function max(v1, v2) {
 
 function arr_min(arr) {
     res = undefined;
-    for(i = 0; i < arr.size(); ++i) {
-        if(res == undefined || arr[i] < res) {
-            res = arr[i];
+    if(arr.is_array()) {
+        for(i = 0; i < arr.size(); ++i) {
+            if(res == undefined || arr[i] < res) {
+                res = arr[i];
+            }
         }
     }
     return res;
@@ -26,9 +50,11 @@ function arr_min(arr) {
 
 function arr_max(arr) {
     res = undefined;
-    for(i = 0; i < arr.size(); ++i) {
-        if(res == undefined || res < arr[i]) {
-            res = arr[i];
+    if(arr.is_array()) {
+        for(i = 0; i < arr.size(); ++i) {
+            if(res == undefined || res < arr[i]) {
+                res = arr[i];
+            }
         }
     }
     return res;
