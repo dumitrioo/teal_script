@@ -314,7 +314,6 @@ my_drafts(host_data) {
     catch(e)
         e.println(" (caught)");
     println("s = ", s);
-    undefine(undefine);
     undefine(s);
     println("s = ", s);
 
