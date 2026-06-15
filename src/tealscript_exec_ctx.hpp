@@ -490,11 +490,11 @@ namespace teal {
     private:
         class stack_frame {
         public:
-            void put(std::string const &name, valbox const &value) {
-                m_[name] = value;
+            void put(std::string const &name, valbox &value) {
                 if(!value.is_stack_placement()) {
-                    m_[name].set_stack_placement();
+                    value.set_stack_placement();
                 }
+                m_[name] = value;
             }
 
             bool get(std::string const &name, valbox &res) const {
