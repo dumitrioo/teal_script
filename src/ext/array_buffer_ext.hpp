@@ -330,85 +330,71 @@ namespace teal {
             rt->add_method("array_buffer", "bool_at", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 valbox res{TEALTHIS(args, std::shared_ptr<array_buffer>)->ref_at<bool>(args[1].cast_to_size_t())};
-                res.set_pointed(args[0]);
                 return res;
             });
             rt->add_method("array_buffer", "char_at", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 valbox res{TEALTHIS(args, std::shared_ptr<array_buffer>)->ref_at<char>(args[1].cast_to_size_t())};
-                res.set_pointed(args[0]);
                 return res;
             });
             rt->add_method("array_buffer", "wchar_at", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 valbox res{TEALTHIS(args, std::shared_ptr<array_buffer>)->ref_at<wchar_t>(args[1].cast_to_size_t())};
-                res.set_pointed(args[0]);
                 return res;
             });
             rt->add_method("array_buffer", "i8_at", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 valbox res{TEALTHIS(args, std::shared_ptr<array_buffer>)->ref_at<int8_t>(args[1].cast_to_size_t())};
-                res.set_pointed(args[0]);
                 return res;
             });
             rt->add_method("array_buffer", "u8_at", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 valbox res{TEALTHIS(args, std::shared_ptr<array_buffer>)->ref_at<uint8_t>(args[1].cast_to_size_t())};
-                res.set_pointed(args[0]);
                 return res;
             });
             rt->add_method("array_buffer", "i16_at", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 valbox res{TEALTHIS(args, std::shared_ptr<array_buffer>)->ref_at<int16_t>(args[1].cast_to_size_t())};
-                res.set_pointed(args[0]);
                 return res;
             });
             rt->add_method("array_buffer", "u16_at", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 valbox res{TEALTHIS(args, std::shared_ptr<array_buffer>)->ref_at<uint16_t>(args[1].cast_to_size_t())};
-                res.set_pointed(args[0]);
                 return res;
             });
             rt->add_method("array_buffer", "i32_at", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 valbox res{TEALTHIS(args, std::shared_ptr<array_buffer>)->ref_at<int32_t>(args[1].cast_to_size_t())};
-                res.set_pointed(args[0]);
                 return res;
             });
             rt->add_method("array_buffer", "u32_at", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 valbox res{TEALTHIS(args, std::shared_ptr<array_buffer>)->ref_at<uint32_t>(args[1].cast_to_size_t())};
-                res.set_pointed(args[0]);
                 return res;
             });
             rt->add_method("array_buffer", "i64_at", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 valbox res{TEALTHIS(args, std::shared_ptr<array_buffer>)->ref_at<int64_t>(args[1].cast_to_size_t())};
-                res.set_pointed(args[0]);
                 return res;
             });
             rt->add_method("array_buffer", "u64_at", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 valbox res{TEALTHIS(args, std::shared_ptr<array_buffer>)->ref_at<uint64_t>(args[1].cast_to_size_t())};
-                res.set_pointed(args[0]);
                 return res;
             });
             rt->add_method("array_buffer", "f32_at", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 valbox res{TEALTHIS(args, std::shared_ptr<array_buffer>)->ref_at<float>(args[1].cast_to_size_t())};
-                res.set_pointed(args[0]);
                 return res;
             });
             rt->add_method("array_buffer", "f64_at", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 valbox res{TEALTHIS(args, std::shared_ptr<array_buffer>)->ref_at<double>(args[1].cast_to_size_t())};
-                res.set_pointed(args[0]);
                 return res;
             });
             rt->add_method("array_buffer", "float_at", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 valbox res{TEALTHIS(args, std::shared_ptr<array_buffer>)->ref_at<long double>(args[1].cast_to_size_t())};
-                res.set_pointed(args[0]);
                 return res;
             });
         }
