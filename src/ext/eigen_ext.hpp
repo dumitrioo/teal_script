@@ -449,26 +449,6 @@ namespace teal {
             if(rt_ == nullptr) {
                 return;
             }
-
-            // rt_->remove_object_services("timestamp");
-            // rt_->remove_function("timestamp");
-            // rt_->remove_function("gmtimestamp");
-            // rt_->remove_function("steady_clock");
-            // rt_->remove_function("time");
-            // rt_->remove_function("gmtime");
-            // rt_->remove_method("timestamp", "year");
-            // rt_->remove_method("timestamp", "month");
-            // rt_->remove_method("timestamp", "day");
-            // rt_->remove_method("timestamp", "weekday");
-            // rt_->remove_method("timestamp", "hour");
-            // rt_->remove_method("timestamp", "min");
-            // rt_->remove_method("timestamp", "sec");
-            // rt_->remove_method("timestamp", "seconds");
-            // rt_->remove_method("timestamp", "fseconds");
-            // rt_->remove_method("timestamp", "as_iso_8601");
-            // rt_->remove_method("timestamp", "as_gmt_iso_8601");
-            // rt_->remove_method("timestamp", "from_string");
-
             rt_ = nullptr;
         }
 
