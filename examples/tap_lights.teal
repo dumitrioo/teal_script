@@ -316,12 +316,3 @@ pcll cfc(t,15,12, sn); pcll cfs(t,15,28, sn);
 pcll cfd(t,15,13, sn); pcll cft(t,15,29, sn);
 pcll cfe(t,15,14, sn); pcll cfu(t,15,30, sn);
 pcll cff(t,15,15, sn); pcll cfv(t,15,31, sn);
-
-performance_limiter() {
-    if(this.initialized == undefined) {
-        this.initialized = true;
-        set_cycle_sleep_seconds(0.00001);
-        set_inactive_sleep_seconds(0.01);
-    }
-}
-performance_limiter perf_limiter();
