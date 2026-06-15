@@ -18,6 +18,14 @@ namespace teal {
 
     class valbox {
     public:
+        enum class mem_placement: std::uint8_t {
+            unbounded,
+            literal,
+            stack,
+            instance,
+            global,
+        };
+
         enum class type: std::uint8_t {
             BOOL,
             CHAR,
@@ -462,22 +470,26 @@ namespace teal {
 #endif
         ~valbox() = default;
         valbox(valbox const &that):
-            box_{that.box_}
+            box_{that.box_},
+            plx_{that.plx_}
         {
         }
         valbox(valbox &&that) noexcept:
-            box_{std::move(that.box_)}
+            box_{std::move(that.box_)},
+            plx_{that.plx_}
         {
         }
         valbox &operator=(valbox const &that) {
             if(&that != this) {
                 box_ = that.box_;
+                plx_ = that.plx_;
             }
             return *this;
         }
         valbox &operator=(valbox &&that) noexcept {
             if(&that != this) {
                 box_ = std::move(that.box_);
+                plx_ = that.plx_;
             }
             return *this;
         }
@@ -519,6 +531,19 @@ namespace teal {
                 return valbox{valbox_no_initialize::dont_do_it};
             }
         }
+
+        void set_placement(mem_placement p) { plx_ = p; }
+        mem_placement placement() const { return plx_; }
+        void set_literal_placement() { plx_ = mem_placement::literal; }
+        bool is_literal_placement() const { return plx_ == mem_placement::literal; }
+        void set_global_placement() { plx_ = mem_placement::global; }
+        bool is_global_placement() const { return plx_ == mem_placement::global; }
+        void set_stack_placement() { plx_ = mem_placement::stack; }
+        bool is_stack_placement() const { return plx_ == mem_placement::stack; }
+        void set_instance_placement() { plx_ = mem_placement::instance; }
+        bool is_instance_placement() const { return plx_ == mem_placement::instance; }
+        void set_unbounded_placement() { plx_ = mem_placement::unbounded; }
+        bool is_unbounded_placement() const { return plx_ == mem_placement::unbounded; }
 
         void undefine() {
             if(box_) {
@@ -7243,9 +7268,6 @@ namespace teal {
             return *this;
         }
 
-        void set_pointed(valbox &) {
-        }
-
         std::size_t num_refs() const {
             valbox const &dr{deref()};
             return dr.box_ ? static_cast<std::size_t>(dr.box_.use_count()) : static_cast<std::size_t>(0);
@@ -7813,6 +7835,7 @@ namespace teal {
         valbox(std::shared_ptr<box_data> &&b): box_{std::move(b)} {}
 
         mutable std::shared_ptr<box_data> box_{};
+        mem_placement plx_{mem_placement::unbounded};
     };
 
     static std::ostream &operator<<(std::ostream &os, valbox const &v) {

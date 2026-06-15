@@ -209,7 +209,8 @@ namespace teal {
             return function_depth_ > 0;
         }
 
-        void set_local_value(std::string const &name, valbox const &val) {
+        void set_local_value(std::string const &name, valbox &val) {
+            val.set_stack_placement();
             stack_[stack_ptr_].put(name, val);
         }
 
@@ -251,6 +252,7 @@ namespace teal {
                         }
                         if(create_if_not_exists()) {
                             valbox res{};
+                            res.set_stack_placement();
                             stack_[stack_ptr_].put(name, res);
                             return res;
                         }
@@ -284,6 +286,7 @@ namespace teal {
             }
             if(create_if_not_exists()) {
                 valbox res{};
+                res.set_stack_placement();
                 stack_[stack_ptr_].put(name, res);
                 objtyp = obj_type::stack_var;
                 return res;
@@ -291,12 +294,12 @@ namespace teal {
             str_map_t<valbox>::const_iterator gvd_it{rt_ptr_->global_constants_dictionary()->find(name)};
             if(gvd_it != rt_ptr_->global_constants_dictionary()->end()) {
                 objtyp = obj_type::global_var;
-                return gvd_it->second.clone();
+                return gvd_it->second;
             }
             gvd_it = rt_ptr_->global_functions_dictionary()->find(name);
             if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
                 objtyp = obj_type::global_fun;
-                return gvd_it->second.clone();
+                return gvd_it->second;
             }
             if((rt_ptr_->user_functions_search())(name)) {
                 objtyp = obj_type::user_fun;
@@ -452,8 +455,26 @@ namespace teal {
             self_fields_ = sf;
         }
 
-        str_map_t<valbox> *self_fields() {
-            return self_fields_;
+        valbox get_or_create_self_field(std::string const &n) {
+            auto it{self_fields_->find(n)};
+            if(it == self_fields_->end()) {
+                (*self_fields_)[n] = valbox{};
+                (*self_fields_)[n].set_instance_placement();
+                return (*self_fields_)[n];
+            }
+            return it->second;
+        }
+
+        valbox get_self_field(std::string const &n) const {
+            auto it{self_fields_->find(n)};
+            if(it == self_fields_->end()) {
+                throw std::runtime_error{std::string{"identifier \"this."} + n + "\" not found"};
+            }
+            return it->second;
+        }
+
+        bool have_self_field(std::string const &n) const {
+            return self_fields_->find(n) != self_fields_->end();
         }
 
         bool create_if_not_exists() const {
@@ -471,6 +492,9 @@ namespace teal {
         public:
             void put(std::string const &name, valbox const &value) {
                 m_[name] = value;
+                if(!value.is_stack_placement()) {
+                    m_[name].set_stack_placement();
+                }
             }
 
             bool get(std::string const &name, valbox &res) const {

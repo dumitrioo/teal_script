@@ -1266,6 +1266,7 @@ namespace teal {
                 };
             }
             global_functions_dictionary_[func_name] = valbox{std::move(f), func_name, false};
+            global_functions_dictionary_[func_name].set_global_placement();
         }
 
         void remove_function(std::string const &fname) override {
@@ -1286,6 +1287,7 @@ namespace teal {
                 };
             }
             global_constants_dictionary_[var_name] = v;
+            global_constants_dictionary_[var_name].set_global_placement();
         }
 
         void remove_var(std::string const &varname) override {
@@ -1308,6 +1310,7 @@ namespace teal {
                 throw std::runtime_error{std::string{"method already exists: \""} + method_name + "\""};
             }
             global_methods_dictionary_[class_name][method_name] = valbox{std::move(f), method_name, false};
+            global_methods_dictionary_[class_name][method_name].set_global_placement();
         }
 
         void remove_method(std::string const &class_name, std::string const &method_name) override {
@@ -1480,7 +1483,8 @@ namespace teal {
                                 ai.cell_ptr = w_it->second.get();
                             }
                         }
-                        exctx_.set_local_value(ai.argname, ai.cell_ptr->value());
+                        valbox stack_var{ai.cell_ptr->value()};
+                        exctx_.set_local_value(ai.argname, stack_var);
                     }
                 }
 
@@ -1683,7 +1687,8 @@ namespace teal {
                                                 ai.cell_ptr = w_it->second.get();
                                             }
                                         }
-                                        exctx_ptr->set_local_value(ai.argname, ai.cell_ptr->value());
+                                        valbox stack_var{ai.cell_ptr->value()};
+                                        exctx_ptr->set_local_value(ai.argname, stack_var);
                                     }
                                 }
 
@@ -2112,7 +2117,8 @@ namespace teal {
                 auto fargs_size{fargs.size()};
                 for(std::size_t i{0}; i < anames.size(); ++i) {
                     if(i >= fargs_size) {
-                        exctx->set_local_value(anames[i], valbox{valbox_no_initialize::dont_do_it});
+                        valbox stack_var{};
+                        exctx->set_local_value(anames[i], stack_var);
                     } else {
                         exctx->set_local_value(anames[i], fargs[i + 2]);
                     }
