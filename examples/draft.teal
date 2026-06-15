@@ -63,6 +63,9 @@ my_drafts(host_data) {
     console.fixed();
     console.setprecision(9);
 
+    timestamp(highres_clock()).as_iso_8601().println();
+    return exit();
+
     kkk = 0;
     while kkk++ < 5 println("kkk = ", kkk);
     version_string().println();

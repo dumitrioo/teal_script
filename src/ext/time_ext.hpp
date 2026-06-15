@@ -160,10 +160,10 @@ namespace teal {
             rt->add_function("steady_clock", TEALFUN() {
                 return static_cast<long double>(std::chrono::steady_clock::now().time_since_epoch().count()) * 0.000000001L;
             });
-            rt->add_function("hires_clock", TEALFUN() {
+            rt->add_function("highres_clock", TEALFUN() {
                 return std::chrono::duration<long double, std::nano>{std::chrono::high_resolution_clock::now().time_since_epoch()}.count() * 0.000000001L;
             });
-            rt->add_function("time", TEALFUN() {
+            rt->add_function("localtime", TEALFUN() {
                 return timespec_wrapper::now().fseconds();
             });
             rt->add_function("gmtime", TEALFUN() {

@@ -1,17 +1,6 @@
-qeq_exec_time_limiter(dt) {
-    if(this.t == undefined) this.t = timestamp().fseconds() + dt;
-    if(timestamp().fseconds() > this.t) {
-        exit();
-    }
-    return 0;
-}
-
-qeq_exec_time_limiter qeqetlim(.01);
-
 'a' a_in;
 'b' b_in;
 'c' c_in;
-
 
 random_from_range(lo, hi) {
     return randf() * abs(hi - lo) + (lo < hi ? lo : hi);

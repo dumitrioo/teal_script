@@ -1,8 +1,8 @@
 exmpl_exec_time_limiter(dt) {
     if(this.t == undefined) {
-        this.t = timestamp().fseconds() + dt;
+        this.t = steady_clock() + dt;
     }
-    if(timestamp().fseconds() > this.t) {
+    if(steady_clock() > this.t) {
         exit();
     }
     return 0;

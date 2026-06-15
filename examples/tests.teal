@@ -260,7 +260,7 @@ my_test mtst();
 ctr(anything) {
     if(this.delay == undefined) {
         this.delay = 0.0007;
-        this.tsfs = time();
+        this.tsfs = localtime();
         console.fixed();
         console.setprecision(16);
     }
