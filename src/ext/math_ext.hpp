@@ -1471,6 +1471,10 @@ namespace teal {
                 return t == valbox::type::FLOAT || t == valbox::type::DOUBLE || t == valbox::type::LONG_DOUBLE;
             });
 
+            rt_->add_var("M_E", static_cast<long double>(2.7182818284590452353602874713526624977572470936999595749669676277240766L));
+            rt_->add_var("M_PI", static_cast<long double>(3.1415926535897932384626433832795028841971693993751058209749445923078164L));
+            rt_->add_var("M_PHI", static_cast<long double>(1.6180339887498948482045868343656381177203091798057628621354486227052605L));
+
             rt_->add_var("FP_INFINITE", static_cast<int>(FP_INFINITE));
             rt_->add_var("FP_NAN", static_cast<int>(FP_NAN));
             rt_->add_var("FP_ZERO", static_cast<int>(FP_ZERO));

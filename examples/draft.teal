@@ -63,7 +63,8 @@ my_drafts(host_data) {
     console.fixed();
     console.setprecision(9);
 
-    timestamp(highres_clock()).as_iso_8601().println();
+    this.instvar = 2;
+    this.instvar.placement().println();
     return exit();
 
     kkk = 0;
