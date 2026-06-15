@@ -232,7 +232,7 @@ namespace teal {
                 case obj_type::global_fun: {
                     str_map_t<valbox>::const_iterator gvd_it{rt_ptr_->global_functions_dictionary()->find(name)};
                         if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
-                            return gvd_it->second.clone();
+                            return gvd_it->second;
                         }
                     }
                     break;
@@ -268,7 +268,6 @@ namespace teal {
                 default:
                     break;
             }
-
             objtyp = obj_type::unknown;
             valbox res{valbox_no_initialize::dont_do_it};
             int64_t stb{-2};
@@ -284,26 +283,27 @@ namespace teal {
                     stb = stack_barrier();
                 }
             }
-            str_map_t<valbox>::const_iterator gvd_it{rt_ptr_->global_constants_dictionary()->find(name)};
-            if(gvd_it != rt_ptr_->global_constants_dictionary()->end()) {
-                objtyp = obj_type::global_var;
-                return gvd_it->second;
-            }
-            gvd_it = rt_ptr_->global_functions_dictionary()->find(name);
-            if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
-                objtyp = obj_type::global_fun;
-                return gvd_it->second;
-            }
-            if((rt_ptr_->user_functions_search())(name)) {
-                objtyp = obj_type::user_fun;
-                return valbox{rt_ptr_->user_function_selector(), name, true};
-            }
             if(create_if_not_exists()) {
                 valbox res{};
                 res.set_stack_placement();
                 stack_[stack_ptr_].put(name, res);
                 objtyp = obj_type::stack_var;
                 return res;
+            } else {
+                str_map_t<valbox>::const_iterator gvd_it{rt_ptr_->global_constants_dictionary()->find(name)};
+                if(gvd_it != rt_ptr_->global_constants_dictionary()->end()) {
+                    objtyp = obj_type::global_var;
+                    return gvd_it->second;
+                }
+                gvd_it = rt_ptr_->global_functions_dictionary()->find(name);
+                if(gvd_it != rt_ptr_->global_functions_dictionary()->end()) {
+                    objtyp = obj_type::global_fun;
+                    return gvd_it->second;
+                }
+                if((rt_ptr_->user_functions_search())(name)) {
+                    objtyp = obj_type::user_fun;
+                    return valbox{rt_ptr_->user_function_selector(), name, true};
+                }
             }
             throw teal_identifier_not_found{l, c, std::string{"identifier \""} + name + "\" not found"};
         }

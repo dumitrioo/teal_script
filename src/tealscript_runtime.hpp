@@ -198,7 +198,7 @@ namespace teal {
             add_method("console", "setw", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) TEALTHIS(args, console *)->setw(args[1].cast_to_u64()); return valbox{valbox_no_initialize::dont_do_it}; });
             add_method("console", "setfill", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) TEALTHIS(args, console *)->setfill(args[1].cast_to_char()); return valbox{valbox_no_initialize::dont_do_it}; });
             add_method("console", "fill", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return TEALTHIS(args, console *)->fill(); });
-            add_method("console", "enable_colors", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) TEALTHIS(args, console *)->enable_colors(args[1].cast_to_bool()); return valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "enable_colors", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2) TEALTHIS(args, console *)->enable_colors(args.size() == 2 ? args[1].cast_to_bool() : true); return valbox{valbox_no_initialize::dont_do_it}; });
             add_method("console", "colors_enabled", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return TEALTHIS(args, console *)->colors_enabled(); });
             add_method("console", "sync_stdio", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) return TEALTHIS(args, console *)->setsync(args[1].cast_to_bool()); });
             add_function("print", TEALFUN(args) { con_.rawprint(args); return {valbox_no_initialize::dont_do_it}; });
