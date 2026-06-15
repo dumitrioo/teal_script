@@ -211,7 +211,7 @@ simply_test tutst();
 
 
 cpu_test() {
-    if(!this.cpuperf) {
+    if(this.cpuperf == undefined) {
         this.cpuperf = perf_stat();
         if(!this.cpuperf.start()) {
             console.print("spssususususdgsdyustgsfsyutsfdesf");

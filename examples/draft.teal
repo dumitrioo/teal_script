@@ -61,11 +61,21 @@ function apply_func(a, fn) {
 
 my_drafts(host_data) {
     console.fixed();
-    console.setprecision(9);
+    console.enable_colors(true);
+    console.setprecision(16);
+
+    k["r"] = "1";
+    t["d"] = "d";
+    o = k + t;
+    println(o);
+
+    pi = M_PI;
+    pi.println();
+    M_PI.placement().println();
+    pi.placement().println();
 
     this.instvar = 2;
     this.instvar.placement().println();
-    return exit();
 
     kkk = 0;
     while kkk++ < 5 println("kkk = ", kkk);
