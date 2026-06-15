@@ -158,7 +158,10 @@ namespace teal {
                 return args[0];
             });
             rt->add_function("steady_clock", TEALFUN() {
-                return static_cast<long double>(std::chrono::steady_clock::now().time_since_epoch().count()) / 1e9L;
+                return static_cast<long double>(std::chrono::steady_clock::now().time_since_epoch().count()) * 0.000000001L;
+            });
+            rt->add_function("hires_clock", TEALFUN() {
+                return std::chrono::duration<long double, std::nano>{std::chrono::high_resolution_clock::now().time_since_epoch()}.count() * 0.000000001L;
             });
             rt->add_function("time", TEALFUN() {
                 return timespec_wrapper::now().fseconds();
@@ -177,6 +180,7 @@ namespace teal {
             rt_->remove_function("timestamp");
             rt_->remove_function("gmtimestamp");
             rt_->remove_function("steady_clock");
+            rt_->remove_function("high_resolution_clock");
             rt_->remove_function("time");
             rt_->remove_function("gmtime");
             rt_->remove_method("timestamp", "year");
