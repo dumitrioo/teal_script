@@ -113,7 +113,7 @@ function fibonacci(n, memo) {
 
 fib_test() {
     memo = object();
-    println(fibonacci(12, memo));
+    println("fibonacci(12) = ", fibonacci(12, memo));
     return 0;
 }
 

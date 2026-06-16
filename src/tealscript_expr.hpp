@@ -1320,7 +1320,12 @@ namespace teal {
                     if(l.is_ptr()) {
                         l.assign_preserving_type(r);
                     } else {
-                        l.assign(r);
+                        if(r.is_ptr()) {
+                            l.become_type(r.val_or_pointed_type());
+                            l.assign_preserving_type(r);
+                        } else {
+                            l.assign(r);
+                        }
                     }
                     return l;
                 },
