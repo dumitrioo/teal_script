@@ -72,18 +72,12 @@ function reverse(s) {
 function reverse2(s) {
     if(s.size() > 1) {
         rs = s;
-        rs.println();
         rss = rs.size();
         rs2 = rss / 2;
         for(i = 0; i < rs2; ++i) {
-            rs[i].println();
-            rs[rss - i - 1].println();
             t = rs[i];
             rs[i] = rs[rss - i - 1];
             rs[rss - i - 1] = t;
-            rs[i].println();
-            rs[rss - i - 1].println();
-            println("-------");
         }
         return rs;
     }
@@ -99,6 +93,7 @@ my_drafts(host_data) {
     s[0]++;
     s.println();
 
+    "12345".reverse().println();
     "12345".reverse2().println();
 
     "asdasdasdasdkdsadsadsadsa".palindrom().println();
