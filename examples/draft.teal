@@ -84,10 +84,25 @@ function reverse2(s) {
     return s;
 }
 
+function fibonacci(n) {
+    a = (float)0;
+    b = (float)1;
+    for(i = 0; i < n; ++i) {
+        c = a + b;
+        a = b;
+        b = c;
+    }
+    return string(a);
+}
+
+
 my_drafts(host_data) {
     console.fixed();
     console.enable_colors(true);
     console.setprecision(16);
+
+    fibonacci(120).println();
+    exit();
 
     s = "123123123";
     s[0]++;

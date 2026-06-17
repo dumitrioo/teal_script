@@ -1,8 +1,8 @@
-drive_door_lock_def(vehicle_speed, all_doors_closed, ignition_on, start_btn, gear) {
+door_lock_needed_driving_def(vehicle_speed, all_doors_closed, ignition_on, start_btn, gear) {
     return vehicle_speed > 5 && all_doors_closed && ignition_on && start_btn && gear != "P";
 }
 
-standing_door_lock_def(all_doors_closed, all_windows_closed, ignition_on, ign_off_timepoint) {
+door_lock_needed_standing_def(all_doors_closed, all_windows_closed, ignition_on, ign_off_timepoint) {
     return !ignition_on && steady_clock() - ign_off_timepoint > 30
             && all_doors_closed && all_windows_closed;
 }
@@ -96,8 +96,8 @@ doors_lock_request_def(
 
 doors_lock_unlock_button_value_def          manual_doors_lock_state(doors_lock_btn, crash_detected, ignition_status_changed_timepoint);
 doors_lock_unlock_button_pressed_def        doors_lock_btn_pressed(doors_lock_btn, crash_detected, ignition_status_changed_timepoint);
-drive_door_lock_def                         doors_lock_driving_necessity(max_wheel_speed, all_doors_closed, ignition_status, engine_start_btn, current_gear);
-standing_door_lock_def                      doors_lock_parking_necessity(all_doors_closed, all_windows_closed, ignition_status, ignition_status_changed_timepoint);
+door_lock_needed_driving_def                doors_lock_driving_necessity(max_wheel_speed, all_doors_closed, ignition_status, engine_start_btn, current_gear);
+door_lock_needed_standing_def               doors_lock_parking_necessity(all_doors_closed, all_windows_closed, ignition_status, ignition_status_changed_timepoint);
 manual_lock_by_button_def                   doors_manual_lock_cmd(manual_doors_lock_state, doors_lock_btn_pressed);
 manual_unlock_by_button_def                 doors_manual_unlock_cmd(manual_doors_lock_state, doors_lock_btn_pressed);
 force_doors_unlock_detector_def             force_doors_unlock(crash_detected);

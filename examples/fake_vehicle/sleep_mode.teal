@@ -44,7 +44,9 @@ have_activated_elements_def(
 
 may_vehicle_sleep_def(human_act_tp, have_activated_elements) {
     time_without_human_activity = human_act_tp != undefined ? steady_clock() - human_act_tp : 0.0;
-    res = have_activated_elements ? time_without_human_activity > 3600 : time_without_human_activity > 60 * 5;
+    // res = have_activated_elements ? time_without_human_activity > 3600 : time_without_human_activity > 60 * 5;
+    res = have_activated_elements ? time_without_human_activity > 60 * 60 : time_without_human_activity > 60 * 1;
+    // println("have activated elements: ", have_activated_elements, ", seconds of calm: ", time_without_human_activity, " -> may sleep: ", res);
     return res;
 }
 

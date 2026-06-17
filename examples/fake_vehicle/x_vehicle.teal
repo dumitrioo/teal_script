@@ -11,18 +11,21 @@
 battery_soc_drops_below_threshold(battery_soc) {
     return battery_soc < 10;
 }
+
 battery_soc_drops_below_threshold battery_low(battery_soc);
 
 
 battery_power_consumption_calc(u, i) {
     return u * i;
 }
+
 battery_power_consumption_calc battery_power_consumption(battery_voltage, battery_current);
 
 
 engine_temp_limit_watchdog(coolant, oil, exhaust) {
     return coolant > 110 || oil > 150 || exhaust > 300;
 }
+
 engine_temp_limit_watchdog temperature_exceeds_limit(engine_coolant_temp, engine_oil_temp, exhaust_temp) 'temperature_exceeds_limit';
 
 
@@ -45,6 +48,7 @@ understeer_detector(
     if(adaptive_threshold > 0.99) adaptive_threshold = 0.99;
     return yaw_rate < (adaptive_threshold * expected_yaw_rate);
 }
+
 understeer_detector understeer_detected(steering_angle, gps_speed, yaw_rate, wheelbase, steering_ratio, lateral_accel);
 
 
@@ -67,6 +71,7 @@ forward_pending_collision_detector(dist) {
         return proximity_speed > 0 && (dist < 3 || time_to_collision < 3); // 3 m or 3 sec
     }
 }
+
 forward_pending_collision_detector coll_pending(radar_long_dist) 'collision_pending';
 
 
@@ -189,6 +194,7 @@ cruise_controller(
 
     return res;
 }
+
 cruise_controller acc_output(
     gps_speed,                        // текущая скорость (m/s)
     wheel_speed_rl,                   // альтернативная скорость от ABS (m/s)
@@ -212,6 +218,7 @@ driver_demand(tempexlim, pedal, brake, acc, understeer) {
     if(acc.active && acc.throttle_cmd > 0.0) return acc.throttle_cmd;
     return tempexlim ? (pedal * 100.0) * 0.2 : pedal * 100.0;
 }
+
 driver_demand torque_request(
     temperature_exceeds_limit, throttle_pos_signal, brake_pos_signal, acc_output, understeer_detected
 ) 'torque_request';
@@ -233,6 +240,7 @@ esp_logic(steer, yaw, speed, torqeq) {
 
     return torqeq;
 }
+
 esp_logic stabilized_demand(steering_angle, yaw_rate, gps_speed, torque_request) 'esp_intervention';
 
 
@@ -243,18 +251,20 @@ torque_splitter(torqeq, steer) {
     if(steer < -10.0) return [base_torque * 1.2, base_torque * 0.8, base_torque * 1.1, base_torque * 0.9];
     return [base_torque, base_torque, base_torque, base_torque];
 }
+
 torque_splitter wheel_torques(stabilized_demand, steering_angle);
 
 
-get_fl(arr) return arr[0];
-get_fr(arr) return arr[1];
-get_rl(arr) return arr[2];
-get_rr(arr) return arr[3];
+get_arr_nth(arr, n) {
+    if(arr != undefined && n != undefined && n < arr.size()) {
+        return arr[n];
+    }
+}
 
-get_fl motor_torque_fl(wheel_torques) 'motor_torque_fl';
-get_fr motor_torque_fr(wheel_torques) 'motor_torque_fr';
-get_rl motor_torque_rl(wheel_torques) 'motor_torque_rl';
-get_rr motor_torque_rr(wheel_torques) 'motor_torque_rr';
+get_arr_nth motor_torque_fl(wheel_torques, 0) 'motor_torque_fl';
+get_arr_nth motor_torque_fr(wheel_torques, 1) 'motor_torque_fr';
+get_arr_nth motor_torque_rl(wheel_torques, 2) 'motor_torque_rl';
+get_arr_nth motor_torque_rr(wheel_torques, 3) 'motor_torque_rr';
 
 
 // --- ACTIVE SUSPENSION (Magneride-like) intentionally simplified ---
