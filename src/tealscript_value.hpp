@@ -1146,7 +1146,7 @@ namespace teal {
             return t == type::WSTRING || t == type::STRING;
         }
 
-        valbox operator[](valbox const &indx) {
+        valbox operator_brackets(valbox const &indx, bool constant) {
             valbox const &indr{indx.deref()};
             valbox &der{deref()};
             auto t_of_indx{indr.val_or_pointed_type()};
@@ -1195,14 +1195,23 @@ namespace teal {
                         throw std::range_error{"index out of range"};
                     }
                 } else {
-                    if(t == type::UNDEFINED) {
+                    if(t == type::UNDEFINED && !constant) {
                         der.become_array();
                         t = type::ARRAY;
                     }
                     if(t == type::ARRAY) {
-                        auto &a{as_array()};
-                        if(a.size() <= i) { a.resize(i + 1); }
-                        return a[i];
+                        if(!constant) {
+                            array_t &a{as_array()};
+                            if(a.size() <= i) { a.resize(i + 1); }
+                            return a[i];
+                        } else {
+                            array_t const &a{as_array()};
+                            if(i < a.size()) {
+                                return a[i];
+                            } else {
+                                throw std::range_error{"index out of range"};
+                            }
+                        }
                     } else if(t == type::MAT4) {
                         mat4_t &a{as_mat4()};
                         if(i < 4) {
@@ -6375,7 +6384,7 @@ namespace teal {
                         case type::MAT4:
                             thisref.as_object().clear();
                             for(int i{}; i < 16; ++i) {
-                                thisref["mat4"][i].assign(thatref.as_mat4().at_flat_index(i));
+                                thisref.operator_brackets("mat4", false).operator_brackets(i, false).assign(thatref.as_mat4().at_flat_index(i));
                             }
                             break;
                         case type::POINTER: throw std::runtime_error{"inappropriate value"};
@@ -6947,9 +6956,9 @@ namespace teal {
                 case type::S32:           { std::stringstream ss{}; ss << as_s32(); return ss.str(); }
                 case type::U64:           { std::stringstream ss{}; ss << as_u64(); return ss.str(); }
                 case type::S64:           { std::stringstream ss{}; ss << as_s64(); return ss.str(); }
-                case type::FLOAT:         { std::stringstream ss{}; ss << as_float(); return ss.str(); }
-                case type::DOUBLE:        { std::stringstream ss{}; ss << as_double(); return ss.str(); }
-                case type::LONG_DOUBLE:   { std::stringstream ss{}; ss << as_long_double(); return ss.str(); }
+                case type::FLOAT:         { std::stringstream ss{}; ss << std::fixed << as_float(); return ss.str(); }
+                case type::DOUBLE:        { std::stringstream ss{}; ss << std::fixed << as_double(); return ss.str(); }
+                case type::LONG_DOUBLE:   { std::stringstream ss{}; ss << std::fixed << as_long_double(); return ss.str(); }
                 case type::BOOL:          { return as_bool() ? "true" : "false"; }
                 case type::WCHAR:         { std::wstring s{}; s += as_wchar(); return str_util::to_utf8(s); }
                 case type::STRING:        return as_string();
