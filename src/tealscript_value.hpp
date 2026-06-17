@@ -1273,7 +1273,11 @@ namespace teal {
                     }
                 }
             }
-            throw std::runtime_error{"invalid indirection"};
+            if(constant) {
+                return valbox{};
+            } else {
+                throw std::runtime_error{"invalid indirection"};
+            }
         }
 
         valbox object_key_at(uint64_t indx) {

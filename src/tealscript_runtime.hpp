@@ -81,8 +81,9 @@ namespace teal {
 
     class runtime: public runtime_interface {
     public:
-        runtime(bool sequential_cells_execution = false):
-            sequential_cells_execution_traversal_{sequential_cells_execution}
+        runtime(bool sequential_cells_execution = false, bool enable_undefined_inputs = true):
+            sequential_cells_execution_traversal_{sequential_cells_execution},
+            enable_undefined_inputs_{enable_undefined_inputs}
         {
             exctx_.set_runtime_interface(this);
 
@@ -1423,6 +1424,14 @@ namespace teal {
             set_thread_mode_multi();
         }
 
+        void set_undefined_inputs_enabled(bool val) {
+            enable_undefined_inputs_ = val;
+        }
+
+        bool undefined_inputs_enabled() const {
+            return enable_undefined_inputs_;
+        }
+
         void run_cycles(std::size_t n) {
             for(std::size_t i{0}; i < n; ++i) {
                 run_cycle();
@@ -1465,14 +1474,21 @@ namespace teal {
 
                 auto &&args_info{curr_cell->actual_args_info()};
                 auto ainfsiz{args_info.size()};
+                bool have_undefineds{false};
                 for(std::size_t curr_arg_number{0}; curr_arg_number < ainfsiz; ++curr_arg_number) {
                     auto &&ai{args_info[curr_arg_number]};
                     if(!ai.is_cell) {
                         if(ai.expr_val.is_undefined()) {
                             ai.expr_val = ai.expr->eval(&exctx_, eval_caller_type::no_matter, nullptr);
+                            ai.expr_val.set_global_placement();
                         }
                         valbox vb{ai.expr_val};
-                        exctx_.set_local_value(ai.argname, vb);
+                        if(vb.is_undefined() && !undefined_inputs_enabled()) {
+                            have_undefineds = true;
+                            break;
+                        } else {
+                            exctx_.set_local_value(ai.argname, vb);
+                        }
                     } else {
                         if(ai.cell_ptr == nullptr) {
                             auto w_it{worker_cells_.find(ai.cell_name)};
@@ -1497,7 +1513,12 @@ namespace teal {
                             }
                         }
                         valbox stack_var{ai.cell_ptr->value()};
-                        exctx_.set_local_value(ai.argname, stack_var);
+                        if(stack_var.is_undefined() && !undefined_inputs_enabled()) {
+                            have_undefineds = true;
+                            break;
+                        } else {
+                            exctx_.set_local_value(ai.argname, stack_var);
+                        }
                     }
                 }
 
@@ -1512,6 +1533,9 @@ namespace teal {
                         };
                     }
                     curr_cell->set_body(body_it->second);
+                }
+                if(have_undefineds && !undefined_inputs_enabled()) {
+                    continue;
                 }
                 curr_cell->body()->exec(&exctx_);
 
@@ -1639,6 +1663,7 @@ namespace teal {
                         bool have_locked{false};
                         uint64_t loop_ctr{0};
                         uint64_t num_cycles{0};
+                        uint64_t sleep_between_cycles_nanoseconds{sleep_between_cycles_nanoseconds_};
                         while(!termination_requested() && !failure_occured()) {
                             wc_indx = worker_cells_flat_array_index_.fetch_add(1);
                             worker_cell_instance *curr_cell{worker_cells_flat_array_[
@@ -1669,14 +1694,21 @@ namespace teal {
 
                                 std::vector<worker_cell_instance::arg_info> &args_info{curr_cell->actual_args_info()};
                                 auto ainfsiz{args_info.size()};
+                                bool have_undefineds{false};
                                 for(std::size_t curr_arg_number{0}; curr_arg_number < ainfsiz; ++curr_arg_number) {
                                     worker_cell_instance::arg_info &ai{args_info[curr_arg_number]};
                                     if(!ai.is_cell) {
                                         if(ai.expr_val.is_undefined()) {
                                             ai.expr_val = ai.expr->eval(exctx_ptr, eval_caller_type::no_matter, nullptr);
+                                            ai.expr_val.set_global_placement();
                                         }
                                         valbox vb{ai.expr_val};
-                                        exctx_ptr->set_local_value(ai.argname, vb);
+                                        if(vb.is_undefined() && !undefined_inputs_enabled()) {
+                                            have_undefineds = true;
+                                            break;
+                                        } else {
+                                            exctx_ptr->set_local_value(ai.argname, vb);
+                                        }
                                     } else {
                                         if(ai.cell_ptr == nullptr) {
                                             auto w_it{worker_cells_.find(ai.cell_name)};
@@ -1701,7 +1733,12 @@ namespace teal {
                                             }
                                         }
                                         valbox stack_var{ai.cell_ptr->value()};
-                                        exctx_ptr->set_local_value(ai.argname, stack_var);
+                                        if(stack_var.is_undefined() && !undefined_inputs_enabled()) {
+                                            have_undefineds = true;
+                                            break;
+                                        } else {
+                                            exctx_ptr->set_local_value(ai.argname, stack_var);
+                                        }
                                     }
                                 }
 
@@ -1717,8 +1754,14 @@ namespace teal {
                                     }
                                     curr_cell->set_body(body_it->second);
                                 }
+                                if(have_undefineds && !undefined_inputs_enabled()) {
+                                    continue;
+                                }
                                 curr_cell->body()->exec(exctx_ptr);
 
+                                if(termination_requested()) {
+                                    break;
+                                }
                                 if(exctx_ptr->return_requested()) {
                                     curr_cell->set_value(exctx_ptr->return_result());
                                     if(!curr_cell->output_name().empty()) {
@@ -1728,8 +1771,8 @@ namespace teal {
                                 exctx_ptr->clear_all_jumps_request();
                             }
 
-                            if(sleep_between_cycles_nanoseconds_ > 0 && cell_executed) {
-                                std::this_thread::sleep_for(std::chrono::nanoseconds{sleep_between_cycles_nanoseconds_});
+                            if(sleep_between_cycles_nanoseconds > 0 && cell_executed) {
+                                std::this_thread::sleep_for(std::chrono::nanoseconds{sleep_between_cycles_nanoseconds});
                             }
 
                             if(num_cycles < wc_indx / worker_cells_cnt) {
@@ -1737,6 +1780,7 @@ namespace teal {
                                 if(!have_locked && sleep_inactive_thread_nanoseconds_ > 0) {
                                     std::this_thread::sleep_for(std::chrono::nanoseconds{sleep_inactive_thread_nanoseconds_});
                                 }
+                                sleep_between_cycles_nanoseconds = sleep_between_cycles_nanoseconds_;
                                 have_locked = false;
                             }
                             if(loop_ctr >= worker_cells_max_idx) {
@@ -2101,6 +2145,7 @@ namespace teal {
             }
         };
         bool sequential_cells_execution_traversal_{false};
+        bool enable_undefined_inputs_{true};
         std::function<valbox(std::vector<valbox> &)> user_function_selector_{
             [this](std::vector<valbox> &fargs) -> valbox {
                 execution_context *exctx{reinterpret_cast<execution_context *>(fargs[0].as_ptr())};
