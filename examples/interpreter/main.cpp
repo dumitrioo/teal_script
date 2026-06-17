@@ -61,7 +61,7 @@ private:
 
 
 int main(int argc, char **argv) {
-    std::vector<std::string> args{argv, argv + argc};
+    std::vector<std::string> const args{argv, argv + argc};
     std::setlocale(LC_ALL, "en_US.UTF-8");
 
     if(args.size() < 2) {
