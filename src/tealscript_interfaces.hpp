@@ -38,6 +38,8 @@ namespace teal {
         virtual void terminate() = 0;
         virtual void unterminate() = 0;
         virtual bool termination_requested() const = 0;
+        virtual bool undefined_inputs_enabled() const = 0;
+        virtual bool except_on_out_of_range_or_field() const = 0;
 
         virtual void add_object_serializer(
             std::string const &,

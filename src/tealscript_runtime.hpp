@@ -81,9 +81,14 @@ namespace teal {
 
     class runtime: public runtime_interface {
     public:
-        runtime(bool sequential_cells_execution = false, bool enable_undefined_inputs = true):
+        runtime(
+            bool sequential_cells_execution = false,
+            bool enable_undefined_inputs = true,
+            bool exception_on_out_of_range_or_field = false
+        ):
             sequential_cells_execution_traversal_{sequential_cells_execution},
-            enable_undefined_inputs_{enable_undefined_inputs}
+            enable_undefined_inputs_{enable_undefined_inputs},
+            except_on_out_of_range_or_field_{exception_on_out_of_range_or_field}
         {
             exctx_.set_runtime_interface(this);
 
@@ -1428,8 +1433,16 @@ namespace teal {
             enable_undefined_inputs_ = val;
         }
 
-        bool undefined_inputs_enabled() const {
+        bool undefined_inputs_enabled() const override {
             return enable_undefined_inputs_;
+        }
+
+        void set_except_on_out_of_range_or_field(bool val) {
+            except_on_out_of_range_or_field_ = val;
+        }
+
+        bool except_on_out_of_range_or_field() const override {
+            return except_on_out_of_range_or_field_;
         }
 
         void run_cycles(std::size_t n) {
@@ -2146,6 +2159,7 @@ namespace teal {
         };
         bool sequential_cells_execution_traversal_{false};
         bool enable_undefined_inputs_{true};
+        bool except_on_out_of_range_or_field_{false};
         std::function<valbox(std::vector<valbox> &)> user_function_selector_{
             [this](std::vector<valbox> &fargs) -> valbox {
                 execution_context *exctx{reinterpret_cast<execution_context *>(fargs[0].as_ptr())};

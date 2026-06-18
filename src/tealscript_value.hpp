@@ -190,6 +190,7 @@ namespace teal {
                 user_func_ = false;
             }
 
+            std::shared_mutex mtp_{};
             value_t value_{nullptr};
             std::string class_{};
             std::string func_name_{};
@@ -1146,7 +1147,7 @@ namespace teal {
             return t == type::WSTRING || t == type::STRING;
         }
 
-        valbox operator_brackets(valbox const &indx, bool constant) {
+        valbox operator_brackets(valbox const &indx, bool constant, bool except_on_oor_fnf) {
             valbox const &indr{indx.deref()};
             valbox &der{deref()};
             auto t_of_indx{indr.val_or_pointed_type()};
@@ -1178,21 +1179,33 @@ namespace teal {
                             ++curr_indx;
                         }
                     } else {
-                        throw std::range_error{"index out of range"};
+                        if(except_on_oor_fnf) {
+                            throw std::range_error{"index out of range"};
+                        } else {
+                            return valbox{};
+                        }
                     }
                 } else if(t == type::STRING) {
                     std::string &s{as_string()};
                     if(s.size() > i) {
                         return &s[i];
                     } else {
-                        throw std::range_error{"index out of range"};
+                        if(except_on_oor_fnf) {
+                            throw std::range_error{"index out of range"};
+                        } else {
+                            return valbox{};
+                        }
                     }
                 } else if(t == type::WSTRING) {
                     std::wstring &s{as_wstring()};
                     if(s.size() > i) {
                         return &s[i];
                     } else {
-                        throw std::range_error{"index out of range"};
+                        if(except_on_oor_fnf) {
+                            throw std::range_error{"index out of range"};
+                        } else {
+                            return valbox{};
+                        }
                     }
                 } else {
                     if(t == type::UNDEFINED && !constant) {
@@ -1209,7 +1222,11 @@ namespace teal {
                             if(i < a.size()) {
                                 return a[i];
                             } else {
-                                throw std::range_error{"index out of range"};
+                                if(except_on_oor_fnf) {
+                                    throw std::range_error{"index out of range"};
+                                } else {
+                                    return valbox{};
+                                }
                             }
                         }
                     } else if(t == type::MAT4) {
@@ -1276,7 +1293,11 @@ namespace teal {
             if(constant) {
                 return valbox{};
             } else {
-                throw std::runtime_error{"invalid indirection"};
+                if(except_on_oor_fnf) {
+                    throw std::runtime_error{"invalid indirection"};
+                } else {
+                    return valbox{};
+                }
             }
         }
 
@@ -5754,6 +5775,12 @@ namespace teal {
 
         valbox &assign_preserving_type(valbox const &that) {
             valbox &thisref{deref()};
+            bool locked{false};
+            shut_on_destroy sod{[&]() { if(locked) { thisref.box_->mtp_.unlock(); } }};
+            if(thisref.box_) {
+                thisref.box_->mtp_.lock();
+                locked = true;
+            }
             valbox const &thatref{that.deref()};
             auto thist{thisref.val_or_pointed_type()};
             auto thatt{thatref.val_or_pointed_type()};
@@ -6388,7 +6415,9 @@ namespace teal {
                         case type::MAT4:
                             thisref.as_object().clear();
                             for(int i{}; i < 16; ++i) {
-                                thisref.operator_brackets("mat4", false).operator_brackets(i, false).assign(thatref.as_mat4().at_flat_index(i));
+                                thisref.operator_brackets("mat4", false, true)
+                                       .operator_brackets(i, false, true)
+                                       .assign(thatref.as_mat4().at_flat_index(i));
                             }
                             break;
                         case type::POINTER: throw std::runtime_error{"inappropriate value"};
@@ -6507,6 +6536,7 @@ namespace teal {
             }
             if(that_ref.is_undefined()) {
                 if(ref.box_) {
+                    std::unique_lock l{ref.box_->mtp_};
                     ref.box_->type_ = type::UNDEFINED;
                     ref.box_->pointed_type_ = type::UNDEFINED;
                     ref.box_->class_.clear();
@@ -6524,6 +6554,7 @@ namespace teal {
                         that_ref.box_->user_func_
                     );
                 } else {
+                    std::unique_lock l{ref.box_->mtp_};
                     ref.box_->value_ = that_ref.box_->value_;
                     ref.box_->type_ = that_ref.box_->type_;
                     ref.box_->pointed_type_ = that_ref.box_->pointed_type_;
@@ -7436,6 +7467,12 @@ namespace teal {
         json serialize(T *helper) const {
             json res{};
             valbox const &thisref{deref()};
+            bool locked{false};
+            shut_on_destroy sod{[&]() { if(locked) { thisref.box_->mtp_.unlock_shared(); } }};
+            if(thisref.box_) {
+                thisref.box_->mtp_.lock_shared();
+                locked = true;
+            }
             res["type"] = type_to_str(thisref.val_or_pointed_type());
             json &v{res["value"]};
             if(thisref.is_undefined()) {
@@ -7508,6 +7545,12 @@ namespace teal {
         template<typename T>
         valbox &deserialize(json const &jv, T *helper) {
             valbox &vr{deref()};
+            bool locked{false};
+            shut_on_destroy sod{[&]() { if(locked) { vr.box_->mtp_.unlock_shared(); } }};
+            if(vr.box_) {
+                vr.box_->mtp_.lock_shared();
+                locked = true;
+            }
             auto t{str_to_type(jv["type"].as_string())};
             switch(t) {
                 case type::BOOL:

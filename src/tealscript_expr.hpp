@@ -2149,16 +2149,19 @@ namespace teal {
                                     l.become_object();
                                 }
                             }
-                            res = l.operator_brackets(r, !ctx->create_if_not_exists());
+                            res = l.operator_brackets(r, !ctx->create_if_not_exists(), ctx->rt_interface()->except_on_out_of_range_or_field());
                         } else {
                             if(valbox::is_any_string_type(rt)) {
                                 if(lt != valbox::type::OBJECT) {
-                                    throw runtime_error{this_->line(), this_->col(), "wrong left operand for indirection"};
+                                    throw runtime_error{this_->line(), this_->col(), "invalid indirection"};
                                 }
                                 if(l.as_object().end() == l.as_object().find(r.cast_to_string())) {
-                                    throw runtime_error{this_->line(), this_->col(), "field not found"};
+                                    if(ctx->rt_interface()->except_on_out_of_range_or_field()) {
+                                        throw runtime_error{this_->line(), this_->col(), "field not found"};
+                                    }
+                                } else {
+                                    res = l.operator_brackets(r, !ctx->create_if_not_exists(), ctx->rt_interface()->except_on_out_of_range_or_field());
                                 }
-                                res = l.operator_brackets(r, !ctx->create_if_not_exists());
                             } else if(valbox::is_numeric_type(rt)) {
                                 if(lt == valbox::type::ARRAY) {
                                     auto const &ar{l.as_array()};
@@ -2167,7 +2170,7 @@ namespace teal {
                                         res = ar.at(indx);
                                     }
                                 } else {
-                                    res = l.operator_brackets(r, !ctx->create_if_not_exists());
+                                    res = l.operator_brackets(r, !ctx->create_if_not_exists(), ctx->rt_interface()->except_on_out_of_range_or_field());
                                 }
                             }
                         }
@@ -2255,7 +2258,7 @@ namespace teal {
                                 }
                                 if(ctx->create_if_not_exists()) {
                                     l.become_object();
-                                    res = l.operator_brackets(this_->rval_->symbol(), !ctx->create_if_not_exists());
+                                    res = l.operator_brackets(this_->rval_->symbol(), !ctx->create_if_not_exists(), ctx->rt_interface()->except_on_out_of_range_or_field());
                                     this_->sym_ = this_->rval_->symbol();
                                 }
                             } else if(l.is_object()) {
@@ -2272,11 +2275,12 @@ namespace teal {
                                         if(l.is_global_placement() || l.is_literal_placement()) {
                                             throw runtime_error{this_->line_, this_->col_, "cannot modify immutable entity"};
                                         }
-                                        // res = l[this_->rval_->symbol()];
-                                        res = l.operator_brackets(this_->rval_->symbol(), !ctx->create_if_not_exists());
+                                        res = l.operator_brackets(this_->rval_->symbol(), !ctx->create_if_not_exists(), ctx->rt_interface()->except_on_out_of_range_or_field());
                                         this_->sym_ = this_->rval_->symbol();
                                     } else {
-                                        throw runtime_error{this_->line_, this_->col_, "field not found"};
+                                        if(ctx->rt_interface()->except_on_out_of_range_or_field()) {
+                                            throw runtime_error{this_->line_, this_->col_, "field not found"};
+                                        }
                                     }
                                 }
                             } else {
