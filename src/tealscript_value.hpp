@@ -164,7 +164,7 @@ namespace teal {
             std::any
         >;
 
-        struct box_data {
+        struct alignas(64) box_data {
             box_data() = default;
             box_data(
                 value_t const &v, type t, type pointed_type = type::UNDEFINED,
@@ -190,10 +190,47 @@ namespace teal {
                 user_func_ = false;
             }
 
-            std::shared_mutex mtp_{};
+            void lock() {
+                pwr_.fetch_add(1);
+                shut_on_destroy up{[this]() { pwr_.fetch_sub(1); }};
+                std::int32_t wanted{0};
+                while(true) {
+                    if(mtp_.compare_exchange_weak(wanted, -1)) {
+                        break;
+                    }
+                    wanted = 0;
+                }
+            }
+            void unlock() {
+                if(mtp_.fetch_add(1) != -1) {
+                    throw std::runtime_error{"locking counting error"};
+                }
+            }
+            void lock_shared() {
+                std::int32_t curr{mtp_.load()};
+                while(true) {
+                    if(pwr_.load() == 0) {
+                        if(curr >= 0) {
+                            if(mtp_.compare_exchange_weak(curr, curr + 1)) {
+                                break;
+                            }
+                        } else {
+                            curr = mtp_.load();
+                        }
+                    }
+                }
+            }
+            void unlock_shared() {
+                if(mtp_.fetch_sub(1) <= 0) {
+                    throw std::runtime_error{"locking counting error"};
+                }
+            }
+
             value_t value_{nullptr};
             std::string class_{};
             std::string func_name_{};
+            std::atomic<std::int32_t> mtp_{0};
+            std::atomic<std::int32_t> pwr_{0};
             type type_{type::UNDEFINED};
             type pointed_type_{type::UNDEFINED};
             bool user_func_{false};
@@ -5776,9 +5813,9 @@ namespace teal {
         valbox &assign_preserving_type(valbox const &that) {
             valbox &thisref{deref()};
             bool locked{false};
-            shut_on_destroy sod{[&]() { if(locked) { thisref.box_->mtp_.unlock(); } }};
+            shut_on_destroy sod{[&]() { if(locked) { thisref.box_->unlock(); } }};
             if(thisref.box_) {
-                thisref.box_->mtp_.lock();
+                thisref.box_->lock();
                 locked = true;
             }
             valbox const &thatref{that.deref()};
@@ -6536,7 +6573,7 @@ namespace teal {
             }
             if(that_ref.is_undefined()) {
                 if(ref.box_) {
-                    std::unique_lock l{ref.box_->mtp_};
+                    std::unique_lock l{*ref.box_};
                     ref.box_->type_ = type::UNDEFINED;
                     ref.box_->pointed_type_ = type::UNDEFINED;
                     ref.box_->class_.clear();
@@ -6554,7 +6591,7 @@ namespace teal {
                         that_ref.box_->user_func_
                     );
                 } else {
-                    std::unique_lock l{ref.box_->mtp_};
+                    std::unique_lock l{*ref.box_};
                     ref.box_->value_ = that_ref.box_->value_;
                     ref.box_->type_ = that_ref.box_->type_;
                     ref.box_->pointed_type_ = that_ref.box_->pointed_type_;
@@ -7468,9 +7505,9 @@ namespace teal {
             json res{};
             valbox const &thisref{deref()};
             bool locked{false};
-            shut_on_destroy sod{[&]() { if(locked) { thisref.box_->mtp_.unlock_shared(); } }};
+            shut_on_destroy sod{[&]() { if(locked) { thisref.box_->unlock_shared(); } }};
             if(thisref.box_) {
-                thisref.box_->mtp_.lock_shared();
+                thisref.box_->lock_shared();
                 locked = true;
             }
             res["type"] = type_to_str(thisref.val_or_pointed_type());
@@ -7546,9 +7583,9 @@ namespace teal {
         valbox &deserialize(json const &jv, T *helper) {
             valbox &vr{deref()};
             bool locked{false};
-            shut_on_destroy sod{[&]() { if(locked) { vr.box_->mtp_.unlock_shared(); } }};
+            shut_on_destroy sod{[&]() { if(locked) { vr.box_->unlock_shared(); } }};
             if(vr.box_) {
-                vr.box_->mtp_.lock_shared();
+                vr.box_->lock_shared();
                 locked = true;
             }
             auto t{str_to_type(jv["type"].as_string())};
