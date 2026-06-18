@@ -13,6 +13,7 @@ setup_cell setup();
 
 function rnd_str(n) {
     res = "";
+    res.reserve(n);
     for (i = 0; i < n; ++i) {
         res += "0123456789qwertyuiopasdfghjklzx"
                "cvbnmQWERTYUIOPASDFGHJKLZXCVBNM"[rand() % 62];
