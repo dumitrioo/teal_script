@@ -1320,7 +1320,7 @@ namespace teal {
                     if(l.is_ptr()) {
                         l.assign_preserving_type(r);
                     } else {
-                        if(r.is_ptr()) {
+                        if(r.is_ptr() && r.pointed_type() != valbox::type::POINTER) {
                             l.become_type(r.val_or_pointed_type());
                             l.assign_preserving_type(r);
                         } else {
