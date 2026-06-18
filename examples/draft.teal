@@ -96,13 +96,27 @@ function fibonacci(n) {
 }
 
 
+function arr_vals_0_5(a) {
+    a[0].println();
+    a[5].println();
+}
+
+function obj_vals_c_f(o) {
+    o["c"].println();
+    o["f"].println();
+}
+
 my_drafts(host_data) {
     console.fixed();
     console.enable_colors(true);
     console.setprecision(16);
 
+    obj["d"] = "d";
+    obj["c"] = 0xc;
+    obj_vals_c_f(obj);
+    arr_vals_0_5(obj);
+
     fibonacci(120).println();
-    exit();
 
     s = "123123123";
     s[0]++;
