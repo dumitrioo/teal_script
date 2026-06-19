@@ -219,7 +219,7 @@ namespace teal::file_util {
 #if defined(PLATFORM_WINDOWS)
         struct _stat attrib;
         if (_stat(file_path.c_str(), &attrib) == 0) {
-            return attrib.st_ctime;
+            return timespec_wrapper{attrib.st_ctime};
         } else {
             return {};
         }
@@ -246,7 +246,7 @@ namespace teal::file_util {
 #if defined(PLATFORM_WINDOWS)
         struct _stat attrib;
         if (_stat(file_path.c_str(), &attrib) == 0) {
-            return attrib.st_atime;
+            return timespec_wrapper{attrib.st_atime};
         } else {
             return {};
         }
@@ -273,7 +273,7 @@ namespace teal::file_util {
 #if defined(PLATFORM_WINDOWS)
         struct _stat attrib;
         if(_stat(file_path.c_str(), &attrib) == 0) {
-            return attrib.st_mtime;
+            return timespec_wrapper{attrib.st_mtime};
         } else {
             return {};
         }
@@ -654,7 +654,7 @@ namespace teal::file_util {
         if(dir_path.size() == 0) {
             p = std::string{"."};
         }
-        if(!dir_exists(p)) {
+        if(!dir_exists(p.string())) {
             return;
         }
         if(recursive) {

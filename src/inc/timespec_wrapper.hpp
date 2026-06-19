@@ -115,14 +115,19 @@ namespace teal {
 
         std::string as_rfc_1123_str(bool gmt = true) const {
             std::stringstream ss;
-            struct tm *tmp{::localtime(&(t_.tv_sec))};
-            ss << weekdays_shrt[tmp->tm_wday] << ", "
-               << std::setfill('0') << std::setw(2) << tmp->tm_mday << ' '
-               << std::setfill('0') << std::setw(2) << month_shrt[tmp->tm_mon] << ' '
-               << tmp->tm_year + 1900 << ' '
-               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp->tm_hour) << ':'
-               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp->tm_min) << ':'
-               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp->tm_sec) << ' ';
+            struct tm tmp;
+#if defined(PLATFORM_WINDOWS)
+            localtime_s(&tmp, &(t_.tv_sec));
+#else
+            localtime_r(&(t_.tv_sec), &tmp);
+#endif
+            ss << weekdays_shrt[tmp.tm_wday] << ", "
+               << std::setfill('0') << std::setw(2) << tmp.tm_mday << ' '
+               << std::setfill('0') << std::setw(2) << month_shrt[tmp.tm_mon] << ' '
+               << tmp.tm_year + 1900 << ' '
+               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp.tm_hour) << ':'
+               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp.tm_min) << ':'
+               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp.tm_sec) << ' ';
             if(gmt) { ss << "GMT"; }
 
             return ss.str();
@@ -130,14 +135,19 @@ namespace teal {
 
         std::string as_rfc_1036_str(bool gmt = true) const {
             std::stringstream ss;
-            struct tm *tmp{::localtime(&(t_.tv_sec))};
-            ss << weekdays_full[tmp->tm_wday] << ", "
-               << std::setfill('0') << std::setw(2) << tmp->tm_mday << '-'
-               << std::setfill('0') << std::setw(2) << month_shrt[tmp->tm_mon] << '-'
-               << (tmp->tm_year % 100) << ' '
-               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp->tm_hour) << ':'
-               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp->tm_min) << ':'
-               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp->tm_sec) << ' ';
+            struct tm tmp;
+#if defined(PLATFORM_WINDOWS)
+            localtime_s(&tmp, &(t_.tv_sec));
+#else
+            localtime_r(&(t_.tv_sec), &tmp);
+#endif
+            ss << weekdays_full[tmp.tm_wday] << ", "
+               << std::setfill('0') << std::setw(2) << tmp.tm_mday << '-'
+               << std::setfill('0') << std::setw(2) << month_shrt[tmp.tm_mon] << '-'
+               << (tmp.tm_year % 100) << ' '
+               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp.tm_hour) << ':'
+               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp.tm_min) << ':'
+               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp.tm_sec) << ' ';
             if(gmt) { ss << "GMT"; }
 
             return ss.str();
@@ -145,14 +155,19 @@ namespace teal {
 
         std::string as_iso_8601_str(std::size_t prec = 9) const {
             std::stringstream ss{};
-            struct tm *tmp{::localtime(&(t_.tv_sec))};
-            ss << tmp->tm_year + 1900 << '-' << std::setfill('0')
-               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp->tm_mon + 1) << '-'
-               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp->tm_mday)
+            struct tm tmp;
+#if defined(PLATFORM_WINDOWS)
+            localtime_s(&tmp, &(t_.tv_sec));
+#else
+            localtime_r(&(t_.tv_sec), &tmp);
+#endif
+            ss << tmp.tm_year + 1900 << '-' << std::setfill('0')
+               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp.tm_mon + 1) << '-'
+               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp.tm_mday)
                << 'T'
-               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp->tm_hour) << ':'
-               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp->tm_min) << ':'
-               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp->tm_sec);
+               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp.tm_hour) << ':'
+               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp.tm_min) << ':'
+               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp.tm_sec);
 
             if(prec > 0) {
                 if(prec > 9) { prec = 9; }
@@ -179,14 +194,19 @@ namespace teal {
             long double subseconds{fsecs - secs};
 
             std::stringstream ss;
-            struct tm *tmp{::localtime(&(t_.tv_sec))};
-            ss << tmp->tm_year + 1900 << '-' << std::setfill('0')
-               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp->tm_mon + 1) << '-'
-               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp->tm_mday)
+            struct tm tmp;
+#if defined(PLATFORM_WINDOWS)
+            localtime_s(&tmp, &(t_.tv_sec));
+#else
+            localtime_r(&(t_.tv_sec), &tmp);
+#endif
+            ss << tmp.tm_year + 1900 << '-' << std::setfill('0')
+               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp.tm_mon + 1) << '-'
+               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp.tm_mday)
                << 'T'
-               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp->tm_hour) << ':'
-               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp->tm_min) << ':'
-               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp->tm_sec);
+               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp.tm_hour) << ':'
+               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp.tm_min) << ':'
+               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp.tm_sec);
 
             if(prec > 0) {
                 if(prec > 9) { prec = 9; }
@@ -198,15 +218,71 @@ namespace teal {
             return ss.str();
         }
 
-        int year() const { struct tm *tmp{::localtime(&(t_.tv_sec))}; return tmp->tm_year + 1900; }
-        int month() const { struct tm *tmp{::localtime(&(t_.tv_sec))}; return tmp->tm_mon + 1; }
-        int day() const { struct tm *tmp{::localtime(&(t_.tv_sec))}; return tmp->tm_mday; }
-        int hour() const { struct tm *tmp{::localtime(&(t_.tv_sec))}; return tmp->tm_hour; }
-        int min() const { struct tm *tmp{::localtime(&(t_.tv_sec))}; return tmp->tm_min; }
-        int sec() const { struct tm *tmp{::localtime(&(t_.tv_sec))}; return tmp->tm_sec; }
+        int year() const {
+            struct tm tmp;
+#if defined(PLATFORM_WINDOWS)
+            localtime_s(&tmp, &(t_.tv_sec));
+#else
+            localtime_r(&(t_.tv_sec), &tmp);
+#endif
+            return tmp.tm_year + 1900;
+        }
+        int month() const {
+            struct tm tmp;
+#if defined(PLATFORM_WINDOWS)
+            localtime_s(&tmp, &(t_.tv_sec));
+#else
+            localtime_r(&(t_.tv_sec), &tmp);
+#endif
+            return tmp.tm_mon + 1;
+        }
+        int day() const {
+            struct tm tmp;
+#if defined(PLATFORM_WINDOWS)
+            localtime_s(&tmp, &(t_.tv_sec));
+#else
+            localtime_r(&(t_.tv_sec), &tmp);
+#endif
+            return tmp.tm_mday;
+        }
+        int hour() const {
+            struct tm tmp;
+#if defined(PLATFORM_WINDOWS)
+            localtime_s(&tmp, &(t_.tv_sec));
+#else
+            localtime_r(&(t_.tv_sec), &tmp);
+#endif
+            return tmp.tm_hour;
+        }
+        int min() const {
+            struct tm tmp;
+#if defined(PLATFORM_WINDOWS)
+            localtime_s(&tmp, &(t_.tv_sec));
+#else
+            localtime_r(&(t_.tv_sec), &tmp);
+#endif
+            return tmp.tm_min;
+        }
+        int sec() const {
+            struct tm tmp;
+#if defined(PLATFORM_WINDOWS)
+            localtime_s(&tmp, &(t_.tv_sec));
+#else
+            localtime_r(&(t_.tv_sec), &tmp);
+#endif
+            return tmp.tm_sec;
+        }
         long double sec_with_subsec() const { return (long double )sec() + std::fmod(fseconds(), static_cast<long double>(1)); }
 
-        int weekday() const { struct tm *tmp{::localtime(&(t_.tv_sec))}; return tmp->tm_wday; }
+        int weekday() const {
+            struct tm tmp;
+#if defined(PLATFORM_WINDOWS)
+            localtime_s(&tmp, &(t_.tv_sec));
+#else
+            localtime_r(&(t_.tv_sec), &tmp);
+#endif
+            return tmp.tm_wday;
+        }
 
         std::string as_any_tz_iso_8601_str(std::size_t prec = 9, long double hours_offset = 0) const {
             if(std::abs(hours_offset) > 12.0L) { return {}; }
@@ -220,14 +296,19 @@ namespace teal {
             long double subseconds{fsecs - secs};
 
             std::stringstream ss;
-            struct tm *tmp{::localtime(&(dst_tsw.t_.tv_sec))};
-            ss << tmp->tm_year + 1900 << '-' << std::setfill('0')
-               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp->tm_mon + 1) << '-'
-               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp->tm_mday)
+            struct tm tmp;
+#if defined(PLATFORM_WINDOWS)
+            localtime_s(&tmp, &(dst_tsw.t_.tv_sec));
+#else
+            localtime_r(&(dst_tsw.t_.tv_sec), &tmp);
+#endif
+            ss << tmp.tm_year + 1900 << '-' << std::setfill('0')
+               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp.tm_mon + 1) << '-'
+               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp.tm_mday)
                << 'T'
-               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp->tm_hour) << ':'
-               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp->tm_min) << ':'
-               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp->tm_sec);
+               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp.tm_hour) << ':'
+               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp.tm_min) << ':'
+               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp.tm_sec);
 
             if(prec > 0) {
                 if(prec > 9) { prec = 9; }
@@ -259,9 +340,19 @@ namespace teal {
         }
 
         std::string asctime() const {
-            std::stringstream ss;
-            struct tm *tmp{::localtime(&(t_.tv_sec))};
-            return ::asctime(tmp);
+            struct tm tmp;
+#if defined(PLATFORM_WINDOWS)
+            localtime_s(&tmp, &(t_.tv_sec));
+#else
+            localtime_r(&(t_.tv_sec), &tmp);
+#endif
+#if defined(PLATFORM_WINDOWS)
+            char str[64];
+            asctime_s(str, sizeof str, &tmp);
+            return str;
+#else
+            return ::asctime(&tmp);
+#endif
         }
 
         timespec_wrapper &from_mysql_datetime_str(std::string const &dts) {
@@ -342,14 +433,19 @@ namespace teal {
             long double subseconds{fsecs - secs};
 
             std::stringstream ss;
-            struct tm *tmp{::localtime(&(t_.tv_sec))};
-            ss << tmp->tm_year + 1900 << '-' << std::setfill('0')
-               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp->tm_mon + 1) << '-'
-               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp->tm_mday)
+            struct tm tmp;
+#if defined(PLATFORM_WINDOWS)
+            localtime_s(&tmp, &(t_.tv_sec));
+#else
+            localtime_r(&(t_.tv_sec), &tmp);
+#endif
+            ss << tmp.tm_year + 1900 << '-' << std::setfill('0')
+               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp.tm_mon + 1) << '-'
+               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp.tm_mday)
                << ' '
-               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp->tm_hour) << ':'
-               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp->tm_min) << ':'
-               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp->tm_sec);
+               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp.tm_hour) << ':'
+               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp.tm_min) << ':'
+               << std::setfill('0') << std::setw(2) << static_cast<int>(tmp.tm_sec);
 
             if(prec > 0) {
                 if(prec > 9) { prec = 9; }
@@ -369,8 +465,8 @@ namespace teal {
         }
 
         static timespec_wrapper now() noexcept {
-            timespec_wrapper result;
-            timespec ts;
+            timespec_wrapper result{};
+            timespec ts{};
             std::timespec_get(&ts, TIME_UTC);
             result.t_.tv_sec = ts.tv_sec;
             result.t_.tv_nsec = ts.tv_nsec;
@@ -378,23 +474,34 @@ namespace teal {
         }
 
         static timespec_wrapper gmtnow() noexcept {
-            timespec_wrapper result;
-            timespec ts;
+            timespec_wrapper result{};
+            timespec ts{};
             std::timespec_get(&ts, TIME_UTC);
             time_t t{ts.tv_sec};
+#if defined(PLATFORM_WINDOWS)
+            struct tm ltm{};
+            gmtime_s(&ltm, &t);
+            ts.tv_sec = std::mktime(&ltm);
+            result.t_.tv_sec = ts.tv_sec;
+            result.t_.tv_nsec = ts.tv_nsec;
+#else
             struct tm *ltm{std::gmtime(&t)};
             ts.tv_sec = std::mktime(ltm);
             result.t_.tv_sec = ts.tv_sec;
             result.t_.tv_nsec = ts.tv_nsec;
+#endif
             return result;
         }
 
         static timespec_wrapper date_gmtoffset(timespec_wrapper const &d) noexcept {
-            timespec_wrapper result;
-            time_t t{d.t_.tv_sec};
-            struct tm *ltm{std::localtime(&t)};
-            result.t_.tv_sec = ltm->tm_gmtoff;
-            result.t_.tv_nsec = 0;
+            timespec_wrapper result{};
+#if defined(PLATFORM_WINDOWS)
+            std::chrono::nanoseconds ns_duration(d.nseconds());
+            std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds> tp{ns_duration};
+#else
+            std::chrono::system_clock::time_point tp{std::chrono::nanoseconds{d.nseconds()}};
+#endif
+            result.t_.tv_sec = std::chrono::current_zone()->get_info(tp).offset.count();
             return result;
         }
 
@@ -404,10 +511,8 @@ namespace teal {
 
         timespec_wrapper gmtoffset() const noexcept {
             timespec_wrapper result;
-            time_t t{static_cast<time_t>(seconds())};
-            struct tm *ltm{std::localtime(&t)};
-            result.t_.tv_sec = ltm->tm_gmtoff;
-            result.t_.tv_nsec = 0;
+            std::chrono::system_clock::time_point tp{ std::chrono::system_clock::now() };
+            result.t_.tv_sec = std::chrono::current_zone()->get_info(tp).offset.count();
             return result;
         }
 
@@ -519,8 +624,14 @@ namespace teal {
             tm.tm_hour = 1;
             timespec tspc{std::mktime(&tm), 0};
             std::int64_t intial_sec{(std::int64_t)tspc.tv_sec};
-            struct tm *tmp{std::localtime(&(tspc.tv_sec))};
-            int first_day_of_first_week{tmp->tm_wday == 0 ? 7 : tmp->tm_wday};
+            //struct tm *tmp{std::localtime(&(tspc.tv_sec))};
+            struct tm tmp;
+#if defined(PLATFORM_WINDOWS)
+            localtime_s(&tmp, &(tspc.tv_sec));
+#else
+            localtime_r(&(tspc.tv_sec), &tmp);
+#endif
+            int first_day_of_first_week{tmp.tm_wday == 0 ? 7 : tmp.tm_wday};
 
             int flat_day{0};
             if(w == 1) {
@@ -538,11 +649,15 @@ namespace teal {
                 flat_day += d - 1;
             }
             tspc.tv_sec = intial_sec + 86400 * flat_day;
-            tmp = std::localtime(&(tspc.tv_sec));
-            if(tmp->tm_year != initial_y) {
+#if defined(PLATFORM_WINDOWS)
+            localtime_s(&tmp, &(tspc.tv_sec));
+#else
+            localtime_r(&(tspc.tv_sec), &tmp);
+#endif
+            if(tmp.tm_year != initial_y) {
                 return std::pair<int, int>{-1, -1};
             }
-            return {tmp->tm_mon + 1, tmp->tm_mday};
+            return {tmp.tm_mon + 1, tmp.tm_mday};
         }
 
         static std::pair<int, int> from_year_ord_day(int y, int yd) {
@@ -557,11 +672,17 @@ namespace teal {
             timespec tspc{std::mktime(&tm), 0};
             std::int64_t intial_sec{(std::int64_t)tspc.tv_sec};
             tspc.tv_sec = intial_sec + 86400 * (yd - 1);
-            struct tm *tmp{std::localtime(&(tspc.tv_sec))};
-            if(initial_y != tmp->tm_year) {
+            //struct tm *tmp{std::localtime(&(tspc.tv_sec))};
+            struct tm tmp;
+#if defined(PLATFORM_WINDOWS)
+            localtime_s(&tmp, &(tspc.tv_sec));
+#else
+            localtime_r(&(tspc.tv_sec), &tmp);
+#endif
+            if(initial_y != tmp.tm_year) {
                 return std::pair<int, int>{-1, -1};
             }
-            return {tmp->tm_mon + 1, tmp->tm_mday};
+            return {tmp.tm_mon + 1, tmp.tm_mday};
         }
 
         template<typename CHAR_T>
@@ -958,11 +1079,14 @@ namespace teal {
                     }
                     if(have_gmtoffs) {
                         val_sec += -(res_gmt_offs_hour * 3600 + res_gmt_offs_min * 60) * res_gmt_offs_sign;
-                        struct timeval tv;
-                        tv.tv_sec = val_sec;
-                        time_t t{tv.tv_sec};
-                        struct tm *ltm{std::localtime(&t)};
-                        val_sec += ltm->tm_gmtoff;
+                        //struct timeval tv;
+                        //tv.tv_sec = val_sec;
+                        //time_t t{tv.tv_sec};
+                        //struct tm *ltm{std::localtime(&t)};
+                        //val_sec += ltm->tm_gmtoff;
+                        timespec_wrapper tsw;
+                        tsw.t_.tv_sec = val_sec;
+                        val_sec += date_gmtoffset(tsw).seconds();
                     }
                 }
                 t_.tv_sec = val_sec;

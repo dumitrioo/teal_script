@@ -75,10 +75,10 @@ namespace teal::math {
     T cube(T v) noexcept { return v * v * v; }
 
     template<typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
-    T deg2rad(T d) noexcept { return d * M_PIl / 180.0L; }
+    T deg2rad(T d) noexcept { return d * std::numbers::template pi_v<T> / 180.0L; }
 
     template<typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
-    T rad2deg(T r) noexcept { return r * 180.0L / M_PIl; }
+    T rad2deg(T r) noexcept { return r * 180.0L / std::numbers::template pi_v<T>; }
 
     template<typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
     T angle3d(const vector4<T> &u, const vector4<T> &v) {
@@ -139,7 +139,7 @@ namespace teal::math {
 
     template<typename T>
     T mushroomcap(T width, T x) noexcept {
-        return width > 0.0L ? std::cos((M_PIl * .5L) * x / width) : 0.0L;
+        return width > 0.0L ? std::cos((std::numbers::template pi_v<T> * .5L) * x / width) : 0.0L;
     }
 
 
@@ -154,7 +154,7 @@ namespace teal::math {
 
     template<typename FP_T>
     FP_T gaussian(FP_T x, FP_T mat_exp = 0, FP_T std_dev = 1) noexcept {
-        return std::exp(-square(x - mat_exp) / (2 * square(std_dev))) / (std_dev * std::sqrt(2 * M_PI));
+        return std::exp(-square(x - mat_exp) / (2 * square(std_dev))) / (std_dev * std::sqrt(2 * std::numbers::template pi_v<FP_T>));
     }
 
     template<typename FP_T>

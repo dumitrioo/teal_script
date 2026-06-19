@@ -437,12 +437,12 @@ namespace teal::sys_util {
         std::vector<TCHAR> infoBuf;
         infoBuf.resize(32768);
         DWORD  bufCharCount = infoBuf.size();
-        if(GetComputerName(infoBuf.data, &bufCharCount)) {
+        if(GetComputerName(infoBuf.data(), &bufCharCount)) {
             result =
-#ifdef(_UNICODE)
-            result = str_util::to_utf8(std::wstring{(wchar_t const *)infoBuf.data()})
+#if defined(_UNICODE)
+                result = str_util::to_utf8(std::wstring{(wchar_t const *)infoBuf.data()})
 #else
-            result = std::string{(wchar_t const *)infoBuf.data()}
+                result = std::string{(char const *)infoBuf.data()}
 #endif
             ;
         }
@@ -549,7 +549,7 @@ namespace teal::sys_util {
         return result;
     }
 
-    static bool increase_stack(rlim_t const requiredStackSize) {
+    static bool increase_stack(/*rlim_t*/std::size_t const requiredStackSize) {
         bool res{false};
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
         struct rlimit currentLimit;

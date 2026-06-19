@@ -277,10 +277,12 @@ namespace teal {
         valbox(std::uint64_t *v): box_{std::make_shared<box_data>((void *)v, type::POINTER, type::U64)} {}
         valbox(vec4_t const &v): box_{std::make_shared<box_data>(std::any{v}, type::VEC4)} {}
         valbox(mat4_t const &v): box_{std::make_shared<box_data>(std::any{v}, type::MAT4)} {}
+#ifndef PLATFORM_WINDOWS
         valbox(long long v): box_{std::make_shared<box_data>((std::int64_t)v, type::S64)} {}
         valbox(long long *v): box_{std::make_shared<box_data>((void *)v, type::POINTER, type::S64)} {}
         valbox(unsigned long long v): box_{std::make_shared<box_data>((std::uint64_t)v, type::U64)} {}
         valbox(unsigned long long *v): box_{std::make_shared<box_data>((void *)v, type::POINTER, type::U64)} {}
+#endif
         valbox(json const &v): box_{std::make_shared<box_data>(value_t{}, type::UNDEFINED)} { from_json(v); }
         valbox(object_t const &v): box_{std::make_shared<box_data>(v, type::OBJECT)} {}
         valbox(void *v, type pointed_type = type::POINTER): box_{std::make_shared<box_data>(v, type::POINTER, pointed_type)} {}
@@ -422,10 +424,12 @@ namespace teal {
         valbox &operator=(std::uint64_t *v) { VALBOX_ASSIGN_PTR_OPERATOR_BODY(U64) }
         valbox &operator=(vec4_t const &v) { VALBOX_ASSIGN_OPERATOR_BODY(VEC4) }
         valbox &operator=(mat4_t const &v) { VALBOX_ASSIGN_OPERATOR_BODY(MAT4) }
+#ifndef PLATFORM_WINDOWS
         valbox &operator=(long long v) { VALBOX_ASSIGN_OPERATOR_BODY(S64) }
         valbox &operator=(long long *v) { VALBOX_ASSIGN_PTR_OPERATOR_BODY(S64) }
         valbox &operator=(unsigned long long v) { VALBOX_ASSIGN_OPERATOR_BODY(U64) }
         valbox &operator=(unsigned long long *v) { VALBOX_ASSIGN_PTR_OPERATOR_BODY(U64) }
+#endif
         valbox &operator=(json const &v) {
             valbox &ref{deref()};
             if(!ref.box_) {
@@ -1531,13 +1535,13 @@ namespace teal {
                 case type::CHAR: return -as_char();
                 case type::WCHAR: return -as_wchar();
                 case type::S8: return -as_s8();
-                case type::U8: return -as_u8();
+                case type::U8: return static_cast<uint8_t>(-as_u8());
                 case type::S16: return -as_s16();
-                case type::U16: return -as_u16();
+                case type::U16: return static_cast<uint16_t>(-as_u16());
                 case type::S32: return -as_s32();
-                case type::U32: return -as_u32();
+                case type::U32: return static_cast<uint32_t>(0 - as_u32());
                 case type::S64: return -as_s64();
-                case type::U64: return -as_u64();
+                case type::U64: return static_cast<uint64_t>(0 - as_u64());
                 case type::VEC4: return -as_vec4();
                 case type::MAT4: return -as_mat4();
                 case type::UNDEFINED: return valbox{};
@@ -3674,14 +3678,14 @@ namespace teal {
                         case type::BOOL: return -rr.as_bool();
                         case type::CHAR: return -rr.as_char();
                         case type::S8: return -rr.as_s8();
-                        case type::U8: return -rr.as_u8();
+                        case type::U8: return static_cast<uint8_t>(-rr.as_u8());
                         case type::S16: return -rr.as_s16();
-                        case type::U16: return -rr.as_u16();
+                        case type::U16: return static_cast<uint16_t>(-rr.as_u16());
                         case type::WCHAR: return -rr.as_wchar();
                         case type::S32: return -rr.as_s32();
-                        case type::U32: return -rr.as_u32();
+                        case type::U32: return static_cast<uint32_t>(static_cast<uint32_t>(0) - rr.as_u32());
                         case type::S64: return -rr.as_s64();
-                        case type::U64: return -rr.as_u64();
+                        case type::U64: return static_cast<uint64_t>(static_cast<uint64_t>(0) - rr.as_u64());
                         case type::FLOAT: return -rr.as_float();
                         case type::DOUBLE: return -rr.as_double();
                         case type::LONG_DOUBLE: return -rr.as_long_double();

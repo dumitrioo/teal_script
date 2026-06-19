@@ -424,7 +424,11 @@ namespace teal::str_util {
 #ifdef STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
         return unicode_operations::isascii(c);
 #else
+#if defined(PLATFORM_WINDOWS)
+        return isascii(c);
+#else
         return ::isascii(c);
+#endif
 #endif
     }
 
@@ -489,7 +493,11 @@ namespace teal::str_util {
     }
 
     static int isascii_(int c) {
+#if defined(PLATFORM_WINDOWS)
+        return isascii(c);
+#else
         return ::isascii(c);
+#endif
     }
 
     static int iscntrl(int c) {

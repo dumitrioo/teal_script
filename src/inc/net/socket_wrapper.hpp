@@ -155,44 +155,32 @@ namespace teal::net {
         bool connect(const std::string &address, std::uint16_t port) {
             if(ok()) {
                 if(sock_type_ == address_family::inet4) {
-                    struct hostent *hostPtr{::gethostbyname2(address.c_str(), AF_INET)};
-                    if(hostPtr == NULL) {
+                    auto ipaddr{teal::net::resolve(address)};
+                    std::string add{ntop(ipaddr)};
+                    if(add.empty()) {
                         return false;
                     }
-                    struct in_addr *addr_ptr{(struct in_addr *)*hostPtr->h_addr_list};
-                    if(addr_ptr) {
-                        std::string add{ntop(*addr_ptr)};
-                        if(add.empty()) {
-                            return false;
-                        }
-                        struct sockaddr_in sock_addr;
-                        sock_addr.sin_family = AF_INET;
-                        sock_addr.sin_port = teal::bit_util::hnswap<std::uint16_t>{static_cast<std::uint16_t>(port)}.val;
-                        sock_addr.sin_addr.s_addr = inet_addr(add.c_str());
-                        int conn_res{::connect(sock_fd_, (struct sockaddr *)&sock_addr, sizeof(struct sockaddr))};
-                        if(conn_res == 0) {
-                            return true;
-                        }
+                    struct sockaddr_in sock_addr;
+                    sock_addr.sin_family = AF_INET;
+                    sock_addr.sin_port = teal::bit_util::hnswap<std::uint16_t>{static_cast<std::uint16_t>(port)}.val;
+                    sock_addr.sin_addr = teal::net::pton(add);
+                    int conn_res{::connect(sock_fd_, (struct sockaddr *)&sock_addr, sizeof(struct sockaddr))};
+                    if(conn_res == 0) {
+                        return true;
                     }
                 } else if(sock_type_ == address_family::inet6) {
-                    struct hostent *hostPtr{::gethostbyname2(address.c_str(), AF_INET6)};
-                    if(hostPtr == NULL) {
+                    auto ipaddr{ teal::net::resolve6(address) };
+                    std::string add{ntop(ipaddr)};
+                    if(add.empty()) {
                         return false;
                     }
-                    struct in6_addr *addr_ptr{(struct in6_addr *)*hostPtr->h_addr_list};
-                    if(addr_ptr) {
-                        std::string add{ntop(*addr_ptr)};
-                        if(add.empty()) {
-                            return false;
-                        }
-                        struct sockaddr_in6 sock_addr;
-                        sock_addr.sin6_family = AF_INET6;
-                        sock_addr.sin6_port = teal::bit_util::hnswap<std::uint16_t>{static_cast<std::uint16_t>(port)}.val;
-                        sock_addr.sin6_addr = teal::net::pton6(add);
-                        int conn_res{::connect(sock_fd_, (struct sockaddr *)&sock_addr, sizeof(struct sockaddr))};
-                        if(conn_res == 0) {
-                            return true;
-                        }
+                    struct sockaddr_in6 sock_addr;
+                    sock_addr.sin6_family = AF_INET6;
+                    sock_addr.sin6_port = teal::bit_util::hnswap<std::uint16_t>{static_cast<std::uint16_t>(port)}.val;
+                    sock_addr.sin6_addr = teal::net::pton6(add);
+                    int conn_res{::connect(sock_fd_, (struct sockaddr *)&sock_addr, sizeof(struct sockaddr))};
+                    if(conn_res == 0) {
+                        return true;
                     }
                 }
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
@@ -248,7 +236,13 @@ namespace teal::net {
             }
             return result;
         }
-        int send(const void *buff, int len, int flags = MSG_NOSIGNAL) {
+        int send(const void *buff, int len, int flags = 
+#if defined(PLATFORM_WINDOWS)
+            0
+#else
+            MSG_NOSIGNAL
+#endif
+        ) {
             if(ok()) {
                 if(len <= 0 || !buff) {
                     throw socket_error("wrong arguments in call to socket::send()");
@@ -348,7 +342,7 @@ namespace teal::net {
             }
 #ifdef PLATFORM_WINDOWS
             int val{v ? 1 : 0};
-            return ::setsockopt(sock_fd_, SOL_SOCKET, SO_REUSEPORT, (char const *)&val, sizeof(int)) >= 0;
+            return ::setsockopt(sock_fd_, SOL_SOCKET, SO_REUSEADDR, (char const *)&val, sizeof(int)) >= 0;
 #else
             int val{v ? 1 : 0};
             return ::setsockopt(sock_fd_, SOL_SOCKET, SO_REUSEPORT, &val, sizeof(int)) >= 0;
@@ -515,8 +509,10 @@ namespace teal::net {
                    sock_type_ == address_family::inet4
                    ||
                    sock_type_ == address_family::inet6
+#ifndef PLATFORM_WINDOWS
                    ||
                    sock_type_ == address_family::unix_socket
+#endif
                 )
             ;
         }

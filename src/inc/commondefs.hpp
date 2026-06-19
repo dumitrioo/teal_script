@@ -79,7 +79,6 @@
 #include <cmath>
 #include <streambuf>
 #include <istream>
-#include <sstream>
 #include <ostream>
 #include <exception>
 #include <stdexcept>

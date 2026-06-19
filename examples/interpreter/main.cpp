@@ -59,7 +59,6 @@ private:
     int v_{};
 };
 
-
 int main(int argc, char **argv) {
     std::vector<std::string> const args{argv, argv + argc};
     std::setlocale(LC_ALL, "en_US.UTF-8");
@@ -70,6 +69,15 @@ int main(int argc, char **argv) {
 
 #if defined(SIGPIPE)
     std::signal(SIGPIPE, SIG_IGN);
+#endif
+
+#ifdef PLATFORM_WINDOWS
+    WSADATA wsadata;
+    int wsa_result = WSAStartup(MAKEWORD(2, 2), &wsadata);
+    if (wsa_result != 0) {
+        fprintf(stderr, "[ERROR]: main() -> WSAStartup() {} -> %d\n", wsa_result);
+        return 1;
+    }
 #endif
 
     // The runtime

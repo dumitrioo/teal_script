@@ -8,6 +8,11 @@
 #include <netinet/ip6.h>
 #include <sys/un.h>
 #include <sys/uio.h>
+#elif defined(PLATFORM_WINDOWS)
+#include <inaddr.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+typedef uint32_t in_addr_t;
 #endif
 
 namespace teal::net {
@@ -28,10 +33,12 @@ namespace teal::net {
         raw = SOCK_RAW,
         rdm = SOCK_RDM,
         seqpacket = SOCK_SEQPACKET,
+#if !defined(PLATFORM_WINDOWS)
         dccp = SOCK_DCCP,
         packet = SOCK_PACKET,
         cloexec = SOCK_CLOEXEC,
         nonblock = SOCK_NONBLOCK,
+#endif
     };
 
     static bool is_valid_ipv4_adr_string(std::string addr_str) {
@@ -132,37 +139,43 @@ namespace teal::net {
     DEFINE_RUNTIME_ERROR_CLASS(resolve_error)
 
     static in_addr resolve(const std::string &name) {
-        in_addr res;
-        struct in_addr *addr_ptr;
-        struct hostent *hostPtr;
-        hostPtr = ::gethostbyname(name.c_str());
-        if(hostPtr == NULL) {
-            throw resolve_error{"error calling gethostbyname()"};
+        struct addrinfo hints, *info, *p;
+
+        memset(&hints, 0, sizeof hints);
+        hints.ai_family = AF_INET;
+        hints.ai_flags = AI_ALL;
+
+        if(getaddrinfo(name.c_str(), nullptr, &hints, &info) == 0) {
+            for(p = info; p; p = p->ai_next) {
+                if (p->ai_family == AF_INET) {
+                    struct sockaddr_in* ipv4 = (struct sockaddr_in*) p->ai_addr;
+                    return ipv4->sin_addr;
+                }
+            }
+
+            freeaddrinfo(info);
         }
-        addr_ptr = (struct in_addr *)*hostPtr->h_addr_list;
-        if(addr_ptr) {
-            std::memcpy(&res, addr_ptr, hostPtr->h_length);
-        } else {
-            throw resolve_error{"not resolved"};
-        }
-        return res;
+        throw resolve_error{"not resolved"};
     }
 
     static in6_addr resolve6(const std::string &name) {
-        in6_addr res;
-        struct in6_addr *addr_ptr;
-        struct hostent *hostPtr;
-        hostPtr = ::gethostbyname2(name.c_str(), AF_INET6);
-        if(hostPtr == NULL) {
-            throw resolve_error{"error calling gethostbyname()"};
+        struct addrinfo hints, *info, *p;
+
+        memset(&hints, 0, sizeof hints);
+        hints.ai_family = AF_INET6;
+        hints.ai_flags = AI_ALL;
+
+        if(getaddrinfo(name.c_str(), nullptr, &hints, &info) == 0) {
+            for(p = info; p; p = p->ai_next) {
+                if (p->ai_family == AF_INET6) {
+                    struct sockaddr_in6 *ipv6 = (struct sockaddr_in6*) p->ai_addr;
+                    return ipv6->sin6_addr;
+                }
+            }
+
+            freeaddrinfo(info);
         }
-        addr_ptr = (struct in6_addr *)*hostPtr->h_addr_list;
-        if(addr_ptr) {
-            std::memcpy(&res, addr_ptr, hostPtr->h_length);
-        } else {
-            throw resolve_error{"not resolved"};
-        }
-        return res;
+        throw resolve_error{"not resolved"};
     }
 
 }

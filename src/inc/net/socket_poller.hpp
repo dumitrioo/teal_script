@@ -56,7 +56,7 @@ namespace teal::net {
     };
 #elif defined(PLATFORM_WINDOWS)
     enum POLL_EVENTS {
-        POLL_EVENT_ET = 0
+        POLL_EVENT_ET = 0,
         POLL_EVENT_IN = POLLIN,
         POLL_EVENT_PRI = POLLPRI,
         POLL_EVENT_OUT = POLLOUT,
