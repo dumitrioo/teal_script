@@ -7,28 +7,15 @@ door_lock_needed_standing_def(all_doors_closed, all_windows_closed, ignition_on,
             && all_doors_closed && all_windows_closed;
 }
 
-manual_lock_by_button_def(lock_is_on, was_pressed) {
-    return was_pressed && lock_is_on;
-}
-
-manual_unlock_by_button_def(lock_is_on, was_pressed) {
-    return was_pressed && !lock_is_on;
-}
-
 force_doors_unlock_detector_def(crash) {
     return crash;
 }
 
-doors_lock_unlock_button_value_def(curr_signal, crash, ign) {
+doors_lock_unlock_button_value_def(curr_signal, crash, ign, was_pressed) {
     cursig = (bool)curr_signal;
-    if(this.value == undefined) {
-        this.value = false;
-        this.prev_sig_val = cursig;
-    }
+    if(this.value == undefined) { this.value = false; this.prev_sig_val = cursig; }
     if(this.crash != crash) {
-        if(crash) {
-            this.value = false;
-        }
+        if(crash) { this.value = false; }
         this.crash = crash;
     }
     if(this.ign != ign) {
@@ -36,12 +23,10 @@ doors_lock_unlock_button_value_def(curr_signal, crash, ign) {
         this.ign = ign;
     }
     if(this.prev_sig_val != cursig) {
-        if(cursig) {
-            this.value = !this.value;
-        }
+        if(cursig) { this.value = !this.value; }
         this.prev_sig_val = cursig;
     }
-    return this.value;
+    return was_pressed ? this.value : undefined;
 }
 
 doors_lock_unlock_button_pressed_def(curr_signal, crash, ign) {
@@ -51,9 +36,7 @@ doors_lock_unlock_button_pressed_def(curr_signal, crash, ign) {
         this.prev_sig_val = cursig;
     }
     if(this.crash != crash) {
-        if(crash) {
-            this.value = false;
-        }
+        if(crash) { this.value = false; }
         this.crash = crash;
     }
     if(this.ign != ign) {
@@ -71,20 +54,19 @@ doors_lock_request_def(
     driving_lock_suggest,
     parking_lock_suggest,
     force_doors_unlock,
-    manual_lock,
-    manual_unlock,
+    manual_doors_lock_state,
     key_inside
 ) {
     if(this.lck == undefined) {
         this.lck = false;
     }
 
-    if(force_doors_unlock || manual_unlock || key_inside) {
+    if(force_doors_unlock || (manual_doors_lock_state != undefined && !manual_lock) || key_inside) {
         this.lck = false;
         return false;
     }
 
-    if(manual_lock || driving_lock_suggest || parking_lock_suggest) {
+    if((manual_doors_lock_state != undefined && manual_lock) || driving_lock_suggest || parking_lock_suggest) {
         this.lck = true;
         return true;
     }
@@ -94,19 +76,15 @@ doors_lock_request_def(
 
 // --------------------------------------------------------------------------
 
-doors_lock_unlock_button_value_def          manual_doors_lock_state(doors_lock_btn, crash_detected, ignition_status_changed_timepoint);
-doors_lock_unlock_button_pressed_def        doors_lock_btn_pressed(doors_lock_btn, crash_detected, ignition_status_changed_timepoint);
+doors_lock_unlock_button_pressed_def        manual_doors_lock_button_pressed(doors_lock_btn, crash_detected, ignition_status_changed_timepoint);
+doors_lock_unlock_button_value_def          manual_doors_lock_state(doors_lock_btn, crash_detected, ignition_status_changed_timepoint, manual_doors_lock_button_pressed);
+triggering_timepoint_def                    door_locking_button_state_changed_timepoint(manual_doors_lock_state);
 door_lock_needed_driving_def                doors_lock_driving_necessity(max_wheel_speed, all_doors_closed, ignition_status, engine_start_btn, current_gear);
 door_lock_needed_standing_def               doors_lock_parking_necessity(all_doors_closed, all_windows_closed, ignition_status, ignition_status_changed_timepoint);
-manual_lock_by_button_def                   doors_manual_lock_cmd(manual_doors_lock_state, doors_lock_btn_pressed);
-manual_unlock_by_button_def                 doors_manual_unlock_cmd(manual_doors_lock_state, doors_lock_btn_pressed);
 force_doors_unlock_detector_def             force_doors_unlock(crash_detected);
-triggering_timepoint_def                    door_locking_button_state_changed_timepoint(manual_doors_lock_state);
 doors_lock_request_def                      door_lock_request(
     doors_lock_driving_necessity,
     doors_lock_parking_necessity,
     force_doors_unlock,
-    doors_manual_lock_cmd,
-    doors_manual_unlock_cmd,
     key_inside_car
 ) 'door_lock_request';

@@ -160,7 +160,7 @@ my_drafts(host_data) {
     assert(k.typeof() == "array").println();
 
     timestamps = [];
-    for(i = 0; i < 100; ++i) {
+    for(i = 0; i < 1000; ++i) {
         timestamps.push_back(steady_clock());
     }
     timestamps.apply_func(println);
@@ -435,3 +435,9 @@ my_drafts(host_data) {
 }
 
 my_drafts drf(host_provided_data);
+
+
+
+
+
+
