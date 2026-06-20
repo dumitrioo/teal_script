@@ -63,7 +63,16 @@ namespace teal {
             t_.tv_sec = msec / 1'000LL;
             t_.tv_nsec = (msec % 1'000LL) * 1'000'000LL;
         }
-
+#ifdef PLATFORM_WINDOWS
+        static uint64_t constexpr PTW32_TIMESPEC_TO_FILETIME_OFFSET{
+            ((uint64_t)27111902UL << 32) + (uint64_t)3577643008UL
+        };
+        explicit timespec_wrapper(FILETIME const &ft) noexcept {
+            t_.tv_sec = ((*(uint64_t*)&ft - PTW32_TIMESPEC_TO_FILETIME_OFFSET) / 10000000UL);
+            t_.tv_nsec = ((*(uint64_t*)&ft - PTW32_TIMESPEC_TO_FILETIME_OFFSET -
+                    ((uint64_t)t_.tv_sec * (uint64_t)10000000UL)) * 100);
+        }
+#endif
         explicit timespec_wrapper(long double flt_val) noexcept {
             t_.tv_sec = flt_val;
             t_.tv_nsec = (flt_val - t_.tv_sec) * 1'000'000'000LL;
@@ -672,7 +681,6 @@ namespace teal {
             timespec tspc{std::mktime(&tm), 0};
             std::int64_t intial_sec{(std::int64_t)tspc.tv_sec};
             tspc.tv_sec = intial_sec + 86400 * (yd - 1);
-            //struct tm *tmp{std::localtime(&(tspc.tv_sec))};
             struct tm tmp;
 #if defined(PLATFORM_WINDOWS)
             localtime_s(&tmp, &(tspc.tv_sec));
@@ -700,6 +708,7 @@ namespace teal {
                 teal::static_buff<int, 24> z_idx{};
                 teal::static_buff<int, 24> spc_idx{};
                 struct bufs {
+                    bufs() = default;
                     teal::static_buff<char, 16> buff{};
                     tk_t t{tk_t::none};
                     bool is_none() const { return t == tk_t::none; }

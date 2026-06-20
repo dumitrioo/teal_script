@@ -2,6 +2,7 @@
 
 #include "../commondefs.hpp"
 #include "../bit_util.hpp"
+#include "../str_util.hpp"
 
 namespace teal {
 
@@ -216,13 +217,12 @@ namespace teal {
         }
 
         static std::string sha512sum(std::string const &input) {
-            std::array<std::uint8_t, sha512::digest_size()> res{sha512sum(input.data(), input.size())};
-            char buf[2 * sha512::digest_size() + 1];
-            for(std::size_t i = 0; i < sha512::digest_size(); i++) {
-                sprintf(buf + i * 2, "%02x", res[i]);
+            std::array<std::uint8_t, sha512::digest_size()> digest{sha512sum(input.data(), input.size())};
+            std::string res{}; res.reserve(2 * digest.size());
+            for(std::size_t i = 0; i < digest.size(); i++) {
+                res += str_util::utoa<std::string>((std::uint64_t)digest[i], 16, 2);
             }
-            buf[2 * sha512::digest_size()] = 0;
-            return buf;
+            return res;
         }
 
     }

@@ -12,7 +12,7 @@ namespace teal {
         using size_type = std::uint64_t;
         using offset_type = std::int64_t;
 
-        static_buff() = default;
+        static_buff() {}
         static_buff(std::initializer_list<T> vals) { for(auto &&v: vals) { push_back(v); } }
         static_buff(std::vector<T> const &vals) { for(auto &&v: vals) { push_back(v); } }
         template<typename U, std::size_t CNT>
@@ -37,8 +37,8 @@ namespace teal {
         T const &operator[](std::size_t indx) const & { if(indx >= cnt_) { throw std::runtime_error{"index out of range"}; } return (T const &)buf_[indx]; }
         T &operator[](int indx) & { if(indx >= (int)cnt_) { throw std::runtime_error{"index out of range"}; } return (T &)buf_[indx]; }
         T const &operator[](int indx) const & { if(indx >= cnt_) { throw std::runtime_error{"index out of range"}; } return (T const &)buf_[indx]; }
-        T const *data() const & { return buf_; }
-        T *data() & { return buf_; }
+        T const *data() const & { return buf_.data(); }
+        T *data() & { return buf_.data(); }
         std::size_t size() const { return cnt_; }
         bool empty() const { return cnt_ == 0; }
         std::size_t constexpr capacity() const { return cnt_; }
@@ -52,7 +52,7 @@ namespace teal {
         void traverse(FT fun) { for(std::size_t i = 0; i < size(); ++i) { fun(buf_[i]); } }
 
     private:
-        T buf_[N]{};
+        std::array<T, N> buf_{};
         std::size_t cnt_{0};
     };
 

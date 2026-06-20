@@ -95,7 +95,11 @@ namespace teal::net {
                 if(is_data_arrived_set()) {
                     result = helpers::make_nonblocking(sock_fd_);
                     if(!result) {
+#ifdef PLATFORM_WINDOWS
+                        ::closesocket(sock_fd_);
+#else
                         ::close(sock_fd_);
+#endif
                         sock_fd_ = -1;
                     }
                 } else {
@@ -225,8 +229,18 @@ namespace teal::net {
             std::vector<std::uint8_t> close_data{'c', 'l', 'o', 's', 'e'};
             std::unique_lock l{sock_fd_mtp_};
             if(sock_fd_ >= 0) {
-                ::sendto(sock_fd_, close_data.data(), close_data.size(), MSG_DONTWAIT, serv_addr(), sizeof(struct sockaddr_in));
+                ::sendto(sock_fd_, (char const *)close_data.data(), close_data.size(), 
+#ifdef PLATFORM_WINDOWS
+                    0
+#else
+                    MSG_DONTWAIT
+#endif
+                    , serv_addr(), sizeof(struct sockaddr_in));
+#ifdef PLATFORM_WINDOWS
+                ::closesocket(sock_fd_);
+#else
                 ::close(sock_fd_);
+#endif
                 sock_fd_ = -1;
                 sock_type_ = address_family::unspecified;
             }
@@ -259,9 +273,19 @@ namespace teal::net {
                 crc = bit_util::swap_on_le<uint64_t>{crc}.val;
                 std::memcpy(&buff[0], &crc, 8);
                 std::memcpy(&buff[8], ch.data(), ch.size());
-                if(::sendto(sock_fd_, buff.data(), ch.size() + 8, MSG_DONTWAIT, serv_addr(), sizeof(struct sockaddr_in)) == -1) {
+                if(::sendto(sock_fd_, (char const *)buff.data(), ch.size() + 8, 
+#ifdef PLATFORM_WINDOWS
+                    0
+#else
+                    MSG_DONTWAIT
+#endif
+                    , serv_addr(), sizeof(struct sockaddr_in)) == -1) {
+#ifdef PLATFORM_WINDOWS
+                    ::closesocket(sock_fd_);
+#else
                     ::close(sock_fd_);
-                    sock_fd_ = -1;
+#endif
+                        sock_fd_ = -1;
                     sock_type_ = address_family::unspecified;
                     return false;
                 }
@@ -284,10 +308,14 @@ namespace teal::net {
                             sizeof(sockaddr_in6) : sizeof(sockaddr_in)
                         )
                 };
-                ssize_t n = ::recvfrom(sock_fd_, buffer.data(), buffer.size(), 0, serv_addr(), &socklen);
+                ssize_t n = ::recvfrom(sock_fd_, (char *)buffer.data(), buffer.size(), 0, serv_addr(), &socklen);
                 l.unlock();
                 if(n == 5 && std::memcmp("close", buffer.data(), 5) == 0) {
+#ifdef PLATFORM_WINDOWS
+                    ::closesocket(sock_fd_);
+#else
                     ::close(sock_fd_);
+#endif
                     sock_fd_ = -1;
                     sock_type_ = address_family::unspecified;
                 } else if(n > 8) {
@@ -385,10 +413,14 @@ namespace teal::net {
                                             sizeof(sockaddr_in6) : sizeof(sockaddr_in)
                                     )
                                 };
-                                ssize_t n = ::recvfrom(sock_fd_, buffer.data(), buffer.size(), 0, serv_addr(), &socklen);
+                                ssize_t n = ::recvfrom(sock_fd_, (char *)buffer.data(), buffer.size(), 0, serv_addr(), &socklen);
                                 l.unlock();
                                 if(n == 5 && std::memcmp("close", buffer.data(), 5) == 0) {
+#ifdef PLATFORM_WINDOWS
+                                    ::closesocket(sock_fd_);
+#else
                                     ::close(sock_fd_);
+#endif
                                     sock_fd_ = -1;
                                     sock_type_ = address_family::unspecified;
                                 } else if(n > 8) {

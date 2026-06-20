@@ -26,7 +26,7 @@ namespace teal {
         struct multiplexing;
 
     public:
-        pp_server_tcp() = default;
+        pp_server_tcp(command_queue *cq): cq_{cq} {}
         pp_server_tcp(pp_server_tcp const &) = delete;
         pp_server_tcp &operator=(pp_server_tcp const &) = delete;
         pp_server_tcp(pp_server_tcp &&) = delete;
@@ -35,7 +35,7 @@ namespace teal {
             stop();
         }
 
-        void set_on_data_arrived(std::function<void(conn_id_t, bytevec const &)> &&on_data_arrived) {
+        void set_on_data_arrived(std::function<void(net::conn_id_t, bytevec const &)> &&on_data_arrived) {
             std::unique_lock l{on_data_arrived_mtp_};
             on_data_arrived_ = std::move(on_data_arrived);
         }
@@ -47,10 +47,10 @@ namespace teal {
         void start(const std::string &address, std::uint16_t port, std::size_t num_work_threads, bool no_delay = false) {
             if(tns_.started()) { return; }
 #if 0
-            tns_.set_on_new_connection([](conn_id_t conn_id) {
+            tns_.set_on_new_connection([](net::conn_id_t conn_id) {
             });
 #endif
-            tns_.set_on_data_arrived([this](conn_id_t conn_id) {
+            tns_.set_on_data_arrived([this](net::conn_id_t conn_id) {
                 auto d{tns_.get_conn_data(conn_id)};
                 if(d) {
                     std::shared_ptr<multiplexing> mxr{get_or_create_muxerset(conn_id)};
@@ -63,10 +63,10 @@ namespace teal {
                     }
                 }
             });
-            tns_.set_on_connection_closed([this](conn_id_t conn_id) {
+            tns_.set_on_connection_closed([this](net::conn_id_t conn_id) {
                 remove_muxerset_by_conn_id(conn_id);
             });
-            tns_.start(address, port, num_work_threads, no_delay);
+            tns_.start(cq_, address, port, 4096, false, std::string{}, std::string{});
         }
 
         void stop() {
@@ -80,35 +80,42 @@ namespace teal {
             }
         }
 
-        int send(conn_id_t conn_id, void const *data, std::size_t dsize) {
+        int send(net::conn_id_t conn_id, void const *data, std::size_t dsize) {
             std::shared_ptr<multiplexing> mxr{get_or_create_muxerset(conn_id)};
             std::unique_lock l{mxr->mux_mtp_};
             mxr->muxer_.add_message(data, dsize);
             int res{};
             while(auto chnk{mxr->muxer_.fetch_out_chunk()}) {
                 bytevec pckt{mxr->mux_bottom_layer_.output_data_to_network_frame(*chnk)};
-                res += tns_.send(conn_id, pckt);
+                if(!pckt.empty()) {
+                    auto sent{tns_.send(conn_id, pckt)};
+                    if(sent < 0) {
+                        tns_.close_connection(conn_id);
+                        break;
+                    }
+                    res += tns_.send(conn_id, pckt);
+                }
             }
             return res;
         }
 
-        int send(conn_id_t conn_id, std::string const &data) {
+        int send(net::conn_id_t conn_id, std::string const &data) {
             return send(conn_id, data.data(), data.size());
         }
 
-        int send(conn_id_t conn_id, bytevec const &data) {
+        int send(net::conn_id_t conn_id, bytevec const &data) {
             return send(conn_id, data.data(), data.size());
         }
 
     private:
-        void notify_on_data_arrived(conn_id_t c, bytevec const &d) {
+        void notify_on_data_arrived(net::conn_id_t c, bytevec const &d) {
             std::shared_lock l{on_data_arrived_mtp_};
             if(on_data_arrived_) {
                 on_data_arrived_(c, d);
             }
         }
 
-        std::shared_ptr<multiplexing> get_or_create_muxerset(conn_id_t conn_id) {
+        std::shared_ptr<multiplexing> get_or_create_muxerset(net::conn_id_t conn_id) {
             std::shared_lock l{muxers_mtp_};
             std::shared_ptr<multiplexing> res{};
             auto it{muxers_.find(conn_id)};
@@ -126,16 +133,16 @@ namespace teal {
             return res;
         }
 
-        void remove_muxerset_by_conn_id(conn_id_t conn_id) {
+        void remove_muxerset_by_conn_id(net::conn_id_t conn_id) {
             std::unique_lock l{muxers_mtp_};
             muxers_.erase(conn_id);
         }
 
     private:
-        teal_net_server tns_{};
-
+        command_queue *cq_{nullptr};
+        net::tcp_server<command_queue> tns_{};
         mutable std::shared_mutex on_data_arrived_mtp_{};
-        std::function<void(conn_id_t, bytevec const &)> on_data_arrived_{nullptr};
+        std::function<void(net::conn_id_t, bytevec const &)> on_data_arrived_{nullptr};
 
         struct multiplexing {
             mutable std::shared_mutex mux_mtp_{};
@@ -146,7 +153,7 @@ namespace teal {
             net::packets_demuxer demuxer_{};
         };
         mutable std::shared_mutex muxers_mtp_{};
-        emhash_8::HashMap<conn_id_t, std::shared_ptr<multiplexing>> muxers_{};
+        emhash_8::HashMap<net::conn_id_t, std::shared_ptr<multiplexing>> muxers_{};
     };
 
     class pp_client_tcp {
@@ -238,7 +245,7 @@ namespace teal {
         }
 
     private:
-        teal_net_client tnc_{};
+        net::tcp_client tnc_{};
 
         std::shared_mutex callback_mtp_{};
         std::function<void(pp_client_tcp *)> on_data_arrived_{nullptr};
@@ -282,12 +289,12 @@ namespace teal {
             stop();
         }
 
-        void set_on_data_arrived(std::function<void(conn_id_t, bytevec const &)> const &on_data_arrived) {
+        void set_on_data_arrived(std::function<void(net::conn_id_t, bytevec const &)> const &on_data_arrived) {
             std::unique_lock l{on_data_arrived_mtp_};
             on_data_arrived_ = on_data_arrived;
         }
 
-        void set_on_data_arrived(std::function<void(conn_id_t, bytevec const &)> &&on_data_arrived) {
+        void set_on_data_arrived(std::function<void(net::conn_id_t, bytevec const &)> &&on_data_arrived) {
             std::unique_lock l{on_data_arrived_mtp_};
             on_data_arrived_ = std::move(on_data_arrived);
         }
@@ -298,7 +305,7 @@ namespace teal {
 
         bool start(const std::string &address, std::uint16_t port, std::size_t num_listen_threads) {
             if(usm_->started()) { return true; }
-            usm_->set_on_data_arrived([this](conn_id_t conn_id, void const *d, std::size_t s) {
+            usm_->set_on_data_arrived([this](net::conn_id_t conn_id, void const *d, std::size_t s) {
                 if(d) {
                     notify_on_data_arrived(conn_id, bytevec{static_cast<uint8_t const *>(d), static_cast<uint8_t const *>(d) + s});
                 }
@@ -313,20 +320,20 @@ namespace teal {
             usm_->set_on_connection_closed(nullptr);
         }
 
-        int send(conn_id_t conn_id, void const *data, std::size_t dsize) {
+        int send(net::conn_id_t conn_id, void const *data, std::size_t dsize) {
             return usm_->send(conn_id, data, dsize) ? dsize : 0;
         }
 
-        int send(conn_id_t conn_id, std::string const &data) {
+        int send(net::conn_id_t conn_id, std::string const &data) {
             return send(conn_id, data.data(), data.size());
         }
 
-        int send(conn_id_t conn_id, bytevec const &data) {
+        int send(net::conn_id_t conn_id, bytevec const &data) {
             return send(conn_id, data.data(), data.size());
         }
 
     private:
-        void notify_on_data_arrived(conn_id_t c, bytevec const &d) {
+        void notify_on_data_arrived(net::conn_id_t c, bytevec const &d) {
             std::shared_lock l{on_data_arrived_mtp_};
             if(on_data_arrived_) {
                 on_data_arrived_(c, d);
@@ -337,7 +344,7 @@ namespace teal {
         command_queue *cq_{nullptr};
         std::unique_ptr<teal::net::udp_server_muxed<1400>> usm_{};
         mutable std::shared_mutex on_data_arrived_mtp_{};
-        std::function<void(conn_id_t, bytevec const &)> on_data_arrived_{nullptr};
+        std::function<void(net::conn_id_t, bytevec const &)> on_data_arrived_{nullptr};
     };
 
     class pp_client_udp {

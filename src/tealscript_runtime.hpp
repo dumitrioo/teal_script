@@ -162,9 +162,9 @@ namespace teal {
             add_function("strerror", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_LE(args, 1)
                 if(args.size() > 0) {
-                    return std::string{strerror(args[0].cast_num_to_num<int>())};
+                    return sys_util::error_str(args[0].cast_num_to_num<int>());
                 }
-                return std::string{strerror(sys_util::last_error())};
+                return sys_util::error_str(sys_util::last_error());
             });
 
             array_buffer_ext_.register_runtime(this);
@@ -1968,7 +1968,7 @@ namespace teal {
                 std::unique_lock l1{ppserver_mtp_};
                 if(!ppserver_) {
                     ppserver_ = std::make_unique<pp_server_udp>(cq_.get(), af, stale_connections_removal_timeout);
-                    ppserver_->set_on_data_arrived([this](conn_id_t conn_id, bytevec const &data) {
+                    ppserver_->set_on_data_arrived([this](net::conn_id_t conn_id, bytevec const &data) {
                         json requ{json::bdeserialize(data)};
                         auto act{requ["act"].as_string()};
                         json resp{};
@@ -2403,22 +2403,22 @@ namespace teal {
         mutable std::shared_mutex net_subs_mtp_{};
         std::atomic_bool pp_subs_functor_running_{false};
         std::atomic_bool pp_subs_functor_enabled_{false};
-        std::map<conn_id_t, net_value_subscriber> net_subs_{};
+        std::map<net::conn_id_t, net_value_subscriber> net_subs_{};
         uint64_t ext_cells_refresh_interval_nanos_{1000000ULL};
 
-        void pp_subscribe(conn_id_t conn_id, std::string const &name, std::string const &alias) {
+        void pp_subscribe(net::conn_id_t conn_id, std::string const &name, std::string const &alias) {
             std::unique_lock l{net_subs_mtp_};
             if(pp_subs_functor_enabled_) {
                 net_subs_[conn_id].subscribe(name, alias);
             }
         }
-        void pp_unsubscribe(conn_id_t conn_id, std::string const &name) {
+        void pp_unsubscribe(net::conn_id_t conn_id, std::string const &name) {
             std::unique_lock l{net_subs_mtp_};
             if(pp_subs_functor_enabled_) {
                 net_subs_[conn_id].unsubscribe(name);
             }
         }
-        void pp_remove(conn_id_t conn_id) {
+        void pp_remove(net::conn_id_t conn_id) {
             std::unique_lock l{net_subs_mtp_};
             if(pp_subs_functor_enabled_) {
                 net_subs_.erase(conn_id);

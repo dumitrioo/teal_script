@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../commondefs.hpp"
+#include "../str_util.hpp"
 
 #define SHA2_SHFR(x, n)    (x >> n)
 #define SHA2_ROTR(x, n)   ((x >> n) | (x << ((sizeof(x) << 3) - n)))
@@ -170,12 +171,11 @@ namespace teal {
 
         static std::string sha256sum(std::string const &input) {
             std::array<std::uint8_t, sha256::DIGEST_SIZE> digest{sha256sum(input.data(), input.size())};
-            char buf[2 * sha256::DIGEST_SIZE + 1];
-            buf[2 * sha256::DIGEST_SIZE] = 0;
-            for(std::size_t i = 0; i < sha256::DIGEST_SIZE; i++) {
-                sprintf(buf+i*2, "%02x", digest[i]);
+            std::string res{}; res.reserve(2 * digest.size());
+            for(std::size_t i = 0; i < digest.size(); i++) {
+                res += str_util::utoa<std::string>((std::uint64_t)digest[i], 16, 2);
             }
-            return buf;
+            return res;
         }
 
     }

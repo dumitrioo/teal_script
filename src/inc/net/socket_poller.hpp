@@ -2,7 +2,6 @@
 
 #include "../commondefs.hpp"
 #include "../sys_util.hpp"
-// #include "../threading.hpp"
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
 extern "C" {
 #include <sys/epoll.h>
@@ -215,7 +214,7 @@ namespace teal::net {
                 return true;
             }
             bool add_event(int fd, int ev_flags, void *sock_attached_data = nullptr) {
-                epoll_event evt;
+                epoll_event evt{};
                 std::memset(&evt, 0, sizeof(evt));
                 if(sock_attached_data) {
                     evt.data.ptr = sock_attached_data;
@@ -249,7 +248,7 @@ namespace teal::net {
             }
             std::vector<poll_event> wait(std::size_t maxcount = 64, teal::timespec_wrapper const &timeout = teal::eternity) {
                 if(maxcount <= 0) {
-                    throw poll_error("bad arguments for epoll wait()");
+                    return {};
                 }
 
                 std::vector<epoll_event> events_buf{};
@@ -267,8 +266,10 @@ namespace teal::net {
                     }
                     return res;
                 } else if(wait_result < 0) {
-                    last_error_ = teal::sys_util::last_error();
-                    throw poll_error{teal::sys_util::error_str(teal::sys_util::last_error())};
+                    if (teal::sys_util::last_error() != EINTR) {
+                        last_error_ = teal::sys_util::last_error();
+                        throw poll_error{teal::sys_util::error_str(teal::sys_util::last_error())};
+                    }
                 }
 
                 return {};

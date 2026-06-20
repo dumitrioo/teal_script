@@ -11,16 +11,16 @@
 #include "socket_poller.hpp"
 #include "socket_wrapper.hpp"
 
-namespace teal {
+namespace teal::net {
 
-    class teal_net_client: public terminable {
+    class tcp_client: public terminable {
     public:
-        teal_net_client() = default;
-        teal_net_client(teal_net_client const &) = delete;
-        teal_net_client &operator=(teal_net_client const &) = delete;
-        teal_net_client(teal_net_client &&) = delete;
-        teal_net_client &operator=(teal_net_client &&) = delete;
-        ~teal_net_client() {
+        tcp_client() = default;
+        tcp_client(tcp_client const &) = delete;
+        tcp_client &operator=(tcp_client const &) = delete;
+        tcp_client(tcp_client &&) = delete;
+        tcp_client &operator=(tcp_client &&) = delete;
+        ~tcp_client() {
             try {
                 disconnect();
             } catch (...) {

@@ -6,6 +6,14 @@
 
 #include <tealscript_runtime.hpp>
 
+#ifdef PLATFORM_WINDOWS
+#pragma comment( lib,"ws2_32.lib" )
+#ifdef TEAL_TCPSERVER_USE_SSL
+#pragma comment(lib, "libeay32.lib")
+#pragma comment(lib, "ssleay32.lib")
+#endif
+#endif
+
 #ifdef USE_CUSTOM_MEMORY_ALLOCATION
 
 static teal::binned_allocator<16, 4096> glbl_alloc{};
@@ -75,7 +83,7 @@ int main(int argc, char **argv) {
     WSADATA wsadata;
     int wsa_result = WSAStartup(MAKEWORD(2, 2), &wsadata);
     if (wsa_result != 0) {
-        fprintf(stderr, "[ERROR]: main() -> WSAStartup() {} -> %d\n", wsa_result);
+        std::cerr << "WSAStartup() error " << wsa_result << std::endl;
         return 1;
     }
 #endif
@@ -141,7 +149,7 @@ int main(int argc, char **argv) {
             } else if(std::filesystem::is_directory(args[i])) {
                 for(auto const &dir_entry: std::filesystem::recursive_directory_iterator{args[i]}) {
                     if(dir_entry.is_regular_file()) {
-                        rt.load_file(dir_entry.path());
+                        rt.load_file(dir_entry.path().string());
                     }
                 }
             } else {

@@ -4,7 +4,7 @@
 #include "../str_util.hpp"
 #include "../json.hpp"
 
-namespace teal {
+namespace teal::net {
 
     class url final {
     public:

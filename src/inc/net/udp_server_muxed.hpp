@@ -145,7 +145,11 @@ namespace teal::net {
                     poller_.close();
                     }
                     std::unique_lock sl{sock_fd_mtp_};
+#ifdef PLATFORM_WINDOWS
+                    ::closesocket(sock_fd_);
+#else
                     ::close(sock_fd_);
+#endif
                     sock_fd_ = -1;
                 }
             } catch(...) {
@@ -187,7 +191,7 @@ namespace teal::net {
                                     sizeof(sockaddr_in6) : sizeof(sockaddr_in))
                             };
                             n = ::recvfrom(
-                                sock_fd_, in_buff->first.data(), NET_PACKET_PAYLOAD_SIZE_MAX + 256,
+                                sock_fd_, (char *)in_buff->first.data(), NET_PACKET_PAYLOAD_SIZE_MAX + 256,
                                 0, (struct sockaddr *)&cli_addr, &socklen
                             );
                             l.unlock();
@@ -229,7 +233,11 @@ namespace teal::net {
                     if((sock_fd_ = ::socket(AF_INET, SOCK_DGRAM, 0)) >= 0) {
                         if(sock_fd_ != -1) {
                             if(!helpers::make_nonblocking(sock_fd_)) {
+#ifdef PLATFORM_WINDOWS
+                                ::closesocket(sock_fd_);
+#else
                                 ::close(sock_fd_);
+#endif
                                 sock_fd_ = -1;
                             }
                         }
@@ -260,7 +268,11 @@ namespace teal::net {
                     if((sock_fd_ = ::socket(AF_INET6, SOCK_DGRAM, 0)) >= 0) {
                         if(sock_fd_ != -1) {
                             if(!helpers::make_nonblocking(sock_fd_)) {
+#ifdef PLATFORM_WINDOWS
+                                ::closesocket(sock_fd_);
+#else
                                 ::close(sock_fd_);
+#endif
                                 sock_fd_ = -1;
                             }
                         }
@@ -329,7 +341,7 @@ namespace teal::net {
                                         sizeof(sockaddr_in6) : sizeof(sockaddr_in))
                                 };
                                 res = ::sendto(
-                                          sock_fd_, dts.data(), och->size() + 8, 0,
+                                          sock_fd_, (char const *)dts.data(), och->size() + 8, 0,
                                           (const struct sockaddr *)cnn->addr_ptr(), socklen
                                       ) != -1;
                             }
@@ -363,7 +375,13 @@ namespace teal::net {
                             static_cast<socklen_t>(sock_type_ == address_family::inet6 ?
                                                        sizeof(sockaddr_in6) : sizeof(sockaddr_in))
                         };
-                        ::sendto(sock_fd_, "close", 5, MSG_DONTWAIT, cnn->addr_ptr(), socklen);
+                        ::sendto(sock_fd_, "close", 5, 
+#ifdef PLATFORM_WINDOWS
+                            0
+#else
+                            MSG_DONTWAIT
+#endif
+                            , cnn->addr_ptr(), socklen);
                     }
                 }
                 if(on_connection_closed_) {

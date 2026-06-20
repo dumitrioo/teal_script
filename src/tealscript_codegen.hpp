@@ -73,7 +73,7 @@ namespace teal {
                     } else if(array_contains_str(cur_cnt["cell_flags"], "extern")) {
                         std::string cnm{cur_cnt["cell_name"].as_string()};
                         std::string rnm{cur_cnt["remote_name"].as_string()};
-                        url u{rnm};
+                        net::url u{rnm};
                         if(!u.valid()) {
                             throw compilation_error{cur["loc"]["line"].try_as_number(), cur["loc"]["col"].try_as_number(),
                                 rnm + ": external name should be a valid URL"};

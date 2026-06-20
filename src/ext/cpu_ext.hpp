@@ -142,7 +142,7 @@ namespace teal {
         private:
             bool cpu_state_init() {
                 n_of_processors_ = std::thread::hardware_concurrency();
-#if defined __linux
+#if defined(PLATFORM_LINUX)
                 last_clk_ = ::times(&tsmpl_last_);
                 if(last_clk_ == static_cast<clock_t>(-1)) {
                     return false;
@@ -152,7 +152,7 @@ namespace teal {
                 }
                 self_cpu_consumption_buff_.clear();
                 return true;
-#elif defined(WINDOWS)
+#elif defined(PLATFORM_WINDOWS)
                 if(n_of_processors_ == 0ULL) {
                     return false;
                 }
@@ -163,8 +163,8 @@ namespace teal {
                 FILETIME UserTime;
                 if(GetProcessTimes(hProcess, &CreationTime, &ExitTime, &KernelTime, &UserTime)) {
                     teal::timespec_wrapper now{ teal::timespec_wrapper::now() };
-                    curr_cpu_kernel_last_scan_time_ = KernelTime;
-                    curr_cpu_user_last_scan_time_ = UserTime;
+                    curr_cpu_kernel_last_scan_time_ = teal::timespec_wrapper{KernelTime};
+                    curr_cpu_user_last_scan_time_ = teal::timespec_wrapper{UserTime};
                     curr_cpu_milestone_last_scan_time_ = now;
                 } else {
                     return false;
@@ -173,7 +173,7 @@ namespace teal {
 #endif
             }
 
-#if defined(WINDOWS)
+#if defined(PLATFORM_WINDOWS)
             unsigned long long _previousTotalTicks{ 0 };
             unsigned long long _previousIdleTicks{ 0 };
 
@@ -202,7 +202,7 @@ namespace teal {
 #endif
 
             void actualize_curr_cpu_value() {
-#if defined __linux
+#if defined(PLATFORM_LINUX)
                 struct tms tsmpl;
                 clock_t now = ::times(&tsmpl);
                 FLT_T res = 0;
@@ -218,7 +218,7 @@ namespace teal {
                     sum += self_cpu_consumption_buff_[k];
                 }
                 self_cpu_consumption_ = sum / static_cast<FLT_T>(self_cpu_consumption_buff_.size());
-#elif defined(WINDOWS)
+#elif defined(PLATFORM_WINDOWS)
                 FILETIME CreationTime;
                 FILETIME ExitTime;
                 FILETIME KernelTime;
@@ -253,12 +253,12 @@ namespace teal {
 #endif
             }
 
-#if defined __linux
+#if defined(PLATFORM_LINUX)
             std::ifstream proc_stat_ifs_{/*"/proc/stat"*/};
 #endif
 
             void actualize_all_cpu_value() {
-#if defined __linux
+#if defined(PLATFORM_LINUX)
                 if(!proc_stat_ifs_) {
                     proc_stat_ifs_.open("/proc/stat");
                 }
@@ -284,7 +284,7 @@ namespace teal {
                         cpu_usage_.store(static_cast<FLT_T>(d_work_j) / static_cast<FLT_T>(d_total_j));
                     }
                 }
-#elif defined(WINDOWS)
+#elif defined(PLATFORM_WINDOWS)
                 cpu_usage_ = static_cast<FLT_T>(GetCPULoad());
 #endif
             }
@@ -298,9 +298,9 @@ namespace teal {
             clock_t last_clk_{0};
             clock_t clock_last{0};
             teal::scalar_circular_buffer<FLT_T, 5> self_cpu_consumption_buff_{};
-#if defined(__linux)
+#if defined(PLATFORM_LINUX)
             struct tms tsmpl_last_{};
-#elif defined(WINDOWS)
+#elif defined(PLATFORM_WINDOWS)
             teal::timespec_wrapper curr_cpu_milestone_last_scan_time_{};
             teal::timespec_wrapper curr_cpu_kernel_last_scan_time_{};
             teal::timespec_wrapper curr_cpu_user_last_scan_time_{};

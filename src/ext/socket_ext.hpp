@@ -42,11 +42,12 @@ namespace teal {
             rt->add_var("sock_raw", static_cast<int>(teal::net::sock_type::raw));
             rt->add_var("sock_rdm", static_cast<int>(teal::net::sock_type::rdm));
             rt->add_var("sock_seqpacket", static_cast<int>(teal::net::sock_type::seqpacket));
+#ifndef PLATFORM_WINDOWS
             rt->add_var("sock_dccp", static_cast<int>(teal::net::sock_type::dccp));
             rt->add_var("sock_packet", static_cast<int>(teal::net::sock_type::packet));
             rt->add_var("sock_cloexec", static_cast<int>(teal::net::sock_type::cloexec));
             rt->add_var("sock_nonblock", static_cast<int>(teal::net::sock_type::nonblock));
-
+#endif
             rt->add_function("socket", TEALFUN() {
                 return valbox{std::make_shared<teal::net::socket>(), "socket"};
             });

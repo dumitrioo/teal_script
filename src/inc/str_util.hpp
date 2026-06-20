@@ -321,7 +321,7 @@ namespace teal::str_util {
         if(s <= 0) {
             throw std::runtime_error{"wrong number format"};
         }
-        return negative ? -result : result;
+        return negative ? (uint64_t)0 - result : result;
     }
 
     template<typename string_t>

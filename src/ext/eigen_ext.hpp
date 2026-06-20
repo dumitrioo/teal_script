@@ -408,8 +408,8 @@ namespace teal {
 
                 Eigen::MatrixXd P;
 
-                const uint dim_x = A.rows();
-                const uint dim_u = B.cols();
+                const auto dim_x = A.rows();
+                const auto dim_u = B.cols();
 
                 // set Hamilton matrix
                 Eigen::MatrixXd Ham = Eigen::MatrixXd::Zero(2 * dim_x, 2 * dim_x);
