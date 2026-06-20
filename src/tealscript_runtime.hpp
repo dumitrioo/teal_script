@@ -1262,7 +1262,10 @@ namespace teal {
                 auto type_it{worker_cells_templates_.find(curr_cell->type_name())};
                 if(type_it != worker_cells_templates_.end()) {
                     if(curr_cell->actual_args_info().size() != static_cast<size_t>(type_it->second.num_args())) {
-                        throw runtime_error{curr_cell->line(), curr_cell->col(), "actual arguments count for the cell mismatch"};
+                        throw runtime_error{curr_cell->line(), curr_cell->col(),
+                            std::string{"error instantiating node \""} + curr_cell->inst_name() + "\" of type \"" + curr_cell->type_name() +
+                                "\": number of actual parameters mismatch"
+                        };
                     }
                     curr_cell->set_type_info(type_it->second.num_args(), type_it->second.arg_names());
                 }
@@ -1474,7 +1477,10 @@ namespace teal {
                     auto type_it{worker_cells_templates_.find(curr_cell_type_name)};
                     if(type_it != worker_cells_templates_.end()) {
                         if(curr_cell->actual_args_info().size() != static_cast<size_t>(type_it->second.num_args())) {
-                            throw runtime_error{curr_cell->line(), curr_cell->col(), "actual arguments count for the cell mismatch"};
+                            throw runtime_error{curr_cell->line(), curr_cell->col(),
+                                std::string{"error instantiating node \""} + curr_cell->inst_name() + "\" of type \"" + curr_cell->type_name() +
+                                    "\": number of actual parameters mismatch"
+                            };
                         }
                         curr_cell->set_type_info(type_it->second.num_args(), type_it->second.arg_names());
                     }
@@ -1694,7 +1700,10 @@ namespace teal {
                                     auto type_it{worker_cells_templates_.find(curr_cell_type_name)};
                                     if(type_it != worker_cells_templates_.end()) {
                                         if(curr_cell->actual_args_info().size() != static_cast<size_t>(type_it->second.num_args())) {
-                                            throw runtime_error{curr_cell->line(), curr_cell->col(), "actual arguments count for the cell mismatch"};
+                                            throw runtime_error{curr_cell->line(), curr_cell->col(),
+                                                std::string{"error instantiating node \""} + curr_cell->inst_name() + "\" of type \"" + curr_cell->type_name() +
+                                                    "\": number of actual parameters mismatch"
+                                            };
                                         }
                                         curr_cell->set_type_info(type_it->second.num_args(), type_it->second.arg_names());
                                     }
