@@ -552,25 +552,52 @@ namespace teal {
                 }
                 return false;
             });
+
             add_function("push_back", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 valbox &a1r{args[0].deref()};
                 if(a1r.is_undefined()) {
                     a1r.become_array();
                 }
-                a1r.as_array().push_back(args[1]);
-                return args[0];
+                if(a1r.is_array()) {
+                    if(args[1].is_unbounded_placement()) {
+                        a1r.as_array().push_back(args[1]);
+                    } else {
+                        a1r.as_array().push_back(args[1].clone());
+                    }
+                    return args[0];
+                }
+                throw std::runtime_error{"not array"};
             });
-
-#if 1
+            add_function("pop_back", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
+                valbox &a1r{args[0].deref()};
+                if(a1r.is_array()) {
+                    if(a1r.as_array().empty()) {
+                        throw std::runtime_error{"array empty"};
+                    }
+                    auto &vec{a1r.as_array()};
+                    valbox res{vec.back()};
+                    vec.pop_back();
+                    return res;
+                }
+                throw std::runtime_error{"not array"};
+            });
             add_function("push_front", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 valbox &a1r{args[0].deref()};
                 if(a1r.is_undefined()) {
                     a1r.become_array();
                 }
-                a1r.as_array().insert(a1r.as_array().begin(), args[1]);
-                return args[0];
+                if(a1r.is_array()) {
+                    if(args[1].is_unbounded_placement()) {
+                        a1r.as_array().push_front(args[1]);
+                    } else {
+                        a1r.as_array().push_front(args[1].clone());
+                    }
+                    return args[0];
+                }
+                throw std::runtime_error{"not array"};
             });
             add_function("pop_front", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
@@ -579,24 +606,9 @@ namespace teal {
                     if(a1r.as_array().empty()) {
                         throw std::runtime_error{"array empty"};
                     }
-                    valbox res{a1r.as_array().front()};
                     auto &vec{a1r.as_array()};
-                    vec.erase(vec.begin());
-                    return res;
-                }
-                throw std::runtime_error{"not array"};
-            });
-#endif
-
-            add_function("pop_back", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                valbox &a1r{args[0].deref()};
-                if(a1r.is_array()) {
-                    if(a1r.as_array().empty()) {
-                        throw std::runtime_error{"array empty"};
-                    }
-                    valbox res{a1r.as_array().back()};
-                    a1r.as_array().pop_back();
+                    valbox res{vec.front()};
+                    vec.pop_front();
                     return res;
                 }
                 throw std::runtime_error{"not array"};
