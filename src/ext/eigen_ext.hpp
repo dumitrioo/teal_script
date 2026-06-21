@@ -87,7 +87,7 @@ namespace teal {
                 return teal::valbox{std::move(res), "matrix"};
             });
 
-            rt->add_object_binary_operation("matrix", "=",
+            rt->add_object_binary_operation("matrix", std::string{OPERATOR_ASSIGN},
                 [](valbox &l, valbox &r) -> valbox {
                     if(l.class_name() == "matrix") {
                         if(r.class_name() == "matrix") {
@@ -104,7 +104,7 @@ namespace teal {
                 }
             );
 
-            rt->add_object_binary_operation("matrix", "*",
+            rt->add_object_binary_operation("matrix", std::string{OPERATOR_MUL},
                 [](valbox &l, valbox &r) -> valbox {
                     if(l.class_name() == "matrix" && r.class_name() == "matrix") {
                         Eigen::MatrixXd mr{l.as_class<Eigen::MatrixXd>() * r.as_class<Eigen::MatrixXd>()};
@@ -130,7 +130,26 @@ namespace teal {
                 }
             );
 
-            rt->add_object_binary_operation("matrix", "/",
+            rt->add_object_binary_operation("matrix", std::string{OPERATOR_MULASSIGN},
+                [](valbox &l, valbox &r) -> valbox {
+                    if(l.class_name() == "matrix") {
+                        if(r.class_name() == "matrix") {
+                            l.as_class<Eigen::MatrixXd>() *= r.as_class<Eigen::MatrixXd>();
+                            return l;
+                        } else if(auto ortsw{detail::mb_construct_from(r)}) {
+                            l.as_class<Eigen::MatrixXd>() *= *ortsw;
+                            return l;
+                        } else if(r.is_numeric()) {
+                            l.as_class<Eigen::MatrixXd>() *= r.cast_to_double();
+                            return l;
+                        }
+                        throw std::runtime_error{"invalid right operand"};
+                    }
+                    throw std::runtime_error{"invalid left operand"};
+                }
+            );
+
+            rt->add_object_binary_operation("matrix", std::string{OPERATOR_DIV},
                 [](valbox &l, valbox &r) -> valbox {
                     if(l.class_name() == "matrix" && r.is_numeric()) {
                         Eigen::MatrixXd mr{l.as_class<Eigen::MatrixXd>() / r.cast_to_double()};
@@ -140,7 +159,20 @@ namespace teal {
                 }
             );
 
-            rt->add_object_binary_operation("matrix", "-",
+            rt->add_object_binary_operation("matrix", std::string{OPERATOR_DIVASSIGN},
+                [](valbox &l, valbox &r) -> valbox {
+                    if(l.class_name() == "matrix") {
+                        if(r.is_numeric()) {
+                            l.as_class<Eigen::MatrixXd>() /= r.cast_to_double();
+                            return l;
+                        }
+                        throw std::runtime_error{"invalid right operand"};
+                    }
+                    throw std::runtime_error{"invalid left operand"};
+                }
+            );
+
+            rt->add_object_binary_operation("matrix", std::string{OPERATOR_MINUS},
                 [](valbox &l, valbox &r) -> valbox {
                     if(l.class_name() == "matrix" && r.class_name() == "matrix") {
                         Eigen::MatrixXd mr{l.as_class<Eigen::MatrixXd>() - r.as_class<Eigen::MatrixXd>()};
@@ -162,7 +194,26 @@ namespace teal {
                 }
             );
 
-            rt->add_object_unary_operation("matrix", "-",
+            rt->add_object_binary_operation("matrix", std::string{OPERATOR_SUBASSIGN},
+                [](valbox &l, valbox &r) -> valbox {
+                    if(l.class_name() == "matrix") {
+                        if(r.class_name() == "matrix") {
+                            l.as_class<Eigen::MatrixXd>() -= r.as_class<Eigen::MatrixXd>();
+                            return l;
+                        } else {
+                            auto rm{detail::mb_construct_from(r)};
+                            if(rm) {
+                                l.as_class<Eigen::MatrixXd>() -= *rm;
+                                return l;
+                            }
+                        }
+                        throw std::runtime_error{"invalid right operand"};
+                    }
+                    throw std::runtime_error{"invalid left operand"};
+                }
+            );
+
+            rt->add_object_unary_operation("matrix", std::string{OPERATOR_MINUS},
                 [](valbox &v) -> valbox {
                     if(v.class_name() == "matrix") {
                         Eigen::MatrixXd mr{-v.as_class<Eigen::MatrixXd>()};
@@ -172,7 +223,7 @@ namespace teal {
                 }
             );
 
-            rt->add_object_binary_operation("matrix", "+",
+            rt->add_object_binary_operation("matrix", std::string{OPERATOR_PLUS},
                 [](valbox &l, valbox &r) -> valbox {
                     if(l.class_name() == "matrix" && r.class_name() == "matrix") {
                         Eigen::MatrixXd mr{l.as_class<Eigen::MatrixXd>() + r.as_class<Eigen::MatrixXd>()};
@@ -194,7 +245,26 @@ namespace teal {
                 }
             );
 
-            rt->add_object_unary_operation("matrix", "(bool)",
+            rt->add_object_binary_operation("matrix", std::string{OPERATOR_ADDASSIGN},
+                [](valbox &l, valbox &r) -> valbox {
+                    if(l.class_name() == "matrix") {
+                        if(r.class_name() == "matrix") {
+                            l.as_class<Eigen::MatrixXd>() += r.as_class<Eigen::MatrixXd>();
+                            return l;
+                        } else {
+                            auto rm{detail::mb_construct_from(r)};
+                            if(rm) {
+                                l.as_class<Eigen::MatrixXd>() += *rm;
+                                return l;
+                            }
+                        }
+                        throw std::runtime_error{"invalid right operand"};
+                    }
+                    throw std::runtime_error{"invalid left operand"};
+                }
+            );
+
+            rt->add_object_unary_operation("matrix", std::string{OPERATOR_CAST_TO_BOOL},
                 [](valbox &v) -> valbox {
                     if(v.class_name() == "matrix") {
                         bool res{false};
@@ -212,7 +282,7 @@ namespace teal {
                 }
             );
 
-            rt->add_object_unary_operation("matrix", "+",
+            rt->add_object_unary_operation("matrix", std::string{OPERATOR_PLUS},
                 [](valbox &v) -> valbox {
                     if(v.class_name() == "matrix") {
                         return teal::valbox{v.as_class<Eigen::MatrixXd>(), "matrix"};
@@ -221,7 +291,7 @@ namespace teal {
                 }
             );
 
-            rt->add_object_binary_operation("matrix", "==",
+            rt->add_object_binary_operation("matrix", std::string{OPERATOR_EQUAL},
                 [](valbox &l, valbox &r) -> valbox {
                     if(l.class_name() == "matrix" && r.class_name() == "matrix") {
                         return l.as_class<Eigen::MatrixXd>() == r.as_class<Eigen::MatrixXd>();
@@ -440,8 +510,6 @@ namespace teal {
 
                 return teal::valbox{P, "matrix"};
             });
-
-
         }
 
         void unregister_runtime() override {

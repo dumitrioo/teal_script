@@ -68,7 +68,7 @@ namespace teal {
                 }
             );
 
-            rt->add_object_binary_operation("timestamp", "==",
+            rt->add_object_binary_operation("timestamp", std::string{OPERATOR_EQUAL},
                 [](valbox &l, valbox &r) -> valbox {
                     static const auto mb_constr{[](valbox const &vb) -> std::optional<timespec_wrapper> {
                         if(vb.is_any_int_number()) { return timespec_wrapper{vb.cast_to_s64()};
@@ -96,7 +96,7 @@ namespace teal {
                 }
             );
 
-            rt->add_object_binary_operation("timestamp", "<=>",
+            rt->add_object_binary_operation("timestamp", std::string{OPERATOR_SPACESHIP},
                 [](valbox &l, valbox &r) -> valbox {
                     static const auto mb_constr{[](valbox const &vb) -> std::optional<timespec_wrapper> {
                         if(vb.is_any_int_number()) { return timespec_wrapper{vb.cast_to_s64()};

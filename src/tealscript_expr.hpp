@@ -285,7 +285,7 @@ namespace teal {
                                 &(ctx->rt_interface()->get_object_services(t.class_name())->unops)
                             };
                             if(unops != nullptr) {
-                                auto it{unops->find("+")};
+                                auto it{unops->find(std::string{OPERATOR_PLUS})};
                                 if(it != unops->end()) {
                                     res = it->second(t);
                                 } else {
@@ -333,7 +333,7 @@ namespace teal {
                                 &(ctx->rt_interface()->get_object_services(res.class_name())->unops)
                             };
                             if(unops != nullptr) {
-                                auto it{unops->find("-")};
+                                auto it{unops->find(std::string{OPERATOR_MINUS})};
                                 if(it != unops->end()) {
                                     res = it->second(t);
                                 } else {
@@ -383,7 +383,7 @@ namespace teal {
                             &(ctx->rt_interface()->get_object_services(t.class_name())->unops)
                         };
                         if(unops != nullptr) {
-                            auto it{unops->find("!")};
+                            auto it{unops->find(std::string{OPERATOR_NOT})};
                             if(it != unops->end()) {
                                 res = it->second(t);
                             } else {
@@ -444,7 +444,7 @@ namespace teal {
                                 &(ctx->rt_interface()->get_object_services(res.class_name())->unops)
                             };
                             if(unops != nullptr) {
-                                auto it{unops->find("prefix++")};
+                                auto it{unops->find(std::string{OPERATOR_PREFIX_INCREMENT})};
                                 if(it != unops->end()) {
                                     res = it->second(res);
                                 } else {
@@ -487,7 +487,7 @@ namespace teal {
                                 &(ctx->rt_interface()->get_object_services(res.class_name())->unops)
                             };
                             if(unops != nullptr) {
-                                auto it{unops->find("prefix--")};
+                                auto it{unops->find(std::string{OPERATOR_PREFIX_DECREMENT})};
                                 if(it != unops->end()) {
                                     res = it->second(res);
                                 } else {
@@ -531,7 +531,7 @@ namespace teal {
                                 &(ctx->rt_interface()->get_object_services(res.class_name())->unops)
                             };
                             if(unops != nullptr) {
-                                auto it{unops->find("~")};
+                                auto it{unops->find(std::string{OPERATOR_BITNOT})};
                                 if(it != unops->end()) {
                                     res = it->second(res);
                                 } else {
@@ -669,7 +669,7 @@ namespace teal {
                             &(ctx->rt_interface()->get_object_services(res.class_name())->unops)
                         };
                         if(unops != nullptr) {
-                            auto it{unops->find("postfix++")};
+                            auto it{unops->find(std::string{OPERATOR_POSTFIX_INCREMENT})};
                             if(it != unops->end()) {
                                 res = it->second(res);
                             } else {
@@ -700,7 +700,7 @@ namespace teal {
                             &(ctx->rt_interface()->get_object_services(res.class_name())->unops)
                         };
                         if(unops != nullptr) {
-                            auto it{unops->find("postfix--")};
+                            auto it{unops->find(std::string{OPERATOR_POSTFIX_DECREMENT})};
                             if(it != unops->end()) {
                                 res = it->second(res);
                             } else {
@@ -805,7 +805,7 @@ namespace teal {
                             binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
                         }
                         if(binops != nullptr) {
-                            auto it{binops->find("+")};
+                            auto it{binops->find(std::string{OPERATOR_PLUS})};
                             if(it != binops->end()) {
                                 res = it->second(l, r);
                             } else {
@@ -846,7 +846,7 @@ namespace teal {
                             binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
                         }
                         if(binops != nullptr) {
-                            auto it{binops->find("-")};
+                            auto it{binops->find(std::string{OPERATOR_MINUS})};
                             if(it != binops->end()) {
                                 res = it->second(l, r);
                             } else {
@@ -887,7 +887,7 @@ namespace teal {
                             binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
                         }
                         if(binops != nullptr) {
-                            auto it{binops->find("*")};
+                            auto it{binops->find(std::string{OPERATOR_MUL})};
                             if(it != binops->end()) {
                                 res = it->second(l, r);
                             } else {
@@ -928,7 +928,7 @@ namespace teal {
                             binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
                         }
                         if(binops != nullptr) {
-                            auto it{binops->find("/")};
+                            auto it{binops->find(std::string{OPERATOR_DIV})};
                             if(it != binops->end()) {
                                 res = it->second(l, r);
                             } else {
@@ -969,7 +969,7 @@ namespace teal {
                             binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
                         }
                         if(binops != nullptr) {
-                            auto it{binops->find("%")};
+                            auto it{binops->find(std::string{OPERATOR_MOD})};
                             if(it != binops->end()) {
                                 res = it->second(l, r);
                             } else {
@@ -1019,11 +1019,16 @@ namespace teal {
                             binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
                         }
                         if(binops != nullptr) {
-                            auto it{binops->find("==")};
+                            auto it{binops->find(std::string{OPERATOR_EQUAL})};
                             if(it != binops->end()) {
-                                res = it->second(l, r);
+                                res = it->second(l, r).cast_to_bool();
                             } else {
-                                throw runtime_error{this_->line(), this_->col(), "unsupported operation"};
+                                auto it{binops->find(std::string{OPERATOR_NOTEQUAL})};
+                                if(it != binops->end()) {
+                                    res = !it->second(l, r).cast_to_bool();
+                                } else {
+                                    throw runtime_error{this_->line(), this_->col(), "unsupported operation"};
+                                }
                             }
                         } else {
                             res = l == r;
@@ -1069,11 +1074,16 @@ namespace teal {
                             binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
                         }
                         if(binops != nullptr) {
-                            auto it{binops->find("==")};
+                            auto it{binops->find(std::string{OPERATOR_NOTEQUAL})};
                             if(it != binops->end()) {
-                                res = !it->second(l, r).cast_to_bool();
+                                res = it->second(l, r).cast_to_bool();
                             } else {
-                                throw runtime_error{this_->line(), this_->col(), "unsupported operation"};
+                                auto it{binops->find(std::string{OPERATOR_EQUAL})};
+                                if(it != binops->end()) {
+                                    res = !it->second(l, r).cast_to_bool();
+                                } else {
+                                    throw runtime_error{this_->line(), this_->col(), "unsupported operation"};
+                                }
                             }
                         } else {
                             res = l != r;
@@ -1110,11 +1120,16 @@ namespace teal {
                             binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
                         }
                         if(binops != nullptr) {
-                            auto it{binops->find("<=>")};
+                            auto it{binops->find(std::string{OPERATOR_LESSEQUAL})};
                             if(it != binops->end()) {
                                 res = it->second(l, r).cast_to_int() <= 0;
                             } else {
-                                throw runtime_error{this_->line(), this_->col(), "unsupported operation"};
+                                auto it{binops->find(std::string{OPERATOR_SPACESHIP})};
+                                if(it != binops->end()) {
+                                    res = it->second(l, r).cast_to_int() < 0;
+                                } else {
+                                    throw runtime_error{this_->line(), this_->col(), "unsupported operation"};
+                                }
                             }
                         } else {
                             res = l <= r;
@@ -1151,11 +1166,16 @@ namespace teal {
                             binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
                         }
                         if(binops != nullptr) {
-                            auto it{binops->find("<=>")};
+                            auto it{binops->find(std::string{OPERATOR_LESS})};
                             if(it != binops->end()) {
                                 res = it->second(l, r).cast_to_int() < 0;
                             } else {
-                                throw runtime_error{this_->line(), this_->col(), "unsupported operation"};
+                                auto it{binops->find(std::string{OPERATOR_SPACESHIP})};
+                                if(it != binops->end()) {
+                                    res = it->second(l, r).cast_to_int() < 0;
+                                } else {
+                                    throw runtime_error{this_->line(), this_->col(), "unsupported operation"};
+                                }
                             }
                         } else {
                             res = l < r;
@@ -1192,11 +1212,16 @@ namespace teal {
                             binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
                         }
                         if(binops != nullptr) {
-                            auto it{binops->find("<=>")};
+                            auto it{binops->find(std::string{OPERATOR_GREATER})};
                             if(it != binops->end()) {
                                 res = it->second(l, r).cast_to_int() > 0;
                             } else {
-                                throw runtime_error{this_->line(), this_->col(), "unsupported operation"};
+                                auto it{binops->find(std::string{OPERATOR_SPACESHIP})};
+                                if(it != binops->end()) {
+                                    res = it->second(l, r).cast_to_int() > 0;
+                                } else {
+                                    throw runtime_error{this_->line(), this_->col(), "unsupported operation"};
+                                }
                             }
                         } else {
                             res = r < l;
@@ -1233,11 +1258,16 @@ namespace teal {
                             binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
                         }
                         if(binops != nullptr) {
-                            auto it{binops->find("<=>")};
+                            auto it{binops->find(std::string{OPERATOR_GREATEREQUAL})};
                             if(it != binops->end()) {
                                 res = it->second(l, r).cast_to_int() >= 0;
                             } else {
-                                throw runtime_error{this_->line(), this_->col(), "unsupported operation"};
+                                auto it{binops->find(std::string{OPERATOR_SPACESHIP})};
+                                if(it != binops->end()) {
+                                    res = it->second(l, r).cast_to_int() >= 0;
+                                } else {
+                                    throw runtime_error{this_->line(), this_->col(), "unsupported operation"};
+                                }
                             }
                         } else {
                             res = !(l < r);
@@ -1274,7 +1304,7 @@ namespace teal {
                             binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
                         }
                         if(binops != nullptr) {
-                            auto it{binops->find("<=>")};
+                            auto it{binops->find(std::string{OPERATOR_SPACESHIP})};
                             if(it != binops->end()) {
                                 res = it->second(l, r);
                             } else {
@@ -1351,13 +1381,11 @@ namespace teal {
                                     binops = &(ctx->rt_interface()->get_object_services(l.class_name())->binops);
                                 }
                                 if(binops != nullptr) {
-                                    auto add_it{binops->find("+")};
-                                    auto assign_it{binops->find("=")};
-                                    if(add_it != binops->end() && assign_it != binops->end()) {
-                                        valbox res{add_it->second(l, r)};
-                                        assign_it->second(l, res);
+                                    auto it{binops->find(std::string{OPERATOR_ADDASSIGN})};
+                                    if(it != binops->end()) {
+                                        l = it->second(l, r);
                                     } else {
-                                        l += r;
+                                        throw runtime_error{this_->line(), this_->col(), "unsupported operation"};
                                     }
                                 } else {
                                     l += r;
@@ -1401,13 +1429,11 @@ namespace teal {
                                     binops = &(ctx->rt_interface()->get_object_services(l.class_name())->binops);
                                 }
                                 if(binops != nullptr) {
-                                    auto add_it{binops->find("-")};
-                                    auto assign_it{binops->find("=")};
-                                    if(add_it != binops->end() && assign_it != binops->end()) {
-                                        valbox res{add_it->second(l, r)};
-                                        assign_it->second(l, res);
+                                    auto it{binops->find(std::string{OPERATOR_SUBASSIGN})};
+                                    if(it != binops->end()) {
+                                        l = it->second(l, r);
                                     } else {
-                                        l -= r;
+                                        throw runtime_error{this_->line(), this_->col(), "unsupported operation"};
                                     }
                                 } else {
                                     l -= r;
@@ -1455,13 +1481,11 @@ namespace teal {
                                     binops = &(ctx->rt_interface()->get_object_services(l.class_name())->binops);
                                 }
                                 if(binops != nullptr) {
-                                    auto add_it{binops->find("*")};
-                                    auto assign_it{binops->find("=")};
-                                    if(add_it != binops->end() && assign_it != binops->end()) {
-                                        valbox res{add_it->second(l, r)};
-                                        assign_it->second(l, res);
+                                    auto it{binops->find(std::string{OPERATOR_MULASSIGN})};
+                                    if(it != binops->end()) {
+                                        l = it->second(l, r);
                                     } else {
-                                        l *= r;
+                                        throw runtime_error{this_->line(), this_->col(), "unsupported operation"};
                                     }
                                 } else {
                                     l *= r;
@@ -1504,13 +1528,11 @@ namespace teal {
                                 binops = &(ctx->rt_interface()->get_object_services(l.class_name())->binops);
                             }
                             if(binops != nullptr) {
-                                auto add_it{binops->find("/")};
-                                auto assign_it{binops->find("=")};
-                                if(add_it != binops->end() && assign_it != binops->end()) {
-                                    valbox res{add_it->second(l, r)};
-                                    assign_it->second(l, res);
+                                auto it{binops->find(std::string{OPERATOR_DIVASSIGN})};
+                                if(it != binops->end()) {
+                                    l = it->second(l, r);
                                 } else {
-                                    l /= r;
+                                    throw runtime_error{this_->line(), this_->col(), "unsupported operation"};
                                 }
                             } else {
                                 l /= r;
@@ -1552,13 +1574,11 @@ namespace teal {
                                 binops = &(ctx->rt_interface()->get_object_services(l.class_name())->binops);
                             }
                             if(binops != nullptr) {
-                                auto add_it{binops->find("%")};
-                                auto assign_it{binops->find("=")};
-                                if(add_it != binops->end() && assign_it != binops->end()) {
-                                    valbox res{add_it->second(l, r)};
-                                    assign_it->second(l, res);
+                                auto it{binops->find(std::string{OPERATOR_MODASSIGN})};
+                                if(it != binops->end()) {
+                                    l = it->second(l, r);
                                 } else {
-                                    l %= r;
+                                    throw runtime_error{this_->line(), this_->col(), "unsupported operation"};
                                 }
                             } else {
                                 l %= r;
@@ -1604,13 +1624,11 @@ namespace teal {
                                     binops = &(ctx->rt_interface()->get_object_services(l.class_name())->binops);
                                 }
                                 if(binops != nullptr) {
-                                    auto add_it{binops->find("&")};
-                                    auto assign_it{binops->find("=")};
-                                    if(add_it != binops->end() && assign_it != binops->end()) {
-                                        valbox res{add_it->second(l, r)};
-                                        assign_it->second(l, res);
+                                    auto it{binops->find(std::string{OPERATOR_BITANDASSIGN})};
+                                    if(it != binops->end()) {
+                                        l = it->second(l, r);
                                     } else {
-                                        l &= r;
+                                        throw runtime_error{this_->line(), this_->col(), "unsupported operation"};
                                     }
                                 } else {
                                     l &= r;
@@ -1656,13 +1674,11 @@ namespace teal {
                                 binops = &(ctx->rt_interface()->get_object_services(l.class_name())->binops);
                             }
                             if(binops != nullptr) {
-                                auto add_it{binops->find("^")};
-                                auto assign_it{binops->find("=")};
-                                if(add_it != binops->end() && assign_it != binops->end()) {
-                                    valbox res{add_it->second(l, r)};
-                                    assign_it->second(l, res);
+                                auto it{binops->find(std::string{OPERATOR_XORASSIGN})};
+                                if(it != binops->end()) {
+                                    l = it->second(l, r);
                                 } else {
-                                    l ^= r;
+                                    throw runtime_error{this_->line(), this_->col(), "unsupported operation"};
                                 }
                             } else {
                                 l ^= r;
@@ -1706,13 +1722,11 @@ namespace teal {
                                 binops = &(ctx->rt_interface()->get_object_services(l.class_name())->binops);
                             }
                             if(binops != nullptr) {
-                                auto add_it{binops->find("|")};
-                                auto assign_it{binops->find("=")};
-                                if(add_it != binops->end() && assign_it != binops->end()) {
-                                    valbox res{add_it->second(l, r)};
-                                    assign_it->second(l, res);
+                                auto it{binops->find(std::string{OPERATOR_BITORASSIGN})};
+                                if(it != binops->end()) {
+                                    l = it->second(l, r);
                                 } else {
-                                    l |= r;
+                                    throw runtime_error{this_->line(), this_->col(), "unsupported operation"};
                                 }
                             } else {
                                 l |= r;
@@ -1757,13 +1771,11 @@ namespace teal {
                                     binops = &(ctx->rt_interface()->get_object_services(l.class_name())->binops);
                                 }
                                 if(binops != nullptr) {
-                                    auto add_it{binops->find("<<")};
-                                    auto assign_it{binops->find("=")};
-                                    if(add_it != binops->end() && assign_it != binops->end()) {
-                                        valbox res{add_it->second(l, r)};
-                                        assign_it->second(l, res);
+                                    auto it{binops->find(std::string{OPERATOR_LSHIFTASSIGN})};
+                                    if(it != binops->end()) {
+                                        l = it->second(l, r);
                                     } else {
-                                        l <<= r;
+                                        throw runtime_error{this_->line(), this_->col(), "unsupported operation"};
                                     }
                                 } else {
                                     l <<= r;
@@ -1807,13 +1819,11 @@ namespace teal {
                                     binops = &(ctx->rt_interface()->get_object_services(l.class_name())->binops);
                                 }
                                 if(binops != nullptr) {
-                                    auto add_it{binops->find(">>")};
-                                    auto assign_it{binops->find("=")};
-                                    if(add_it != binops->end() && assign_it != binops->end()) {
-                                        valbox res{add_it->second(l, r)};
-                                        assign_it->second(l, res);
+                                    auto it{binops->find(std::string{OPERATOR_RSHIFTASSIGN})};
+                                    if(it != binops->end()) {
+                                        l = it->second(l, r);
                                     } else {
-                                        l >>= r;
+                                        throw runtime_error{this_->line(), this_->col(), "unsupported operation"};
                                     }
                                 } else {
                                     l >>= r;
@@ -1854,7 +1864,7 @@ namespace teal {
                             binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
                         }
                         if(binops != nullptr) {
-                            auto it{binops->find("<<")};
+                            auto it{binops->find(std::string{OPERATOR_LSHIFT})};
                             if(it != binops->end()) {
                                 res = it->second(l, r);
                             } else {
@@ -1895,7 +1905,7 @@ namespace teal {
                             binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
                         }
                         if(binops != nullptr) {
-                            auto it{binops->find(">>")};
+                            auto it{binops->find(std::string{OPERATOR_RSHIFT})};
                             if(it != binops->end()) {
                                 res = it->second(l, r);
                             } else {
@@ -1941,7 +1951,7 @@ namespace teal {
                             binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
                         }
                         if(binops != nullptr) {
-                            auto it{binops->find("^")};
+                            auto it{binops->find(std::string{OPERATOR_XOR})};
                             if(it != binops->end()) {
                                 res = it->second(l, r);
                             } else {
@@ -1983,7 +1993,7 @@ namespace teal {
                             binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
                         }
                         if(binops != nullptr) {
-                            auto it{binops->find("|")};
+                            auto it{binops->find(std::string{OPERATOR_BITOR})};
                             if(it != binops->end()) {
                                 res = it->second(l, r);
                             } else {
@@ -2017,7 +2027,7 @@ namespace teal {
                         unops = &(ctx->rt_interface()->get_object_services(l.class_name())->unops);
                     }
                     if(unops != nullptr) {
-                        auto it{unops->find("(bool)")};
+                        auto it{unops->find(std::string{OPERATOR_CAST_TO_BOOL})};
                         if(it != unops->end()) {
                             if(it->second(l).cast_to_bool()) {
                                 return true;
@@ -2035,7 +2045,7 @@ namespace teal {
                             unops = &(ctx->rt_interface()->get_object_services(r.class_name())->unops);
                         }
                         if(unops != nullptr) {
-                            auto it{unops->find("(bool)")};
+                            auto it{unops->find(std::string{OPERATOR_CAST_TO_BOOL})};
                             if(it != unops->end()) {
                                 return it->second(r).cast_to_bool();
                             }
@@ -2060,7 +2070,7 @@ namespace teal {
                             binops = &(ctx->rt_interface()->get_object_services(r.class_name())->binops);
                         }
                         if(binops != nullptr) {
-                            auto it{binops->find("&")};
+                            auto it{binops->find(std::string{OPERATOR_BITAND})};
                             if(it != binops->end()) {
                                 res = it->second(l, r);
                             } else {
@@ -2094,7 +2104,7 @@ namespace teal {
                         unops = &(ctx->rt_interface()->get_object_services(l.class_name())->unops);
                     }
                     if(unops != nullptr) {
-                        auto it{unops->find("(bool)")};
+                        auto it{unops->find(std::string{OPERATOR_CAST_TO_BOOL})};
                         if(it != unops->end()) {
                             if(!it->second(l).cast_to_bool()) {
                                 return false;
@@ -2109,7 +2119,7 @@ namespace teal {
                             unops = &(ctx->rt_interface()->get_object_services(r.class_name())->unops);
                         }
                         if(unops != nullptr) {
-                            auto it{unops->find("(bool)")};
+                            auto it{unops->find(std::string{OPERATOR_CAST_TO_BOOL})};
                             if(it != unops->end()) {
                                 return it->second(r).cast_to_bool();
                             }

@@ -9,6 +9,66 @@
 
 namespace teal {
 
+    constexpr std::string_view OPERATOR_PLUS                 = "+";
+    constexpr std::string_view OPERATOR_MINUS                = "-";
+    constexpr std::string_view OPERATOR_MUL                  = "*";
+    constexpr std::string_view OPERATOR_DIV                  = "/";
+    constexpr std::string_view OPERATOR_MOD                  = "%";
+    constexpr std::string_view OPERATOR_EQUAL                = "==";
+    constexpr std::string_view OPERATOR_NOT                  = "!";
+    constexpr std::string_view OPERATOR_NOTEQUAL             = "!=";
+    constexpr std::string_view OPERATOR_LESSEQUAL            = "<=";
+    constexpr std::string_view OPERATOR_LESS                 = "<";
+    constexpr std::string_view OPERATOR_GREATER              = ">";
+    constexpr std::string_view OPERATOR_GREATEREQUAL         = ">=";
+    constexpr std::string_view OPERATOR_SPACESHIP            = "<=>";
+    constexpr std::string_view OPERATOR_ASSIGN               = "=";
+    constexpr std::string_view OPERATOR_ADDASSIGN            = "+=";
+    constexpr std::string_view OPERATOR_SUBASSIGN            = "-=";
+    constexpr std::string_view OPERATOR_MULASSIGN            = "*=";
+    constexpr std::string_view OPERATOR_DIVASSIGN            = "/=";
+    constexpr std::string_view OPERATOR_MODASSIGN            = "%=";
+    constexpr std::string_view OPERATOR_BITANDASSIGN         = "&=";
+    constexpr std::string_view OPERATOR_XORASSIGN            = "^=";
+    constexpr std::string_view OPERATOR_BITORASSIGN          = "|=";
+    constexpr std::string_view OPERATOR_LSHIFTASSIGN         = "<<=";
+    constexpr std::string_view OPERATOR_RSHIFTASSIGN         = ">>=";
+    constexpr std::string_view OPERATOR_PREFIX_INCREMENT     = "prefix++";
+    constexpr std::string_view OPERATOR_POSTFIX_INCREMENT    = "postfix++";
+    constexpr std::string_view OPERATOR_PREFIX_DECREMENT     = "prefix--";
+    constexpr std::string_view OPERATOR_POSTFIX_DECREMENT    = "postfix--";
+    constexpr std::string_view OPERATOR_LSHIFT               = "<<";
+    constexpr std::string_view OPERATOR_RSHIFT               = ">>";
+    constexpr std::string_view OPERATOR_BITNOT               = "~";
+    constexpr std::string_view OPERATOR_XOR                  = "^";
+    constexpr std::string_view OPERATOR_BITOR                = "|";
+    constexpr std::string_view OPERATOR_OR                   = "||";
+    constexpr std::string_view OPERATOR_BITAND               = "&";
+    constexpr std::string_view OPERATOR_AND                  = "&&";
+
+    constexpr std::string_view OPERATOR_BRACKETS             = "[]";
+
+    constexpr std::string_view OPERATOR_CAST_TO_BOOL         = "(bool)";
+    constexpr std::string_view OPERATOR_CAST_TO_CHAR         = "(char)";
+    constexpr std::string_view OPERATOR_CAST_TO_S8           = "(s8)";
+    constexpr std::string_view OPERATOR_CAST_TO_U8           = "(u8)";
+    constexpr std::string_view OPERATOR_CAST_TO_S16          = "(s16)";
+    constexpr std::string_view OPERATOR_CAST_TO_U16          = "(u16)";
+    constexpr std::string_view OPERATOR_CAST_TO_WCHAR        = "(wchar)";
+    constexpr std::string_view OPERATOR_CAST_TO_S32          = "(s32)";
+    constexpr std::string_view OPERATOR_CAST_TO_U32          = "(u32)";
+    constexpr std::string_view OPERATOR_CAST_TO_S64          = "(s64)";
+    constexpr std::string_view OPERATOR_CAST_TO_U64          = "(u64)";
+    constexpr std::string_view OPERATOR_CAST_TO_F32          = "(f32)";
+    constexpr std::string_view OPERATOR_CAST_TO_F64          = "(f64)";
+    constexpr std::string_view OPERATOR_CAST_TO_FLOAT        = "(float)";
+    constexpr std::string_view OPERATOR_CAST_TO_VEC4         = "(vec4)";
+    constexpr std::string_view OPERATOR_CAST_TO_MAT4         = "(mat4)";
+    constexpr std::string_view OPERATOR_CAST_TO_ARRAY        = "(array)";
+    constexpr std::string_view OPERATOR_CAST_TO_OBJECT       = "(object)";
+    constexpr std::string_view OPERATOR_CAST_TO_STRING       = "(string)";
+    constexpr std::string_view OPERATOR_CAST_TO_WSTRING      = "(wstring)";
+
     struct obj_services {
         std::function<std::optional<std::string>(valbox const &)> serializer{nullptr};
         std::function<valbox(std::string const &, std::string const &)> deserializer{nullptr};

@@ -222,6 +222,7 @@ namespace teal {
             global_fun,
             method,
         };
+
         valbox find_val_by_sym_name(std::string const &name, int64_t l, int64_t c, obj_type &objtyp) {
             switch(objtyp) {
                 case obj_type::user_fun:
