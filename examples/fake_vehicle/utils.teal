@@ -1,11 +1,35 @@
 performance_limiter_def() {
     if(this.initialized == undefined) {
         this.initialized = true;
-        set_cycle_sleep_seconds(0.0001);
+        set_cycle_sleep_seconds(0.001);
         set_inactive_sleep_seconds(0.01);
+
+        println("input nodes: ", runtime_input_nodes());
+        println("computation nodes: ", runtime_computation_nodes());
+        println("extern nodes: ", runtime_external_nodes());
+        println("number of worker threads: ", hardware_concurrency());
     }
 }
 performance_limiter_def schema_perflimit();
+
+pulsation_period_def(pptgt) {
+    if(this.t == undefined) {
+        this.t = steady_clock();
+    } else {
+        res = steady_clock() - this.t;
+        this.t = steady_clock();
+        println("pulse period: ", res);
+        diff = pptgt - res;
+        if(abs(diff) > 0.001) {
+            set_cycle_sleep_seconds(cycle_sleep_seconds() + diff * .01);
+            println("new cycle_sleep_seconds: ", cycle_sleep_seconds());
+        }
+        return res;
+    }
+    return steady_clock() - steady_clock();
+}
+pulsation_period_def pulse_period_meter(0.01);
+
 
 exmpl_exec_time_limiter_auto(dt) {
     if(this.t == undefined) this.t = steady_clock() + dt;

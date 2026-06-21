@@ -1082,21 +1082,27 @@ namespace teal {
             });
             add_function("set_cycle_sleep_seconds", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1);
-                uint64_t time_to_sleep{static_cast<uint64_t>(args[0].cast_to_long_double() * 1000000000.0L)};
-                set_nanoseconds_of_sleeping_between_cycles(time_to_sleep);
-                return time_to_sleep;
+                long double ttsld{args[0].cast_to_long_double()};
+                if(ttsld <= 10) {
+                    uint64_t time_to_sleep{static_cast<uint64_t>(ttsld * 1000000000.0L)};
+                    set_nanoseconds_of_sleeping_between_cycles(time_to_sleep);
+                }
+                return (long double)sleep_between_cycles_nanoseconds() * 1e-9L;
             });
-            add_function("cycle_nanosleep", TEALFUN() {
-                return sleep_between_cycles_nanoseconds();
+            add_function("cycle_sleep_seconds", TEALFUN() {
+                return sleep_between_cycles_nanoseconds() * 1e-9L;
             });
             add_function("set_inactive_sleep_seconds", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1);
-                uint64_t time_to_sleep{static_cast<uint64_t>(args[0].cast_to_long_double() * 1000000000.0L)};
-                set_sleep_inactive_thread_nanoseconds(time_to_sleep);
-                return time_to_sleep;
+                long double issld{args[0].cast_to_long_double()};
+                if(issld <= 10) {
+                    uint64_t time_to_sleep{static_cast<uint64_t>(issld * 1000000000.0L)};
+                    set_sleep_inactive_thread_nanoseconds(time_to_sleep);
+                }
+                return sleep_inactive_thread_nanoseconds() * 1e-9L;
             });
-            add_function("inactive_nanosleep", TEALFUN() {
-                return sleep_inactive_thread_nanoseconds();
+            add_function("inactive_sleep_seconds", TEALFUN() {
+                return sleep_inactive_thread_nanoseconds() * 1e-9L;
             });
 
             add_function("assign", TEALFUN(args) {
@@ -1131,6 +1137,18 @@ namespace teal {
                 std::shared_lock l{threads_mtp_};
                 auto ts{threads_.size()};
                 return ts > 0 ? ts : 1;
+            });
+            add_function("runtime_input_nodes", TEALFUN() {
+                std::shared_lock l{input_cells_mtp_};
+                return input_cells_.size();
+            });
+            add_function("runtime_computation_nodes", TEALFUN() {
+                std::shared_lock l{workers_mtp_};
+                return worker_cells_.size();
+            });
+            add_function("runtime_external_nodes", TEALFUN() {
+                std::shared_lock l{extern_cells_mtp_};
+                return extern_cells_.size();
             });
 
             add_function("enable_external_values_server", TEALFUN(args) {
