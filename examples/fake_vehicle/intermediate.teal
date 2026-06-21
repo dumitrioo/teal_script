@@ -9,7 +9,7 @@ crash_detector_def(lat_accel, lon_accel, airbg) {
 }
 
 max_wheel_speed_def(fl, fr, rl, rr) {
-    return arr_max([fl, fr, rl, rr]);
+    return arr_avg([fl, fr, rl, rr]);
 }
 
 min_wheel_speed_def(fl, fr, rl, rr) {

@@ -8,12 +8,8 @@ performance_limiter_def() {
 performance_limiter_def schema_perflimit();
 
 exmpl_exec_time_limiter_auto(dt) {
-    if(this.t == undefined) {
-        this.t = steady_clock() + dt;
-    }
-    if(steady_clock() > this.t) {
-        exit();
-    }
+    if(this.t == undefined) this.t = steady_clock() + dt;
+    if(steady_clock() > this.t) exit();
     return 0;
 }
 
@@ -55,6 +51,20 @@ function arr_max(arr) {
                 res = arr[i];
             }
         }
+    }
+    return res;
+}
+
+function arr_avg(arr) {
+    res = undefined;
+    if(arr.is_array() && arr.size() > 0) {
+        s = 0.0;
+        for(i = 0; i < arr.size(); ++i) {
+            if(res == undefined || res < arr[i]) {
+                s += (f64)arr[i];
+            }
+        }
+        res = s / arr.size();
     }
     return res;
 }
