@@ -7,9 +7,9 @@ The fundamental bottleneck in modern Cyber-Physical Systems (CPS) software is no
 
 To unlock true scalability and AI integration, the software architecture of any complex mechatronic system must be strictly bifurcated by the principle of separation of concerns based on latency and cognitive load.
 
-    The Deterministic Reflexive Substrate (The "Spinal Cord"): The lower software layer must be exclusively dedicated to hard real-time execution. Its sole purpose is to instantaneously ingest high-frequency sensor data and drive actuators with microsecond precision. It must remain lightweight, uncompromisingly deterministic, and devoid of business logic.
+1. The Deterministic Reflexive Substrate (The "Spinal Cord"): The lower software layer must be exclusively dedicated to hard real-time execution. Its sole purpose is to instantaneously ingest high-frequency sensor data and drive actuators with microsecond precision. It must remain lightweight, uncompromisingly deterministic, and devoid of business logic.
 
-    The Cognitive Orchestration Layer (The "Cerebral Cortex"): The upper layer should be latency-tolerant but tasked with managing the huge complexity of the system’s behavioral logic, state machines, and AI integration.
+2. The Cognitive Orchestration Layer (The "Cerebral Cortex"): The upper layer should be latency-tolerant but tasked with managing the huge complexity of the system’s behavioral logic, state machines, and AI integration.
 
 The critical mistake the industry is making today is attempting to build this "Cerebral Cortex" directly in C++. Forcing engineers to weave highly complex, asynchronous business logic and neural network orchestration into a low-level systems language results in skyrocketing development costs, brittle codebases, and stunted vehicle intelligence.
 
