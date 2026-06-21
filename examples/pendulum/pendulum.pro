@@ -19,12 +19,12 @@ DEFINES += RW_MUTEX_PRIORITIES
 LIBS += -lraylib
 
 INCLUDEPATH += ../../src \
-    ./bullet
+    ../../3rd/bullet3/src
 
 SOURCES += main.cpp \
-    bullet/btBulletCollisionAll.cpp \
-    bullet/btBulletDynamicsAll.cpp \
-    bullet/btLinearMathAll.cpp
+    ../../3rd/bullet3/src/btBulletCollisionAll.cpp \
+    ../../3rd/bullet3/src/btBulletDynamicsAll.cpp \
+    ../../3rd/bullet3/src/btLinearMathAll.cpp
 
 DISTFILES += \
     ../pidreg.teal
