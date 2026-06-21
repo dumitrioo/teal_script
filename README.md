@@ -3,9 +3,19 @@
 
 ## Preface
 
-Despite the imperative and OOP programming languages Turing completeness, there is at least one area of programming where usage of them ​​is impractical: they are not suited to solving a particular class of computation problems in a developer-friendly manner.
+The fundamental bottleneck in modern Cyber-Physical Systems (CPS) software is not hardware limitations, but an architectural paradox. Currently, engineering teams are forced to build the entire software stack - ranging from microsecond reflexes to colossal strategic logic - within the same imperative paradigm (like C++). This approach suffocates the system's potential intelligence under the weight of low-level, event-driven, and algorithmically-defined complexity, because such systems are most conveniently described in terms of computing nodes and data paths between those nodes. Using imperative methods, however, requires mapping multiple data flow signals onto a control flow diagram, a very complex and intricate task.
 
-This class of computational problems is the creation of control schemas controlling multiple actuators based on the analysis of data from multiple sensors in parallel. The analysis and decision-making process for such systems is conveniently described in terms of computing nodes and data paths between that nodes. Using imperative methods, however, requires mapping multiple data flow signals onto a control flow diagram, a very complex and intricate task.
+To unlock true scalability and AI integration, the software architecture of any complex mechatronic system must be strictly bifurcated by the principle of separation of concerns based on latency and cognitive load.
+
+    The Deterministic Reflexive Substrate (The "Spinal Cord"): The lower software layer must be exclusively dedicated to hard real-time execution. Its sole purpose is to instantaneously ingest high-frequency sensor data and drive actuators with microsecond precision. It must remain lightweight, uncompromisingly deterministic, and devoid of business logic.
+
+    The Cognitive Orchestration Layer (The "Cerebral Cortex"): The upper layer should be latency-tolerant but tasked with managing the huge complexity of the system’s behavioral logic, state machines, and AI integration.
+
+The critical mistake the industry is making today is attempting to build this "Cerebral Cortex" directly in C++. Forcing engineers to weave highly complex, asynchronous business logic and neural network orchestration into a low-level systems language results in skyrocketing development costs, brittle codebases, and stunted vehicle intelligence.
+
+The solution is to decouple the cognitive layer into a specialized, expressive scripting environment - specifically, one built on the Data-flow Graph (DFG) paradigm. A DFG-based engine operates as the strategic brain: it effortlessly consumes the abstracted states from the lower layer, orchestrates complex multi-actuator scenarios, and seamlessly integrates with AI models.
+
+This hybrid topology allows your R&D teams to stop wrestling with memory management and thread synchronization, and instead focus entirely on making the system genuinely intelligent. I have developed exactly this kind of middleware, designed to sit between your hardware abstraction layer inputs and outputs, possibly engaging the AI from time to time, and orchestrating this complex cyber-physical apparatus with unprecedented efficiency.
 
 
 ## TealScript
