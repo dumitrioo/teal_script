@@ -29,7 +29,7 @@ TealScript is a programmable easy-to-use embedded control system for driving man
  * Easy integration into a C++ application and extension of the scripting engine’s capabilities using C++.
 
 
-## Data-Flow Graph
+## Data-Flow Graph adoption
 
 While based on the data-centric discrete-time, clocked data-flow static declarative stream functional programming paradigm, TealScript departs from strict functional purity. Each compute node is an instance of an object that syntactically resembles a function, but can retain state between execution cycles via instance variables accessible through the "this" keyword. This makes writing complex state machines or PID controllers as easy as writing simple functions.
 
