@@ -175,7 +175,6 @@ example7() {
         console.println(hexdump(data_to_base64_str(d)));
     } else {
         console.println("error opening file /dev/random");
-        exit(-1);
     }
 }
 
