@@ -46,9 +46,9 @@ You get a problem-specific tool to handle complex control schemas for multiple a
  * Intuitive JS-like sytax, conciseness and readability of the program, most of C math functions provided.
  * Zero Dependencies & Portable: Implemented as a custom execution tree interpreter (no LLVM/external lexers). It compiles into any C++17 codebase via CMake and is completely hardware-agnostic.
  * Np Garbage Collector: Data processing in the script and its extensions uses smart pointers for memory management, so the engine is implemented without a Garbage Collector.
- * True Multi-Threading: Execute graph schemas in parallel across available CPU cores. The interpreter safely handles node execution without requiring the user to manage C++ threads or locks.
+ * True Multi-Threading: Execute graph schemas in parallel across available CPU cores. The interpreter safely handles node execution without requiring the user to manage threads and data locking.
  * Turing Complete & Extensible: Handle general-purpose tasks, system interaction, math (functions, matrices), JSON, and custom host-provided types. Easily inject host functions into the scripting runtime. Simple integration, well defined rules of host-script interaction.
- * Partially Stateful: DFG computation nodes are able to store a state between execution cycles which gives the ability to perform imperative work inside the node while the overall structure of the program is static declarative.
+ * Partially Stateful, Side Effects: Internally, TealScript's computation nodes are written in conventional imperative code. They are capable of maintaining state across execution cycles and runtime interactions, which allows for precise control over side effects to solve any computational problem.
  * Uniform Function Call Syntax (UFCS), where __func(obj, arg)__ call is fully equivalent of __obj.func(arg)__.
  * Network-Agnostic Distributed Graphs: Seamlessly link variables across different hosts using extern URIs. Built on a custom UDP multiplexing protocol (MTU-safe 1400 bytes) that eliminates Head-of-Line blocking without the overhead of TCP or heavy brokers like MQTT (see [example script](examples/external_value.teal)).
 
