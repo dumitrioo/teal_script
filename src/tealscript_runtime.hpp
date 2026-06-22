@@ -1176,15 +1176,18 @@ namespace teal {
 
 
             add_function("disable_external_values_server", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 0);
                 stop_net_server();
                 return !net_server_running();
             });
 
             add_function("external_values_server_enabled", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 0);
                 return net_server_running();
             });
 
             add_function("extern_update_seconds", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 0);
                 return ext_cells_refresh_interval_nanos_ / 1'000'000'000.0L;
             });
 
@@ -1196,6 +1199,7 @@ namespace teal {
 
 
             add_function("size", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1);
                 valbox &der{args[0].deref()};
                 switch(der.val_type()) {
                     case valbox::type::STRING: return static_cast<uint64_t>(der.as_string().size());
@@ -1207,13 +1211,31 @@ namespace teal {
             });
 
             add_function("empty", TEALFUN(args) {
-                valbox arg0{args[0]};
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1);
+                valbox &arg0{args[0].deref()};
                 return arg0.is_undefined() ||
                        (arg0.is_object() && arg0.as_object().empty()) ||
                        (arg0.is_array() && arg0.as_array().empty()) ||
                        (arg0.is_string() && arg0.as_string().empty()) ||
                        (arg0.is_wstring() && arg0.as_wstring().empty());
             });
+
+            add_function("sort", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1);
+                valbox &arg0{args[0].deref()};
+                if(arg0.is_array()) {
+                    valbox::array_t &arr{arg0.as_array()};
+                    std::sort(arr.begin(), arr.end());
+                } else if(arg0.is_string()) {
+                    std::string &s{arg0.as_string()};
+                    std::sort(s.begin(), s.end());
+                } else if(arg0.is_wstring()) {
+                    std::wstring &ws{arg0.as_wstring()};
+                    std::sort(ws.begin(), ws.end());
+                }
+                return args[0];
+            });
+
             check_func_kw_ = true;
         }
 
@@ -1971,7 +1993,11 @@ namespace teal {
 
         void set_output(std::string const &name, valbox const &val) override {
             std::unique_lock l{outputs_mtp_};
-            outputs_[name] = val;
+            if(val.is_instance_placement()) {
+                outputs_[name] = val.clone();
+            } else {
+                outputs_[name] = val.clone();
+            }
         }
 
         void clear_input(std::string const &name) override {

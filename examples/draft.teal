@@ -95,6 +95,14 @@ function fibonacci(n) {
     return string(a);
 }
 
+function rnd_str(n) {
+    res = "";
+    for (i = 0; i < n; ++i) {
+        res += "0123456789qwertyuiopasdfghjklzx"
+               "cvbnmQWERTYUIOPASDFGHJKLZXCVBNM"[rand() % 62];
+    }
+    return res;
+}
 
 function arr_vals_0_5(a) {
     a[0].println();
@@ -111,10 +119,14 @@ my_drafts(host_data) {
     console.enable_colors(true);
     console.setprecision(16);
 
-    wewerwer = object();
-    for(i = 0; i < 10; ++i) {
-        wewerwer[i.string()] = i;
-    }
+    wewerwer = [4,26,3,6,1,8,6,3,5,98,43,76,24,82];
+    wewerwer.println();
+    wewerwer.sort();
+    wewerwer.println();
+
+    wewerwer = rnd_str(64);
+    wewerwer.println();
+    wewerwer.sort();
     wewerwer.println();
 
     obj["d"] = "d";
