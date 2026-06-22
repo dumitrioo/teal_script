@@ -1,65 +1,40 @@
-door_lock_needed_driving_def(vehicle_speed, all_doors_closed, ignition_on, start_btn, gear) {
-    return vehicle_speed > 5 && all_doors_closed && ignition_on && start_btn && gear != "P";
+door_lock_needed_driving_def(vehicle_mode_driving, vehicle_speed, all_doors_closed) {
+    return vehicle_mode_driving && all_doors_closed && ignition_on;
 }
-door_lock_needed_driving_def doors_lock_driving_necessity(max_wheel_speed, all_doors_closed, ignition_status, engine_start_btn, current_gear);
+door_lock_needed_driving_def doors_lock_driving_necessity(vehicle_mode_driving, calculated_vehicle_speed, all_doors_closed);
 
-
-
-door_lock_needed_standing_def(all_doors_closed, all_windows_closed, ignition_on, ign_off_timepoint) {
-    return !ignition_on && steady_clock() - ign_off_timepoint > 30
-            && all_doors_closed && all_windows_closed;
+door_lock_needed_standing_def(all_doors_closed, all_windows_closed, vehicle_mode_stopped, ign_off_timepoint) {
+    return all_doors_closed && all_windows_closed && vehicle_mode_stopped && steady_clock() - ign_off_timepoint > 30;
 }
-door_lock_needed_standing_def doors_lock_standing_necessity(all_doors_closed, all_windows_closed, ignition_status, ignition_status_changed_timepoint);
+door_lock_needed_standing_def doors_lock_standing_necessity(all_doors_closed, all_windows_closed, vehicle_mode_stopped, ignition_status_changed_timepoint);
+
+logical_or_def doors_lock_suggest(doors_lock_driving_necessity, doors_lock_standing_necessity);
 
 
-
-force_doors_unlock_detector_def(crash) return crash;
-force_doors_unlock_detector_def force_doors_unlock(crash_detected);
-
-
-
-doors_lock_unlock_button_value_def(curr_signal, crash, ign, was_pressed) {
-    cursig = (bool)curr_signal;
-    if(this.value == undefined) { this.value = false; this.prev_sig_val = cursig; }
-    if(this.crash != crash) {
-        if(crash) { this.value = false; }
-        this.crash = crash;
-    }
+doors_lock_unlock_button_pressed_def(curr_signal, ign) {
+    if(curr_signal) { this.value = true; }
     if(this.ign != ign) { this.value = false; this.ign = ign; }
-    if(this.prev_sig_val != cursig) {
-        if(cursig) { this.value = !this.value; }
-        this.prev_sig_val = cursig;
+    return this.value == undefined ? false : this.value;
+}
+doors_lock_unlock_button_pressed_def manual_doors_lock_button_pressed(doors_lock_btn, ignition_status_changed_timepoint);
+doors_lock_unlock_button_value_def(curr_signal, was_pressed) {
+    if(this.prev_sig_val != curr_signal && (this.prev_sig_val = curr_signal)) {
+        this.value = !this.value;
     }
     return was_pressed ? this.value : undefined;
 }
-doors_lock_unlock_button_value_def manual_doors_lock_state(doors_lock_btn, crash_detected, ignition_status_changed_timepoint, manual_doors_lock_button_pressed);
-triggering_timepoint_def door_locking_button_state_changed_timepoint(manual_doors_lock_state);
+doors_lock_unlock_button_value_def manual_doors_lock_state(doors_lock_btn, manual_doors_lock_button_pressed);
 
 
 
-doors_lock_unlock_button_pressed_def(curr_signal, crash, ign) {
-    cursig = (bool)curr_signal;
-    if(this.value == undefined) { this.value = false; this.prev_sig_val = cursig; }
-    if(this.crash != crash) {
-        if(crash) { this.value = false; }
-        this.crash = crash;
-    }
-    if(this.ign != ign) { this.value = false; this.ign = ign; }
-    if(this.prev_sig_val != cursig) { this.value = true; this.prev_sig_val = cursig; }
-    return this.value;
-}
-doors_lock_unlock_button_pressed_def manual_doors_lock_button_pressed(doors_lock_btn, crash_detected, ignition_status_changed_timepoint);
-
-
-
-doors_lock_request_def(driving_lock_suggest, parking_lock_suggest, force_doors_unlock, manual_doors_lock_state, key_inside) {
+doors_lock_request_def(lock_suggest, crash, manual_lock, key_inside) {
     if(this.lck == undefined) { this.lck = false; }
-    if(force_doors_unlock || (manual_doors_lock_state != undefined && !manual_lock) || key_inside) {
+    if(crash || (manual_lock != undefined && !manual_lock) || key_inside) {
         this.lck = false; return false;
     }
-    if((manual_doors_lock_state != undefined && manual_lock) || driving_lock_suggest || parking_lock_suggest) {
+    if((manual_lock != undefined && manual_lock) || lock_suggest) {
         this.lck = true; return true;
     }
     return this.lck;
 }
-doors_lock_request_def door_lock_request(doors_lock_driving_necessity, doors_lock_standing_necessity, force_doors_unlock, manual_doors_lock_state, key_inside_car) 'door_lock_request';
+doors_lock_request_def door_lock_request(doors_lock_suggest, crash_detected, manual_doors_lock_state, key_inside_car) 'door_lock_request';

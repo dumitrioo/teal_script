@@ -9,11 +9,19 @@ crash_detector_def(lat_accel, lon_accel, airbg) {
 }
 
 max_wheel_speed_def(fl, fr, rl, rr) {
+    return arr_max([fl, fr, rl, rr]);
+}
+
+avg_wheel_speed_def(fl, fr, rl, rr) {
     return arr_avg([fl, fr, rl, rr]);
 }
 
 min_wheel_speed_def(fl, fr, rl, rr) {
     return arr_min([fl, fr, rl, rr]);
+}
+
+calculated_vehicle_speed_def(wh, gps) {
+    return max(wh, gps);
 }
 
 all_doors_closed_def(fl, fr, rl, rr, trnk) {
@@ -28,39 +36,58 @@ ignition_status_from_power_mode(pm) {
     return pm == "ON" || pm == "CRANK";
 }
 
+vehicle_stopped_parking_mode_def(ign, gear) {
+    return !ign && gear == "P";
+}
+
+vehicle_stopped_mode_def(ign) {
+    return !ign;
+}
+
+vehicle_driving_mode_def(power_mode, gear, speed) {
+    return power_mode == "CRANK" && gear != "P" && speed > 0;
+}
+
+
+
 // --------------------------------------------------------------------------
 
-ignition_status_from_power_mode ignition_status(power_mode);
-all_doors_closed_def            all_doors_closed(door_fl_status, door_fr_status, door_rl_status, door_rr_status, trunk_status);
-all_windows_closed_def          all_windows_closed(window_fl_pos, window_fr_pos, window_rl_pos, window_rr_pos);
-min_wheel_speed_def             min_wheel_speed(wheel_speed_fl, wheel_speed_fr, wheel_speed_rl, wheel_speed_rr);
-max_wheel_speed_def             max_wheel_speed(wheel_speed_fl, wheel_speed_fr, wheel_speed_rl, wheel_speed_rr);
-crash_detector_def              crash_detected(lateral_accel, longitudinal_accel, airbag_deployed_stat);
-triggering_timepoint_def        power_mode_changed_timepoint(power_mode);
-triggering_timepoint_def        ignition_status_changed_timepoint(ignition_status);
-triggering_timepoint_def        doors_closed_state_changed_timepoint(all_doors_closed);
-triggering_timepoint_def        windows_closed_state_changed_timepoint(all_windows_closed);
-triggering_timepoint_def        radio_state_changed_timepoint(radio_active);
-triggering_timepoint_def        interior_light_status_changed_timepoint(interior_light_status);
-triggering_timepoint_def        steering_vol_up_changed_timepoint(steering_vol_up);
-triggering_timepoint_def        steering_vol_down_changed_timepoint(steering_vol_down);
-triggering_timepoint_def        steering_cruise_toggle_changed_timepoint(steering_cruise_toggle);
-triggering_timepoint_def        steering_cruise_set_changed_timepoint(steering_cruise_set);
-triggering_timepoint_def        steering_cruise_resume_changed_timepoint(steering_cruise_resume);
-triggering_timepoint_def        steering_lane_assist_changed_timepoint(steering_lane_assist);
-triggering_timepoint_def        steering_voice_cmd_changed_timepoint(steering_voice_cmd);
-triggering_timepoint_def        drive_mode_switch_changed_timepoint(drive_mode_switch);
-triggering_timepoint_def        parking_brake_switch_changed_timepoint(parking_brake_switch);
-triggering_timepoint_def        hud_brightness_changed_timepoint(hud_brightness);
-triggering_timepoint_def        cluster_display_cmd_changed_timepoint(cluster_display_cmd);
-triggering_timepoint_def        acc_target_speed_changed_timepoint(acc_target_speed);
-triggering_timepoint_def        acc_gap_setting_changed_timepoint(acc_gap_setting);
-triggering_timepoint_def        doors_lock_btn_changed_timepoint(doors_lock_btn);
-triggering_timepoint_def        light_switch_position_changed_timepoint(light_switch_position);
-triggering_timepoint_def        hvac_fan_cmd_changed_timepoint(hvac_fan_cmd);
-triggering_timepoint_def        hvac_temp_cmd_changed_timepoint(hvac_temp_cmd);
-triggering_timepoint_def        hvac_ac_cmd_changed_timepoint(hvac_ac_cmd);
-triggering_timepoint_def        door_lock_sw_changed_timepoint(door_lock_sw);
-triggering_timepoint_def        door_unlock_sw_changed_timepoint(door_unlock_sw);
-triggering_timepoint_def        hood_status_changed_timepoint(hood_status);
-triggering_timepoint_def        trunk_status_changed_timepoint(trunk_status);
+vehicle_stopped_parking_mode_def    vehicle_mode_stopped_parking(ignition_status, current_gear);
+vehicle_stopped_mode_def            vehicle_mode_stopped(ignition_status);
+vehicle_driving_mode_def            vehicle_mode_driving(power_mode, current_gear, calculated_vehicle_speed);
+ignition_status_from_power_mode     ignition_status(power_mode);
+all_doors_closed_def                all_doors_closed(door_fl_status, door_fr_status, door_rl_status, door_rr_status, trunk_status);
+all_windows_closed_def              all_windows_closed(window_fl_pos, window_fr_pos, window_rl_pos, window_rr_pos);
+min_wheel_speed_def                 min_wheel_speed(wheel_speed_fl, wheel_speed_fr, wheel_speed_rl, wheel_speed_rr);
+max_wheel_speed_def                 max_wheel_speed(wheel_speed_fl, wheel_speed_fr, wheel_speed_rl, wheel_speed_rr);
+avg_wheel_speed_def                 avg_wheel_speed(wheel_speed_fl, wheel_speed_fr, wheel_speed_rl, wheel_speed_rr);
+calculated_vehicle_speed_def        calculated_vehicle_speed(avg_wheel_speed, gps_speed);
+crash_detector_def                  crash_detected(lateral_accel, longitudinal_accel, airbag_deployed_stat);
+triggering_timepoint_def            power_mode_changed_timepoint(power_mode);
+triggering_timepoint_def            ignition_status_changed_timepoint(ignition_status);
+triggering_timepoint_def            doors_closed_state_changed_timepoint(all_doors_closed);
+triggering_timepoint_def            windows_closed_state_changed_timepoint(all_windows_closed);
+triggering_timepoint_def            radio_state_changed_timepoint(radio_active);
+triggering_timepoint_def            interior_light_status_changed_timepoint(interior_light_status);
+triggering_timepoint_def            steering_vol_up_changed_timepoint(steering_vol_up);
+triggering_timepoint_def            steering_vol_down_changed_timepoint(steering_vol_down);
+triggering_timepoint_def            steering_cruise_toggle_changed_timepoint(steering_cruise_toggle);
+triggering_timepoint_def            steering_cruise_set_changed_timepoint(steering_cruise_set);
+triggering_timepoint_def            steering_cruise_resume_changed_timepoint(steering_cruise_resume);
+triggering_timepoint_def            steering_lane_assist_changed_timepoint(steering_lane_assist);
+triggering_timepoint_def            steering_voice_cmd_changed_timepoint(steering_voice_cmd);
+triggering_timepoint_def            drive_mode_switch_changed_timepoint(drive_mode_switch);
+triggering_timepoint_def            parking_brake_switch_changed_timepoint(parking_brake_switch);
+triggering_timepoint_def            hud_brightness_changed_timepoint(hud_brightness);
+triggering_timepoint_def            cluster_display_cmd_changed_timepoint(cluster_display_cmd);
+triggering_timepoint_def            acc_target_speed_changed_timepoint(acc_target_speed);
+triggering_timepoint_def            acc_gap_setting_changed_timepoint(acc_gap_setting);
+triggering_timepoint_def            doors_lock_btn_changed_timepoint(doors_lock_btn);
+triggering_timepoint_def            light_switch_position_changed_timepoint(light_switch_position);
+triggering_timepoint_def            hvac_fan_cmd_changed_timepoint(hvac_fan_cmd);
+triggering_timepoint_def            hvac_temp_cmd_changed_timepoint(hvac_temp_cmd);
+triggering_timepoint_def            hvac_ac_cmd_changed_timepoint(hvac_ac_cmd);
+triggering_timepoint_def            door_lock_sw_changed_timepoint(door_lock_sw);
+triggering_timepoint_def            door_unlock_sw_changed_timepoint(door_unlock_sw);
+triggering_timepoint_def            hood_status_changed_timepoint(hood_status);
+triggering_timepoint_def            trunk_status_changed_timepoint(trunk_status);

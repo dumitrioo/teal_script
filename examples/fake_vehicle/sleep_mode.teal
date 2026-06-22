@@ -33,24 +33,6 @@ human_recent_activity_timepoint_def(
     ]);
     return hrat;
 }
-
-have_activated_elements_def(
-    hazard_status,
-    interior_light_status,
-    radio_active
-) {
-    return hazard_status || interior_light_status || radio_active;
-}
-
-may_vehicle_sleep_def(human_act_tp, have_activated_elements) {
-    time_without_human_activity = human_act_tp != undefined ? steady_clock() - human_act_tp : 0.0;
-    res = have_activated_elements ? time_without_human_activity > 3600 : time_without_human_activity > 60 * 5;
-    // println("have activated elements: ", have_activated_elements, ", seconds of calm: ", time_without_human_activity, " -> may sleep: ", res);
-    return res;
-}
-
-// --------------------------------------------------------------------------
-
 human_recent_activity_timepoint_def     human_recent_activity_timepoint(
     ignition_status_changed_timepoint,
     doors_closed_state_changed_timepoint,
@@ -69,5 +51,22 @@ human_recent_activity_timepoint_def     human_recent_activity_timepoint(
     door_lock_sw_changed_timepoint,
     door_unlock_sw_changed_timepoint
 );
+
+
+have_activated_elements_def(
+    hazard_status,
+    interior_light_status,
+    radio_active
+) {
+    return hazard_status || interior_light_status || radio_active;
+}
 have_activated_elements_def             have_activated_elements(hazard_status, interior_light_status, radio_active);
+
+
+may_vehicle_sleep_def(human_act_tp, have_activated_elements) {
+    time_without_human_activity = human_act_tp != undefined ? steady_clock() - human_act_tp : 0.0;
+    res = have_activated_elements ? time_without_human_activity > 3600 : time_without_human_activity > 60 * 5;
+    // println("have activated elements: ", have_activated_elements, ", seconds of calm: ", time_without_human_activity, " -> may sleep: ", res);
+    return res;
+}
 may_vehicle_sleep_def                   vehicle_may_sleep(human_recent_activity_timepoint, have_activated_elements) 'vehicle_may_sleep';
