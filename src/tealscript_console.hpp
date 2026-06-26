@@ -12,6 +12,7 @@
 #include "inc/base85.hpp"
 #include "inc/so.hpp"
 #include "tealscript_util.hpp"
+#include "tealscript_value.hpp"
 #include "tealscript_interfaces.hpp"
 
 namespace teal {

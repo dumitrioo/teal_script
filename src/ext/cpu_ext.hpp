@@ -72,7 +72,7 @@ namespace teal {
             cpu_pc(/*FLT_T scan_period = 0.1*/):
                 cpu_usage_{0},
                 self_cpu_consumption_{0}/*,
-            scan_period_{std::max<FLT_T>(std::min<FLT_T>(scan_period, 5), 0)}*/
+            scan_period_{(std::max<FLT_T>)((std::min<FLT_T>)(scan_period, 5), 0)}*/
             {
             }
 

@@ -992,7 +992,7 @@ public:
     void rebuild(size_type num_buckets, size_type required_buckets) noexcept
     {
         free(_index);
-        const auto need_size = std::max((size_type)((double)num_buckets * max_load_factor()) + 4, required_buckets + 2);
+        const auto need_size = (std::max)((size_type)((double)num_buckets * max_load_factor()) + 4, required_buckets + 2);
         auto new_pairs = (value_type*)alloc_bucket(need_size);
         if (is_trivially_copyable()) {
             if (_pairs)

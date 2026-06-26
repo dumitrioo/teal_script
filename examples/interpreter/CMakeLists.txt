@@ -8,7 +8,9 @@ add_executable(tealscript
     main.cpp
 )
 
-target_link_libraries(tealscript
-    pthread
-    dl
-)
+if(UNIX AND NOT APPLE)
+    target_link_libraries(tealscript
+        pthread
+        dl
+    )
+endif()

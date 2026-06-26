@@ -1,6 +1,6 @@
 rm -rf build
-cmake -Wno-dev -S. -Bbuild
-cmake --build build -j8
+cmake -W no-dev -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j16
 rm -rf bin
 mkdir bin
 cp build/examples/pendulum/pendulum bin

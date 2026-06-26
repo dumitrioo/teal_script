@@ -28,7 +28,7 @@ namespace teal {
             char_type const *sd{reinterpret_cast<char_type const *>(s.data())};
             for(std::size_t i{0}; i < ss; i += sizeof(std::size_t) / sizeof(char_type)) {
                 std::size_t k{0};
-                std::size_t const end{std::min<std::size_t>(sizeof(std::size_t) / sizeof(char_type), ss - i)};
+                std::size_t const end{(std::min<std::size_t>)(sizeof(std::size_t) / sizeof(char_type), ss - i)};
                 for(std::size_t j{0}; j < end; ++j) {
                     std::size_t const indx{i + j};
                     std::size_t l{static_cast<std::size_t>(sd[indx])};

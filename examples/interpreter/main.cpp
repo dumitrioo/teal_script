@@ -162,8 +162,8 @@ int main(int argc, char **argv) {
             throw std::runtime_error{"nothing to do - no working elements"};
         }
 
-#if 0
-        rt.start_net_server(teal::net::address_family::inet4, "0.0.0.0", 43987, 0);
+#if 1
+        rt.start_net_server(teal::network_address_family::inet4, "0.0.0.0", 43987, 0);
 #endif
 
 #if 0

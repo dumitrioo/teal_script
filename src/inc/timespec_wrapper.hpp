@@ -263,7 +263,7 @@ namespace teal {
 #endif
             return tmp.tm_hour;
         }
-        int min() const {
+        int minute() const {
             struct tm tmp;
 #if defined(PLATFORM_WINDOWS)
             localtime_s(&tmp, &(t_.tv_sec));

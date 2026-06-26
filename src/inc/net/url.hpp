@@ -76,7 +76,7 @@ namespace teal::net {
             size_t path_start = i;
             size_t qpos = urll.find('?', path_start);
             size_t hpos = urll.find('#', path_start);
-            size_t path_end = std::min(qpos == std::string::npos ? urll.size() : qpos, hpos == std::string::npos ? urll.size() : hpos);
+            size_t path_end = (std::min)(qpos == std::string::npos ? urll.size() : qpos, hpos == std::string::npos ? urll.size() : hpos);
             if(path_end > path_start) {
                 path_ = urll.substr(path_start, path_end - path_start);
             } else {

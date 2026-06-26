@@ -7,6 +7,7 @@
 #include "inc/json.hpp"
 
 #include "tealscript_util.hpp"
+#include "tealscript_value.hpp"
 #include "tealscript_token.hpp"
 #include "tealscript_expr.hpp"
 #include "tealscript_statement.hpp"

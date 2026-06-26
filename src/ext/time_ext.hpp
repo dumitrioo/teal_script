@@ -133,7 +133,7 @@ namespace teal {
             rt->add_method("timestamp", "day", TEALFUN(args) { return TEALTHIS(args, timespec_wrapper).day(); });
             rt->add_method("timestamp", "weekday", TEALFUN(args) { return TEALTHIS(args, timespec_wrapper).weekday(); });
             rt->add_method("timestamp", "hour", TEALFUN(args) { return TEALTHIS(args, timespec_wrapper).hour(); });
-            rt->add_method("timestamp", "min", TEALFUN(args) { return TEALTHIS(args, timespec_wrapper).min(); });
+            rt->add_method("timestamp", "min", TEALFUN(args) { return TEALTHIS(args, timespec_wrapper).minute(); });
             rt->add_method("timestamp", "sec", TEALFUN(args) { return TEALTHIS(args, timespec_wrapper).sec_with_subsec(); });
             rt->add_method("timestamp", "seconds", TEALFUN(args) { return TEALTHIS(args, timespec_wrapper).seconds(); });
             rt->add_method("timestamp", "fseconds", TEALFUN(args) { return TEALTHIS(args, timespec_wrapper).fseconds(); });

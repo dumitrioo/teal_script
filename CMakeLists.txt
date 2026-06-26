@@ -4,11 +4,18 @@ project(TealScript C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-message(STATUS "CMake version: ${CMAKE_VERSION}")
-
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release)
+    set(CMAKE_BUILD_TYPE Release)
 endif()
+
+if(MSVC)
+    add_compile_options(/Zc:__cplusplus /bigobj)
+endif()
+
+include_directories(${CMAKE_SOURCE_DIR}/src)
+
+add_subdirectory(examples/interpreter)
+add_subdirectory(examples/fractal)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libs" FORCE)
@@ -19,8 +26,6 @@ add_subdirectory(3rd/bullet3)
 add_subdirectory(3rd/raylib)
 add_subdirectory(3rd/libzmq)
 
-add_subdirectory(examples/interpreter)
-add_subdirectory(examples/fractal)
 add_subdirectory(examples/pendulum)
 add_subdirectory(examples/ray)
 add_subdirectory(examples/zmq)

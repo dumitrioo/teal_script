@@ -14,6 +14,7 @@
 #include "inc/so.hpp"
 #include "inc/binned_allocator.hpp"
 #include "tealscript_util.hpp"
+#include "tealscript_value.hpp"
 #include "tealscript_token.hpp"
 #include "tealscript_lexer.hpp"
 #include "tealscript_parser.hpp"
@@ -591,9 +592,17 @@ namespace teal {
                 }
                 if(a1r.is_array()) {
                     if(args[1].is_unbounded_placement()) {
+#ifndef TEAL_ARRAY_USE_STL_DEQUE
+                        a1r.as_array().insert(a1r.as_array().begin(), args[1]);
+#else
                         a1r.as_array().push_front(args[1]);
+#endif
                     } else {
+#ifndef TEAL_ARRAY_USE_STL_DEQUE
+                        a1r.as_array().insert(a1r.as_array().begin(), args[1].clone());
+#else
                         a1r.as_array().push_front(args[1].clone());
+#endif
                     }
                     return args[0];
                 }
@@ -608,7 +617,11 @@ namespace teal {
                     }
                     auto &vec{a1r.as_array()};
                     valbox res{vec.front()};
+#ifndef TEAL_ARRAY_USE_STL_DEQUE
+                    vec.erase(vec.begin());
+#else
                     vec.pop_front();
+#endif
                     return res;
                 }
                 throw std::runtime_error{"not array"};
@@ -1171,7 +1184,7 @@ namespace teal {
                 if(args.size() > 0) { bind_addr = args[0].cast_to_string(); }
                 if(args.size() > 1) { port = args[1].cast_to_u16(); }
                 if(args.size() > 2) { port = args[2].cast_to_long_double(); }
-                return start_net_server(teal::net::address_family::inet4, bind_addr, port, stale_connections_removal_timeout);
+                return start_net_server(network_address_family::inet4, bind_addr, port, stale_connections_removal_timeout);
             });
 
 
@@ -1882,7 +1895,7 @@ namespace teal {
         bool wait(long double secnds) {
             if(thread_mode_ == thread_mode::multi) {
                 auto slpfor{std::chrono::nanoseconds{
-                        std::min<std::int64_t>(static_cast<std::int64_t>(secnds * 1'000'000'000.0L),
+                        (std::min<std::int64_t>)(static_cast<std::int64_t>(secnds * 1'000'000'000.0L),
                         wait_granularity_nsec_)
                     }
                 };
@@ -2021,7 +2034,7 @@ namespace teal {
         }
 
         bool start_net_server(
-            net::address_family af,
+            network_address_family af,
             std::string const &bind_addr,
             std::uint16_t port,
             long double stale_connections_removal_timeout
@@ -2032,7 +2045,7 @@ namespace teal {
                 l.unlock();
                 std::unique_lock l1{ppserver_mtp_};
                 if(!ppserver_) {
-                    ppserver_ = std::make_unique<pp_server_udp>(cq_.get(), af, stale_connections_removal_timeout);
+                    ppserver_ = std::make_unique<pp_server_udp>(cq_.get(), addr_family_convert(af), stale_connections_removal_timeout);
                     ppserver_->set_on_data_arrived([this](net::conn_id_t conn_id, bytevec const &data) {
                         json requ{json::bdeserialize(data)};
                         auto act{requ["act"].as_string()};

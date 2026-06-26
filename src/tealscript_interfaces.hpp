@@ -1,8 +1,6 @@
 #pragma once
 
 #include "inc/commondefs.hpp"
-#include "inc/emhash/hash_set8.hpp"
-#include "inc/net/net_utils.hpp"
 
 #include "tealscript_util.hpp"
 #include "tealscript_value.hpp"
@@ -77,6 +75,15 @@ namespace teal {
         str_map_t<std::function<valbox(valbox &)>> unops{};
     };
 
+    enum class network_address_family: int {
+        unspecified,
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
+        unix_socket = 1,
+#endif
+        inet4 = 2,
+        inet6 = 10,
+    };
+
     class runtime_interface {
     public:
         virtual ~runtime_interface() = default;
@@ -143,7 +150,7 @@ namespace teal {
 
         // expose values to network directly
         virtual bool start_net_server(
-            net::address_family /*af*/,
+            network_address_family /*af*/,
             std::string const &/*bind_addr*/,
             std::uint16_t /*port*/,
             long double /*stale_connections_removal_timeout*/

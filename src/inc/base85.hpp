@@ -90,7 +90,7 @@ namespace teal {
             std::size_t num_done{0};
             std::size_t num_rest{num};
             while(num_rest > 0) {
-                std::size_t to_process{std::min<std::size_t>(num_rest, 5)};
+                std::size_t to_process{(std::min<std::size_t>)(num_rest, 5)};
                 if(to_process < 5) {
                     std::array<char, 5> buf{};
                     for(std::size_t i{0}; i < to_process; ++i) {
@@ -140,7 +140,7 @@ namespace teal {
             std::size_t num_done{0};
             std::size_t num_rest{num};
             while(num_rest > 0) {
-                std::size_t to_process{std::min<std::size_t>(num_rest, 5)};
+                std::size_t to_process{(std::min<std::size_t>)(num_rest, 5)};
                 if(to_process < 5) {
                     std::array<char, 5> buf{};
                     for(std::size_t i{0}; i < to_process; ++i) {
@@ -178,7 +178,7 @@ namespace teal {
         std::size_t num_done{0};
         std::size_t num_rest{num};
         while(num_rest > 0) {
-            std::size_t to_process{std::min<std::size_t>(num_rest, 4)};
+            std::size_t to_process{(std::min<std::size_t>)(num_rest, 4)};
             res.append(detail::my85_enc_4(byte_ptr + num_done, to_process));
             num_done += to_process;
             num_rest -= to_process;

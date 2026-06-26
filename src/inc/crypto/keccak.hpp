@@ -126,7 +126,7 @@ namespace teal {
                 //Absorbing phase
                 while(length > 0) {
                    //Limit the number of bytes to process at a time
-                   n = std::min(length, this->blockSize - this->length);
+                    n = (std::min)(length, this->blockSize - this->length);
 
                    //Copy the data to the buffer
                    std::memcpy(this->buffer + this->length, input, n);
@@ -218,7 +218,7 @@ namespace teal {
                    }
 
                    //Compute the number of bytes to process at a time
-                   n = std::min(length, this->length);
+                   n = (std::min)(length, this->length);
 
                    //Copy the output string
                    if(output != NULL) {

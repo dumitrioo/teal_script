@@ -316,7 +316,7 @@ namespace teal {
         }
 
         template<typename T> static T workers_needed(T num_works) {
-            return std::min(std::sqrt(num_works) * 3, num_works);
+            return (std::min)(std::sqrt(num_works) * 3, num_works);
         }
 
         void maybe_create_worker() {

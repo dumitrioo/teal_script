@@ -422,7 +422,7 @@ namespace teal::file_util {
         if(file.is_open()) {
             file.seekg(0, std::ios_base::end);
             auto fs{file.tellg()};
-            result.reserve(how_much == 0 ? static_cast<std::size_t>(fs) : std::min<std::size_t>(fs, how_much));
+            result.reserve(how_much == 0 ? static_cast<std::size_t>(fs) : (std::min<std::size_t>)(fs, how_much));
             file.seekg(0);
             int c{};
             std::uint64_t total_read{0};
@@ -448,7 +448,7 @@ namespace teal::file_util {
         if(file.is_open()) {
             file.seekg(0, std::ios_base::end);
             auto fs{file.tellg()};
-            result.reserve(how_much == 0 ? static_cast<std::size_t>(fs) : std::min<std::size_t>(fs, how_much));
+            result.reserve(how_much == 0 ? static_cast<std::size_t>(fs) : (std::min<std::size_t>)(fs, how_much));
             file.seekg(0);
             int c{};
             std::uint64_t total_read{0};

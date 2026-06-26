@@ -41,7 +41,7 @@ namespace teal {
         private:
             void update(const void *data, std::size_t length) {
                 while(length > 0) {
-                    std::size_t n{std::min(length, 128 - size_)};
+                    std::size_t n{(std::min)(length, 128 - size_)};
 
                     std::memcpy(buffer_ + size_, data, n);
 

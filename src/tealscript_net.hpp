@@ -15,12 +15,25 @@
 #include "inc/net/url.hpp"
 
 #include "tealscript_util.hpp"
+#include "tealscript_interfaces.hpp"
 #include "tealscript_token.hpp"
 #include "tealscript_expr.hpp"
 #include "tealscript_statement.hpp"
 #include "tealscript_exec_ctx.hpp"
 
 namespace teal {
+
+    static teal::net::address_family addr_family_convert(network_address_family nadf) {
+        switch(nadf) {
+            case network_address_family::unspecified: return teal::net::address_family::unspecified;
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
+            case network_address_family::unix_socket: return teal::net::address_family::unix_socket;
+#endif
+            case network_address_family::inet4: return teal::net::address_family::inet4;
+            case network_address_family::inet6: return teal::net::address_family::inet6;
+            default: throw std::runtime_error{"invalid or unsupported address family"};
+        }
+    }
 
     class pp_server_tcp {
         struct multiplexing;

@@ -393,7 +393,7 @@ namespace teal::net {
                     std::unique_lock wl{write_mtp_};
                     long double last_sent_moment{steady_time_sec()};
                     while(off < data_size) {
-                        std::int64_t to_send{std::min<std::int64_t>(32768, data_size - off)};
+                        std::int64_t to_send{(std::min<std::int64_t>)(32768, data_size - off)};
                         if(sckt_ && sckt_->ok()) {
                             try {
                                 std::int64_t wr{-1};

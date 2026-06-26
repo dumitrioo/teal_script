@@ -283,7 +283,7 @@ namespace teal {
             std::size_t count = std::numeric_limits<std::size_t>::max()
         ) const {
             map_array res{};
-            res.resize(std::min(count, size() - start_index));
+            res.resize((std::min)(count, size() - start_index));
             for(auto it{map_.lower_bound(start_index)}; it != map_.end(); ++ it) {
                 if(it->first - start_index >= count) {
                     break;

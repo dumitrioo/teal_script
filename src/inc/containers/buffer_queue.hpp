@@ -44,8 +44,8 @@ namespace teal {
             if(buf_.empty()) {
                 return res;
             }
-            res.assign(buf_.begin(), buf_.begin() + std::min<std::size_t>(n, buf_.size()));
-            buf_.erase(buf_.begin(), buf_.begin() + std::min<std::size_t>(n, buf_.size()));
+            res.assign(buf_.begin(), buf_.begin() + (std::min<std::size_t>)(n, buf_.size()));
+            buf_.erase(buf_.begin(), buf_.begin() + (std::min<std::size_t>)(n, buf_.size()));
             return res;
         }
 
@@ -54,8 +54,8 @@ namespace teal {
             if(buf_.empty()) {
                 return res;
             }
-            res.assign(buf_.begin(), buf_.begin() + std::min<std::size_t>(n, buf_.size()));
-            buf_.erase(buf_.begin(), buf_.begin() + std::min<std::size_t>(n, buf_.size()));
+            res.assign(buf_.begin(), buf_.begin() + (std::min<std::size_t>)(n, buf_.size()));
+            buf_.erase(buf_.begin(), buf_.begin() + (std::min<std::size_t>)(n, buf_.size()));
             return res;
         }
 
@@ -69,7 +69,7 @@ namespace teal {
         std::vector<std::uint8_t> peek_bytevec(std::size_t n) const {
             std::vector<std::uint8_t> res{};
             if(buf_.empty()) { return res; }
-            res.assign(buf_.cbegin(), buf_.cbegin() + std::min<std::size_t>(n, buf_.size()));
+            res.assign(buf_.cbegin(), buf_.cbegin() + (std::min<std::size_t>)(n, buf_.size()));
             return res;
         }
 

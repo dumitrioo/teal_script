@@ -70,7 +70,7 @@ namespace teal::crypt {
                     std::memcpy(&key_[0], key, key_size());
                 } else {
                     std::memset(&key_[0], 0, key_size());
-                    std::memcpy(&key_[0], key, std::min<std::size_t>(k_size, key_size()));
+                    std::memcpy(&key_[0], key, (std::min<std::size_t>)(k_size, key_size()));
                 }
             } else {
                 std::memset(&key_[0], 0, k_size);
@@ -85,7 +85,7 @@ namespace teal::crypt {
                     std::memcpy(&iv_[8], iv, iv_length());
                 } else {
                     std::memset(&iv_[8], 0, iv_length());
-                    std::memcpy(&iv_[8], iv, std::min<std::size_t>(iv_length(), iv_size));
+                    std::memcpy(&iv_[8], iv, (std::min<std::size_t>)(iv_length(), iv_size));
                 }
             } else {
                 std::memset(&iv_[8], 0, iv_length());
