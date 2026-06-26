@@ -12,23 +12,23 @@ performance_limiter_def() {
 }
 performance_limiter_def schema_perflimit();
 
-pulsation_period_def(pptgt) {
+pulse_period_regulator_def(pptgt) {
+    t = steady_clock();
     if(this.t == undefined) {
-        this.t = steady_clock();
+        this.t = t;
+        return steady_clock() - t;
     } else {
-        res = steady_clock() - this.t;
-        this.t = steady_clock();
-        println("pulse period: ", res);
-        diff = pptgt - res;
-        if(abs(diff) > 0.001) {
-            set_cycle_sleep_seconds(cycle_sleep_seconds() + diff * .01);
-            println("new cycle_sleep_seconds: ", cycle_sleep_seconds());
+        res = t - this.t;
+        this.t = t;
+        if(abs(1 - pptgt / res) > 0.02) {
+            diff = pptgt - res;
+            println("pulse period: ", res);
+            println("new cycle_sleep_seconds: ", set_cycle_sleep_seconds(cycle_sleep_seconds() + diff * .03));
         }
         return res;
     }
-    return steady_clock() - steady_clock();
 }
-pulsation_period_def pulse_period_meter(0.01);
+pulse_period_regulator_def pulse_period_regulator(0.1);
 
 
 exmpl_exec_time_limiter_auto(dt) {

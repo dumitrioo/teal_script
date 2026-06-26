@@ -119,6 +119,12 @@ my_drafts(host_data) {
     console.enable_colors(true);
     console.setprecision(16);
 
+    awepo = [];
+    for(i = 0; i < 10; ++i) {
+        awepo.push_front(i);
+    }
+    awepo.apply_func(println);
+
     wewerwer = [4,26,3,6,1,8,6,3,5,98,43,76,24,82];
     wewerwer.println();
     wewerwer.sort();
