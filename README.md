@@ -3,7 +3,7 @@
 
 ## Preface
 
-The fundamental bottleneck in modern Cyber-Physical Systems (CPS) software is not hardware limitations, but an architectural paradox. Currently, engineering teams are forced to build the entire software stack - ranging from microsecond reflexes to colossal strategic logic - within the same imperative paradigm (like C++). This approach suffocates the system's potential intelligence under the weight of low-level, event-driven, and algorithmically-defined complexity, because such systems are most conveniently described in terms of computing nodes and data paths between those nodes. Using imperative methods, however, requires mapping multiple data flow signals onto a control flow diagram, a very complex and intricate task.
+The fundamental bottleneck in modern Cyber-Physical Systems (CPS) software is an architectural paradox. Currently, engineering teams are forced to build the entire software stack - ranging from microsecond reflexes to colossal strategic logic - within the same imperative paradigm (like C++). This approach suffocates the system's potential intelligence under the weight of low-level, event-driven, and algorithmically-defined complexity, because such systems are most conveniently described in terms of computing nodes and data paths between those nodes. Using imperative methods, however, requires mapping multiple data flow signals onto a control flow diagram, a very complex and intricate task.
 
 To unlock true scalability and AI integration, the software architecture of any complex mechatronic system must be strictly bifurcated by the principle of separation of concerns based on latency and cognitive load.
 
