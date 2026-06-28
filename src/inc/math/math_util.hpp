@@ -43,26 +43,33 @@ namespace teal::math {
         return x < 0;
     }
 
-    template<typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
+    template<typename T>
     T sigmoid(T x, T xshift = 0, T yshift = 0, T slope = 1) noexcept {
         return static_cast<T>(1) / (static_cast<T>(1) + std::exp(-(x - xshift) * slope)) + yshift;
     }
 
-    template<typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
+    template<typename T>
     T sigmoid_nonmodified(T x) noexcept {
         return static_cast<T>(1) / (static_cast<T>(1) + std::exp(-x));
     }
 
-    template<typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
+#if 0
+    template<typename T>
     T tanh(T x) {
         T ex{std::exp(x)};
         T enx{std::exp(-x)};
         return (ex - enx)/(ex + enx);
     }
+#endif
 
-    template<typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
+    template<typename T>
     T relu(T x) noexcept {
-        return (x + std::abs(x)) * 0.5;
+        return std::max(x, T{0});
+    }
+
+    template<typename T>
+    T gelu(T x) noexcept {
+        return 0.5 * x * (1 + std::tanh(std::sqrt(M_1_PIl * 2) * (x + 0.044715 * x * x * x)));
     }
 
     template<typename T>
@@ -74,18 +81,18 @@ namespace teal::math {
     template<typename T>
     T cube(T v) noexcept { return v * v * v; }
 
-    template<typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
+    template<typename T>
     T deg2rad(T d) noexcept { return d * std::numbers::template pi_v<T> / 180.0L; }
 
-    template<typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
+    template<typename T>
     T rad2deg(T r) noexcept { return r * 180.0L / std::numbers::template pi_v<T>; }
 
-    template<typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
+    template<typename T>
     T angle3d(const vector4<T> &u, const vector4<T> &v) {
         return std::acos((u & v) / (v.length() * u.length()));
     }
 
-    template<typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
+    template<typename T>
     T angle_xy(const vector4<T> & u, const vector4<T> &v) noexcept {
         T ang1, ang2, ul = u.length(), vl = v.length();
         ang1 = std::acos(u.x() / ul);
