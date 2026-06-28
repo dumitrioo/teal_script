@@ -684,6 +684,11 @@ namespace teal {
                 } else if(args[0].is_wstring()) {
                     args[0].as_wstring().reserve(args[1].cast_to_size_t());
                     return true;
+                } else if(args[0].is_array()) {
+#ifndef TEAL_ARRAY_USE_STL_DEQUE
+                    args[0].as_array().reserve(args[1].cast_to_size_t());
+                    return true;
+#endif
                 }
                 return false;
             });

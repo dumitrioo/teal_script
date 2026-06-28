@@ -117,7 +117,14 @@ function obj_vals_c_f(o) {
 my_drafts(host_data) {
     console.fixed();
     console.enable_colors(true);
-    console.setprecision(16);
+    console.setprecision(6);
+
+    timestamps = [];
+    timestamps.reserve(2000);
+    for(i = 0; i < 100; ++i) {
+        timestamps.push_back(steady_clock());
+    }
+    timestamps.apply_func(println);
 
     awepo = [];
     for(i = 0; i < 10; ++i) {
@@ -182,12 +189,6 @@ my_drafts(host_data) {
     k = [[1,2,3], [1,2,3], [obj]];
     k.apply_func(assert);
     assert(k.typeof() == "array").println();
-
-    timestamps = [];
-    for(i = 0; i < 1000; ++i) {
-        timestamps.push_back(steady_clock());
-    }
-    timestamps.apply_func(println);
 
     this.k = timestamp();
 
