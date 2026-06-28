@@ -48,9 +48,6 @@ namespace teal {
 
     class extern_cell: public cell_base {
     public:
-        virtual void exec(execution_context *) {
-        }
-
         void set_remote_var_name(std::string const &name) { remote_name_ = name; }
         std::string const &remote_var_name() const { return remote_name_; }
 
