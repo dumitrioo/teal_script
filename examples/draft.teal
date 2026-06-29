@@ -55,7 +55,7 @@ function apply_func(a, fn) {
             fn(a[i]);
         }
     } else {
-        fn(a[i]);
+        fn(a);
     }
 }
 
@@ -63,25 +63,6 @@ function palindrom(s) {
     return
         s.size() < 2 ||
         s[0] == s[s.size() - 1] && palindrom(s.substr(1, s.size() - 2));
-}
-
-function reverse(s) {
-    return s.size() < 2 ? s : reverse(s.substr(1)) + s[0];
-}
-
-function reverse2(s) {
-    if(s.size() > 1) {
-        rs = s;
-        rss = rs.size();
-        rs2 = rss / 2;
-        for(i = 0; i < rs2; ++i) {
-            t = rs[i];
-            rs[i] = rs[rss - i - 1];
-            rs[rss - i - 1] = t;
-        }
-        return rs;
-    }
-    return s;
 }
 
 function fibonacci(n) {
@@ -114,17 +95,29 @@ function obj_vals_c_f(o) {
     o["f"].println();
 }
 
+function reverse(s) {
+    return s.size() < 2 ? s : s.slice(1).reverse() + s[0];
+}
+
+function bitrev(n) {
+    return atoi(itoa(n, 2).reverse(), 2);
+}
+
 my_drafts(host_data) {
     console.fixed();
     console.enable_colors(true);
     console.setprecision(6);
 
+    println((f64)"AUTOSAR"[1]);
+
     timestamps = [];
-    timestamps.reserve(2000);
-    for(i = 0; i < 100; ++i) {
+    timestamps.reserve(100);
+    for(i = 0; i < 30; ++i) {
         timestamps.push_back(steady_clock());
     }
     timestamps.apply_func(println);
+    println("-------------");
+    timestamps.reverse().apply_func(println);
 
     awepo = [];
     for(i = 0; i < 10; ++i) {
@@ -154,7 +147,6 @@ my_drafts(host_data) {
     s.println();
 
     "12345".reverse().println();
-    "12345".reverse2().println();
 
     "asdasdasdasdkdsadsadsadsa".palindrom().println();
 
