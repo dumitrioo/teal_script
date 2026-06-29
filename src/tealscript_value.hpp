@@ -514,31 +514,6 @@ namespace teal {
             }
         }
 #endif
-        ~valbox() = default;
-        valbox(valbox const &that):
-            box_{that.box_},
-            plx_{that.plx_}
-        {
-        }
-        valbox(valbox &&that) noexcept:
-            box_{std::move(that.box_)},
-            plx_{that.plx_}
-        {
-        }
-        valbox &operator=(valbox const &that) {
-            if(&that != this) {
-                box_ = that.box_;
-                plx_ = that.plx_;
-            }
-            return *this;
-        }
-        valbox &operator=(valbox &&that) noexcept {
-            if(&that != this) {
-                box_ = std::move(that.box_);
-                plx_ = that.plx_;
-            }
-            return *this;
-        }
 
         bool is_another_ref(valbox const &other) const {
             return box_.get() != nullptr && box_.get() == other.box_.get();
@@ -6608,16 +6583,6 @@ namespace teal {
                     ref.box_->user_func_ = that_ref.box_->user_func_;
                 }
             }
-            return *this;
-        }
-
-        valbox &fetch_from(valbox &&that) {
-            valbox &that_ref{that.deref()};
-            valbox &ref{deref()};
-            if(ref.box_.get() != nullptr && ref.box_.get() == that_ref.box_.get()) {
-                return *this;
-            }
-            ref.box_ = std::move(that_ref.box_);
             return *this;
         }
 
