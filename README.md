@@ -3,7 +3,7 @@
 
 ## Preface
 
-Currently, engineering teams build the entire software stack - ranging from microsecond reflexes to sophisticated strategic logic - within the same imperative paradigm (usually in C++). This approach suffocates the system's potential intelligence under the weight of low-level imperative complexity. Such systems are most conveniently described in terms of computing nodes and data paths between those nodes. Using imperative methods, however, requires mapping multiple data flow signals onto a control flow diagram, a very complex and intricate task.
+Although conventional mainstream programming languages are Turing-complete, there is a specific domain where their application proves impractical. They fail to address a particular class of  computational problems in a developer-friendly manner: the creation of control logic that manages multiple actuators in parallel based on data  from multiple sensors. The analysis and decision-making processes for such systems are most naturally described in terms of computing nodes and data paths between those nodes. However, using imperative methods  requires mapping multiple data-flow signals onto an imperative  control-flow - a highly complex and intricate task. Imperative approach suffocates the system's potential intelligence under the weight of low-level complexity.
 
 To unlock true scalability and AI integration, the software architecture of any complex mechatronic system must be strictly bifurcated by the principle of separation of concerns based on latency and cognitive load.
 
