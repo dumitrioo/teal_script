@@ -88,7 +88,6 @@ example10 ex10();
 
 
 example9() {
-    o = object();
     o["k"] = "1";
 
     o["k"] = "5";

@@ -12,21 +12,17 @@
 
 namespace teal {
 
-    enum class valbox_no_initialize {
-        dont_do_it
-    };
-
     class valbox {
     public:
-        enum class mem_placement: std::uint8_t {
-            unbounded,
-            literal,
-            stack,
-            instance,
-            global,
+        enum class mem_placement {
+            unbounded = 0,
+            literal = (1 << 0),
+            stack = (1 << 1),
+            instance = (1 << 2),
+            global = (1 << 3),
         };
 
-        enum class type: std::uint8_t {
+        enum class type {
             BOOL,
             CHAR,
             S8,
@@ -241,8 +237,7 @@ namespace teal {
         };
 
     public:
-        valbox(): box_{std::make_shared<box_data>(value_t{}, type::UNDEFINED)} {}
-        valbox(valbox_no_initialize) {}
+        valbox()/*: box_{std::make_shared<box_data>(value_t{}, type::UNDEFINED)}*/ {}
         valbox(bool v): box_{std::make_shared<box_data>(v, type::BOOL)} {}
         valbox(bool *v): box_{std::make_shared<box_data>((void *)v, type::POINTER, type::BOOL)} {}
         valbox(float v): box_{std::make_shared<box_data>(v, type::FLOAT)} {}
@@ -549,23 +544,31 @@ namespace teal {
                 };
                 return res;
             } else {
-                return valbox{valbox_no_initialize::dont_do_it};
+                return valbox{};
             }
         }
 
-        void set_placement(mem_placement p) { plx_ = p; }
+        void set_placement(mem_placement p) { plx_ = p; allocate_undefined(); }
         mem_placement placement() const { return plx_; }
         void set_literal_placement() { plx_ = mem_placement::literal; }
         bool is_literal_placement() const { return plx_ == mem_placement::literal; }
-        void set_global_placement() { plx_ = mem_placement::global; }
+        void set_global_placement() { plx_ = mem_placement::global; allocate_undefined(); }
         bool is_global_placement() const { return plx_ == mem_placement::global; }
-        void set_stack_placement() { plx_ = mem_placement::stack; }
+        bool is_immutable_placement() const { return ((int)plx_ & ((int)mem_placement::global | (int)mem_placement::literal)) != 0; }
+        void set_stack_placement() { plx_ = mem_placement::stack; allocate_undefined(); }
         bool is_stack_placement() const { return plx_ == mem_placement::stack; }
-        void set_instance_placement() { plx_ = mem_placement::instance; }
+        void set_instance_placement() { plx_ = mem_placement::instance; allocate_undefined(); }
         bool is_instance_placement() const { return plx_ == mem_placement::instance; }
         void set_unbounded_placement() { plx_ = mem_placement::unbounded; }
         bool is_unbounded_placement() const { return plx_ == mem_placement::unbounded; }
+        bool is_mutable_resident_placement() const { return ((int)plx_ & ((int)mem_placement::stack | (int)mem_placement::instance)) != 0; }
 
+        void allocate_undefined() {
+            valbox &dr{deref()};
+            if(!dr.box_) {
+                dr.box_ = std::make_shared<box_data>(value_t{}, type::UNDEFINED);
+            }
+        }
         void undefine() {
             if(box_) {
                 box_->undefine();
@@ -604,6 +607,10 @@ namespace teal {
         template<typename T>
         std::remove_cv_t<T> const &deref_ptr() const {
             return *reinterpret_cast<std::remove_cv_t<T> const *>(as_ptr());
+        }
+
+        bool is_same(valbox const &other) const {
+            return box_.get() != nullptr && box_.get() == other.box_.get();
         }
 
         void *as_ptr() {
@@ -1051,7 +1058,7 @@ namespace teal {
                 throw std::runtime_error{"not na array"};
             }
             array_t const &a{as_array()};
-            valbox res{valbox_no_initialize::dont_do_it};
+            valbox res{};
             res.become_array();
             array_t &resarr{res.as_array()};
             if(n > 0 && start < a.size()) {
@@ -1173,18 +1180,26 @@ namespace teal {
             auto t_of_indx{indr.val_or_pointed_type()};
             auto t{val_or_pointed_type()};
             if(t_of_indx == type::STRING) {
-                if(is_undefined()) {
+                if(t == type::UNDEFINED && !constant) {
                     become_object();
                 }
                 if(is_object()) {
-                    return as_object()[indr.as_string()];
+                    object_t &o{der.as_object()};
+                    std::string sind{indr.as_string()};
+                    valbox &oi{o[sind]};
+                    oi.set_placement(placement());
+                    return oi;
                 }
             } else if(t_of_indx == type::WSTRING) {
-                if(t == type::UNDEFINED) {
+                if(t == type::UNDEFINED && !constant) {
                     become_object();
                 }
                 if(t == type::OBJECT) {
-                    return as_object()[str_util::to_utf8(indr.as_wstring())];
+                    object_t &o{der.as_object()};
+                    std::string sind{str_util::to_utf8(indr.as_wstring())};
+                    valbox &oi{o[sind]};
+                    oi.set_placement(placement());
+                    return oi;
                 }
             } else if(is_numeric_type(t_of_indx)) {
                 std::uint64_t i{indr.cast_to_u64()};
@@ -1194,6 +1209,7 @@ namespace teal {
                         std::size_t curr_indx{0};
                         for(auto &&kv: o) {
                             if(curr_indx == i) {
+                                kv.second.set_placement(placement());
                                 return &kv.second;
                             }
                             ++curr_indx;
@@ -1208,7 +1224,9 @@ namespace teal {
                 } else if(t == type::STRING) {
                     std::string &s{as_string()};
                     if(s.size() > i) {
-                        return &s[i];
+                        valbox res{&s[i]};
+                        res.set_placement(placement());
+                        return res;
                     } else {
                         if(except_on_oor_fnf) {
                             throw std::range_error{"index out of range"};
@@ -1219,7 +1237,9 @@ namespace teal {
                 } else if(t == type::WSTRING) {
                     std::wstring &s{as_wstring()};
                     if(s.size() > i) {
-                        return &s[i];
+                        valbox res{&s[i]};
+                        res.set_placement(placement());
+                        return res;
                     } else {
                         if(except_on_oor_fnf) {
                             throw std::range_error{"index out of range"};
@@ -1233,14 +1253,17 @@ namespace teal {
                         t = type::ARRAY;
                     }
                     if(t == type::ARRAY) {
+                        array_t &a{as_array()};
                         if(!constant) {
-                            array_t &a{as_array()};
                             if(a.size() <= i) { a.resize(i + 1); }
-                            return a[i];
+                            valbox &ai{a[i]};
+                            ai.set_placement(placement());
+                            return ai;
                         } else {
-                            array_t const &a{as_array()};
                             if(i < a.size()) {
-                                return a[i];
+                                valbox &ai{a[i]};
+                                ai.set_placement(placement());
+                                return ai;
                             } else {
                                 if(except_on_oor_fnf) {
                                     throw std::range_error{"index out of range"};
@@ -1252,59 +1275,77 @@ namespace teal {
                     } else if(t == type::MAT4) {
                         mat4_t &a{as_mat4()};
                         if(i < 4) {
-                            return a[i].ptr();
+                            valbox res{a[i].ptr()};
+                            res.set_placement(placement());
+                            return res;
                         } else {
                             throw std::range_error{"index out of range"};
                         }
                     } else if(t == type::VEC4) {
                         vec4_t &a{as_vec4()};
                         valbox res{&a[i]};
+                        res.set_placement(placement());
                         return res;
                     } else if(der.is_ptr()) {
                         if(der.pointed_type() == type::LONG_DOUBLE) {
                             valbox res{der.as_typed_ptr<long double>() + i};
+                            res.set_placement(placement());
                             return res;
                         } else if(der.pointed_type() == type::BOOL) {
                             valbox res{der.as_typed_ptr<bool>() + i};
+                            res.set_placement(placement());
                             return res;
                         } else if(der.pointed_type() == type::CHAR) {
                             valbox res{der.as_typed_ptr<char>() + i};
+                            res.set_placement(placement());
                             return res;
                         } else if(der.pointed_type() == type::S8) {
                             valbox res{der.as_typed_ptr<std::int8_t>() + i};
+                            res.set_placement(placement());
                             return res;
                         } else if(der.pointed_type() == type::U8) {
                             valbox res{der.as_typed_ptr<std::uint8_t>() + i};
+                            res.set_placement(placement());
                             return res;
                         } else if(der.pointed_type() == type::S16) {
                             valbox res{der.as_typed_ptr<std::int16_t>() + i};
+                            res.set_placement(placement());
                             return res;
                         } else if(der.pointed_type() == type::U16) {
                             valbox res{der.as_typed_ptr<std::uint16_t>() + i};
+                            res.set_placement(placement());
                             return res;
                         } else if(der.pointed_type() == type::WCHAR) {
                             valbox res{der.as_typed_ptr<wchar_t>() + i};
+                            res.set_placement(placement());
                             return res;
                         } else if(der.pointed_type() == type::S32) {
                             valbox res{der.as_typed_ptr<std::int32_t>() + i};
+                            res.set_placement(placement());
                             return res;
                         } else if(der.pointed_type() == type::U32) {
                             valbox res{der.as_typed_ptr<std::uint32_t>() + i};
+                            res.set_placement(placement());
                             return res;
                         } else if(der.pointed_type() == type::S64) {
                             valbox res{der.as_typed_ptr<std::int64_t>() + i};
+                            res.set_placement(placement());
                             return res;
                         } else if(der.pointed_type() == type::U64) {
                             valbox res{der.as_typed_ptr<std::uint64_t>() + i};
+                            res.set_placement(placement());
                             return res;
                         } else if(der.pointed_type() == type::FLOAT) {
                             valbox res{der.as_typed_ptr<float>() + i};
+                            res.set_placement(placement());
                             return res;
                         } else if(der.pointed_type() == type::DOUBLE) {
                             valbox res{der.as_typed_ptr<double>() + i};
+                            res.set_placement(placement());
                             return res;
                         } else if(der.pointed_type() == type::LONG_DOUBLE) {
                             valbox res{der.as_typed_ptr<long double>() + i};
+                            res.set_placement(placement());
                             return res;
                         }
                     }
@@ -1768,7 +1809,7 @@ namespace teal {
                     switch(rt) {
                         case type::STRING: {
                                 json j{json::deserialize(rr.as_string())};
-                                valbox vb{valbox_no_initialize::dont_do_it};
+                                valbox vb{};
                                 vb.from_json(j);
                                 if(vb.is_object()) {
                                     for(auto &&p: vb.as_object()) {
@@ -1779,7 +1820,7 @@ namespace teal {
                             return *this;
                         case type::WSTRING: {
                                 json j{json::deserialize(rr.as_wstring())};
-                                valbox vb{valbox_no_initialize::dont_do_it};
+                                valbox vb{};
                                 vb.from_json(j);
                                 if(vb.is_object()) {
                                     for(auto &&p: vb.as_object()) {
@@ -3677,7 +3718,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -4272,7 +4313,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -4414,7 +4455,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -4444,7 +4485,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -4474,7 +4515,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -4504,7 +4545,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -4534,7 +4575,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -4564,7 +4605,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -4594,7 +4635,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -4624,7 +4665,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -4654,7 +4695,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -4684,7 +4725,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -4714,7 +4755,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -4744,7 +4785,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -4774,7 +4815,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -4804,7 +4845,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -4834,7 +4875,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -4864,7 +4905,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -4884,7 +4925,7 @@ namespace teal {
                 case type::WSTRING:
                     break;
                 case type::UNDEFINED:
-                    return valbox{valbox_no_initialize::dont_do_it};
+                    return valbox{};
                     break;
                 case type::VALBOX:
                     break;
@@ -5009,7 +5050,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -5039,7 +5080,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -5069,7 +5110,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -5099,7 +5140,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -5129,7 +5170,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -5159,7 +5200,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -5189,7 +5230,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -5219,7 +5260,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -5249,7 +5290,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -5285,7 +5326,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -5315,7 +5356,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -5345,7 +5386,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -5375,7 +5416,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -5405,7 +5446,7 @@ namespace teal {
                         case type::OBJECT: break;
                         case type::STRING: break;
                         case type::WSTRING: break;
-                        case type::UNDEFINED: return valbox{valbox_no_initialize::dont_do_it};
+                        case type::UNDEFINED: return valbox{};
                         case type::VALBOX: break;
                         default: break;
                     }
@@ -5485,7 +5526,7 @@ namespace teal {
                 case type::WSTRING:
                     break;
                 case type::UNDEFINED:
-                    return valbox{valbox_no_initialize::dont_do_it};
+                    return valbox{};
                     break;
                 case type::VALBOX:
                     break;
@@ -5522,7 +5563,7 @@ namespace teal {
         }
 
         friend valbox operator<<(valbox const &l, valbox const &r) {
-            valbox res{valbox_no_initialize::dont_do_it};
+            valbox res{};
             valbox const &lr{l.deref()};
             valbox const &rr{r.deref()};
             type lt{lr.val_or_pointed_type()};
@@ -5578,7 +5619,7 @@ namespace teal {
         }
 
         friend valbox operator>>(valbox const &l, valbox const &r) {
-            valbox res{valbox_no_initialize::dont_do_it};
+            valbox res{};
             valbox const &lr{l.deref()};
             valbox const &rr{r.deref()};
             type lt{lr.val_or_pointed_type()};
@@ -5634,7 +5675,7 @@ namespace teal {
         }
 
         friend valbox operator&(valbox const &l, valbox const &r) {
-            valbox res{valbox_no_initialize::dont_do_it};
+            valbox res{};
             type st;
             auto lr{l.deref()};
             auto rr{r.deref()};
@@ -5696,7 +5737,7 @@ namespace teal {
         }
 
         friend valbox operator|(valbox const &l, valbox const &r) {
-            valbox res{valbox_no_initialize::dont_do_it};
+            valbox res{};
             type st;
             auto lr{l.deref()};
             auto rr{r.deref()};
@@ -5758,7 +5799,7 @@ namespace teal {
         }
 
         friend valbox operator^(valbox const &l, valbox const &r) {
-            valbox res{valbox_no_initialize::dont_do_it};
+            valbox res{};
             type st;
             auto lr{l.deref()};
             auto rr{r.deref()};
@@ -7538,7 +7579,7 @@ namespace teal {
                     v[p.first] = p.second.serialize(helper);
                 }
             } else if(thisref.is_class()) {
-                auto s{helper->obj_svc_[thisref.class_name()].serializer(*this)};
+                auto s{helper->get_object_services(thisref.class_name())->serializer(*this)};
                 if(s) {
                     res["class"] = thisref.class_name();
                     v = *s;
@@ -7799,7 +7840,7 @@ namespace teal {
                     break;
                 case type::CLASS: {
                         valbox dv{
-                            helper->obj_svc_[jv["class"].as_string()].deserializer(
+                            helper->get_object_services(jv["class"].as_string())->deserializer(
                                 jv["class"].as_string(), jv["value"].as_string()
                             )
                         };
@@ -7841,7 +7882,7 @@ namespace teal {
                         json const &v{jv["value"]};
                         auto sz{v.size()};
                         for(std::size_t i{}; i < sz; ++i) {
-                            vr.as_array().emplace_back(valbox_no_initialize::dont_do_it);
+                            vr.as_array().emplace_back();
                             vr.as_array().back().deserialize(v[i], helper);
                         }
                     }

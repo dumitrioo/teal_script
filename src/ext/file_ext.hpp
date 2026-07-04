@@ -215,7 +215,7 @@ namespace teal {
                 if(args.size() >= 2) {
                     recur = args[1].cast_to_bool();
                 }
-                valbox names{valbox_no_initialize::dont_do_it};
+                valbox names{};
                 names.become_array();
                 file_util::for_dir_tree(
                     args[0].cast_to_string(),

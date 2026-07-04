@@ -103,10 +103,84 @@ function bitrev(n) {
     return atoi(itoa(n, 2).reverse(), 2);
 }
 
+function cpu_info() {
+    res = object();
+    if(PLATFORM == "linux") {
+        cpu_strings = file("/proc/cpuinfo").read(1000000).str_tok("\n");
+        for(i = 0; i < cpu_strings.size(); ++i) {
+            p = cpu_strings[i].str_tok(":");
+            if(p.size() == 2) {
+                k = p[0].trim();
+                if(res.key_exists(k)) { break; }
+                v = p[1].trim();
+                if(!["apicid", "core id", "initial apicid", "processor", "physical id"].contains(k)) {
+                    if(["vmx flags", "bugs", "flags"].contains(k)) {
+                        res[k] = v.trim().str_tok(" ");
+                    } else if(["cache_alignment", "clflush size", "cpu cores", "cpu family", "cpuid level", "model", "siblings", "stepping"].contains(k)) {
+                        res[k] = v.trim().atoi();
+                    } else if(["bogomips", "cpu MHz"].contains(k)) {
+                        res[k] = v.trim().atof();
+                    } else if(["microcode"].contains(k)) {
+                        res[k] = v.trim().substr(2).atoi(16);
+                    } else {
+                        res[k] = v.trim();
+                    }
+                }
+            }
+        }
+    }
+    return res;
+}
+
 my_drafts(host_data) {
     console.fixed();
     console.enable_colors(true);
-    console.setprecision(6);
+    console.setprecision(16);
+
+    d = 3 / 2.0;
+    d.println();
+    d = this.p;
+    d.println();
+    d = undefined;
+    try {
+        d.println();
+    } catch(e) {
+        e.println();
+    }
+
+    this.trur = true;
+    this.trur.println();
+    this.trur = undefined;
+    this.trur.println();
+
+    k.t++;
+    k.println();
+
+    ++this.wert;
+    this.wert.println();
+
+    this.o.j = 98;
+    this.o.println();
+    astr = "udutrdutrdturdutrd";
+    astr.println();
+    astr[0] = '5';
+    astr.println();
+    ko = astr[0];
+    ko.println();
+
+    cpu_info().serialize5(2).println();
+
+    ctr = 0;
+    if(persistence_enabled()) {
+        ctr = persistence.get("ctr");
+    }
+    ctr_top = ctr + 10;
+    for(; ctr < ctr_top; ++ctr) {
+        ctr.println();
+    }
+    if(persistence_enabled()) {
+        persistence.put("ctr", ctr);
+    }
 
     println((f64)"AUTOSAR"[1]);
 
@@ -452,9 +526,3 @@ my_drafts(host_data) {
 }
 
 my_drafts drf(host_provided_data);
-
-
-
-
-
-

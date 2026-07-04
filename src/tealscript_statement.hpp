@@ -64,7 +64,7 @@ namespace teal {
             ctx->new_stack_frame();
             teal::shut_on_destroy leave_try_frame{[&]() { ctx->del_stack_frame(); }};
             std::string err_msg{""};
-            valbox err_obj{valbox_no_initialize::dont_do_it};
+            valbox err_obj{};
             bool excepted_obj{false};
             bool excepted{false};
             try {

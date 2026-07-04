@@ -87,6 +87,9 @@ namespace teal {
     class runtime_interface {
     public:
         virtual ~runtime_interface() = default;
+        virtual void enable_persistence(std::string const &) = 0;
+        virtual void disable_persistence() = 0;
+        virtual std::string const &persistence_file_path() const = 0;
         virtual str_map_t<valbox> const *global_constants_dictionary() const = 0;
         virtual str_map_t<valbox> const *global_functions_dictionary() const = 0;
         virtual str_map_t<str_map_t<valbox>> const *global_methods_dictionary() const = 0;
@@ -105,9 +108,12 @@ namespace teal {
         virtual void terminate() = 0;
         virtual void unterminate() = 0;
         virtual bool termination_requested() const = 0;
+        virtual void set_sequential_cells_execution(bool) = 0;
+        virtual void set_except_on_out_of_range_or_field(bool) = 0;
+        virtual void set_undefined_inputs_enabled(bool) = 0;
         virtual bool undefined_inputs_enabled() const = 0;
         virtual bool except_on_out_of_range_or_field() const = 0;
-
+        virtual valbox find_func(std::string const &name) const = 0;
         virtual void add_object_serializer(
             std::string const &,
             std::function<std::optional<std::string>(valbox const &)> const &

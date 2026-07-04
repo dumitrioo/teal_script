@@ -158,50 +158,50 @@ public:
                 args.size() > 1 ? TEALNUMARG(args, 1, int) > 0 ? TEALNUMARG(args, 1, int) : 600 : 600,
                 args.size() > 2 ? args[2].cast_to_string().c_str() : "Raylib Window"
             );
-            return teal::valbox{teal::valbox_no_initialize::dont_do_it};
+            return teal::valbox{};
         });
         rt->add_function("ray_maximize_window", TEALFUN() { MaximizeWindow(); return true; });
         rt->add_function("ray_minimize_window", TEALFUN() { MinimizeWindow(); return true; });
         rt->add_function("ray_window_should_close", TEALFUN() { return WindowShouldClose(); });
-        rt->add_function("ray_begin_drawing", TEALFUN() { BeginDrawing(); return teal::valbox{teal::valbox_no_initialize::dont_do_it}; });
-        rt->add_function("ray_end_drawing", TEALFUN() { EndDrawing(); return teal::valbox{teal::valbox_no_initialize::dont_do_it}; });
-        rt->add_function("ray_close_window", TEALFUN() { CloseWindow(); return teal::valbox{teal::valbox_no_initialize::dont_do_it}; });
+        rt->add_function("ray_begin_drawing", TEALFUN() { BeginDrawing(); return teal::valbox{}; });
+        rt->add_function("ray_end_drawing", TEALFUN() { EndDrawing(); return teal::valbox{}; });
+        rt->add_function("ray_close_window", TEALFUN() { CloseWindow(); return teal::valbox{}; });
         rt->add_function("ray_clear_background", TEALFUN(args) {
             TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
             ClearBackground(TEALTHIS(args, Color));
-            return teal::valbox{teal::valbox_no_initialize::dont_do_it};
+            return teal::valbox{};
         });
 
         // SetTargetFPS
         rt->add_function("ray_set_target_fps", TEALFUN(args) {
             TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
             SetTargetFPS(args[0].cast_to_s32());
-            return teal::valbox{teal::valbox_no_initialize::dont_do_it};
+            return teal::valbox{};
         });
 
-        rt->add_function("ray_toggle_full_screen", TEALFUN() { ToggleFullscreen(); return teal::valbox{teal::valbox_no_initialize::dont_do_it}; });
+        rt->add_function("ray_toggle_full_screen", TEALFUN() { ToggleFullscreen(); return teal::valbox{}; });
 
         rt->add_function("ray_draw_pixel", TEALFUN(args) {
             TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 3)
             DrawPixel(TEALNUMARG(args, 0, int), TEALNUMARG(args, 1, int), TEALCLASSARG(args, 2, Color));
-            return teal::valbox{teal::valbox_no_initialize::dont_do_it};
+            return teal::valbox{};
         });
         rt->add_function("ray_draw_pixel_v", TEALFUN(args) {
             TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-            DrawPixelV(TEALTHIS(args, Vector2), TEALCLASSARG(args, 1, Color)); return teal::valbox{teal::valbox_no_initialize::dont_do_it};
+            DrawPixelV(TEALTHIS(args, Vector2), TEALCLASSARG(args, 1, Color)); return teal::valbox{};
         });
 
         rt->add_function("ray_draw_line", TEALFUN(args) {
             TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 5)
-            DrawLine(TEALNUMARG(args, 0, int), TEALNUMARG(args, 1, int), TEALNUMARG(args, 2, int), TEALNUMARG(args, 3, int), TEALCLASSARG(args, 4, Color)); return teal::valbox{teal::valbox_no_initialize::dont_do_it};
+            DrawLine(TEALNUMARG(args, 0, int), TEALNUMARG(args, 1, int), TEALNUMARG(args, 2, int), TEALNUMARG(args, 3, int), TEALCLASSARG(args, 4, Color)); return teal::valbox{};
         });
         rt->add_function("ray_draw_line_v", TEALFUN(args) {
             TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 3)
-            DrawLineV(TEALTHIS(args, Vector2), TEALCLASSARG(args, 1, Vector2), TEALCLASSARG(args, 2, Color)); return teal::valbox{teal::valbox_no_initialize::dont_do_it};
+            DrawLineV(TEALTHIS(args, Vector2), TEALCLASSARG(args, 1, Vector2), TEALCLASSARG(args, 2, Color)); return teal::valbox{};
         });
         rt->add_function("ray_draw_line_ex", TEALFUN(args) {
             TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 4)
-            DrawLineEx(TEALTHIS(args, Vector2), TEALCLASSARG(args, 1, Vector2), TEALNUMARG(args, 2, float), TEALCLASSARG(args, 3, Color)); return teal::valbox{teal::valbox_no_initialize::dont_do_it};
+            DrawLineEx(TEALTHIS(args, Vector2), TEALCLASSARG(args, 1, Vector2), TEALNUMARG(args, 2, float), TEALCLASSARG(args, 3, Color)); return teal::valbox{};
         });
 
         rt->add_function("ray_draw_line_strip", TEALFUN(args) {
@@ -219,11 +219,11 @@ public:
 
         rt->add_function("ray_draw_line_bezier", TEALFUN(args) {
             TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 4)
-            DrawLineBezier(TEALTHIS(args, Vector2), TEALCLASSARG(args, 1, Vector2), TEALNUMARG(args, 2, int), TEALCLASSARG(args, 3, Color)); return teal::valbox{teal::valbox_no_initialize::dont_do_it};
+            DrawLineBezier(TEALTHIS(args, Vector2), TEALCLASSARG(args, 1, Vector2), TEALNUMARG(args, 2, int), TEALCLASSARG(args, 3, Color)); return teal::valbox{};
         });
         rt->add_function("ray_draw_circle", TEALFUN(args) {
             TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 4)
-            DrawCircle(TEALNUMARG(args, 0, int), TEALNUMARG(args, 1, int), TEALNUMARG(args, 2, float), TEALCLASSARG(args, 3, Color)); return teal::valbox{teal::valbox_no_initialize::dont_do_it};
+            DrawCircle(TEALNUMARG(args, 0, int), TEALNUMARG(args, 1, int), TEALNUMARG(args, 2, float), TEALCLASSARG(args, 3, Color)); return teal::valbox{};
         });
 
         rt->add_function("ray_draw_text", TEALFUN(args) {
@@ -234,12 +234,12 @@ public:
                 TEALNUMARG(args, 3, int),
                 TEALCLASSARG(args, 4, Color)
             );
-            return teal::valbox{teal::valbox_no_initialize::dont_do_it};
+            return teal::valbox{};
         });
 
         rt->add_function("ray_draw_rectangle", TEALFUN(args) {
             TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 5)
-            DrawRectangle(TEALNUMARG(args, 0, int), TEALNUMARG(args, 1, int), TEALNUMARG(args, 2, int), TEALNUMARG(args, 3, int), TEALCLASSARG(args, 4, Color)); return teal::valbox{teal::valbox_no_initialize::dont_do_it};
+            DrawRectangle(TEALNUMARG(args, 0, int), TEALNUMARG(args, 1, int), TEALNUMARG(args, 2, int), TEALNUMARG(args, 3, int), TEALCLASSARG(args, 4, Color)); return teal::valbox{};
         });
 
         rt->add_function("ray_is_key_pressed", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return IsKeyPressed(TEALNUMARG(args, 0, int)); });

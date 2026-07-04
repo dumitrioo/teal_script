@@ -143,7 +143,7 @@ namespace teal {
             bool is_cell{false};
             std::string cell_name{};
             expr_ptr expr{nullptr};
-            valbox expr_val{valbox_no_initialize::dont_do_it};
+            valbox expr_val{};
             cell_base *cell_ptr{nullptr};
         };
 

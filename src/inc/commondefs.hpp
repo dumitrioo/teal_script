@@ -94,6 +94,7 @@
 
 #if defined(_WIN64)
     #define PLATFORM_WINDOWS
+    #define PLATFORM_WINDOWS64
     #include <WinSock2.h>
     #include <ws2tcpip.h>
     #ifndef ENVIRONMENT64
@@ -101,6 +102,7 @@
     #endif
 #elif defined(_WIN32)
     #define PLATFORM_WINDOWS
+    #define PLATFORM_WINDOWS32
     #include <WinSock2.h>
     #include <ws2tcpip.h>
     #ifndef ENVIRONMENT32
@@ -194,6 +196,8 @@
     #include <netinet/ip_icmp.h>
     #include <sys/random.h>
     #include <sched.h>
+#elif defined(__FreeBSD__)
+    #define PLATFORM_FREEBSD
 #elif defined(__unix) // all unices not caught above
     #define PLATFORM_UNIXISH
 #elif defined(__posix)

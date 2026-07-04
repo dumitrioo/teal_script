@@ -43,13 +43,13 @@ namespace teal {
     public:
         void_expression() {}
         valbox eval(execution_context *, eval_caller_type, valbox *) override {
-            return valbox{valbox_no_initialize::dont_do_it};
+            return valbox{};
         }
     };
 
-    class primary_expression: public expression {
+    class immediate_val_expression: public expression {
     public:
-        primary_expression(valbox const &val):
+        immediate_val_expression(valbox const &val):
             val_{val}
         {
             val_.set_literal_placement();
@@ -65,14 +65,6 @@ namespace teal {
     public:
         sym_expression(std::string const &name): name_{name} {}
 
-        bool primary() const override {
-            return primary_.load(std::memory_order_acquire);
-        }
-
-        void reset_primary() override {
-            primary_ = false;
-        }
-
         void mark_fun() override {
             fun_ref_ = true;
         }
@@ -82,37 +74,17 @@ namespace teal {
         }
 
         valbox eval(execution_context *ctx, eval_caller_type, valbox *) override {
-            if(primary()) {
-                return primary_val_;
-            }
-            valbox res{valbox_no_initialize::dont_do_it};
-            if(fun()) {
-                execution_context::obj_type objtyp{objtyp_.load(std::memory_order_acquire)};
-                res = ctx->find_func(name_, objtyp);
+            valbox res{};
+            if(fun_ref_) {
+                res = ctx->find_func(name_);
                 if(!res.is_func()) {
-                    res = ctx->find_val_by_sym_name(name_, line(), col(), objtyp);
-                } else {
-                    objtyp_.store(objtyp, std::memory_order_release);
-                    std::unique_lock l{primary_val_mtp_};
-                    if(!primary()) {
-                        primary_val_ = res;
-                        primary_ = true;
-                    }
+                    res = ctx->find_val_by_sym_name(name_, line(), col());
                 }
             } else {
                 bool excepted{false};
                 runtime_error er{{}, {}, {}};
                 try {
-                    execution_context::obj_type objtyp{objtyp_.load(std::memory_order_acquire)};
-                    res = ctx->find_val_by_sym_name(name_, line(), col(), objtyp);
-                    objtyp_.store(objtyp, std::memory_order_release);
-                    if(objtyp == execution_context::obj_type::global_var) {
-                        std::unique_lock l{primary_val_mtp_};
-                        if(!primary()) {
-                            primary_val_ = res;
-                            primary_ = true;
-                        }
-                    }
+                    res = ctx->find_val_by_sym_name(name_, line(), col());
                 } catch (runtime_error const &e) {
                     er = e;
                     excepted = true;
@@ -138,10 +110,6 @@ namespace teal {
 
     private:
         std::string name_{};
-        std::atomic<execution_context::obj_type> objtyp_{execution_context::obj_type::unknown};
-        mutable shared_mutex primary_val_mtp_{};
-        valbox primary_val_{};
-        std::atomic<bool> primary_{false};
         bool fun_ref_{false};
     };
 
@@ -164,7 +132,7 @@ namespace teal {
         valbox eval(execution_context *ctx, eval_caller_type, valbox *) override {
             bool old{ctx->set_create_if_not_exists(false)};
             teal::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
-            valbox left_of_dot{valbox_no_initialize::dont_do_it};
+            valbox left_of_dot{};
             valbox fn{func_->eval(ctx, eval_caller_type::func_call, &left_of_dot)};
             if(!fn.is_func()) {
                 throw runtime_error{func_->line(), func_->col(), "calling of non-function"};
@@ -275,7 +243,7 @@ namespace teal {
                     expr_ptr &val{this_->val_};
                     bool old{ctx->set_create_if_not_exists(false)};
                     teal::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
-                    valbox res{valbox_no_initialize::dont_do_it};
+                    valbox res{};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
                     try {
@@ -323,7 +291,7 @@ namespace teal {
                     expr_ptr &val{this_->val_};
                     bool old{ctx->set_create_if_not_exists(false)};
                     teal::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
-                    valbox res{valbox_no_initialize::dont_do_it};
+                    valbox res{};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
                     try {
@@ -376,7 +344,7 @@ namespace teal {
                     expr_ptr &val{this_->val_};
                     bool old{ctx->set_create_if_not_exists(false)};
                     teal::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
-                    valbox res{valbox_no_initialize::dont_do_it};
+                    valbox res{};
                     valbox t{val->eval(ctx, eval_caller_type::no_matter, nullptr)};
                     if(t.is_class()) {
                         str_map_t<std::function<valbox(valbox &)>> const *unops{
@@ -428,16 +396,17 @@ namespace teal {
                     bool old{ctx->set_create_if_not_exists(true)};
                     teal::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
                     runtime_error er{{}, {}, {}};
-                    valbox res{valbox_no_initialize::dont_do_it};
+                    valbox res{};
                     try {
                         res = this_->val_->eval(ctx, eval_caller_type::no_matter, nullptr).deref();
-                        if(res.is_global_placement() || res.is_literal_placement()) {
+                        if(!res.is_mutable_resident_placement()) {
                             if(res.is_global_placement()) {
-                                throw runtime_error{this_->line_, this_->col_, "assignment is invalid: immutable entity"};
+                                throw runtime_error{this_->line_, this_->col_, "invalid increment: immutable entity"};
                             }
                             if(res.is_literal_placement()) {
                                 throw runtime_error{this_->line_, this_->col_, "lvalue required"};
                             }
+                            throw runtime_error{this_->line_, this_->col_, "lvalue required"};
                         }
                         if(res.is_class()) {
                             str_map_t<std::function<valbox(valbox &)>> const *unops{
@@ -471,16 +440,17 @@ namespace teal {
                     bool old{ctx->set_create_if_not_exists(true)};
                     teal::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
                     runtime_error er{{}, {}, {}};
-                    valbox res{valbox_no_initialize::dont_do_it};
+                    valbox res{};
                     try {
                         res = this_->val_->eval(ctx, eval_caller_type::no_matter, nullptr).deref();
-                        if(res.is_global_placement() || res.is_literal_placement()) {
+                        if(!res.is_mutable_resident_placement()) {
                             if(res.is_global_placement()) {
-                                throw runtime_error{this_->line_, this_->col_, "assignment is invalid: immutable entity"};
+                                throw runtime_error{this_->line_, this_->col_, "invalid decrement: immutable entity"};
                             }
                             if(res.is_literal_placement()) {
                                 throw runtime_error{this_->line_, this_->col_, "lvalue required"};
                             }
+                            throw runtime_error{this_->line_, this_->col_, "lvalue required"};
                         }
                         if(res.is_class()) {
                             str_map_t<std::function<valbox(valbox &)>> const *unops{
@@ -508,7 +478,6 @@ namespace teal {
                         er = runtime_error{this_->line_, this_->col_, "unknown error"};
                     }
                     throw er;
-                    return res;
                 },
                 /* LSHIFT */ nullptr,
                 /* RSHIFT */ nullptr,
@@ -521,7 +490,7 @@ namespace teal {
                     expr_ptr &val{this_->val_};
                     bool old{ctx->set_create_if_not_exists(false)};
                     teal::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
-                    valbox res{valbox_no_initialize::dont_do_it};
+                    valbox res{};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
                     try {
@@ -590,7 +559,7 @@ namespace teal {
                     valbox v{};
                     bool old{ctx->set_create_if_not_exists(false)};
                     teal::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
-                    valbox res{valbox_no_initialize::dont_do_it};
+                    valbox res{};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
                     try {
@@ -656,13 +625,14 @@ namespace teal {
                     bool old{ctx->set_create_if_not_exists(true)};
                     teal::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
                     valbox res{val_->eval(ctx, eval_caller_type::no_matter, nullptr)};
-                    if(res.is_global_placement() || res.is_literal_placement()) {
+                    if(!res.is_mutable_resident_placement()) {
                         if(res.is_global_placement()) {
-                            throw runtime_error{line_, col_, "assignment is invalid: immutable entity"};
+                            throw runtime_error{line_, col_, "invalid increment: immutable entity"};
                         }
                         if(res.is_literal_placement()) {
                             throw runtime_error{line_, col_, "lvalue required"};
                         }
+                        throw runtime_error{line_, col_, "lvalue required"};
                     }
                     if(res.is_class()) {
                         str_map_t<std::function<valbox(valbox &)>> const *unops{
@@ -687,13 +657,14 @@ namespace teal {
                     bool old{ctx->set_create_if_not_exists(true)};
                     teal::shut_on_destroy sod{[ctx, old]() { ctx->set_create_if_not_exists(old); }};
                     valbox res{val_->eval(ctx, eval_caller_type::no_matter, nullptr)};
-                    if(res.is_global_placement() || res.is_literal_placement()) {
+                    if(!res.is_mutable_resident_placement()) {
                         if(res.is_global_placement()) {
-                            throw runtime_error{line_, col_, "assignment is invalid: immutable entity"};
+                            throw runtime_error{line_, col_, "invalid decrement: immutable entity"};
                         }
                         if(res.is_literal_placement()) {
                             throw runtime_error{line_, col_, "lvalue required"};
                         }
+                        throw runtime_error{line_, col_, "lvalue required"};
                     }
                     if(res.is_class()) {
                         str_map_t<std::function<valbox(valbox &)>> const *unops{
@@ -790,7 +761,7 @@ namespace teal {
                 /* IDENTIFIER */ nullptr,
                 /* PLUS */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
-                    valbox res{valbox_no_initialize::dont_do_it};
+                    valbox res{};
                     bool old{ctx->set_create_if_not_exists(false)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr)};
@@ -831,7 +802,7 @@ namespace teal {
                 },
                 /* MINUS */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
-                    valbox res{valbox_no_initialize::dont_do_it};
+                    valbox res{};
                     bool old{ctx->set_create_if_not_exists(false)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr)};
@@ -872,7 +843,7 @@ namespace teal {
                 },
                 /* STAR */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
-                    valbox res{valbox_no_initialize::dont_do_it};
+                    valbox res{};
                     bool old{ctx->set_create_if_not_exists(false)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr)};
@@ -913,7 +884,7 @@ namespace teal {
                 },
                 /* SLASH */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
-                    valbox res{valbox_no_initialize::dont_do_it};
+                    valbox res{};
                     bool old{ctx->set_create_if_not_exists(false)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr)};
@@ -954,7 +925,7 @@ namespace teal {
                 },
                 /* MOD */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
-                    valbox res{valbox_no_initialize::dont_do_it};
+                    valbox res{};
                     bool old{ctx->set_create_if_not_exists(false)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr)};
@@ -998,7 +969,7 @@ namespace teal {
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
-                    valbox res{valbox_no_initialize::dont_do_it};
+                    valbox res{};
                     auto l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     auto r{this_->rval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     auto lt{l.val_or_pointed_type()};
@@ -1051,7 +1022,7 @@ namespace teal {
                 /* NOT */ nullptr,
                 /* NOTEQUAL */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
-                    valbox res{valbox_no_initialize::dont_do_it};
+                    valbox res{};
                     bool old{ctx->set_create_if_not_exists(false)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     auto l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
@@ -1107,7 +1078,7 @@ namespace teal {
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
-                    valbox res{valbox_no_initialize::dont_do_it};
+                    valbox res{};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
@@ -1153,7 +1124,7 @@ namespace teal {
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
-                    valbox res{valbox_no_initialize::dont_do_it};
+                    valbox res{};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
@@ -1199,7 +1170,7 @@ namespace teal {
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
-                    valbox res{valbox_no_initialize::dont_do_it};
+                    valbox res{};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
@@ -1245,7 +1216,7 @@ namespace teal {
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
-                    valbox res{valbox_no_initialize::dont_do_it};
+                    valbox res{};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
@@ -1291,7 +1262,7 @@ namespace teal {
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
                     bool old{ctx->set_create_if_not_exists(false)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
-                    valbox res{valbox_no_initialize::dont_do_it};
+                    valbox res{};
                     bool excepted{false};
                     runtime_error er{{}, {}, {}};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
@@ -1343,19 +1314,29 @@ namespace teal {
                     bool old{ctx->set_create_if_not_exists(true)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-                    if(l.is_global_placement() || l.is_literal_placement()) {
-                        throw runtime_error{this_->line_, this_->col_, "assignment is invalid: immutable entity"};
+                    if(l.is_immutable_placement()) {
+                        throw runtime_error{this_->line_, this_->col_, "invalid assignment: immutable entity"};
                     }
                     this_->lval_->reset_primary();
                     if(l.is_ptr()) {
                         l.assign_preserving_type(r);
-                    } else {
-                        if(r.is_ptr() && r.pointed_type() != valbox::type::POINTER) {
-                            l.become_type(r.val_or_pointed_type());
-                            l.assign_preserving_type(r);
+                    } else if(r.is_undefined()) {
+                        if(r.is_literal_placement()) {
+                            if(l.is_stack_placement()) {
+                                ctx->clear_stack_variable_before_barrier(l);
+                            } else if(l.is_instance_placement()) {
+                                ctx->clear_instance_variable(l);
+                            } else {
+                                l.become_undefined();
+                            }
                         } else {
-                            l.assign(r);
+                            l.become_undefined();
                         }
+                    } else if(r.is_ptr() && r.pointed_type() != valbox::type::POINTER) {
+                        l.become_type(r.val_or_pointed_type());
+                        l.assign_preserving_type(r);
+                    } else {
+                        l.assign(r);
                     }
                     return l;
                 },
@@ -1365,8 +1346,8 @@ namespace teal {
                     bool old{ctx->set_create_if_not_exists(true)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-                    if(l.is_global_placement() || l.is_literal_placement()) {
-                        throw runtime_error{this_->line_, this_->col_, "assignment is invalid: immutable entity"};
+                    if(l.is_immutable_placement()) {
+                        throw runtime_error{this_->line_, this_->col_, "invalid assignment: immutable entity"};
                     }
                     this_->lval_->reset_primary();
                     if(!r.is_undefined()) {
@@ -1413,8 +1394,8 @@ namespace teal {
                     bool old{ctx->set_create_if_not_exists(true)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-                    if(l.is_global_placement() || l.is_literal_placement()) {
-                        throw runtime_error{this_->line_, this_->col_, "assignment is invalid: immutable entity"};
+                    if(l.is_immutable_placement()) {
+                        throw runtime_error{this_->line_, this_->col_, "invalid assignment: immutable entity"};
                     }
                     this_->lval_->reset_primary();
                     if(!r.is_undefined()) {
@@ -1461,8 +1442,8 @@ namespace teal {
                     bool old{ctx->set_create_if_not_exists(true)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-                    if(l.is_global_placement() || l.is_literal_placement()) {
-                        throw runtime_error{this_->line_, this_->col_, "assignment is invalid: immutable entity"};
+                    if(l.is_immutable_placement()) {
+                        throw runtime_error{this_->line_, this_->col_, "invalid assignment: immutable entity"};
                     }
                     this_->lval_->reset_primary();
                     if(r.is_undefined()) {
@@ -1513,8 +1494,8 @@ namespace teal {
                     bool old{ctx->set_create_if_not_exists(true)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-                    if(l.is_global_placement() || l.is_literal_placement()) {
-                        throw runtime_error{this_->line_, this_->col_, "assignment is invalid: immutable entity"};
+                    if(l.is_immutable_placement()) {
+                        throw runtime_error{this_->line_, this_->col_, "invalid assignment: immutable entity"};
                     }
                     this_->lval_->reset_primary();
                     if(r.is_undefined()) {
@@ -1559,8 +1540,8 @@ namespace teal {
                     bool old{ctx->set_create_if_not_exists(true)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-                    if(l.is_global_placement() || l.is_literal_placement()) {
-                        throw runtime_error{this_->line_, this_->col_, "assignment is invalid: immutable entity"};
+                    if(l.is_immutable_placement()) {
+                        throw runtime_error{this_->line_, this_->col_, "invalid assignment: immutable entity"};
                     }
                     this_->lval_->reset_primary();
                     if(r.is_undefined()) {
@@ -1606,8 +1587,8 @@ namespace teal {
                     bool old{ctx->set_create_if_not_exists(true)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-                    if(l.is_global_placement() || l.is_literal_placement()) {
-                        throw runtime_error{this_->line_, this_->col_, "assignment is invalid: immutable entity"};
+                    if(l.is_immutable_placement()) {
+                        throw runtime_error{this_->line_, this_->col_, "invalid assignment: immutable entity"};
                     }
                     this_->lval_->reset_primary();
                     if(r.is_undefined()) {
@@ -1657,8 +1638,8 @@ namespace teal {
                     bool old{ctx->set_create_if_not_exists(true)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-                    if(l.is_global_placement() || l.is_literal_placement()) {
-                        throw runtime_error{this_->line_, this_->col_, "assignment is invalid: immutable entity"};
+                    if(l.is_immutable_placement()) {
+                        throw runtime_error{this_->line_, this_->col_, "invalid assignment: immutable entity"};
                     }
                     this_->lval_->reset_primary();
                     if(r.is_undefined()) {
@@ -1705,8 +1686,8 @@ namespace teal {
                     bool old{ctx->set_create_if_not_exists(true)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-                    if(l.is_global_placement() || l.is_literal_placement()) {
-                        throw runtime_error{this_->line_, this_->col_, "assignment is invalid: immutable entity"};
+                    if(l.is_immutable_placement()) {
+                        throw runtime_error{this_->line_, this_->col_, "invalid assignment: immutable entity"};
                     }
                     this_->lval_->reset_primary();
                     if(r.is_undefined()) {
@@ -1755,8 +1736,8 @@ namespace teal {
                     bool old{ctx->set_create_if_not_exists(true)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-                    if(l.is_global_placement() || l.is_literal_placement()) {
-                        throw runtime_error{this_->line_, this_->col_, "assignment is invalid: immutable entity"};
+                    if(l.is_immutable_placement()) {
+                        throw runtime_error{this_->line_, this_->col_, "invalid assignment: immutable entity"};
                     }
                     this_->lval_->reset_primary();
                     if(r.is_undefined()) {
@@ -1803,8 +1784,8 @@ namespace teal {
                     bool old{ctx->set_create_if_not_exists(true)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
-                    if(l.is_global_placement() || l.is_literal_placement()) {
-                        throw runtime_error{this_->line_, this_->col_, "assignment is invalid: immutable entity"};
+                    if(l.is_immutable_placement()) {
+                        throw runtime_error{this_->line_, this_->col_, "invalid assignment: immutable entity"};
                     }
                     this_->lval_->reset_primary();
                     if(r.is_undefined()) {
@@ -1849,7 +1830,7 @@ namespace teal {
                 /* DECREMENT */ nullptr,
                 /* LSHIFT */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
-                    valbox res{valbox_no_initialize::dont_do_it};
+                    valbox res{};
                     bool old{ctx->set_create_if_not_exists(false)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr)};
@@ -1890,7 +1871,7 @@ namespace teal {
                 },
                 /* RSHIFT */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
-                    valbox res{valbox_no_initialize::dont_do_it};
+                    valbox res{};
                     bool old{ctx->set_create_if_not_exists(false)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr)};
@@ -1936,7 +1917,7 @@ namespace teal {
                 /* BITNOT */ nullptr,
                 /* XOR */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
-                    valbox res{valbox_no_initialize::dont_do_it};
+                    valbox res{};
                     bool old{ctx->set_create_if_not_exists(false)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr)};
@@ -1978,7 +1959,7 @@ namespace teal {
                 /* CIRCUMFLEXCIRCUMFLEX */ nullptr,
                 /* BITOR */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
-                    valbox res{valbox_no_initialize::dont_do_it};
+                    valbox res{};
                     bool old{ctx->set_create_if_not_exists(false)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr)};
@@ -2055,7 +2036,7 @@ namespace teal {
                 },
                 /* BITAND */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *) -> valbox {
-                    valbox res{valbox_no_initialize::dont_do_it};
+                    valbox res{};
                     bool old{ctx->set_create_if_not_exists(false)};
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr)};
@@ -2135,12 +2116,12 @@ namespace teal {
                 /* RPAREN */ nullptr,
                 /* LBRACKET */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type, valbox *dotlptr) -> valbox {
-                    valbox res{valbox_no_initialize::dont_do_it};
+                    valbox res{};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     if(dotlptr) {
                         *dotlptr = l;
                     }
-                    valbox r{valbox_no_initialize::dont_do_it};
+                    valbox r{};
                     {
                         bool old{ctx->set_create_if_not_exists(false)};
                         shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
@@ -2152,6 +2133,15 @@ namespace teal {
                     runtime_error er{{}, {}, {}};
                     try {
                         if(ctx->create_if_not_exists()) {
+                            if(l.is_immutable_placement()) {
+                                if(l.is_global_placement()) {
+                                    throw runtime_error{this_->line_, this_->col_, "invalid increment: immutable entity"};
+                                }
+                                if(l.is_literal_placement()) {
+                                    throw runtime_error{this_->line_, this_->col_, "lvalue required"};
+                                }
+                                // throw runtime_error{this_->line_, this_->col_, "lvalue required"};
+                            }
                             if(l.is_undefined()) {
                                 if(valbox::is_numeric_type(rt)) {
                                     l.become_array();
@@ -2160,6 +2150,7 @@ namespace teal {
                                 }
                             }
                             res = l.operator_brackets(r, !ctx->create_if_not_exists(), ctx->rt_interface()->except_on_out_of_range_or_field());
+                            // res.set_placement(l.placement());
                         } else {
                             if(valbox::is_any_string_type(rt)) {
                                 if(lt != valbox::type::OBJECT) {
@@ -2171,6 +2162,7 @@ namespace teal {
                                     }
                                 } else {
                                     res = l.operator_brackets(r, !ctx->create_if_not_exists(), ctx->rt_interface()->except_on_out_of_range_or_field());
+                                    // res.set_placement(l.placement());
                                 }
                             } else if(valbox::is_numeric_type(rt)) {
                                 if(lt == valbox::type::ARRAY) {
@@ -2178,9 +2170,11 @@ namespace teal {
                                     auto indx{r.cast_to_u64()};
                                     if(indx < ar.size()) {
                                         res = ar.at(indx);
+                                        res.set_placement(l.placement());
                                     }
                                 } else {
                                     res = l.operator_brackets(r, !ctx->create_if_not_exists(), ctx->rt_interface()->except_on_out_of_range_or_field());
+                                    // res.set_placement(l.placement());
                                 }
                             }
                         }
@@ -2205,7 +2199,7 @@ namespace teal {
                 /* COMMA */ nullptr,
                 /* DOT */
                 [](binop_expression *this_, execution_context *ctx, eval_caller_type caller_type, valbox *dotlptr) -> valbox {
-                    valbox res{valbox_no_initialize::dont_do_it};
+                    valbox res{};
                     if(this_->lval_->symbol() == "this") {
                         if(ctx->is_inside_function()) {
                             throw runtime_error{this_->line_, this_->col_, "function can not have own context"};
@@ -2217,7 +2211,7 @@ namespace teal {
                             if(ctx->have_self_field(this_->sym_)) {
                                 res = ctx->get_self_field(this_->sym_);
                             } else {
-                                res = valbox{valbox_no_initialize::dont_do_it};
+                                res = valbox{};
                             }
                         }
                     } else {
@@ -2229,12 +2223,11 @@ namespace teal {
                             res = ctx->find_method(l.ref_class_name(), this_->rval_->symbol());
                             if(res.is_undefined()) {
                                 valbox found_fn{};
-                                execution_context::obj_type objtyp{execution_context::obj_type::unknown};
-                                if(ctx->find_func(this_->rval_->symbol(), found_fn, objtyp)) {
+                                if(ctx->find_func(this_->rval_->symbol(), found_fn)) {
                                     res = found_fn;
                                     this_->sym_ = this_->rval_->symbol();
                                 } else {
-                                    res = valbox{valbox_no_initialize::dont_do_it};
+                                    res = valbox{};
                                 }
                             } else {
                                 this_->sym_ = this_->rval_->symbol();
@@ -2254,12 +2247,11 @@ namespace teal {
                                 }
                                 if(!func_found) {
                                     valbox found_fn{};
-                                    execution_context::obj_type objtyp{execution_context::obj_type::unknown};
-                                    if(ctx->find_func(this_->rval_->symbol(), found_fn, objtyp)) {
+                                    if(ctx->find_func(this_->rval_->symbol(), found_fn)) {
                                         res = found_fn;
                                         this_->sym_ = this_->rval_->symbol();
                                     } else {
-                                        res = valbox{valbox_no_initialize::dont_do_it};
+                                        res = valbox{};
                                     }
                                 }
                             } else if(l.is_undefined()) {
@@ -2279,10 +2271,11 @@ namespace teal {
                                 auto it{o.find(this_->rval_->symbol())};
                                 if(it != o.end()) {
                                     res = it->second;
+                                    res.set_placement(l.placement());
                                     this_->sym_ = this_->rval_->symbol();
                                 } else {
                                     if(ctx->create_if_not_exists()) {
-                                        if(l.is_global_placement() || l.is_literal_placement()) {
+                                        if(l.is_immutable_placement()) {
                                             throw runtime_error{this_->line_, this_->col_, "cannot modify immutable entity"};
                                         }
                                         res = l.operator_brackets(this_->rval_->symbol(), !ctx->create_if_not_exists(), ctx->rt_interface()->except_on_out_of_range_or_field());

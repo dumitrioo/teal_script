@@ -13,8 +13,8 @@ TEMPLATE = app
 # DEFINES += USE_CUSTOM_MEMORY_ALLOCATION
 
 # DEFINES += TEAL_USE_CUSTOM_SHARED_MUTEX
-DEFINES += RW_MUTEX_PRIORITIES
-# DEFINES += RW_MUTEX_COPYABLE_WITHOUT_ACTUAL_COPYING
+# DEFINES += RW_MUTEX_PRIORITIES
+# DEFINES += RW_MUTEX_UPGRADEABLE
 
 # DEFINES += TEAL_TCPSERVER_USE_SSL
 
@@ -88,6 +88,7 @@ HEADERS += \
     ../../src/ext/crypto_ext.hpp \
     ../../src/ext/file_ext.hpp \
     ../../src/ext/math_ext.hpp \
+    ../../src/ext/persistence_ext.hpp \
     ../../src/ext/pid_ext.hpp \
     ../../src/ext/quectoml_ext.hpp \
     ../../src/ext/rand_ext.hpp \

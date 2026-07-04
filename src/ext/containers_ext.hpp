@@ -170,7 +170,7 @@ namespace teal {
                 return m_.find(k) != m_.end();
             }
             valbox list_keys() const {
-                valbox res{valbox_no_initialize::dont_do_it};
+                valbox res{};
                 res.become_array();
                 std::shared_lock l{mtp_};
                 for(auto &&p: m_) {
@@ -220,7 +220,7 @@ namespace teal {
                 return q_.back();
             }
             valbox pop_front() {
-                valbox res{valbox_no_initialize::dont_do_it};
+                valbox res{};
                 std::unique_lock l{mtp_};
                 if(!q_.empty()) {
                     res = std::move(q_.front());
@@ -229,7 +229,7 @@ namespace teal {
                 return res;
             }
             valbox pop_back() {
-                valbox res{valbox_no_initialize::dont_do_it};
+                valbox res{};
                 std::unique_lock l{mtp_};
                 if(!q_.empty()) {
                     res = std::move(q_.front());
@@ -238,7 +238,7 @@ namespace teal {
                 return res;
             }
             valbox at(std::size_t indx) const {
-                valbox res{valbox_no_initialize::dont_do_it};
+                valbox res{};
                 std::shared_lock l{mtp_};
                 if(!q_.empty()) {
                     res = q_.at(indx);

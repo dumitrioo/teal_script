@@ -55,7 +55,7 @@ namespace teal {
                     if(class_name == "timestamp") {
                         return teal::valbox{timespec_wrapper{serial_form}, "timestamp"};
                     }
-                    return teal::valbox{valbox_no_initialize::dont_do_it};
+                    return teal::valbox{};
                 }
             );
 
@@ -123,7 +123,7 @@ namespace teal {
                             }
                         }
                     }
-                    return teal::valbox{valbox_no_initialize::dont_do_it};
+                    return teal::valbox{};
                 }
             );
 

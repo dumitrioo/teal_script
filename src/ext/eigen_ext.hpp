@@ -412,7 +412,7 @@ namespace teal {
                         valbox::type::DOUBLE
                     };
                 }
-                return teal::valbox{valbox_no_initialize::dont_do_it};
+                return teal::valbox{};
             });
 
             rt->add_method("matrix", "resize", TEALFUN(args) {
@@ -424,7 +424,7 @@ namespace teal {
                     TEALTHIS(args, Eigen::MatrixXd).resize(args[1].cast_to_int(), args[2].cast_to_int());
                     return args[0];
                 }
-                return teal::valbox{valbox_no_initialize::dont_do_it};
+                return teal::valbox{};
             });
 
             rt->add_method("matrix", "inversed", TEALFUN(args) {

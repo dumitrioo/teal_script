@@ -39,6 +39,7 @@
 #include "ext/time_ext.hpp"
 #include "ext/math_ext.hpp"
 #include "ext/pid_ext.hpp"
+#include "ext/persistence_ext.hpp"
 #include "ext/socket_ext.hpp"
 
 #ifdef PLATFORM_WINDOWS
@@ -82,15 +83,7 @@ namespace teal {
 
     class runtime: public runtime_interface {
     public:
-        runtime(
-            bool sequential_cells_execution = false,
-            bool enable_undefined_inputs = true,
-            bool exception_on_out_of_range_or_field = false
-        ):
-            sequential_cells_execution_traversal_{sequential_cells_execution},
-            enable_undefined_inputs_{enable_undefined_inputs},
-            except_on_out_of_range_or_field_{exception_on_out_of_range_or_field}
-        {
+        runtime() {
             exctx_.set_runtime_interface(this);
 
             add_function("version_major", TEALFUN(/*args*/) { return version_major_; });
@@ -142,6 +135,17 @@ namespace teal {
             add_var("EDOM", EDOM);       // 33  Math argument out of domain of func
             add_var("ERANGE", ERANGE);   // 34  Math result not representable
 
+
+#if defined(PLATFORM_LINUX)
+            add_var("PLATFORM", "linux");
+#elif defined(PLATFORM_FREEBSD)
+            add_var("PLATFORM", "freebsd");
+#elif defined(PLATFORM_ANDROID)
+            add_var("PLATFORM", "android");
+#elif defined(PLATFORM_WINDOWS)
+            add_var("PLATFORM", "windows");
+#endif
+
             add_function("last_error", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 0)
                 return sys_util::last_error();
@@ -187,29 +191,29 @@ namespace teal {
                 TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1)
                 std::vector<valbox> args1{args.begin() + 1, args.end()};
                 TEALTHIS(args, console *)->info(args1);
-                return {valbox_no_initialize::dont_do_it};
+                return {};
             });
-            add_method("console", "log", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, console *)->log(args1); return {valbox_no_initialize::dont_do_it}; });
-            add_method("console", "warn", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, console *)->warn(args1); return {valbox_no_initialize::dont_do_it}; });
-            add_method("console", "debug", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, console *)->debug(args1); return {valbox_no_initialize::dont_do_it}; });
-            add_method("console", "error", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, console *)->error(args1); return {valbox_no_initialize::dont_do_it}; });
-            add_method("console", "print", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, console *)->print(args1); return {valbox_no_initialize::dont_do_it}; });
-            add_method("console", "println", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, console *)->println(args1); return {valbox_no_initialize::dont_do_it}; });
-            add_method("console", "flush", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, console *)->flush(); return valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "fixed", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, console *)->fixed(); return valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "scientific", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, console *)->scientific(); return valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "hexfloat", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, console *)->hexfloat(); return valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "defaultfloat", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, console *)->defaultfloat(); return valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "setprecision", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) TEALTHIS(args, console *)->setprecision(args[1].cast_to_u64()); return valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "log", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, console *)->log(args1); return {}; });
+            add_method("console", "warn", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, console *)->warn(args1); return {}; });
+            add_method("console", "debug", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, console *)->debug(args1); return {}; });
+            add_method("console", "error", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, console *)->error(args1); return {}; });
+            add_method("console", "print", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, console *)->print(args1); return {}; });
+            add_method("console", "println", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_GE(args, 1) std::vector<valbox> args1{args.begin() + 1, args.end()}; TEALTHIS(args, console *)->println(args1); return {}; });
+            add_method("console", "flush", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, console *)->flush(); return valbox{}; });
+            add_method("console", "fixed", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, console *)->fixed(); return valbox{}; });
+            add_method("console", "scientific", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, console *)->scientific(); return valbox{}; });
+            add_method("console", "hexfloat", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, console *)->hexfloat(); return valbox{}; });
+            add_method("console", "defaultfloat", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) TEALTHIS(args, console *)->defaultfloat(); return valbox{}; });
+            add_method("console", "setprecision", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) TEALTHIS(args, console *)->setprecision(args[1].cast_to_u64()); return valbox{}; });
             add_method("console", "precision", TEALFUN(args) { return TEALTHIS(args, console *)->precision(); });
-            add_method("console", "setw", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) TEALTHIS(args, console *)->setw(args[1].cast_to_u64()); return valbox{valbox_no_initialize::dont_do_it}; });
-            add_method("console", "setfill", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) TEALTHIS(args, console *)->setfill(args[1].cast_to_char()); return valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "setw", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) TEALTHIS(args, console *)->setw(args[1].cast_to_u64()); return valbox{}; });
+            add_method("console", "setfill", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) TEALTHIS(args, console *)->setfill(args[1].cast_to_char()); return valbox{}; });
             add_method("console", "fill", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return TEALTHIS(args, console *)->fill(); });
-            add_method("console", "enable_colors", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2) TEALTHIS(args, console *)->enable_colors(args.size() == 2 ? args[1].cast_to_bool() : true); return valbox{valbox_no_initialize::dont_do_it}; });
+            add_method("console", "enable_colors", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2) TEALTHIS(args, console *)->enable_colors(args.size() == 2 ? args[1].cast_to_bool() : true); return valbox{}; });
             add_method("console", "colors_enabled", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return TEALTHIS(args, console *)->colors_enabled(); });
             add_method("console", "sync_stdio", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2) return TEALTHIS(args, console *)->setsync(args[1].cast_to_bool()); });
-            add_function("print", TEALFUN(args) { con_.rawprint(args); return {valbox_no_initialize::dont_do_it}; });
-            add_function("println", TEALFUN(args) { con_.rawprintln(args); return {valbox_no_initialize::dont_do_it}; });
+            add_function("print", TEALFUN(args) { con_.rawprint(args); return {}; });
+            add_function("println", TEALFUN(args) { con_.rawprintln(args); return {}; });
 
 
             add_function("to_string", TEALFUN(args) {
@@ -405,7 +409,15 @@ namespace teal {
                 return res;
             });
             add_function("array", TEALFUN(args) {
-                valbox res{valbox_no_initialize::dont_do_it};
+                valbox res{};
+                res.become_array();
+                for(std::size_t i = 0; i < args.size(); ++i) {
+                    res.as_array().push_back(args[i]);
+                }
+                return res;
+            });
+            add_function("to_array", TEALFUN(args) {
+                valbox res{};
                 if(args.size() == 1 && (args[0].is_array())) {
                     res.assign(args[0]);
                 } else if(args.size() == 1 && (args[0].is_string() || args[0].is_wstring())) {
@@ -419,7 +431,7 @@ namespace teal {
                 return res;
             });
             add_function("object", TEALFUN(args) {
-                valbox res{valbox_no_initialize::dont_do_it};
+                valbox res{};
                 if(args.empty()) {
                     res.become_object();
                     return res;
@@ -459,7 +471,7 @@ namespace teal {
             });
             add_function("deserialize", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                valbox res{valbox_no_initialize::dont_do_it};
+                valbox res{};
                 if(args[0].is_string()) {
                     res.from_json(json::deserialize(args[0].as_string()));
                     return res;
@@ -469,7 +481,7 @@ namespace teal {
                 return res;
             });
             add_function("serialize", TEALFUN(args) {
-                valbox res{valbox_no_initialize::dont_do_it};
+                valbox res{};
                 if(args.size() == 1) {
                     res = args[0].to_json().serialize();
                 } else if(args.size() == 2) {
@@ -478,7 +490,7 @@ namespace teal {
                 return res;
             });
             add_function("serialize5", TEALFUN(args) {
-                valbox res{valbox_no_initialize::dont_do_it};
+                valbox res{};
                 if(args.size() == 1) {
                     res = args[0].to_json().serialize5();
                 } else if(args.size() == 2) {
@@ -493,8 +505,13 @@ namespace teal {
                 if(a1r.is_object()) {
                     return a1r.as_object().find(args[1].cast_to_string()) != a1r.as_object().end();
                 } else if(a1r.is_array()) {
-                    auto idx{args[1].cast_to_u64()};
-                    return idx < a1r.as_array().size();
+                    valbox::array_t a{a1r.as_array()};
+                    auto a2r{args[1].deref()};
+                    for(auto &&i: a) {
+                        if(i == a2r) {
+                            return true;
+                        }
+                    }
                 }
                 return false;
             });
@@ -718,12 +735,12 @@ namespace teal {
                     if(args.size() == 1) {
                         return args[0];
                     } else if(args.size() == 2) {
-                        valbox res{valbox_no_initialize::dont_do_it};
+                        valbox res{};
                         res.become_array();
                         res = args[0].subarray(args[1].cast_to_u64());
                         return res;
                     } else if(args.size() == 3) {
-                        valbox res{valbox_no_initialize::dont_do_it};
+                        valbox res{};
                         res.become_array();
                         res = args[0].subarray(args[1].cast_to_u64(), args[2].cast_to_u64());
                         return res;
@@ -749,12 +766,12 @@ namespace teal {
                         return args[0].cast_to_wstring();
                     }
                 }
-                return valbox{valbox_no_initialize::dont_do_it};
+                return valbox{};
             });
 
             add_function("str_tok", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                valbox res{valbox_no_initialize::dont_do_it};
+                valbox res{};
                 res.become_array();
                 if(args[0].is_string()) {
                     std::vector<std::string> sv{str_util::str_tok(args[0].cast_to_string(), args[1].cast_to_string())};
@@ -893,7 +910,7 @@ namespace teal {
 
             add_function("getset", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                valbox res{valbox_no_initialize::dont_do_it};
+                valbox res{};
                 res.assign(args[0]);
                 args[0].assign(args[1]);
                 return res;
@@ -1078,7 +1095,7 @@ namespace teal {
                 } else {
                     bf.clr(bitpos);
                 }
-                valbox res{valbox_no_initialize::dont_do_it};
+                valbox res{};
                 res.become_same_type_as(args[0]);
                 res.assign_preserving_type(bf.whole());
                 return res;
@@ -1087,7 +1104,7 @@ namespace teal {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
                 bf.set(args[1].cast_to_u64());
-                valbox res{valbox_no_initialize::dont_do_it};
+                valbox res{};
                 res.become_same_type_as(args[0]);
                 res.assign_preserving_type(bf.whole());
                 return res;
@@ -1096,7 +1113,7 @@ namespace teal {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 bit_util::bits<std::uint64_t> bf{args[0].cast_to_u64()};
                 bf.clr(args[1].cast_to_u64());
-                valbox res{valbox_no_initialize::dont_do_it};
+                valbox res{};
                 res.become_same_type_as(args[0]);
                 res.assign_preserving_type(bf.whole());
                 return res;
@@ -1133,6 +1150,10 @@ namespace teal {
             });
             add_function("inactive_sleep_seconds", TEALFUN() {
                 return sleep_inactive_thread_nanoseconds() * 1e-9L;
+            });
+
+            add_function("persistence_enabled", TEALFUN() {
+                return !persistence_file_path_.empty();
             });
 
             add_function("assign", TEALFUN(args) {
@@ -1293,6 +1314,7 @@ namespace teal {
             time_ext_.unregister_runtime();
             math_ext_.unregister_runtime();
             pid_ext_.unregister_runtime();
+            persistence_ext_.unregister_runtime();
             array_buffer_ext_.unregister_runtime();
         }
 
@@ -1500,22 +1522,6 @@ namespace teal {
 
         void set_multi_thread_mode() {
             set_thread_mode_multi();
-        }
-
-        void set_undefined_inputs_enabled(bool val) {
-            enable_undefined_inputs_ = val;
-        }
-
-        bool undefined_inputs_enabled() const override {
-            return enable_undefined_inputs_;
-        }
-
-        void set_except_on_out_of_range_or_field(bool val) {
-            except_on_out_of_range_or_field_ = val;
-        }
-
-        bool except_on_out_of_range_or_field() const override {
-            return except_on_out_of_range_or_field_;
         }
 
         void run_cycles(std::size_t n) {
@@ -1936,7 +1942,40 @@ namespace teal {
             wait_granularity_nsec_ = val;
         }
 
-        // runtime interface ---------------------------------------------------------------
+        void set_sequential_cells_execution(bool v) override {
+            sequential_cells_execution_traversal_ = v;
+        }
+
+        void set_undefined_inputs_enabled(bool val) override {
+            enable_undefined_inputs_ = val;
+        }
+
+        bool undefined_inputs_enabled() const override {
+            return enable_undefined_inputs_;
+        }
+
+        void set_except_on_out_of_range_or_field(bool val) override {
+            except_on_out_of_range_or_field_ = val;
+        }
+
+        bool except_on_out_of_range_or_field() const override {
+            return except_on_out_of_range_or_field_;
+        }
+
+        void enable_persistence(std::string const &file_path) override {
+            persistence_file_path_ = file_path;
+            persistence_ext_.register_runtime(this);
+        }
+
+        void disable_persistence() override {
+            persistence_file_path_.clear();
+            persistence_ext_.unregister_runtime();
+        }
+
+        std::string const &persistence_file_path() const override {
+            return persistence_file_path_;
+        }
+
         str_map_t<valbox> const *global_constants_dictionary() const override {
             return &global_constants_dictionary_;
         }
@@ -2198,6 +2237,8 @@ namespace teal {
     private:
         console con_{this};
 
+        std::string persistence_file_path_{};
+
         std::atomic<std::int64_t> failure_{0};
         mutable shared_mutex failure_mtp_{};
         std::string failure_description_{};
@@ -2280,13 +2321,13 @@ namespace teal {
                     return exctx->return_result();
                 }
 
-                return valbox{valbox_no_initialize::dont_do_it};
+                return valbox{};
             }
         };
         int64_t exit_status_{};
         std::size_t programmatic_termination_enabled_{1};
 
-        valbox find_func(std::string const &name) const {
+        valbox find_func(std::string const &name) const override {
             valbox fn{};
             if((user_functions_search())(name)) {
                 fn = valbox{user_function_selector(), name, true};
@@ -2301,6 +2342,7 @@ namespace teal {
         }
 
         math_ext math_ext_{};
+        persistence_ext persistence_ext_{};
         pid_ext pid_ext_{};
         time_ext time_ext_{};
         crypto_ext crypt_{};
@@ -2399,7 +2441,7 @@ namespace teal {
                             auto nme{resp["name"].as_string()};
                             auto it{extern_cells_.find(nme)};
                             if(it != extern_cells_.end()) {
-                                valbox desin{ valbox_no_initialize::dont_do_it};
+                                valbox desin{ };
                                 desin.deserialize(resp["result"], this);
                                 it->second->set_value(desin);
                             }

@@ -491,7 +491,7 @@ namespace teal {
                 } else if((*stack.back().ast)["subtype"].as_string() == "literal") {
                     json const &cnt{(*stack.back().ast)["content"]};
                     if((*stack.back().ast)["literal"].as_string() == "flt") {
-                        stack.back().res = std::make_shared<primary_expression>(cnt.as_double());
+                        stack.back().res = std::make_shared<immediate_val_expression>(cnt.as_double());
                         stack.back().res->set_loc(
                             (*stack.back().ast)["loc"]["line"].try_as_number(),
                             (*stack.back().ast)["loc"]["col"].try_as_number()
@@ -499,7 +499,7 @@ namespace teal {
                         stack_res = std::move(stack.back());
                         stack.pop_back();
                     } else if(hobi.find((*stack.back().ast)["literal"].as_string()) != hobi.end()) {
-                        stack.back().res = std::make_shared<primary_expression>(cnt.as_number());
+                        stack.back().res = std::make_shared<immediate_val_expression>(cnt.as_number());
                         stack.back().res->set_loc(
                             (*stack.back().ast)["loc"]["line"].try_as_number(),
                             (*stack.back().ast)["loc"]["col"].try_as_number()
@@ -507,7 +507,7 @@ namespace teal {
                         stack_res = std::move(stack.back());
                         stack.pop_back();
                     } else if((*stack.back().ast)["literal"].as_string() == "bool") {
-                        stack.back().res = std::make_shared<primary_expression>(cnt.as_boolean());
+                        stack.back().res = std::make_shared<immediate_val_expression>(cnt.as_boolean());
                         stack.back().res->set_loc(
                             (*stack.back().ast)["loc"]["line"].try_as_number(),
                             (*stack.back().ast)["loc"]["col"].try_as_number()
@@ -515,8 +515,8 @@ namespace teal {
                         stack_res = std::move(stack.back());
                         stack.pop_back();
                     } else if((*stack.back().ast)["literal"].as_string() == "undefined") {
-                        stack.back().res = std::make_shared<primary_expression>(
-                            valbox{valbox_no_initialize::dont_do_it}
+                        stack.back().res = std::make_shared<immediate_val_expression>(
+                            valbox{}
                         );
                         stack.back().res->set_loc(
                             (*stack.back().ast)["loc"]["line"].try_as_number(),
@@ -525,7 +525,7 @@ namespace teal {
                         stack_res = std::move(stack.back());
                         stack.pop_back();
                     } else if((*stack.back().ast)["literal"].as_string() == "str") {
-                        stack.back().res = std::make_shared<primary_expression>(cnt.as_string());
+                        stack.back().res = std::make_shared<immediate_val_expression>(cnt.as_string());
                         stack.back().res->set_loc(
                             (*stack.back().ast)["loc"]["line"].try_as_number(),
                             (*stack.back().ast)["loc"]["col"].try_as_number()
@@ -547,9 +547,9 @@ namespace teal {
                         std::wstring chr_str{teal::str_util::from_utf8(cnt.as_string())};
                         if(chr_str.size() == 1) {
                             if(chr_str[0] < 256) {
-                                stack.back().res = std::make_shared<primary_expression>((char)chr_str[0]);
+                                stack.back().res = std::make_shared<immediate_val_expression>((char)chr_str[0]);
                             } else {
-                                stack.back().res = std::make_shared<primary_expression>(chr_str[0]);
+                                stack.back().res = std::make_shared<immediate_val_expression>(chr_str[0]);
                             }
                         } else if(chr_str.size() > 1) {
                             uint32_t c{};
@@ -559,7 +559,7 @@ namespace teal {
                                 c |= cc << (i * 8);
                                 --pos;
                             }
-                            stack.back().res = std::make_shared<primary_expression>((wchar_t)c);
+                            stack.back().res = std::make_shared<immediate_val_expression>((wchar_t)c);
                         } else {
                             throw compilation_error{
                                 (*stack.back().ast)["loc"]["line"].try_as_number(),
