@@ -704,12 +704,6 @@ namespace teal {
         {
         }
 
-        void reset_primary() override {
-            cond_->reset_primary();
-            on_true_->reset_primary();
-            on_false_->reset_primary();
-        }
-
         valbox eval(execution_context *ctx, eval_caller_type, valbox *) override {
             if(cond_->eval(ctx, eval_caller_type::no_matter, nullptr).cast_to_bool()) {
                 return on_true_->eval(ctx, eval_caller_type::no_matter, nullptr);
@@ -1315,6 +1309,9 @@ namespace teal {
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     if(l.is_immutable_placement()) {
+                        if(l.is_literal_placement()) {
+                            throw runtime_error{this_->line_, this_->col_, "invalid assignment: lvalue required"};
+                        }
                         throw runtime_error{this_->line_, this_->col_, "invalid assignment: immutable entity"};
                     }
                     this_->lval_->reset_primary();
@@ -1347,6 +1344,9 @@ namespace teal {
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     if(l.is_immutable_placement()) {
+                        if(l.is_literal_placement()) {
+                            throw runtime_error{this_->line_, this_->col_, "invalid assignment: lvalue required"};
+                        }
                         throw runtime_error{this_->line_, this_->col_, "invalid assignment: immutable entity"};
                     }
                     this_->lval_->reset_primary();
@@ -1395,6 +1395,9 @@ namespace teal {
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     if(l.is_immutable_placement()) {
+                        if(l.is_literal_placement()) {
+                            throw runtime_error{this_->line_, this_->col_, "invalid assignment: lvalue required"};
+                        }
                         throw runtime_error{this_->line_, this_->col_, "invalid assignment: immutable entity"};
                     }
                     this_->lval_->reset_primary();
@@ -1443,6 +1446,9 @@ namespace teal {
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     if(l.is_immutable_placement()) {
+                        if(l.is_literal_placement()) {
+                            throw runtime_error{this_->line_, this_->col_, "invalid assignment: lvalue required"};
+                        }
                         throw runtime_error{this_->line_, this_->col_, "invalid assignment: immutable entity"};
                     }
                     this_->lval_->reset_primary();
@@ -1495,6 +1501,9 @@ namespace teal {
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     if(l.is_immutable_placement()) {
+                        if(l.is_literal_placement()) {
+                            throw runtime_error{this_->line_, this_->col_, "invalid assignment: lvalue required"};
+                        }
                         throw runtime_error{this_->line_, this_->col_, "invalid assignment: immutable entity"};
                     }
                     this_->lval_->reset_primary();
@@ -1541,6 +1550,9 @@ namespace teal {
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     if(l.is_immutable_placement()) {
+                        if(l.is_literal_placement()) {
+                            throw runtime_error{this_->line_, this_->col_, "invalid assignment: lvalue required"};
+                        }
                         throw runtime_error{this_->line_, this_->col_, "invalid assignment: immutable entity"};
                     }
                     this_->lval_->reset_primary();
@@ -1588,6 +1600,9 @@ namespace teal {
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     if(l.is_immutable_placement()) {
+                        if(l.is_literal_placement()) {
+                            throw runtime_error{this_->line_, this_->col_, "invalid assignment: lvalue required"};
+                        }
                         throw runtime_error{this_->line_, this_->col_, "invalid assignment: immutable entity"};
                     }
                     this_->lval_->reset_primary();
@@ -1639,6 +1654,9 @@ namespace teal {
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     if(l.is_immutable_placement()) {
+                        if(l.is_literal_placement()) {
+                            throw runtime_error{this_->line_, this_->col_, "invalid assignment: lvalue required"};
+                        }
                         throw runtime_error{this_->line_, this_->col_, "invalid assignment: immutable entity"};
                     }
                     this_->lval_->reset_primary();
@@ -1687,6 +1705,9 @@ namespace teal {
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     if(l.is_immutable_placement()) {
+                        if(l.is_literal_placement()) {
+                            throw runtime_error{this_->line_, this_->col_, "invalid assignment: lvalue required"};
+                        }
                         throw runtime_error{this_->line_, this_->col_, "invalid assignment: immutable entity"};
                     }
                     this_->lval_->reset_primary();
@@ -1737,6 +1758,9 @@ namespace teal {
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     if(l.is_immutable_placement()) {
+                        if(l.is_literal_placement()) {
+                            throw runtime_error{this_->line_, this_->col_, "invalid assignment: lvalue required"};
+                        }
                         throw runtime_error{this_->line_, this_->col_, "invalid assignment: immutable entity"};
                     }
                     this_->lval_->reset_primary();
@@ -1785,6 +1809,9 @@ namespace teal {
                     shut_on_destroy sod{[&]() { ctx->set_create_if_not_exists(old); }};
                     valbox l{this_->lval_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                     if(l.is_immutable_placement()) {
+                        if(l.is_literal_placement()) {
+                            throw runtime_error{this_->line_, this_->col_, "invalid assignment: lvalue required"};
+                        }
                         throw runtime_error{this_->line_, this_->col_, "invalid assignment: immutable entity"};
                     }
                     this_->lval_->reset_primary();
@@ -2276,6 +2303,9 @@ namespace teal {
                                 } else {
                                     if(ctx->create_if_not_exists()) {
                                         if(l.is_immutable_placement()) {
+                                            if(l.is_literal_placement()) {
+                                                throw runtime_error{this_->line_, this_->col_, "lvalue required"};
+                                            }
                                             throw runtime_error{this_->line_, this_->col_, "cannot modify immutable entity"};
                                         }
                                         res = l.operator_brackets(this_->rval_->symbol(), !ctx->create_if_not_exists(), ctx->rt_interface()->except_on_out_of_range_or_field());

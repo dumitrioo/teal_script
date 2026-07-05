@@ -15,6 +15,7 @@ endif()
 include_directories(${CMAKE_SOURCE_DIR}/src)
 
 #add_definitions(-DTEAL_USE_CUSTOM_SHARED_MUTEX -DRW_MUTEX_PRIORITIES -DRW_MUTEX_UPGRADEABLE)
+#add_definitions(-DTEAL_USE_CUSTOM_ANY)
 #add_definitions(-DUSE_CUSTOM_MEMORY_ALLOCATION)
 #add_definitions(-DSTR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS)
 

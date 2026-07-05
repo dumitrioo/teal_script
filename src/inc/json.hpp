@@ -8,11 +8,19 @@
 #include "serialization.hpp"
 #include "str_util.hpp"
 #include "base64.hpp"
+#if defined(TEAL_JSON_DEBUGGING) || defined(TEAL_USE_CUSTOM_ANY)
+#include "any.hpp"
+#endif
 
 namespace teal {
 
+#if defined(TEAL_JSON_DEBUGGING) || defined(TEAL_USE_CUSTOM_ANY)
+    using teal::any;
+    using teal::any_cast;
+#else
     using std::any;
     using std::any_cast;
+#endif
 
     DEFINE_RUNTIME_ERROR_CLASS(json_error)
 

@@ -7,10 +7,12 @@ TEMPLATE = app
 
 # DEFINES += TEAL_SINGLE_THREADED
 # DEFINES += TEAL_DEBUGGING
+# DEFINES += TEAL_JSON_DEBUGGING
 
 # DEFINES += STR_UTIL_ENABLE_CUSTOM_UNICODE_OPERATIONS
-
 # DEFINES += USE_CUSTOM_MEMORY_ALLOCATION
+
+# DEFINES += TEAL_USE_CUSTOM_ANY
 
 # DEFINES += TEAL_USE_CUSTOM_SHARED_MUTEX
 # DEFINES += RW_MUTEX_PRIORITIES
@@ -27,6 +29,7 @@ HEADERS += \
     ../../src/ext/containers_ext.hpp \
     ../../src/ext/eigen_ext.hpp \
     ../../src/ext/socket_ext.hpp \
+    ../../src/inc/any.hpp \
     ../../src/inc/base16.hpp \
     ../../src/inc/base64.hpp \
     ../../src/inc/base85.hpp \

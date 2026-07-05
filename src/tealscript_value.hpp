@@ -7,10 +7,21 @@
 #include "inc/math/vector4.hpp"
 #include "inc/math/matrix4.hpp"
 #include "inc/math/math_util.hpp"
+#if defined(TEAL_DEBUGGING) || defined(TEAL_USE_CUSTOM_ANY)
+#include "inc/any.hpp"
+#endif
 
 #include "tealscript_util.hpp"
 
 namespace teal {
+
+#if defined(TEAL_DEBUGGING) || defined(TEAL_USE_CUSTOM_ANY)
+    using teal::any;
+    using teal::any_cast;
+#else
+    using std::any;
+    using std::any_cast;
+#endif
 
     class valbox {
     public:
@@ -161,10 +172,10 @@ namespace teal {
             object_t,
             std::string,
             std::wstring,
-            std::any
+            any
         >;
 
-        struct alignas(64) box_data {
+        struct box_data {
             box_data() = default;
             box_data(
                 value_t const &v, type t, type pointed_type = type::UNDEFINED,
@@ -274,8 +285,8 @@ namespace teal {
         valbox(std::int64_t *v): box_{std::make_shared<box_data>((void *)v, type::POINTER, type::S64)} {}
         valbox(std::uint64_t v): box_{std::make_shared<box_data>(v, type::U64)} {}
         valbox(std::uint64_t *v): box_{std::make_shared<box_data>((void *)v, type::POINTER, type::U64)} {}
-        valbox(vec4_t const &v): box_{std::make_shared<box_data>(std::any{v}, type::VEC4)} {}
-        valbox(mat4_t const &v): box_{std::make_shared<box_data>(std::any{v}, type::MAT4)} {}
+        valbox(vec4_t const &v): box_{std::make_shared<box_data>(any{v}, type::VEC4)} {}
+        valbox(mat4_t const &v): box_{std::make_shared<box_data>(any{v}, type::MAT4)} {}
 #ifndef PLATFORM_WINDOWS
         valbox(long long v): box_{std::make_shared<box_data>((std::int64_t)v, type::S64)} {}
         valbox(long long *v): box_{std::make_shared<box_data>((void *)v, type::POINTER, type::S64)} {}
@@ -288,7 +299,7 @@ namespace teal {
         valbox(valbox *v): box_{std::make_shared<box_data>((void *)v, type::POINTER, type::VALBOX)} {}
         template<typename T>
         valbox(T &&v, std::string const &classname):
-            box_{std::make_shared<box_data>(std::any{std::forward<T>(v)}, type::CLASS, type::UNDEFINED, classname)}
+            box_{std::make_shared<box_data>(any{std::forward<T>(v)}, type::CLASS, type::UNDEFINED, classname)}
         {
         }
         valbox(std::function<valbox(std::vector<valbox> &)> const &v, std::string const &func_name, bool user_func):
@@ -673,14 +684,14 @@ namespace teal {
             if(!box_) {
                 throw std::runtime_error{"not an object"};
             }
-            return std::any_cast<T &>(std::get<std::any>(deref().box_->value_));
+            return any_cast<T &>(std::get<any>(deref().box_->value_));
         }
         template<typename T>
         T const &as_class() const {
             if(!box_) {
                 throw std::runtime_error{"not an object"};
             }
-            return std::any_cast<T &>(std::get<std::any>(deref().box_->value_));
+            return any_cast<T &>(std::get<any>(deref().box_->value_));
         }
         bool is_class() const { return val_or_pointed_type() == type::CLASS; }
         std::string class_name() const { return box_ ? deref().box_->class_ : std::string{}; }
@@ -1005,16 +1016,16 @@ namespace teal {
             if(!dr.box_ || !(dr.box_->type_ == type::VEC4 || dr.box_->pointed_type_ == type::VEC4))
                 throw std::runtime_error{"not a vec4"};
             return dr.box_->pointed_type_ == type::VEC4 ?
-                        std::any_cast<vec4_t &>(dr.deref_ptr<std::any>()) :
-                        std::any_cast<vec4_t &>(std::get<std::any>(dr.box_->value_));
+                        any_cast<vec4_t &>(dr.deref_ptr<any>()) :
+                        any_cast<vec4_t &>(std::get<any>(dr.box_->value_));
         }
         vec4_t const &as_vec4() const {
             valbox const &dr{deref()};
             if(!dr.box_ || !(dr.box_->type_ == type::VEC4 || dr.box_->pointed_type_ == type::VEC4))
                 throw std::runtime_error{"not a vec4"};
             return dr.box_->pointed_type_ == type::VEC4 ?
-                        std::any_cast<vec4_t const &>(dr.deref_ptr<std::any>()) :
-                        std::any_cast<vec4_t const &>(std::get<std::any>(dr.box_->value_));
+                        any_cast<vec4_t const &>(dr.deref_ptr<any>()) :
+                        any_cast<vec4_t const &>(std::get<any>(dr.box_->value_));
         }
 
         bool is_mat4() const { return val_or_pointed_type() == type::MAT4; }
@@ -1023,16 +1034,16 @@ namespace teal {
             if(!dr.box_ || !(dr.box_->type_ == type::MAT4 || dr.box_->pointed_type_ == type::MAT4))
                 throw std::runtime_error{"not a mat4"};
             return dr.box_->pointed_type_ == type::MAT4 ?
-                        std::any_cast<mat4_t &>(dr.deref_ptr<std::any>()) :
-                        std::any_cast<mat4_t &>(std::get<std::any>(dr.box_->value_));
+                        any_cast<mat4_t &>(dr.deref_ptr<any>()) :
+                        any_cast<mat4_t &>(std::get<any>(dr.box_->value_));
         }
         mat4_t const &as_mat4() const {
             valbox const &dr{deref()};
             if(!dr.box_ || !(dr.box_->type_ == type::MAT4 || dr.box_->pointed_type_ == type::MAT4))
                 throw std::runtime_error{"not a mat4"};
             return dr.box_->pointed_type_ == type::MAT4 ?
-                        std::any_cast<mat4_t const &>(dr.deref_ptr<std::any>()) :
-                        std::any_cast<mat4_t const &>(std::get<std::any>(dr.box_->value_));
+                        any_cast<mat4_t const &>(dr.deref_ptr<any>()) :
+                        any_cast<mat4_t const &>(std::get<any>(dr.box_->value_));
         }
 
         bool is_array() const { return val_or_pointed_type() == type::ARRAY; }
