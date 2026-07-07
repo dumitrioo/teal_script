@@ -147,6 +147,10 @@ namespace teal {
             cell_base *cell_ptr{nullptr};
         };
 
+        execution_context *exctx() {
+            return &exctx_;
+        }
+
         void set_type_info(
             std::int64_t num_args,
             std::vector<std::string> const &arg_names
@@ -230,6 +234,7 @@ namespace teal {
         }
 
     private:
+        execution_context exctx_{};
         statement_ptr body_ptr_{};
         std::string type_name_{};
         str_map_t<valbox> cell_self_values_{};

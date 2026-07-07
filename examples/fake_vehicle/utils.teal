@@ -84,9 +84,7 @@ function arr_avg(arr) {
     if(arr.is_array() && arr.size() > 0) {
         s = 0.0;
         for(i = 0; i < arr.size(); ++i) {
-            if(res == undefined || res < arr[i]) {
-                s += (f64)arr[i];
-            }
+            s += (f64)arr[i];
         }
         res = s / arr.size();
     }

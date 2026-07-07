@@ -7,7 +7,7 @@
 #include "inc/math/vector4.hpp"
 #include "inc/math/matrix4.hpp"
 #include "inc/math/math_util.hpp"
-#if defined(TEAL_DEBUGGING) || defined(TEAL_USE_CUSTOM_ANY)
+#if defined(TEAL_USE_CUSTOM_ANY)
 #include "inc/any.hpp"
 #endif
 
@@ -15,7 +15,7 @@
 
 namespace teal {
 
-#if defined(TEAL_DEBUGGING) || defined(TEAL_USE_CUSTOM_ANY)
+#if defined(TEAL_USE_CUSTOM_ANY)
     using teal::any;
     using teal::any_cast;
 #else

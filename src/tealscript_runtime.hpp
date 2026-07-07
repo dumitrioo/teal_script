@@ -41,6 +41,7 @@
 #include "ext/pid_ext.hpp"
 #include "ext/persistence_ext.hpp"
 #include "ext/socket_ext.hpp"
+#include "ext/strings_ext.hpp"
 
 #ifdef PLATFORM_WINDOWS
 #define	EPERM		 1	/* Operation not permitted */
@@ -84,8 +85,6 @@ namespace teal {
     class runtime: public runtime_interface {
     public:
         runtime() {
-            exctx_.set_runtime_interface(this);
-
             add_function("version_major", TEALFUN(/*args*/) { return version_major_; });
             add_function("version_minor", TEALFUN(/*args*/) { return version_minor_; });
             add_function("version_patch", TEALFUN(/*args*/) { return version_patch_; });
@@ -177,6 +176,7 @@ namespace teal {
             eigen_ext_.register_runtime(this);
 #endif
             pid_ext_.register_runtime(this);
+            strings_ext_.register_runtime(this);
             math_ext_.register_runtime(this);
             time_ext_.register_runtime(this);
             crypt_.register_runtime(this);
@@ -678,21 +678,6 @@ namespace teal {
                 return args[0].clone();
             });
 
-            add_function("replace_substr", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 2, 3)
-                if(args.size() == 2) {
-                    return str_util::to_utf8(str_util::replace_substring<std::wstring>(
-                        args[0].cast_to_wstring(), args[1].cast_to_wstring(), std::wstring{}
-                    ));
-                }
-                if(args.size() == 3) {
-                    return str_util::to_utf8(str_util::replace_substring<std::wstring>(
-                        args[0].cast_to_wstring(), args[1].cast_to_wstring(), args[2].cast_to_wstring()
-                    ));
-                }
-                return std::string{};
-            });
-
             add_function("reserve", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 if(args[0].is_string()) {
@@ -708,25 +693,6 @@ namespace teal {
 #endif
                 }
                 return false;
-            });
-
-            add_function("substr", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 3)
-                if(args.size() == 1) {
-                    return args[0].cast_to_string();
-                } else if(args.size() == 2) {
-                    std::string s{args[0].cast_to_string()};
-                    std::size_t from{args[1].cast_to_u64()};
-                    return s.substr(from);
-                } else if(args.size() == 3) {
-                    std::string s{args[0].cast_to_string()};
-                    std::size_t from{args[1].cast_to_u64()};
-                    std::size_t num{args[2].cast_to_u64()};
-                    return s.substr(from, num);
-                } else if(args.size() > 3) {
-                    return args[0].cast_to_string();
-                }
-                return std::string{};
             });
 
             add_function("slice", TEALFUN(args) {
@@ -769,65 +735,35 @@ namespace teal {
                 return valbox{};
             });
 
-            add_function("str_tok", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
-                valbox res{};
-                res.become_array();
+            add_function("py_slice", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 4)
                 if(args[0].is_string()) {
-                    std::vector<std::string> sv{str_util::str_tok(args[0].cast_to_string(), args[1].cast_to_string())};
-                    for(auto &&s: sv) {
-                        res.as_array().push_back(s);
+                    if(args.size() == 2) {
+                        return strings_ext::py_slice(args[0].as_string(), args[1].cast_to_s64());
+                    } else if(args.size() == 3) {
+                        return strings_ext::py_slice(args[0].as_string(), args[1].cast_to_s64(), args[2].cast_to_s64());
+                    } else if(args.size() == 4) {
+                        return strings_ext::py_slice(args[0].as_string(), args[1].cast_to_s64(), args[2].cast_to_s64(), args[3].cast_to_s64());
                     }
                 } else if(args[0].is_wstring()) {
-                    std::vector<std::wstring> sv{str_util::str_tok(args[0].cast_to_wstring(), args[1].cast_to_wstring())};
-                    for(auto &&s: sv) {
-                        res.as_array().push_back(s);
+                    if(args.size() == 2) {
+                        return strings_ext::py_slice(args[0].as_wstring(), args[1].cast_to_s64());
+                    } else if(args.size() == 3) {
+                        return strings_ext::py_slice(args[0].as_wstring(), args[1].cast_to_s64(), args[2].cast_to_s64());
+                    } else if(args.size() == 4) {
+                        return strings_ext::py_slice(args[0].as_wstring(), args[1].cast_to_s64(), args[2].cast_to_s64(), args[3].cast_to_s64());
+                    }
+                } else if(args[0].is_array()) {
+                    if(args.size() == 2) {
+                        return strings_ext::py_slice(args[0].as_array(), args[1].cast_to_s64());
+                    } else if(args.size() == 3) {
+                        return strings_ext::py_slice(args[0].as_array(), args[1].cast_to_s64(), args[2].cast_to_s64());
+                    } else if(args.size() == 4) {
+                        return strings_ext::py_slice(args[0].as_array(), args[1].cast_to_s64(), args[2].cast_to_s64(), args[3].cast_to_s64());
                     }
                 }
-                return res;
+                return args[0];
             });
-
-            add_function("ltrim", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                if(args[0].is_string()) {
-                    return str_util::ltrim<std::string>(args[0].as_string());
-                } else if(args[0].is_wstring()) {
-                    return str_util::ltrim<std::wstring>(args[0].as_wstring());
-                } else {
-                    return args[0];
-                }
-            });
-
-            add_function("rtrim", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                if(args[0].is_string()) {
-                    return str_util::rtrim<std::string>(args[0].as_string());
-                } else if(args[0].is_wstring()) {
-                    return str_util::rtrim<std::wstring>(args[0].as_wstring());
-                } else {
-                    return args[0];
-                }
-            });
-            add_function("trim", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                if(args[0].is_string()) {
-                    return str_util::trim<std::string>(args[0].as_string());
-                } else if(args[0].is_wstring()) {
-                    return str_util::trim<std::wstring>(args[0].as_wstring());
-                } else {
-                    return args[0];
-                }
-            });
-
-            add_function("isspace", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::isspace(args[0].cast_to_int()); });
-            add_function("isalpha", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::isalpha(args[0].cast_to_int()); });
-            add_function("isdigit", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::isdigit(args[0].cast_to_int()); });
-            add_function("isalnum", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::isalnum(args[0].cast_to_int()); });
-            add_function("ispunct", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::ispunct(args[0].cast_to_int()); });
-            add_function("iscntrl", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::iscntrl(args[0].cast_to_int()); });
-            add_function("ishexdigit", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::ishexdigit(args[0].cast_to_int()); });
-            add_function("isoctdigit", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::isoctdigit(args[0].cast_to_int()); });
-            add_function("isbindigit", TEALFUN(args) { TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1) return str_util::fltr<std::wstring>::isbindigit(args[0].cast_to_int()); });
 
             add_function("subarray", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 3)
@@ -843,71 +779,6 @@ namespace teal {
                 throw std::runtime_error{"the first argument must be array"};
             });
 
-            add_function("hexdump", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 4)
-                if(args.size() == 1) {
-                    return str_util::hexdump(args[0].cast_to_byte_array());
-                } else if(args.size() == 2) {
-                    return str_util::hexdump(
-                        args[0].cast_to_byte_array(),
-                        args[1].cast_to_u64()
-                    );
-                } else if(args.size() == 3) {
-                    return str_util::hexdump(
-                        args[0].cast_to_byte_array(),
-                        args[1].cast_to_u64(),
-                        args[2].cast_to_string()
-                    );
-                } else if(args.size() == 4) {
-                    return str_util::hexdump(
-                        args[0].cast_to_byte_array(),
-                        args[1].cast_to_u64(),
-                        args[2].cast_to_string(),
-                        args[3].cast_to_bool()
-                     );
-                }
-                return std::string{};
-            });
-
-            add_function("data_to_base85_str", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 1)
-                auto src{args[0].cast_to_byte_array()};
-                return data_to_base85_str(src);
-            });
-
-            add_function("base85_str_to_data", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 1)
-                auto src{args[0].cast_to_string()};
-                auto d{base85_str_to_data(src)};
-                return std::string{d.begin(), d.end()};
-            });
-
-            add_function("data_to_base64_str", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 1)
-                auto src{args[0].cast_to_byte_array()};
-                return data_to_base64_str(src);
-            });
-
-            add_function("base64_str_to_data", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 1)
-                auto src{args[0].cast_to_string()};
-                auto d{base64_str_to_data(src)};
-                return std::string{d.begin(), d.end()};
-            });
-
-            add_function("data_to_hex_str", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 1)
-                auto src{args[0].cast_to_byte_array()};
-                return data_to_hex_str(src);
-            });
-
-            add_function("hex_str_to_data", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 1)
-                auto src{args[0].cast_to_string()};
-                auto d{hex_str_to_data(src)};
-                return std::string{d.begin(), d.end()};
-            });
-
             add_function("getset", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 2)
                 valbox res{};
@@ -915,138 +786,6 @@ namespace teal {
                 args[0].assign(args[1]);
                 return res;
             });
-
-
-            add_function("atoi", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 3)
-                if(args.size() == 1) {
-                    return str_util::atoi(args[0].cast_to_string());
-                } else if(args.size() == 2) {
-                    return str_util::atoi(args[0].cast_to_string(), args[1].cast_to_u64());
-                } else if(args.size() == 3) {
-                    return str_util::atoi(args[0].cast_to_string(), args[1].cast_to_u64(), args[2].cast_to_bool());
-                }
-                return std::int64_t{0};
-            });
-
-            add_function("atoui", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 1, 2)
-                if(args.size() == 1) {
-                    return str_util::atoui(args[0].cast_to_string());
-                } else if(args.size() == 2) {
-                    return str_util::atoui(args[0].cast_to_string(), args[1].cast_to_u64());
-                }
-                return std::uint64_t{0};
-            });
-
-            add_function("atof", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                return str_util::atof(args[0].cast_to_string());
-            });
-
-            add_function("itoa", TEALFUN(args) {
-                if(args.size() > 0) {
-                    if(args.size() > 1) {
-                        if(args.size() > 2) {
-                            if(args.size() > 3) {
-                                return str_util::itoa<std::string>(args[0].cast_to_s64(), args[1].cast_to_s64(), args[2].cast_to_s64(), args[3].cast_to_bool());
-                            } else {
-                                return str_util::itoa<std::string>(args[0].cast_to_s64(), args[1].cast_to_s64(), args[2].cast_to_s64());
-                            }
-                        } else {
-                            return str_util::itoa<std::string>(args[0].cast_to_s64(), args[1].cast_to_s64());
-                        }
-                    } else {
-                        return str_util::itoa<std::string>(args[0].cast_to_s64());
-                    }
-                }
-                return std::string{};
-            });
-
-            add_function("utoa", TEALFUN(args) {
-                if(args.size() > 0) {
-                    if(args.size() > 1) {
-                        if(args.size() > 2) {
-                            if(args.size() > 3) {
-                                return str_util::utoa<std::string>(args[0].cast_to_u64(), args[1].cast_to_s64(), args[2].cast_to_s64(), args[3].cast_to_bool());
-                            } else {
-                                return str_util::utoa<std::string>(args[0].cast_to_u64(), args[1].cast_to_s64(), args[2].cast_to_s64());
-                            }
-                        } else {
-                            return str_util::utoa<std::string>(args[0].cast_to_u64(), args[1].cast_to_s64());
-                        }
-                    } else {
-                        return str_util::utoa<std::string>(args[0].cast_to_u64());
-                    }
-                }
-                return std::string{};
-            });
-
-            add_function("ftoa", TEALFUN(args) {
-                if(args.size() > 0) {
-                    if(args.size() > 1) {
-                        if(args[0].is_long_double()) {
-                            return str_util::ftoa(args[0].as_long_double(), args[1].cast_to_size_t());
-                        } else if(args[0].is_double()) {
-                            return str_util::ftoa(args[0].as_double(), args[1].cast_to_size_t());
-                        } else if(args[0].is_float()) {
-                            return str_util::ftoa(args[0].as_float(), args[1].cast_to_size_t());
-                        } else if(args[0].is_numeric()) {
-                            return str_util::ftoa(args[0].cast_to_double(), args[1].cast_to_size_t());
-                        }
-                    } else {
-                        if(args[0].is_long_double()) {
-                            return str_util::ftoa(args[0].as_long_double());
-                        } else if(args[0].is_double()) {
-                            return str_util::ftoa(args[0].as_double());
-                        } else if(args[0].is_float()) {
-                            return str_util::ftoa(args[0].as_float());
-                        } else if(args[0].is_numeric()) {
-                            return str_util::ftoa(args[0].cast_to_double());
-                        }
-                    }
-                }
-                return std::string{"0.0"};
-            });
-
-            add_function("toupper", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                if(args[0].is_char()) {
-                    return str_util::fltr<std::string>::toupper(args[0].as_char());
-                } else {
-                    return str_util::fltr<std::wstring>::toupper(args[0].cast_to_u64());
-                }
-            });
-            add_function("tolower", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                if(args[0].is_char()) {
-                    return str_util::fltr<std::string>::tolower(args[0].as_char());
-                } else {
-                    return str_util::fltr<std::wstring>::tolower(args[0].cast_to_u64());
-                }
-            });
-
-            add_function("strtoupper", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                if(args[0].is_string()) {
-                    return str_util::fltr<std::string>::strtoupper(args[0].as_string());
-                } else if(args[0].is_wstring()) {
-                    return str_util::fltr<std::wstring>::strtoupper(args[0].as_wstring());
-                } else {
-                    return str_util::fltr<std::string>::strtoupper(args[0].cast_to_string());
-                }
-            });
-            add_function("strtolower", TEALFUN(args) {
-                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1)
-                if(args[0].is_string()) {
-                    return str_util::fltr<std::string>::strtolower(args[0].as_string());
-                } else if(args[0].is_wstring()) {
-                    return str_util::fltr<std::wstring>::strtolower(args[0].as_wstring());
-                } else {
-                    return str_util::fltr<std::string>::strtolower(args[0].cast_to_string());
-                }
-            });
-
 
             add_function("get_bit_field", TEALFUN(args) {
                 TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 3)
@@ -1275,6 +1014,34 @@ namespace teal {
                 return args[0];
             });
 
+            add_function("sort_r", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_EQ(args, 1);
+                valbox &arg0{args[0].deref()};
+                if(arg0.is_array()) {
+                    valbox::array_t &arr{arg0.as_array()};
+                    std::sort(arr.begin(), arr.end(),
+                        [](valbox const &l, valbox const &r) {
+                            return r < l;
+                        }
+                    );
+                } else if(arg0.is_string()) {
+                    std::string &s{arg0.as_string()};
+                    std::sort(s.begin(), s.end(),
+                        [](char l, char r) {
+                            return r < l;
+                        }
+                    );
+                } else if(arg0.is_wstring()) {
+                    std::wstring &ws{arg0.as_wstring()};
+                    std::sort(ws.begin(), ws.end(),
+                        [](char l, char r) {
+                            return r < l;
+                        }
+                    );
+                }
+                return args[0];
+            });
+
             check_func_kw_ = true;
         }
 
@@ -1313,6 +1080,7 @@ namespace teal {
             randlib_.unregister_runtime();
             time_ext_.unregister_runtime();
             math_ext_.unregister_runtime();
+            strings_ext_.unregister_runtime();
             pid_ext_.unregister_runtime();
             persistence_ext_.unregister_runtime();
             array_buffer_ext_.unregister_runtime();
@@ -1544,28 +1312,12 @@ namespace teal {
                     throw std::runtime_error{"set single thread mode first"};
                 }
             }
-            exctx_.clear_all_jumps_request();
             for(auto &&w: worker_cells_) {
                 std::shared_ptr<worker_cell_instance> &curr_cell{w.second};
-                std::string const &curr_cell_type_name{curr_cell->type_name()};
 
-                if(!curr_cell->type_info_transferred()) {
-                    auto type_it{worker_cells_templates_.find(curr_cell_type_name)};
-                    if(type_it != worker_cells_templates_.end()) {
-                        if(curr_cell->actual_args_info().size() != static_cast<size_t>(type_it->second.num_args())) {
-                            throw runtime_error{curr_cell->line(), curr_cell->col(),
-                                std::string{"error instantiating node \""} + curr_cell->inst_name() + "\" of type \"" + curr_cell->type_name() +
-                                    "\": number of actual parameters mismatch"
-                            };
-                        }
-                        curr_cell->set_type_info(type_it->second.num_args(), type_it->second.arg_names());
-                    }
-                }
-
-                exctx_.set_self_fields(curr_cell->cell_self_values_ptr());
-
-                exctx_.clear_stack_soft();
-                exctx_.new_stack_frame();
+                execution_context *exctx{curr_cell->exctx()};
+                exctx->new_stack_frame();
+                teal::shut_on_destroy del_frm{[exctx]() { exctx->del_stack_frame(); }};
 
                 auto &&args_info{curr_cell->actual_args_info()};
                 auto ainfsiz{args_info.size()};
@@ -1574,7 +1326,7 @@ namespace teal {
                     auto &&ai{args_info[curr_arg_number]};
                     if(!ai.is_cell) {
                         if(ai.expr_val.is_undefined()) {
-                            ai.expr_val = ai.expr->eval(&exctx_, eval_caller_type::no_matter, nullptr);
+                            ai.expr_val = ai.expr->eval(exctx, eval_caller_type::no_matter, nullptr);
                             ai.expr_val.set_global_placement();
                         }
                         valbox vb{ai.expr_val};
@@ -1582,7 +1334,7 @@ namespace teal {
                             have_undefineds = true;
                             break;
                         } else {
-                            exctx_.set_local_value(ai.argname, vb);
+                            exctx->set_local_value(ai.argname, vb);
                         }
                     } else {
                         if(ai.cell_ptr == nullptr) {
@@ -1612,38 +1364,28 @@ namespace teal {
                             have_undefineds = true;
                             break;
                         } else {
-                            exctx_.set_local_value(ai.argname, stack_var);
+                            exctx->set_local_value(ai.argname, stack_var);
                         }
                     }
                 }
 
-                if(!curr_cell->body()) {
-                    auto body_it{worker_bodies_.find(curr_cell_type_name)};
-                    if(body_it == worker_bodies_.end()) {
-                        throw runtime_error{
-                            curr_cell->line(), curr_cell->col(),
-                            std::string{"\""} + curr_cell_type_name +
-                                "\" definition not found for instantiation of \"" +
-                                curr_cell->inst_name() + "\""
-                        };
-                    }
-                    curr_cell->set_body(body_it->second);
-                }
                 if(have_undefineds && !undefined_inputs_enabled()) {
                     continue;
                 }
-                curr_cell->body()->exec(&exctx_);
+                curr_cell->body()->exec(exctx);
+
+                exctx->del_stack_frame();
 
                 if(termination_requested()) {
                     break;
                 }
-                if(exctx_.return_requested()) {
-                    curr_cell->set_value(exctx_.return_result());
+                if(exctx->return_requested()) {
+                    curr_cell->set_value(exctx->return_result());
                     if(!curr_cell->output_name().empty()) {
-                        exctx_.set_output(curr_cell->output_name(), exctx_.return_result());
+                        exctx->set_output(curr_cell->output_name(), exctx->return_result());
                     }
                 }
-                exctx_.clear_all_jumps_request();
+                exctx->clear_all_jumps_request();
             }
         }
 
@@ -1741,6 +1483,37 @@ namespace teal {
             }
             unfail();
             unterminate();
+
+            for(auto &&curr_cell: worker_cells_flat_array_) {
+                curr_cell->exctx()->set_runtime_interface(this);
+                std::string const &curr_cell_type_name{curr_cell->type_name()};
+                if(!curr_cell->type_info_transferred()) {
+                    auto type_it{worker_cells_templates_.find(curr_cell_type_name)};
+                    if(type_it != worker_cells_templates_.end()) {
+                        if(curr_cell->actual_args_info().size() != static_cast<size_t>(type_it->second.num_args())) {
+                            throw runtime_error{curr_cell->line(), curr_cell->col(),
+                                std::string{"error instantiating node \""} + curr_cell->inst_name() + "\" of type \"" + curr_cell->type_name() +
+                                    "\": number of actual parameters mismatch"
+                            };
+                        }
+                        curr_cell->set_type_info(type_it->second.num_args(), type_it->second.arg_names());
+                    }
+                }
+                curr_cell->exctx()->set_self_fields(curr_cell->cell_self_values_ptr());
+                if(!curr_cell->body()) {
+                    auto body_it{worker_bodies_.find(curr_cell_type_name)};
+                    if(body_it == worker_bodies_.end()) {
+                        throw runtime_error{
+                            curr_cell->line(), curr_cell->col(),
+                            std::string{"\""} + curr_cell_type_name +
+                                "\" definition not found for instantiation of \"" +
+                                curr_cell->inst_name() + "\""
+                        };
+                    }
+                    curr_cell->set_body(body_it->second);
+                }
+            }
+
             for(int i{0}; i < thrd_cnt; ++i) {
                 threads_.emplace_back([this]() {
                     bool excepted{false};
@@ -1749,9 +1522,6 @@ namespace teal {
                     try {
 #endif
                         bool sequential_cells_execution_traversal{sequential_cells_execution_traversal_};
-                        std::shared_ptr<execution_context> exctx{std::make_shared<execution_context>()};
-                        execution_context *exctx_ptr{exctx.get()};
-                        exctx_ptr->set_runtime_interface(this);
                         uint64_t wc_indx{};
                         uint64_t const worker_cells_cnt{worker_cells_flat_array_.size()};
                         uint64_t const worker_cells_max_idx{worker_cells_flat_array_.size() - 1};
@@ -1770,25 +1540,10 @@ namespace teal {
                                 shut_on_destroy sod{[&]() { curr_cell->unlock(); }};
                                 cell_executed = true;
                                 have_locked = true;
-                                std::string const &curr_cell_type_name{curr_cell->type_name()};
 
-                                if(!curr_cell->type_info_transferred()) {
-                                    auto type_it{worker_cells_templates_.find(curr_cell_type_name)};
-                                    if(type_it != worker_cells_templates_.end()) {
-                                        if(curr_cell->actual_args_info().size() != static_cast<size_t>(type_it->second.num_args())) {
-                                            throw runtime_error{curr_cell->line(), curr_cell->col(),
-                                                std::string{"error instantiating node \""} + curr_cell->inst_name() + "\" of type \"" + curr_cell->type_name() +
-                                                    "\": number of actual parameters mismatch"
-                                            };
-                                        }
-                                        curr_cell->set_type_info(type_it->second.num_args(), type_it->second.arg_names());
-                                    }
-                                }
-
-                                exctx_ptr->set_self_fields(curr_cell->cell_self_values_ptr());
-
-                                exctx_ptr->clear_stack_soft();
+                                execution_context *exctx_ptr{curr_cell->exctx()};
                                 exctx_ptr->new_stack_frame();
+                                teal::shut_on_destroy del_frm{[exctx_ptr]() { exctx_ptr->del_stack_frame(); }};
 
                                 std::vector<worker_cell_instance::arg_info> &args_info{curr_cell->actual_args_info()};
                                 auto ainfsiz{args_info.size()};
@@ -1840,22 +1595,12 @@ namespace teal {
                                     }
                                 }
 
-                                if(!curr_cell->body()) {
-                                    auto body_it{worker_bodies_.find(curr_cell_type_name)};
-                                    if(body_it == worker_bodies_.end()) {
-                                        throw runtime_error{
-                                            curr_cell->line(), curr_cell->col(),
-                                            std::string{"\""} + curr_cell_type_name +
-                                                "\" definition not found for instantiation of \"" +
-                                                curr_cell->inst_name() + "\""
-                                        };
-                                    }
-                                    curr_cell->set_body(body_it->second);
-                                }
                                 if(have_undefineds && !undefined_inputs_enabled()) {
                                     continue;
                                 }
                                 curr_cell->body()->exec(exctx_ptr);
+
+                                exctx_ptr->del_stack_frame();
 
                                 if(termination_requested()) {
                                     break;
@@ -2246,7 +1991,38 @@ namespace teal {
         std::atomic<std::int64_t> termination_requested_{0};
         enum class thread_mode{none, single, multi };
         thread_mode thread_mode_{thread_mode::none};
-        void set_thread_mode_single() { thread_mode_ = thread_mode::single; }
+        void set_thread_mode_single() {
+            for(auto &&curr_cell: worker_cells_flat_array_) {
+                curr_cell->exctx()->set_runtime_interface(this);
+                std::string const &curr_cell_type_name{curr_cell->type_name()};
+                if(!curr_cell->type_info_transferred()) {
+                    auto type_it{worker_cells_templates_.find(curr_cell_type_name)};
+                    if(type_it != worker_cells_templates_.end()) {
+                        if(curr_cell->actual_args_info().size() != static_cast<size_t>(type_it->second.num_args())) {
+                            throw runtime_error{curr_cell->line(), curr_cell->col(),
+                                std::string{"error instantiating node \""} + curr_cell->inst_name() + "\" of type \"" + curr_cell->type_name() +
+                                    "\": number of actual parameters mismatch"
+                            };
+                        }
+                        curr_cell->set_type_info(type_it->second.num_args(), type_it->second.arg_names());
+                    }
+                }
+                curr_cell->exctx()->set_self_fields(curr_cell->cell_self_values_ptr());
+                if(!curr_cell->body()) {
+                    auto body_it{worker_bodies_.find(curr_cell_type_name)};
+                    if(body_it == worker_bodies_.end()) {
+                        throw runtime_error{
+                            curr_cell->line(), curr_cell->col(),
+                            std::string{"\""} + curr_cell_type_name +
+                                "\" definition not found for instantiation of \"" +
+                                curr_cell->inst_name() + "\""
+                        };
+                    }
+                    curr_cell->set_body(body_it->second);
+                }
+            }
+            thread_mode_ = thread_mode::single;
+        }
         void set_thread_mode_multi() { thread_mode_ = thread_mode::multi; }
         void set_thread_mode_none() { thread_mode_ = thread_mode::none; }
         bool is_current_thread_mode_none() const { return thread_mode_ == thread_mode::none; }
@@ -2255,7 +2031,7 @@ namespace teal {
         std::uint64_t sleep_between_cycles_nanoseconds_{0};
         std::uint64_t sleep_inactive_thread_nanoseconds_{100'000ULL};
 
-        execution_context exctx_{};
+        // execution_context exctx_{};
         shared_mutex threads_mtp_{};
         std::list<std::thread> threads_{};
         std::int64_t wait_granularity_nsec_{100LL};
@@ -2341,6 +2117,7 @@ namespace teal {
             return fn;
         }
 
+        strings_ext strings_ext_{};
         math_ext math_ext_{};
         persistence_ext persistence_ext_{};
         pid_ext pid_ext_{};
@@ -2391,8 +2168,6 @@ namespace teal {
             return cq_.get() != nullptr;
         }
 
-        std::string network_access_point_url_{};
-        std::string network_name_{};
         mutable shared_mutex extern_cells_mtp_{};
         str_map_t<std::shared_ptr<extern_cell>> extern_cells_{};
         mutable shared_mutex ext_cells_processor_mtp_{};

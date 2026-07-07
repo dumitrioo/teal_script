@@ -95,6 +95,7 @@ HEADERS += \
     ../../src/ext/pid_ext.hpp \
     ../../src/ext/quectoml_ext.hpp \
     ../../src/ext/rand_ext.hpp \
+    ../../src/ext/strings_ext.hpp \
     ../../src/ext/time_ext.hpp \
     ../../src/tealscript_cells.hpp \
     ../../src/tealscript_net.hpp \

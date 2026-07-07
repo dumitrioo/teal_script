@@ -202,7 +202,7 @@ exception_test exctst();
 
 
 simply_test() {
-    sv = str_tok("spssususususdgsdyustgsfsyutsfdesf", "s");
+    sv = split("spssususususdgsdyustgsfsyutsfdesf", "s");
     console.print(sv);
     return 0;
 }

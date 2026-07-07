@@ -68,7 +68,7 @@ namespace teal::str_util {
 
 
     template<typename T, std::size_t N, typename U>
-#if (__cplusplus >= 202000L)
+#if(__cplusplus >= 202000L)
         requires(N < 256)
 #endif
     static constexpr std::array<U, 256> create_reverse_table(
