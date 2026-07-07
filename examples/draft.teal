@@ -212,7 +212,6 @@ my_drafts(host_data) {
     timestamps.apply_func(println);
     println("-------------");
     timestamps.sort_r().apply_func(println);
-    exit();
 
     awepo = [];
     for(i = 0; i < 10; ++i) {
