@@ -151,19 +151,6 @@ my_drafts(host_data) {
     console.enable_colors(true);
     console.setprecision(6);
 
-    j = object(load_from_file("/tmp/decoded_txt.json"));
-    k = object();
-    s = "";
-    for(i = 0; i < j.transcription.size(); ++i) {
-        t = j.transcription[i].text;
-        if(!k[t]) {
-            k[t] = true;
-            s += t;
-        }
-    }
-    s.println();
-    exit();
-
     wewerwer = rnd_str(64);
     wewerwer.println();
     wewerwer.sort();
