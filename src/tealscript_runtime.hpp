@@ -1879,12 +1879,28 @@ namespace teal {
         }
 
     private:
+
         void load_source_string(std::string const &src) {
             lexer lxr{};
             parser prs{};
+            std::shared_ptr<token> glued_str_buff{};
             lxr.set_callback([&](token const &tkn, bool /*space_with_nl*/) {
-                if(tkn.tktype() != token::type::SPACE) {
-                    prs.add_token(tkn);
+                if(tkn.type_is_not(token::type::COMMENT)) {
+                    if(tkn.type_is(token::type::STRING_LITERAL)) {
+                        if(glued_str_buff) {
+                            glued_str_buff->append_str(tkn.lexem());
+                        } else {
+                            glued_str_buff = std::make_shared<token>(tkn);
+                        }
+                    } else {
+                        if(tkn.tktype() != token::type::SPACE) {
+                            if(glued_str_buff) {
+                                prs.add_token(*glued_str_buff);
+                                glued_str_buff.reset();
+                            }
+                            prs.add_token(tkn);
+                        }
+                    }
                 }
             });
             for(auto &&c: str_util::from_utf8(src)) {

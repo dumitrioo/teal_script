@@ -14,14 +14,6 @@
 
 namespace teal {
 
-#if defined(TEAL_JSON_DEBUGGING) || defined(TEAL_USE_CUSTOM_ANY)
-    using teal::any;
-    using teal::any_cast;
-#else
-    using std::any;
-    using std::any_cast;
-#endif
-
     DEFINE_RUNTIME_ERROR_CLASS(json_error)
 
     namespace detail {
@@ -738,7 +730,13 @@ namespace teal {
 
         json &become_null() {
             if(t_ != jo_null) {
-                v_ = any{};
+                v_ =
+#if defined(TEAL_JSON_DEBUGGING) || defined(TEAL_USE_CUSTOM_ANY)
+                    teal::
+#else
+                    std::
+#endif
+                    any{};
                 t_ = jo_null;
             }
             return *this;
@@ -2008,11 +2006,23 @@ namespace teal {
 
     private:
         template<typename T> const T &as() const & {
-            return any_cast<T const &>(v_);
+            return
+#if defined(TEAL_JSON_DEBUGGING) || defined(TEAL_USE_CUSTOM_ANY)
+                teal::
+#else
+                std::
+#endif
+                any_cast<T const &>(v_);
         }
 
         template<typename T> T &as() & {
-            return any_cast<T &>(v_);
+            return
+#if defined(TEAL_JSON_DEBUGGING) || defined(TEAL_USE_CUSTOM_ANY)
+                teal::
+#else
+                std::
+#endif
+                any_cast<T &>(v_);
         }
 
         enum type {
@@ -2025,6 +2035,11 @@ namespace teal {
             jo_bool
         };
 
+#if defined(TEAL_JSON_DEBUGGING) || defined(TEAL_USE_CUSTOM_ANY)
+        teal::
+#else
+        std::
+#endif
         any v_{};
         type t_{jo_null};
 

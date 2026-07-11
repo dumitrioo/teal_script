@@ -62,10 +62,6 @@ namespace teal {
             float_phase_.clear();
             space_with_new_line_ = false;
             nl_buff_ = -1;
-            string_buff_present_ = false;
-            string_buff_.clear();
-            str_token_row_ = -1;
-            str_token_col_ = -1;
             stop_escaping();
         }
 
@@ -89,13 +85,8 @@ namespace teal {
                 } else if(teal::str_util::fltr<std::wstring>::isspace(c)) { buff_ += c; state_ = "space";
                 } else if(c == '.') { buff_ += c; state_ = "dot";
                 } else if(is_ident_start(c)) { buff_ += c; state_ = "iden";
-                } else if(c == DQUO) {
-                    state_ = "str";
-                    if(!string_buff_present_) {
-                        str_token_row_ = row_;
-                        str_token_col_ = col_;
-                    }
-                } else if(c == APOS) { state_ = "sc_str"; str_token_row_ = row_; str_token_col_ = col_;
+                } else if(c == DQUO) { state_ = "str";
+                } else if(c == APOS) { state_ = "sc_str";
                 } else if(c == '=') { buff_ += c; state_ = "=";
                 } else if(c == '*') { buff_ += c; state_ = "*";
                 } else if(c == '/') { buff_ += c; state_ = "/";
@@ -356,9 +347,9 @@ namespace teal {
                 }
                 report_token(token::type::STRING_LITERAL);
             } else if(c == -1) {
-                throw compilation_error{str_token_row_, str_token_col_, "unexpected end of input"};
+                throw compilation_error{row_, col_, "unexpected end of input"};
             } else {
-                string_buff_ += c;
+                buff_ += c;
             }
         }
 
@@ -375,14 +366,14 @@ namespace teal {
                 if(str_escape_) {
                     throw compilation_error{esc_row_, esc_col_, "invalid character literal escape"};
                 }
-                if(string_buff_.size() < 1) {
-                    throw compilation_error{str_token_row_, str_token_col_, "invalid character"};
+                if(buff_.size() < 1) {
+                    throw compilation_error{row_, col_, "invalid character"};
                 }
                 report_token(token::type::CHAR_LITERAL);
             } else if(c == -1) {
-                throw compilation_error{str_token_row_, str_token_col_, "unexpected end of input"};
+                throw compilation_error{row_, col_, "unexpected end of input"};
             } else {
-                string_buff_ += c;
+                buff_ += c;
             }
         }
 
@@ -408,7 +399,7 @@ namespace teal {
                                     )
                                 };
                                 if(esc_buff_.size() == 3) {
-                                    string_buff_ += (decltype(string_buff_)::value_type)chr;
+                                    buff_ += static_cast<decltype(buff_)::value_type>(chr);
                                     stop_escaping();
                                 }
                             }
@@ -428,7 +419,7 @@ namespace teal {
                                     )
                                 };
                                 if(esc_buff_.size() == 2) {
-                                    string_buff_ += (decltype(string_buff_)::value_type)chr;
+                                    buff_ += static_cast<decltype(buff_)::value_type>(chr);
                                     stop_escaping();
                                 }
                             }
@@ -448,7 +439,7 @@ namespace teal {
                                     )
                                 };
                                 if(esc_buff_.size() == 4) {
-                                    string_buff_ += (decltype(string_buff_)::value_type)chr;
+                                    buff_ += static_cast<decltype(buff_)::value_type>(chr);
                                     stop_escaping();
                                 }
                             }
@@ -464,7 +455,7 @@ namespace teal {
                                     )
                                 };
                                 if(esc_buff_.size() == 8) {
-                                    string_buff_ += (decltype(string_buff_)::value_type)chr;
+                                    buff_ += static_cast<decltype(buff_)::value_type>(chr);
                                     stop_escaping();
                                 }
                             }
@@ -490,37 +481,41 @@ namespace teal {
                     }
                 }
             } else {
-                if(c == 'n') { string_buff_ += NEWL; stop_escaping();
-                } else if(c == 'r') { string_buff_ += CRET; stop_escaping();
-                } else if(c == 't') { string_buff_ += HTAB; stop_escaping();
-                } else if(c == 'b') { string_buff_ += BACK; stop_escaping();
-                } else if(c == 'a') { string_buff_ += BELL; stop_escaping();
-                } else if(c == 'f') { string_buff_ += FMFD; stop_escaping();
-                } else if(c == 'v') { string_buff_ += VTAB; stop_escaping();
-                } else if(c == 'e') { string_buff_ += ESCP; stop_escaping();
+                if(c == 'n') { buff_ += NEWL; stop_escaping();
+                } else if(c == 'r') { buff_ += CRET; stop_escaping();
+                } else if(c == 't') { buff_ += HTAB; stop_escaping();
+                } else if(c == 'b') { buff_ += BACK; stop_escaping();
+                } else if(c == 'a') { buff_ += BELL; stop_escaping();
+                } else if(c == 'f') { buff_ += FMFD; stop_escaping();
+                } else if(c == 'v') { buff_ += VTAB; stop_escaping();
+                } else if(c == 'e') { buff_ += ESCP; stop_escaping();
                 } else if(c >= '0' && c < '8') { esc_buff_ += c; str_num_escape_mode_ = str_num_escaping_t::oct;
                 } else if(c == 'x') { str_num_escape_mode_ = str_num_escaping_t::hex;
                 } else if(c == 'u') { str_num_escape_mode_ = str_num_escaping_t::u4;
                 } else if(c == 'U') { str_num_escape_mode_ = str_num_escaping_t::u8;
-                } else { string_buff_ += c; stop_escaping();
+                } else { buff_ += c; stop_escaping();
                 }
             }
         }
 
         void space(std::int64_t c) {
             if(!teal::str_util::fltr<std::wstring>::isspace(c)) {
-                buff_ += ' ';
                 report_token(token::type::SPACE, c);
+            } else {
+                buff_ += c;
             }
         }
 
         void slc(std::int64_t c) {
-            if(c == NEWL) {
-                state_.clear();
+            if(c == NEWL || c == -1) {
+                report_token(token::type::COMMENT, c);
+            } else {
+                buff_ += c;
             }
         }
 
         void mlc(std::int64_t c) {
+            buff_ += c;
             if(c == '*' ) {
                 state_ = "mlc_star";
             } else if(c == -1) {
@@ -529,9 +524,9 @@ namespace teal {
         }
 
         void mlc_star(std::int64_t c) {
+            buff_ += c;
             if(c == '/' ) {
-                state_.clear();
-                buff_.clear();
+                report_token(token::type::COMMENT);
             } else if(c == -1) {
                 throw compilation_error{row_, col_, "unexpected end of input on comment"};
             } else if(c == '*' ) {
@@ -561,8 +556,10 @@ namespace teal {
 
         void slash(std::int64_t c) {
             if(c == '/') {
+                buff_ += c;
                 state_ = "slc";
             } else if(c == '*') {
+                buff_ += c;
                 state_ = "mlc";
             } else {
                 if(c == '=') {
@@ -722,50 +719,10 @@ namespace teal {
     private:
         void report_token(token::type tt) {
             if(on_token_) {
-                if(tt == token::type::STRING_LITERAL) {
-                    string_buff_present_ = true;
-                } else if(tt == token::type::CHAR_LITERAL) {
-                    on_token_(
-                        token{
-                            str_token_row_,
-                            str_token_col_,
-                            token::type::CHAR_LITERAL,
-                            string_buff_
-                        },
-                        space_with_new_line_
-                    );
-                    string_buff_.clear();
-                    str_token_row_ = -1;
-                    str_token_col_ = -1;
-                } else {
-                    if(string_buff_present_) {
-                        if(state_ != "space") {
-                            on_token_(
-                                token{
-                                    str_token_row_,
-                                    str_token_col_,
-                                    token::type::STRING_LITERAL,
-                                    string_buff_
-                                },
-                                space_with_new_line_
-                            );
-                            string_buff_.clear();
-                            string_buff_present_ = false;
-                            str_token_row_ = -1;
-                            str_token_col_ = -1;
-                        } else {
-                            buff_.clear();
-                            state_.clear();
-                            return;
-                        }
-                    }
-                    on_token_(
-                        token{token_row_, token_col_, tt, buff_},
-                        space_with_new_line_
-                    );
-                }
-            } else {
-                string_buff_.clear();
+                on_token_(
+                    token{token_row_, token_col_, tt, buff_},
+                    space_with_new_line_
+                );
             }
             buff_.clear();
             state_.clear();
@@ -784,10 +741,6 @@ namespace teal {
 
     private:
         std::function<void(token const &, bool)> on_token_{nullptr};
-        bool string_buff_present_{false};
-        std::wstring string_buff_{};
-        std::int64_t str_token_row_{0};
-        std::int64_t str_token_col_{0};
 
         std::wstring buff_{};
         std::string state_{};
