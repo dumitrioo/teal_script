@@ -3,7 +3,7 @@
 function rnd_str(n) {
     cb = "0123456789qwertyuiopasdfghjklzx"
          "cvbnmQWERTYUIOPASDFGHJKLZXCVBNM"
-         "~!@#$%^&+-*/()_=?`'\";:";
+         "~!@#$%^&+-/*()_=?`'\";:";
     cbs = cb.size();
     res = "";
     for (i = 0; i < n; ++i) {
@@ -150,6 +150,16 @@ my_drafts(host_data) {
     console.fixed();
     console.enable_colors(true);
     console.setprecision(6);
+
+    "ewrgwewerpgihewrpighwepiruhgewrgewgraaaauuufrehpiuhpweirg".find_substr("raaaauuu").println();
+    exit();
+
+    v4a = array();
+    v4a.push_back(vec4(1,1,0));
+    v4a.push_back(vec4(1,1,0));
+    v4a.push_back(vec4(1,1,0));
+    v4a.push_back(vec4(1,1,0));
+    array_avg(v4a).println();
 
     wewerwer = rnd_str(64);
     wewerwer.println();
@@ -555,12 +565,13 @@ my_drafts drf(host_provided_data);
 
 
 function array_avg(arr) {
+    res = arr;
     if(arr.is_array() && arr.size() > 0) {
-        s = 0.0;
-        for(i = 0; i < arr.size(); ++i) { s += (f64)arr[i]; }
-        return s / arr.size();
+        s = arr[0];
+        for(i = 1; i < arr.size(); ++i) { s += arr[i]; }
+        res = s / arr.size();
     }
-    return 0.0;
+    return res;
 }
 
 wind_speed_avg_fltr(curr_speed) { // filtering logic (recent 2 seconds average speed from input)

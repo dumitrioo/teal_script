@@ -478,6 +478,41 @@ namespace teal {
                 auto d{hex_str_to_data(src)};
                 return std::string{d.begin(), d.end()};
             });
+
+            rt_->add_function("find_substr", TEALFUN(args) {
+                TEAL_CHCK_FUN_PARMS_NUM_IN_RANGE(args, 2, 3)
+                if(args[0].is_string()) {
+                    if(args[1].is_string()) {
+                        if(args.size() == 3) {
+                            return substr_finder{}.find(args[0].as_string(), args[1].as_string(), args[2].cast_to_u64());
+                        } else {
+                            return substr_finder{}.find(args[0].as_string(), args[1].as_string());
+                        }
+                    } else {
+                        if(args.size() == 3) {
+                            return substr_finder{}.find(args[0].as_string(), args[1].cast_to_string(), args[2].cast_to_u64());
+                        } else {
+                            return substr_finder{}.find(args[0].as_string(), args[1].cast_to_string());
+                        }
+                    }
+                } else if(args[0].is_wstring()) {
+                    if(args[1].is_wstring()) {
+                        if(args.size() == 3) {
+                            return substr_finder{}.find(args[0].as_wstring(), args[1].as_wstring(), args[2].cast_to_u64());
+                        } else {
+                            return substr_finder{}.find(args[0].as_wstring(), args[1].as_wstring());
+                        }
+                    } else {
+                        if(args.size() == 3) {
+                            return substr_finder{}.find(args[0].as_wstring(), args[1].cast_to_wstring(), args[2].cast_to_u64());
+                        } else {
+                            return substr_finder{}.find(args[0].as_wstring(), args[1].cast_to_wstring());
+                        }
+                    }
+                } else {
+                    return static_cast<int64_t>(-1);
+                }
+            });
         }
 
         void unregister_runtime() override {
@@ -522,6 +557,63 @@ namespace teal {
 
             rt_ = nullptr;
         }
+
+    private:
+        class substr_finder {
+        public:
+            int64_t find(std::string const &s, std::string const &sub, uint64_t starting_point = 0) {
+                if(s.size() == 0 || sub.size() == 0 || s.size() < sub.size() + starting_point) { return -1; }
+                uint64_t sub_cksum{cksum(std::string_view{sub})};
+                uint64_t curr_cksum{cksum(std::string_view{s.data() + starting_point, sub.size()})};
+                for(int64_t i{(int64_t)starting_point}; i <= (int64_t)s.size() - (int64_t)sub.size(); ++i) {
+                    if(i > 0) {
+                        curr_cksum -= (uint8_t)s[i - 1];
+                        curr_cksum += (uint8_t)s[i + sub.size() - 1];
+                    }
+                    if(
+                        curr_cksum == sub_cksum &&
+                        std::string_view{sub} == std::string_view{s.data() + i, sub.size()}
+                    ) {
+                        return i;
+                    }
+                }
+                return -1;
+            }
+            int64_t find(std::wstring const &s, std::wstring const &sub, uint64_t starting_point = 0) {
+                if(s.size() == 0 || sub.size() == 0 || s.size() < sub.size() + starting_point) { return -1; }
+                uint64_t sub_cksum{cksum(std::wstring_view{sub})};
+                uint64_t curr_cksum{cksum(std::wstring_view{s.data() + starting_point, sub.size()})};
+                for(int64_t i{(int64_t)starting_point}; i <= (int64_t)s.size() - (int64_t)sub.size(); ++i) {
+                    if(i > 0) {
+                        curr_cksum -= (uint8_t)s[i - 1];
+                        curr_cksum += (uint8_t)s[i + sub.size() - 1];
+                    }
+                    if(
+                        curr_cksum == sub_cksum &&
+                        std::wstring_view{sub} == std::wstring_view{s.data() + i, sub.size()}
+                    ) {
+                        return i;
+                    }
+                }
+                return -1;
+            }
+
+        private:
+            uint64_t cksum(std::string_view s) {
+                uint64_t res{0};
+                for(size_t i{}; i < s.size(); ++i) {
+                    res += (std::make_unsigned_t<std::string_view::value_type>)s[i];
+                }
+                return res;
+            }
+            uint64_t cksum(std::wstring_view s) {
+                uint64_t res{0};
+                for(size_t i{}; i < s.size(); ++i) {
+                    res += (std::make_unsigned_t<std::wstring_view::value_type>)s[i];
+                }
+                return res;
+            }
+        };
 
     private:
         shared_mutex rt_mtp_{};

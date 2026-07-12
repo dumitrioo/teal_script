@@ -56,10 +56,11 @@ function max(v1, v2) {
 }
 
 function arr_min(arr) {
-    res = undefined;
-    if(arr.is_array()) {
-        for(i = 0; i < arr.size(); ++i) {
-            if(res == undefined || arr[i] < res) {
+    res = arr;
+    if(arr.is_array() && arr.size() > 0) {
+        res = arr[i];
+        for(i = 1; i < arr.size(); ++i) {
+            if(arr[i] < res) {
                 res = arr[i];
             }
         }
@@ -68,10 +69,11 @@ function arr_min(arr) {
 }
 
 function arr_max(arr) {
-    res = undefined;
-    if(arr.is_array()) {
-        for(i = 0; i < arr.size(); ++i) {
-            if(res == undefined || res < arr[i]) {
+    res = arr;
+    if(arr.is_array() && arr.size() > 0) {
+        res = arr[i];
+        for(i = 1; i < arr.size(); ++i) {
+            if(res < arr[i]) {
                 res = arr[i];
             }
         }
@@ -79,17 +81,16 @@ function arr_max(arr) {
     return res;
 }
 
-function arr_avg(arr) {
-    res = undefined;
+function array_avg(arr) {
+    res = arr;
     if(arr.is_array() && arr.size() > 0) {
-        s = 0.0;
-        for(i = 0; i < arr.size(); ++i) {
-            s += (f64)arr[i];
-        }
+        s = arr[0];
+        for(i = 1; i < arr.size(); ++i) { s += arr[i]; }
         res = s / arr.size();
     }
     return res;
 }
+
 
 negation_def(v) {
     return !v;
