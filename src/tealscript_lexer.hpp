@@ -110,12 +110,8 @@ namespace teal {
                 } else if(c == ')') { buff_ += c; state_ = ")"; instant_single_char();
                 } else if(c == '{') { buff_ += c; state_ = "{"; instant_single_char();
                 } else if(c == '}') { buff_ += c; state_ = "}"; instant_single_char();
-                } else {
-                    if(c >= 0) {
-                        throw compilation_error{row_, col_, "invalid character"};
-                    } else {
-                        reset();
-                    }
+                } else if(c >= 0) {
+                    throw compilation_error{row_, col_, "invalid character"};
                 }
             } else if(state_ == "int") { num(c);
             } else if(state_ == "hex") { hex(c);
@@ -150,7 +146,10 @@ namespace teal {
             } else {
                 throw compilation_error{row_, col_, "invalid lexer state"};
             }
-            if(encountered) {
+            if(c < 0) {
+                report_token(token::type::ENDOFFILE);
+                reset();
+            } else if(encountered) {
                 count(c);
             }
         }
