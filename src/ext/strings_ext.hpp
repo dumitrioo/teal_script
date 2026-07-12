@@ -566,9 +566,9 @@ namespace teal {
                 uint64_t sub_cksum{cksum(std::string_view{sub})};
                 uint64_t curr_cksum{cksum(std::string_view{s.data() + starting_point, sub.size()})};
                 for(int64_t i{(int64_t)starting_point}; i <= (int64_t)s.size() - (int64_t)sub.size(); ++i) {
-                    if(i > 0) {
-                        curr_cksum -= (uint8_t)s[i - 1];
-                        curr_cksum += (uint8_t)s[i + sub.size() - 1];
+                    if(i > (int64_t)starting_point) {
+                        curr_cksum -= (std::make_unsigned_t<std::string_view::value_type>)s[i - 1];
+                        curr_cksum += (std::make_unsigned_t<std::string_view::value_type>)s[i + sub.size() - 1];
                     }
                     if(
                         curr_cksum == sub_cksum &&
@@ -584,9 +584,9 @@ namespace teal {
                 uint64_t sub_cksum{cksum(std::wstring_view{sub})};
                 uint64_t curr_cksum{cksum(std::wstring_view{s.data() + starting_point, sub.size()})};
                 for(int64_t i{(int64_t)starting_point}; i <= (int64_t)s.size() - (int64_t)sub.size(); ++i) {
-                    if(i > 0) {
-                        curr_cksum -= (uint8_t)s[i - 1];
-                        curr_cksum += (uint8_t)s[i + sub.size() - 1];
+                    if(i > (int64_t)starting_point) {
+                        curr_cksum -= (std::make_unsigned_t<std::wstring_view::value_type>)s[i - 1];
+                        curr_cksum += (std::make_unsigned_t<std::wstring_view::value_type>)s[i + sub.size() - 1];
                     }
                     if(
                         curr_cksum == sub_cksum &&
