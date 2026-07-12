@@ -65,6 +65,8 @@ namespace teal {
             if(res.is_object()) { return res; }
             res = get_while_statement();
             if(res.is_object()) { return res; }
+            res = get_dowhile_statement();
+            if(res.is_object()) { return res; }
             res = get_for_statement();
             if(res.is_object()) { return res; }
             res = get_compound_statement();
@@ -484,6 +486,58 @@ namespace teal {
                         get_token(0).line(),
                         get_token(0).col(),
                         "invalid \"while\": condition expected"
+                    };
+                }
+            }
+            return res;
+        }
+
+        json get_dowhile_statement() {
+            json res{};
+            if(get_token(0).is_id() && get_token(0).lexem() == L"do") {
+                res["loc"]["line"] = get_token(0).line();
+                res["loc"]["col"] = get_token(0).col();
+                loops_nesting_.push_front("dowhile");
+                teal::shut_on_destroy pop_nest{
+                    [&]() { loops_nesting_.pop_front(); }
+                };
+                increment_pos();
+                check_eof();
+                auto stmt{get_statement()};
+                if(stmt.is_object()) {
+                    if(get_token(0).is_id() && get_token(0).lexem() == L"while") {
+                        res["loc"]["line"] = get_token(0).line();
+                        res["loc"]["col"] = get_token(0).col();
+                        increment_pos();
+                        check_eof();
+                        json expr{get_expr()};
+                        if(expr.is_object()) {
+                            res["type"] = "statement";
+                            res["subtype"] = "dowhile";
+                            res["content"]["cond"] = std::move(expr);
+                            res["content"]["statement"] = std::move(stmt);
+                            check_eof();
+                            if(get_token(0).type_is_not(token::type::SEMICOLON)) {
+                                throw compilation_error{
+                                    get_token(0).line(),
+                                    get_token(0).col(),
+                                    "\";\" expected"
+                                };
+                            }
+                            increment_pos();
+                        } else {
+                            throw compilation_error{
+                                get_token(0).line(),
+                                get_token(0).col(),
+                                "invalid \"while\": condition expected"
+                            };
+                        }
+                    }
+                } else {
+                    throw compilation_error{
+                        get_token(0).line(),
+                        get_token(0).col(),
+                        "invalid \"while\": statement expected"
                     };
                 }
             }

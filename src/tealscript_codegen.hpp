@@ -241,6 +241,12 @@ namespace teal {
                         chop_statement(ast["content"]["statement"])
                     );
                     res->set_loc(ast["loc"]["line"].try_as_number(), ast["loc"]["col"].try_as_number());
+                } else if(ast["subtype"].as_string() == "dowhile") {
+                    res = std::make_shared<statement_dowhile>(
+                        chop_expression(ast["content"]["cond"]),
+                        chop_statement(ast["content"]["statement"])
+                    );
+                    res->set_loc(ast["loc"]["line"].try_as_number(), ast["loc"]["col"].try_as_number());
                 } else if(ast["subtype"].as_string() == "for") {
                     res = std::make_shared<statement_for>(
                         chop_expression(ast["content"]["init"]),

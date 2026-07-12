@@ -285,6 +285,57 @@ namespace teal {
         statement_ptr stat_{};
     };
 
+    class statement_dowhile: public statement {
+    public:
+        statement_dowhile(expr_ptr cond_expr, statement_ptr const &stat):
+            cond_expr_{cond_expr},
+            stat_{stat}
+        {
+            stat_->skip_frame_creation();
+        }
+
+        void exec(execution_context *ctx) override {
+            if(ctx->some_jump_requested()) { return; }
+            ctx->new_stack_frame();
+            teal::shut_on_destroy leave_frame{[&]() {
+                ctx->del_stack_frame();
+            }};
+
+            bool bcond{};
+            do {
+                if(stat_) { stat_->exec(ctx); }
+                if(ctx->return_requested() || ctx->termination_requested()) { return; }
+                if(ctx->continue_requested()) { ctx->clear_continue_request(); }
+                if(ctx->break_requested()) { ctx->clear_break_request(); break; }
+
+                valbox cond{cond_expr_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
+                std::string classname{};
+                std::function<valbox(valbox &)> converter{};
+                if(cond.is_class()) {
+                    classname = cond.class_name();
+                    str_map_t<std::function<valbox(valbox &)>> const *unops{
+                        &(ctx->rt_interface()->get_object_services(classname)->unops)
+                    };
+                    if(unops == nullptr) {
+                        throw runtime_error{line(), col(), "invalid condition conversion to logical value"};
+                    }
+                    auto it{unops->find("(bool)")};
+                    if(it == unops->end()) {
+                        throw runtime_error{line(), col(), "invalid condition conversion to logical value"};
+                    }
+                    converter = it->second;
+                    bcond = converter(cond).cast_to_bool();
+                } else {
+                    bcond = cond.cast_to_bool();
+                }
+            } while(bcond);
+        }
+
+    private:
+        expr_ptr cond_expr_{};
+        statement_ptr stat_{};
+    };
+
     class statement_for: public statement {
     public:
         statement_for(

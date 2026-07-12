@@ -1320,7 +1320,11 @@ namespace teal {
                     } else if(r.is_undefined()) {
                         if(r.is_literal_placement()) {
                             if(l.is_stack_placement()) {
+#if defined(TEAL_CLEAR_ON_ASSIGN_UNDEFINED)
                                 ctx->clear_stack_variable_before_barrier(l);
+#else
+                                l.become_undefined();
+#endif
                             } else if(l.is_instance_placement()) {
                                 ctx->clear_instance_variable(l);
                             } else {
