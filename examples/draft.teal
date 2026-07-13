@@ -151,11 +151,24 @@ my_drafts(host_data) {
     console.enable_colors(true);
     console.setprecision(6);
 
-    oij = -1;
-    do {
-        oij = "ouououiffdguouououhergeiououourerhjytgouououhewfealwqliefouououarg".find_substr("ououou", oij + 1);
+    bigstr = "ouououiffdguouououhergeiououourerhjytgouououhewfealwqliefouououarg";
+    substr = "ououou";
+    for(oij = bigstr.find_substr(substr, 0); oij >= 0; oij = bigstr.find_substr(substr, oij + 1)) {
         oij.println();
-    } while(oij >= 0);
+    }
+
+    {
+        i = 0;
+        do {
+            i++;
+            if (i == 3) {
+                continue; // Skip the rest of the loop when i is 3
+            }
+            println("Value of i: ", i); // This will not print when i is 3
+        } while (i < 5);
+    }
+
+    exit();
 
     v4a = array();
     v4a.push_back(vec4(1,1,0));

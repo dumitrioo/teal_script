@@ -305,8 +305,8 @@ namespace teal {
             do {
                 if(stat_) { stat_->exec(ctx); }
                 if(ctx->return_requested() || ctx->termination_requested()) { return; }
-                if(ctx->continue_requested()) { ctx->clear_continue_request(); }
                 if(ctx->break_requested()) { ctx->clear_break_request(); break; }
+                if(ctx->continue_requested()) { ctx->clear_continue_request(); }
 
                 valbox cond{cond_expr_->eval(ctx, eval_caller_type::no_matter, nullptr).deref()};
                 std::string classname{};
