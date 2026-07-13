@@ -168,8 +168,6 @@ my_drafts(host_data) {
         } while (i < 5);
     }
 
-    exit();
-
     v4a = array();
     v4a.push_back(vec4(1,1,0));
     v4a.push_back(vec4(1,1,0));
