@@ -2321,7 +2321,11 @@ namespace teal {
                                     }
                                 }
                             } else {
-                                throw runtime_error{this_->line(), this_->col(), "wrong operand"};
+                                throw runtime_error{
+                                    this_->line(), this_->col(),
+                                    std::string{"wrong operand type for left side of \".\" operator: \""} +
+                                        valbox::type_to_str(l.val_or_pointed_type()) + "\""
+                                };
                             }
                         }
                     }

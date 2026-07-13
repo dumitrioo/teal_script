@@ -150,12 +150,12 @@ my_drafts(host_data) {
     console.fixed();
     console.enable_colors(true);
     console.setprecision(6);
-    k = -1;
+
+    oij = -1;
     do {
-        k = "ouououiffdguouououhergeiououourerhjytgouououhewfealwqliefouououarg".find_substr("ououou", k + 1);
-        k.println();
-    } while(k >= 0);
-    exit();
+        oij = "ouououiffdguouououhergeiououourerhjytgouououhewfealwqliefouououarg".find_substr("ououou", oij + 1);
+        oij.println();
+    } while(oij >= 0);
 
     v4a = array();
     v4a.push_back(vec4(1,1,0));
