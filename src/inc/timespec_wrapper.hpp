@@ -503,15 +503,26 @@ namespace teal {
         }
 
         static timespec_wrapper date_gmtoffset(timespec_wrapper const &d) noexcept {
+#if (__cplusplus < 202002L)
+            timespec_wrapper result;
+            struct timeval tv;
+            tv.tv_sec = d.t_.tv_sec;
+            time_t t{tv.tv_sec};
+            struct tm *ltm{::localtime(&t)};
+            result.t_.tv_sec = ltm->tm_gmtoff;
+            result.t_.tv_nsec = 0;
+            return result;
+#else
             timespec_wrapper result{};
-#if defined(PLATFORM_WINDOWS)
+    #if defined(PLATFORM_WINDOWS)
             std::chrono::nanoseconds ns_duration(d.nseconds());
             std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds> tp{ns_duration};
-#else
+    #else
             std::chrono::system_clock::time_point tp{std::chrono::nanoseconds{d.nseconds()}};
-#endif
+    #endif
             result.t_.tv_sec = std::chrono::current_zone()->get_info(tp).offset.count();
             return result;
+#endif
         }
 
         static timespec_wrapper system_gmtoffset() noexcept {
@@ -519,10 +530,21 @@ namespace teal {
         }
 
         timespec_wrapper gmtoffset() const noexcept {
+#if (__cplusplus < 202002L)
+            timespec_wrapper result;
+            struct timeval tv;
+            gettimeofday(&tv, nullptr);
+            time_t t{tv.tv_sec};
+            struct tm *ltm{::localtime(&t)};
+            result.t_.tv_sec = ltm->tm_gmtoff;
+            result.t_.tv_nsec = 0;
+            return result;
+#else
             timespec_wrapper result;
             std::chrono::system_clock::time_point tp{ std::chrono::system_clock::now() };
             result.t_.tv_sec = std::chrono::current_zone()->get_info(tp).offset.count();
             return result;
+#endif
         }
 
         timespec_wrapper &operator+=(const timespec_wrapper &rhs) noexcept {

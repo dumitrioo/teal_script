@@ -29,7 +29,8 @@
 
 #include "ext/array_buffer_ext.hpp"
 #include "ext/containers_ext.hpp"
-#ifndef TEALSCRIPT_NO_EIGEN
+#include "ext/geo_ext.hpp"
+#ifdef TEAL_USE_EIGEN
 #include "ext/eigen_ext.hpp"
 #endif
 #include "ext/file_ext.hpp"
@@ -172,13 +173,14 @@ namespace teal {
             });
 
             array_buffer_ext_.register_runtime(this);
-#ifndef TEALSCRIPT_NO_EIGEN
+#ifdef TEAL_USE_EIGEN
             eigen_ext_.register_runtime(this);
 #endif
             pid_ext_.register_runtime(this);
             strings_ext_.register_runtime(this);
             math_ext_.register_runtime(this);
             time_ext_.register_runtime(this);
+            geo_ext_.register_runtime(this);
             crypt_.register_runtime(this);
             fpool_.register_runtime(this);
             perf_stat_.register_runtime(this);
@@ -1074,11 +1076,12 @@ namespace teal {
             crypt_.unregister_runtime();
             fpool_.unregister_runtime();
             perf_stat_.unregister_runtime();
-#ifndef TEALSCRIPT_NO_EIGEN
+#ifdef TEAL_USE_EIGEN
             eigen_ext_.unregister_runtime();
 #endif
             randlib_.unregister_runtime();
             time_ext_.unregister_runtime();
+            geo_ext_.unregister_runtime();
             math_ext_.unregister_runtime();
             strings_ext_.unregister_runtime();
             pid_ext_.unregister_runtime();
@@ -2133,6 +2136,7 @@ namespace teal {
             return fn;
         }
 
+        geo_ext geo_ext_{};
         strings_ext strings_ext_{};
         math_ext math_ext_{};
         persistence_ext persistence_ext_{};
@@ -2145,7 +2149,7 @@ namespace teal {
         array_buffer_ext array_buffer_ext_{};
         socket_ext sockext_{};
         containers_ext dict_ext_{};
-#ifndef TEALSCRIPT_NO_EIGEN
+#ifdef TEAL_USE_EIGEN
         eigen_ext eigen_ext_{};
 #endif
         mutable shared_mutex obj_ser_mtp_{};

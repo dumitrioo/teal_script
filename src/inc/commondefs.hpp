@@ -303,4 +303,10 @@ namespace teal {
         FUNCTOR dref_;
     };
 
+    template<typename T, typename... UU>
+    bool is_first_one_of_the_rest(T const &v, UU&&...vv) {
+        std::unordered_set rest{std::forward<T>(vv)...};
+        return rest.find(v) != rest.end();
+    }
+
 }

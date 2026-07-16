@@ -82,10 +82,38 @@ namespace teal::math {
     T cube(T v) noexcept { return v * v * v; }
 
     template<typename T>
-    T deg2rad(T d) noexcept { return d * std::numbers::template pi_v<T> / 180.0L; }
+    T deg2rad(T d) noexcept { return d *
+#if(__cplusplus < 202002L)
+               M_PIl
+#else
+               std::numbers::template pi_v<T>
+#endif
+               / 180.0L; }
 
     template<typename T>
-    T rad2deg(T r) noexcept { return r * 180.0L / std::numbers::template pi_v<T>; }
+    T rad2deg(T r) noexcept { return r * 180.0L /
+#if(__cplusplus < 202002L)
+               M_PIl
+#else
+               std::numbers::template pi_v<T>
+#endif
+            ;
+    }
+
+    template<typename T>
+    constexpr T constexpr_sqrt(T val, T e = 1e-16) {
+        if(val < 0) return std::numeric_limits<T>::quiet_NaN();
+        if(val == 0 || val == std::numeric_limits<T>::infinity()) return val;
+        T x{val < 1 ? 1 : val};
+        T prev{0};
+        T xmp{x - prev < 0 ? prev - x : x - prev};
+        while(xmp > e) {
+            prev = x;
+            x = 0.5 * (x + val / x);
+            xmp = x - prev < 0 ? prev - x : x - prev;
+        }
+        return x;
+    }
 
     template<typename T>
     T angle3d(const vector4<T> &u, const vector4<T> &v) {
@@ -146,7 +174,13 @@ namespace teal::math {
 
     template<typename T>
     T mushroomcap(T width, T x) noexcept {
-        return width > 0.0L ? std::cos((std::numbers::template pi_v<T> * .5L) * x / width) : 0.0L;
+        return width > 0.0L ? std::cos((
+#if(__cplusplus < 202002L)
+                                           M_PIl
+#else
+                                           std::numbers::template pi_v<T>
+#endif
+                                           * .5L) * x / width) : 0.0L;
     }
 
 
@@ -161,7 +195,13 @@ namespace teal::math {
 
     template<typename FP_T>
     FP_T gaussian(FP_T x, FP_T mat_exp = 0, FP_T std_dev = 1) noexcept {
-        return std::exp(-square(x - mat_exp) / (2 * square(std_dev))) / (std_dev * std::sqrt(2 * std::numbers::template pi_v<FP_T>));
+        return std::exp(-square(x - mat_exp) / (2 * square(std_dev))) / (std_dev * std::sqrt(2 *
+#if(__cplusplus < 202002L)
+            M_PIl
+#else
+            std::numbers::template pi_v<FP_T>
+#endif
+        ));
     }
 
     template<typename FP_T>
@@ -178,9 +218,9 @@ namespace teal::math {
         std::normal_distribution<FP_T> nrd_;
     };
 
-#if 0
+#if 1
     // from Quake III Arena game (just for fun)
-    static float Q_rsqrt(float x) noexcept {
+    static float Q_rsqrt(float x) {
         float x2{x * 0.5f};
         float y{x};
         std::int32_t i{*(std::int32_t *)&y};
@@ -192,12 +232,14 @@ namespace teal::math {
     }
 
     // intended for double numbers (for fun also)
-    static double Q_rsqrt(double x) noexcept {
+    static double Q_rsqrt(double x) {
         double x2{x * 0.5};
         double y{x};
         std::int64_t i{*(std::int64_t *)&y};
         i = 0x5fe6a09e667f3bcdLL - (i >> 1);
         y = *(double *)&i;
+        y = y * (1.5 - x2 * y * y);
+        y = y * (1.5 - x2 * y * y);
         y = y * (1.5 - x2 * y * y);
         y = y * (1.5 - x2 * y * y);
         return y;

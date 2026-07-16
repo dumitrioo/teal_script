@@ -305,7 +305,13 @@ namespace teal::math {
 
         static matrix4 perspective(T fov_y_degrees, T aspect_ratio, T znear, T zfar) {
             matrix4 res{};
-            T f = static_cast<T>(1) / std::tan((fov_y_degrees * static_cast<T>(std::numbers::template pi_v<T>) / static_cast<T>(180)) / static_cast<T>(2));
+            T f = static_cast<T>(1) / std::tan((fov_y_degrees * static_cast<T>(
+#if(__cplusplus < 202002L)
+                                                    M_PIl
+#else
+                                                    std::numbers::template pi_v<T>
+#endif
+                                               ) / static_cast<T>(180)) / static_cast<T>(2));
             res[0][0] = f / aspect_ratio;
             res[1][1] = f;
             res[2][2] = (zfar + znear) / (znear - zfar);

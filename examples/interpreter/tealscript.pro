@@ -19,6 +19,7 @@ TEMPLATE = app
 # DEFINES += RW_MUTEX_UPGRADEABLE
 
 # DEFINES += TEAL_TCPSERVER_USE_SSL
+DEFINES += TEAL_USE_EIGEN
 
 INCLUDEPATH += ../../src
 
@@ -29,6 +30,7 @@ HEADERS += \
     ../../src/ext/containers_ext.hpp \
     ../../src/ext/eigen_ext.hpp \
     ../../src/ext/socket_ext.hpp \
+    ../../src/ext/geo_ext.hpp \
     ../../src/inc/any.hpp \
     ../../src/inc/base16.hpp \
     ../../src/inc/base64.hpp \
@@ -59,6 +61,7 @@ HEADERS += \
     ../../src/inc/emhash/lru_time.h \
     ../../src/inc/file_util.hpp \
     ../../src/inc/fsm_tokenizer.hpp \
+    ../../src/inc/geocoordinates.hpp \
     ../../src/inc/hash/adler.hpp \
     ../../src/inc/hash/crc.hpp \
     ../../src/inc/hash/hash.hpp \
@@ -112,7 +115,7 @@ HEADERS += \
     ../../src/tealscript_util.hpp \
     ../../src/tealscript_value.hpp
 
-QMAKE_CXXFLAGS += -std=c++20 -march=native -Wno-unused-parameter -Wno-unused-function -Wl,-rpath,.
+QMAKE_CXXFLAGS += -std=c++17 -march=native -Wno-unused-parameter -Wno-unused-function -Wl,-rpath,.
 # QMAKE_CXXFLAGS += -ftree-vectorize -mavx2 -ftree-vectorizer-verbose=5
 QMAKE_CXXFLAGS_RELEASE -= -O2
 QMAKE_CXXFLAGS_RELEASE += -O3

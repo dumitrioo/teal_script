@@ -151,6 +151,40 @@ my_drafts(host_data) {
     console.enable_colors(true);
     console.setprecision(6);
 
+
+    test_lla = LLA("5°45′20.88″N, 7°33′36.015″W, 25m");
+    println("test_lla: ", test_lla);
+
+    orgLLA = LLA(5.7558, -7.6173, 150.0);
+    // println("orgLLA Lat: ", orgLLA.latitude(), " Lon: ", orgLLA.longitude(), " Alt: ", orgLLA.altitude());
+    println("orgLLA: ", orgLLA.to_string_iso_6709());
+
+    // 1. LLA -> ECEF
+    orgECEF = LLAtoECEF(orgLLA);
+    // println("orgECEF X:", orgECEF.x(), " Y:", orgECEF.y(), " Z:", orgECEF.z());
+    println("orgECEF: ", orgECEF);
+
+    println("------------------------");
+
+    // 2. ECEF -> LLA
+    calculatedLLA = ECEFtoLLA(orgECEF);
+    println("calculatedLLA Lat: ", calculatedLLA.latitude(), " Lon: ", calculatedLLA.longitude(), " Alt: ", calculatedLLA.altitude());
+    // println("calculatedLLA: ", calculatedLLA);
+
+    println("------------------------");
+
+    targetLLA = LLA(orgLLA.latitude(), orgLLA.longitude() + rad2deg(0.001), orgLLA.altitude() + 100.0);
+    println("targetLLA: ", targetLLA);
+    targetECEF = LLAtoECEF(targetLLA);
+    // println("targetECEF X:", targetECEF.x(), " Y:", targetECEF.y(), " Z:", targetECEF.z());
+    println("targetECEF: ", targetECEF);
+    targetENU = ECEFtoENU(targetECEF, orgLLA);
+
+    // println("targetENU East:", targetENU.east(), " North:", targetENU.north(), " Up:", targetENU.up());
+    println("targetENU: ", targetENU);
+
+
+
     bigstr = "ouououiffdguouououhergeiououourerhjytgouououhewfealwqliefouououarg";
     substr = "ououou";
     for(oij = bigstr.find_substr(substr, 0); oij >= 0; oij = bigstr.find_substr(substr, oij + 1)) {
@@ -588,7 +622,7 @@ function array_avg(arr) {
     return res;
 }
 
-wind_speed_avg_fltr(curr_speed) { // filtering logic (recent 2 seconds average speed from input)
+wind_speed_avg_fltr(curr_speed) {
     if(this.vals == undefined) { this.vals = []; this.last_time = 0; this.avg_speed = 0.0; }
     if(steady_clock() - this.last_time > 0.2) {
         this.last_time = steady_clock();
